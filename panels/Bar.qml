@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import "../core" as Core
 import "../modules" as Modules
 import "../theme" as Theme
@@ -23,6 +24,8 @@ PanelWindow {
 
     implicitHeight: qreepTheme.barHeight
     color: "transparent"
+
+    WlrLayershell.namespace: "qreep-bar"
 
     Rectangle {
         anchors.fill: parent
@@ -51,6 +54,10 @@ PanelWindow {
             }
             theme: qreepTheme
 
+            onClicked: {
+                powerPanel.visible = !powerPanel.visible
+                sharedTooltip.hideLater()
+            }
             onTooltipShowRequested: (anchorItem, title, content, style) =>
                 sharedTooltip.showFor(anchorItem, title, content, style)
             onTooltipHideRequested: sharedTooltip.hideLater()
@@ -68,6 +75,16 @@ PanelWindow {
             theme: qreepTheme
             anchorItem: clock
             events: eventStore
+        }
+
+        PowerPanel {
+            id: powerPanel
+
+            theme: qreepTheme
+            anchorItem: powerButton
+
+            onActionRequested: action =>
+                console.log("Power action requested:", action)
         }
     }
 }

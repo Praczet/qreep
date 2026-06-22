@@ -15,4 +15,8 @@ QtObject {
     readonly property color calendarTodayBackground: "{{calendar_today_background}}"
     readonly property color calendarTodayText: "{{calendar_today_text}}"
     readonly property color eventIndicator: "{{event_indicator}}"
+    readonly property color powerActionBackground: "{{power_action_background}}"
+    readonly property color powerActionHoverBackground: "{{power_action_hover_background}}"
+    readonly property color powerActionText: "{{power_action_text}}"
+    readonly property color powerActionIconColor: "{{power_action_icon_color}}"
 }

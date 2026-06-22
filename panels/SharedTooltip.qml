@@ -27,38 +27,49 @@ PopupWindow {
     grabFocus: false
 
     function showFor(anchorItem, title, content, style) {
-        hideTimer.stop();
+        hideTimer.stop()
+        hideAnimation.stop()
 
-        pendingAnchorItem = anchorItem;
-        pendingTitle = title;
-        pendingContent = content;
-        pendingStyle = style || "normal";
+        pendingAnchorItem = anchorItem
+        pendingTitle = title
+        pendingContent = content
+        pendingStyle = style || "normal"
 
         if (visible) {
-            applyPendingRequest();
-            return;
+            applyPendingRequest(false)
+            tooltipBody.scale = 1
+            return
         }
 
-        showTimer.restart();
+        showTimer.restart()
     }
 
     function hideLater() {
-        showTimer.stop();
+        showTimer.stop()
 
         if (visible)
-            hideTimer.restart();
+            hideTimer.restart()
     }
 
-    function applyPendingRequest() {
-        anchorItem = pendingAnchorItem;
-        title = pendingTitle;
-        content = pendingContent;
-        style = pendingStyle;
-        visible = true;
+    function applyPendingRequest(animate) {
+        anchorItem = pendingAnchorItem
+        title = pendingTitle
+        content = pendingContent
+        style = pendingStyle
+        visible = true
+
+        if (animate)
+            showAnimation.restart()
+        else
+            tooltipBody.scale = 1
     }
 
     Rectangle {
+        id: tooltipBody
+
         anchors.fill: parent
+        transformOrigin: Item.Center
+        scale: 0
         radius: 10
         color: rootSharedTooltip.theme.calendarBackground
         border.width: 1
@@ -99,7 +110,7 @@ PopupWindow {
 
         interval: 400
         repeat: false
-        onTriggered: rootSharedTooltip.applyPendingRequest()
+        onTriggered: rootSharedTooltip.applyPendingRequest(true)
     }
 
     Timer {
@@ -107,6 +118,54 @@ PopupWindow {
 
         interval: 500
         repeat: false
-        onTriggered: rootSharedTooltip.visible = false
+        onTriggered: hideAnimation.restart()
+    }
+
+    SequentialAnimation {
+        id: showAnimation
+
+        NumberAnimation {
+            target: tooltipBody
+            property: "scale"
+            from: 0
+            to: 1.2
+            duration: 120
+            easing.type: Easing.OutCubic
+        }
+
+        NumberAnimation {
+            target: tooltipBody
+            property: "scale"
+            from: 1.2
+            to: 1
+            duration: 90
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    SequentialAnimation {
+        id: hideAnimation
+
+        NumberAnimation {
+            target: tooltipBody
+            property: "scale"
+            from: 1
+            to: 1.2
+            duration: 80
+            easing.type: Easing.OutCubic
+        }
+
+        NumberAnimation {
+            target: tooltipBody
+            property: "scale"
+            from: 1.2
+            to: 0
+            duration: 120
+            easing.type: Easing.InCubic
+        }
+
+        ScriptAction {
+            script: rootSharedTooltip.visible = false
+        }
     }
 }
