@@ -369,6 +369,53 @@ v0.0.4 - one practical module, such as updates or Borg status
 v0.1.0 - usable enough to judge Waybar quietly
 ```
 
+## Current state
+
+Qreep currently has:
+
+* a top `PanelWindow` bar with a centered clock and right-aligned power button;
+* a reusable `QreepModule` wrapper with hover, click, right-click, overlay, and
+  shared-tooltip request support;
+* a clock with optional seconds, current-day event dots, and JSON-backed event
+  tooltip content;
+* a calendar popup with a month grid, event markers, and a six-day agenda
+  covering today plus the next five days;
+* one shared popup tooltip with delayed show/hide and scale animations;
+* a full-height power popup with themed system icons and outside-click/Escape
+  dismissal;
+* centralized size and semantic color tokens in `QreepTheme.qml`;
+* an Unclaimed Bloom palette contract consisting of
+  `theme/colors/template.qml` and
+  `theme/colors/UnclaimedBloomColors.qml`;
+* a watched `events.json` source loaded through `core/EventStore.qml`.
+
+Power actions currently log their requested action. They do not lock, suspend,
+log out, reboot, or power off yet. This is deliberate. Accidentally discovering
+that the shutdown button works is a poor testing strategy.
+
+## Suggested next five steps
+
+1. **Add confirmation flow for destructive power actions.**
+   Keep lock immediate; require confirmation for logout, suspend, reboot, and
+   power off. Continue logging actions until the confirmation UI is proven.
+2. **Wire real power commands behind one small service.**
+   Put system commands in `core/PowerService.qml`, keep command selection
+   explicit, and test non-destructive actions first.
+3. **Finish the Unclaimed Bloom Qreep target.**
+   Add the matching recipe, template deployment, and profile entry in
+   Unclaimed Bloom so generated colors replace the current checked-in palette
+   safely.
+4. **Add one practical status module.**
+   Prefer audio volume or battery. Use `QreepModule`, the shared tooltip, and
+   existing theme tokens before inventing another wrapper.
+5. **Add basic project documentation and validation notes.**
+   Fill `README.md` with the run command, current features, event JSON format,
+   required icon/theme assumptions, Hyprland popup blur rule, and known
+   Wayland limitations.
+
+Keep these steps independent and reviewable. Qreep has enough moving pieces now
+that “one tiny cleanup while here” can reproduce when left unattended.
+
 ## Communication with Adam
 
 Adam likes direct explanations, practical examples, and dry honesty.
