@@ -5,10 +5,34 @@ Rectangle {
 
     required property QtObject theme
     default property alias content: contentContainer.data
+    property alias overlay: overlayContainer.data
     readonly property bool hovered: moduleHoverHandler.hovered
+    property string tooltipTitle
+    property string tooltipContent
+    property string tooltipStyle: "normal"
 
     signal clicked
     signal rightClicked
+    signal tooltipShowRequested(
+        Item anchorItem,
+        string title,
+        string content,
+        string style
+    )
+    signal tooltipHideRequested
+
+    onHoveredChanged: {
+        if (hovered && (tooltipTitle.length > 0 || tooltipContent.length > 0)) {
+            tooltipShowRequested(
+                rootQreepModule,
+                tooltipTitle,
+                tooltipContent,
+                tooltipStyle
+            )
+        } else {
+            tooltipHideRequested()
+        }
+    }
 
     implicitWidth:
         contentContainer.implicitWidth + theme.moduleHorizontalPadding
@@ -24,6 +48,12 @@ Rectangle {
         anchors.centerIn: parent
         implicitWidth: childrenRect.width
         implicitHeight: childrenRect.height
+    }
+
+    Item {
+        id: overlayContainer
+
+        anchors.fill: parent
     }
 
     HoverHandler {

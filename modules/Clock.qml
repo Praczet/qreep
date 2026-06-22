@@ -14,6 +14,16 @@ Components.QreepModule {
         repeat: false
         onTriggered: rootClock.refresh()
     }
+    readonly property var visibleTodayEvents: events.visibleEventsForToday(currentDate)
+    readonly property string eventToolTip: {
+        if (visibleTodayEvents.length === 0)
+            return "No remaining events today";
+
+        return visibleTodayEvents.map(event => events.eventTimeLabel(event) + "  " + event.title).join("\n");
+    }
+
+    tooltipTitle: "Today's events"
+    tooltipContent: eventToolTip
 
     function refresh() {
         currentDate = new Date();
@@ -32,54 +42,46 @@ Components.QreepModule {
         refresh();
     }
 
-    Column {
+    Row {
         id: clockContent
 
-        spacing: 2
+        spacing: rootClock.theme.moduleSpacing
 
-        Row {
-            spacing: rootClock.theme.moduleSpacing
-
-            Text {
-                text: Qt.formatDateTime(rootClock.currentDate, rootClock.timeFormat)
-                color: rootClock.theme.primaryText
-                font.pixelSize: rootClock.theme.clockTimePixelSize
-                font.weight: Font.DemiBold
-            }
-
-            Text {
-                anchors.verticalCenter: parent.children[0].verticalCenter
-                text: Qt.formatDateTime(rootClock.currentDate, rootClock.dateFormat)
-                color: rootClock.theme.secondaryText
-                font.pixelSize: rootClock.theme.clockDatePixelSize
-                font.weight: Font.Medium
-            }
+        Text {
+            text: Qt.formatDateTime(rootClock.currentDate, rootClock.timeFormat)
+            color: rootClock.theme.primaryText
+            font.pixelSize: rootClock.theme.clockTimePixelSize
+            font.weight: Font.DemiBold
         }
 
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter
-            spacing: 4
-            visible:
-                rootClock.events.visibleEventsForToday(
-                    rootClock.currentDate
-                ).length > 0
+        Text {
+            anchors.verticalCenter: parent.children[0].verticalCenter
+            text: Qt.formatDateTime(rootClock.currentDate, rootClock.dateFormat)
+            color: rootClock.theme.secondaryText
+            font.pixelSize: rootClock.theme.clockDatePixelSize
+            font.weight: Font.Medium
+        }
+    }
 
-            Repeater {
-                model: Math.min(
-                    rootClock.events.visibleEventsForToday(
-                        rootClock.currentDate
-                    ).length,
-                    5
-                )
+    overlay: Row {
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            verticalCenter: parent.bottom
+        }
 
-                delegate: Rectangle {
-                    required property int index
+        spacing: 4
+        visible: rootClock.visibleTodayEvents.length > 0
 
-                    width: 4
-                    height: 4
-                    radius: 2
-                    color: rootClock.theme.eventIndicator
-                }
+        Repeater {
+            model: Math.min(rootClock.visibleTodayEvents.length, 5)
+
+            delegate: Rectangle {
+                required property int index
+
+                width: 8
+                height: 8
+                radius: 4
+                color: rootClock.theme.eventIndicator
             }
         }
     }

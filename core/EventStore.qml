@@ -15,60 +15,96 @@ QtObject {
         onLoaded: rootEventStore.loadEvents()
         onTextChanged: rootEventStore.loadEvents()
         onLoadFailed: error => {
-            console.error(
-                "Qreep event error:",
-                FileViewError.toString(error),
-                path
-            )
-            rootEventStore.events = []
+            console.error("Qreep event error:", FileViewError.toString(error), path);
+            rootEventStore.events = [];
         }
     }
 
     function loadEvents() {
-        const contents = eventFile.text()
+        const contents = eventFile.text();
 
         if (contents.length === 0) {
-            events = []
-            return
+            events = [];
+            return;
         }
 
         try {
-            const document = JSON.parse(contents)
-            events = Array.isArray(document.events) ? document.events : []
+            const document = JSON.parse(contents);
+            events = Array.isArray(document.events) ? document.events : [];
         } catch (error) {
-            console.error("Qreep event JSON error:", error)
-            events = []
+            console.error("Qreep event JSON error:", error);
+            events = [];
         }
     }
 
     function dateKey(date) {
-        return Qt.formatDate(date, "yyyy-MM-dd")
+        return Qt.formatDate(date, "yyyy-MM-dd");
     }
 
     function eventsForDate(date) {
-        const key = dateKey(date)
-        return events.filter(event => event.date === key)
+        const key = dateKey(date);
+        return events.filter(event => event.date === key);
     }
 
     function eventCountForDate(date) {
-        return eventsForDate(date).length
+        return eventsForDate(date).length;
+    }
+
+    function eventsForNextDays(now, daysAhead) {
+        const firstDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+        );
+        const lastDate = new Date(firstDate);
+        lastDate.setDate(lastDate.getDate() + daysAhead);
+
+        const firstKey = dateKey(firstDate);
+        const lastKey = dateKey(lastDate);
+
+        return events
+            .filter(event =>
+                event.date >= firstKey && event.date <= lastKey
+            )
+            .slice()
+            .sort((left, right) => {
+                if (left.date !== right.date)
+                    return left.date.localeCompare(right.date);
+
+                if (left.allDay !== right.allDay)
+                    return left.allDay ? -1 : 1;
+
+                return (left.start || "").localeCompare(right.start || "");
+            });
+    }
+
+    function eventTimeLabel(event) {
+        if (event.allDay)
+            return "All day";
+
+        if (!event.start)
+            return "No time";
+
+        return event.end
+            ? event.start + "–" + event.end
+            : event.start;
     }
 
     function visibleEventsForToday(now) {
         return eventsForDate(now).filter(event => {
             if (event.allDay)
-                return true
+                return true;
 
             if (!event.start)
-                return true
+                return true;
 
-            const start = new Date(event.date + "T" + event.start + ":00")
+            const start = new Date(event.date + "T" + event.start + ":00");
 
             if (!event.end)
-                return start >= now
+                return start >= now;
 
-            const end = new Date(event.date + "T" + event.end + ":00")
-            return end >= now
-        })
+            const end = new Date(event.date + "T" + event.end + ":00");
+            return end >= now;
+        });
     }
 }

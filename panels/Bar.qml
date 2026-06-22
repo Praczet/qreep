@@ -36,6 +36,30 @@ PanelWindow {
             events: eventStore
 
             onRightClicked: calendarPopup.visible = !calendarPopup.visible
+            onTooltipShowRequested: (anchorItem, title, content, style) =>
+                sharedTooltip.showFor(anchorItem, title, content, style)
+            onTooltipHideRequested: sharedTooltip.hideLater()
+        }
+
+        Modules.PowerButton {
+            id: powerButton
+
+            anchors {
+                right: parent.right
+                verticalCenter: parent.verticalCenter
+                rightMargin: 4
+            }
+            theme: qreepTheme
+
+            onTooltipShowRequested: (anchorItem, title, content, style) =>
+                sharedTooltip.showFor(anchorItem, title, content, style)
+            onTooltipHideRequested: sharedTooltip.hideLater()
+        }
+
+        SharedTooltip {
+            id: sharedTooltip
+
+            theme: qreepTheme
         }
 
         CalendarPopup {

@@ -12,6 +12,12 @@
       "end": "23:30"
     },
     {
+      "title": "Late test event",
+      "date": "2026-06-22",
+      "start": "09:00",
+      "end": "10:30"
+    },
+    {
       "title": "First June 30 event",
       "date": "2026-06-30",
       "start": "10:00",

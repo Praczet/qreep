@@ -1,0 +1,17 @@
+import QtQuick
+import "../components" as Components
+
+Components.QreepModule {
+    id: rootPowerButton
+
+    tooltipTitle: "Power"
+    tooltipContent: "Open the power menu"
+    tooltipStyle: "warning"
+
+    Text {
+        text: ""
+        color: rootPowerButton.theme.primaryText
+        font.family: "FiraCode Nerd Font"
+        font.pixelSize: 20
+    }
+}
