@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import "../core" as Core
 import "../modules" as Modules
 import "../theme" as Theme
 
@@ -8,6 +9,10 @@ PanelWindow {
 
     Theme.QreepTheme {
         id: qreepTheme
+    }
+
+    Core.EventStore {
+        id: eventStore
     }
 
     anchors {
@@ -24,8 +29,21 @@ PanelWindow {
         color: qreepTheme.barBackground
 
         Modules.Clock {
+            id: clock
+
             anchors.centerIn: parent
             theme: qreepTheme
+            events: eventStore
+
+            onRightClicked: calendarPopup.visible = !calendarPopup.visible
+        }
+
+        CalendarPopup {
+            id: calendarPopup
+
+            theme: qreepTheme
+            anchorItem: clock
+            events: eventStore
         }
     }
 }

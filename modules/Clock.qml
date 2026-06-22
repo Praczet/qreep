@@ -4,6 +4,8 @@ import "../components" as Components
 Components.QreepModule {
     id: rootClock
 
+    required property QtObject events
+
     property bool showSeconds: false
     property string timeFormat: showSeconds ? "HH:mm:ss" : "HH:mm"
     property string dateFormat: "dd MMM"
@@ -30,29 +32,55 @@ Components.QreepModule {
         refresh();
     }
 
-    onRightClicked: {
-        // just send notify via system notification API, no need to use qml notification component
-        console.log("Current time:", Qt.formatDateTime(currentDate, timeFormat), "Current date:", Qt.formatDateTime(currentDate, dateFormat));
-    }
-
-    Row {
+    Column {
         id: clockContent
 
-        spacing: rootClock.theme.moduleSpacing
+        spacing: 2
 
-        Text {
-            text: Qt.formatDateTime(rootClock.currentDate, rootClock.timeFormat)
-            color: rootClock.theme.primaryText
-            font.pixelSize: rootClock.theme.clockTimePixelSize
-            font.weight: Font.DemiBold
+        Row {
+            spacing: rootClock.theme.moduleSpacing
+
+            Text {
+                text: Qt.formatDateTime(rootClock.currentDate, rootClock.timeFormat)
+                color: rootClock.theme.primaryText
+                font.pixelSize: rootClock.theme.clockTimePixelSize
+                font.weight: Font.DemiBold
+            }
+
+            Text {
+                anchors.verticalCenter: parent.children[0].verticalCenter
+                text: Qt.formatDateTime(rootClock.currentDate, rootClock.dateFormat)
+                color: rootClock.theme.secondaryText
+                font.pixelSize: rootClock.theme.clockDatePixelSize
+                font.weight: Font.Medium
+            }
         }
 
-        Text {
-            anchors.verticalCenter: parent.children[0].verticalCenter
-            text: Qt.formatDateTime(rootClock.currentDate, rootClock.dateFormat)
-            color: rootClock.theme.secondaryText
-            font.pixelSize: rootClock.theme.clockDatePixelSize
-            font.weight: Font.Medium
+        Row {
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: 4
+            visible:
+                rootClock.events.visibleEventsForToday(
+                    rootClock.currentDate
+                ).length > 0
+
+            Repeater {
+                model: Math.min(
+                    rootClock.events.visibleEventsForToday(
+                        rootClock.currentDate
+                    ).length,
+                    5
+                )
+
+                delegate: Rectangle {
+                    required property int index
+
+                    width: 4
+                    height: 4
+                    radius: 2
+                    color: rootClock.theme.eventIndicator
+                }
+            }
         }
     }
 

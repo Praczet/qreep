@@ -1,0 +1,27 @@
+{
+  "events": [
+    {
+      "title": "Qreep learning day",
+      "date": "2026-06-22",
+      "allDay": true
+    },
+    {
+      "title": "Late test event",
+      "date": "2026-06-22",
+      "start": "23:00",
+      "end": "23:30"
+    },
+    {
+      "title": "First June 30 event",
+      "date": "2026-06-30",
+      "start": "10:00",
+      "end": "11:00"
+    },
+    {
+      "title": "Second June 30 event",
+      "date": "2026-06-30",
+      "start": "15:00",
+      "end": "16:00"
+    }
+  ]
+}
