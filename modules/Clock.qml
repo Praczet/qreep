@@ -1,33 +1,43 @@
 import QtQuick
+import "../components" as Components
 
-Rectangle {
+Components.QreepModule {
     id: rootClock
 
-    required property QtObject theme
-
-    property string timeFormat: "HH:mm"
+    property bool showSeconds: false
+    property string timeFormat: showSeconds ? "HH:mm:ss" : "HH:mm"
     property string dateFormat: "dd MMM"
     property date currentDate: new Date()
-
-    implicitWidth: clockContent.implicitWidth + theme.moduleHorizontalPadding
-    implicitHeight: theme.moduleHeight
-    radius: theme.moduleRadius
-    color: theme.moduleBackground
+    readonly property Timer minuteTimer: Timer {
+        repeat: false
+        onTriggered: rootClock.refresh()
+    }
 
     function refresh() {
         currentDate = new Date();
 
         const now = currentDate;
-        const millisecondsToNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
+        const refreshInterval = showSeconds ? 1000 : 60000;
+        const elapsedInInterval = showSeconds ? now.getMilliseconds() : now.getSeconds() * 1000 + now.getMilliseconds();
+        const millisecondsToNextRefresh = refreshInterval - elapsedInInterval;
 
-        minuteTimer.interval = Math.max(50, millisecondsToNextMinute);
+        minuteTimer.interval = Math.max(50, millisecondsToNextRefresh);
         minuteTimer.restart();
+    }
+
+    onClicked: {
+        showSeconds = !showSeconds;
+        refresh();
+    }
+
+    onRightClicked: {
+        // just send notify via system notification API, no need to use qml notification component
+        console.log("Current time:", Qt.formatDateTime(currentDate, timeFormat), "Current date:", Qt.formatDateTime(currentDate, dateFormat));
     }
 
     Row {
         id: clockContent
 
-        anchors.centerIn: parent
         spacing: rootClock.theme.moduleSpacing
 
         Text {
@@ -44,13 +54,6 @@ Rectangle {
             font.pixelSize: rootClock.theme.clockDatePixelSize
             font.weight: Font.Medium
         }
-    }
-
-    Timer {
-        id: minuteTimer
-
-        repeat: false
-        onTriggered: rootClock.refresh()
     }
 
     Component.onCompleted: refresh()
