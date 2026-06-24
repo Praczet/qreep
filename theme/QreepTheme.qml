@@ -63,6 +63,38 @@ QtObject {
         return value === undefined ? fallbackColor : value;
     }
 
+    function borgClassColor(className) {
+        switch (className) {
+        case "ok":
+            return borg.okColor;
+        case "warning":
+            return borg.warningColor;
+        case "error":
+            return borg.errorColor;
+        default:
+            return primaryText;
+        }
+    }
+
+    function borgTokenColor(token) {
+        switch (String(token || "")) {
+        case "{{primary}}":
+            return primaryText;
+        case "{{secondary}}":
+            return secondaryText;
+        case "{{tertiary}}":
+            return borg.okColor;
+        case "{{on_surface}}":
+            return calendarHeaderText;
+        case "{{on_surface_variant}}":
+            return calendarMutedText;
+        case "{{error}}":
+            return borg.errorColor;
+        default:
+            return calendarDayText;
+        }
+    }
+
     function validatePalette() {
         const missingColors = requiredPaletteColors.filter(propertyName => palette[propertyName] === undefined);
 

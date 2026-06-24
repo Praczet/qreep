@@ -40,6 +40,14 @@ PanelWindow {
         log: qreepLog
     }
 
+    BorgFeature.BorgService {
+        id: borgService
+        log: qreepLog
+        refreshInterval: rootBar.theme.borg.refreshInterval
+        backupCommand: [rootBar.theme.borg.backupCommand]
+        backupStatusBackend: rootBar.theme.borg.backupStatusBackend
+    }
+
     anchors {
         top: true
         left: true
@@ -107,12 +115,23 @@ PanelWindow {
                 id: borg
 
                 theme: rootBar.theme
+                service: borgService
 
                 onClicked: {
+                    borgService.refreshWithPulse();
                     sharedTooltip.hideLater();
+                    borgTooltip.hideLater();
                 }
-                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
-                onTooltipHideRequested: sharedTooltip.hideLater()
+                onRightClicked: {
+                    borgService.runBackup();
+                    sharedTooltip.hideLater();
+                    borgTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => {
+                    sharedTooltip.hideLater();
+                    borgTooltip.showFor(anchorItem, borgService.tooltip, borgService.className);
+                }
+                onTooltipHideRequested: borgTooltip.hideLater()
             }
 
             PowerFeature.PowerButton {
@@ -138,6 +157,12 @@ PanelWindow {
 
         SharedTooltip {
             id: sharedTooltip
+
+            theme: rootBar.theme
+        }
+
+        BorgFeature.BorgTooltip {
+            id: borgTooltip
 
             theme: rootBar.theme
         }
