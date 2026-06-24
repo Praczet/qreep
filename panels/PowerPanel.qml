@@ -82,7 +82,7 @@ PopupWindow {
         rect.y: -rootPowerPanel.anchorItem.y
     }
 
-    implicitWidth: theme.powerSidebarWidth
+    implicitWidth: theme.power.sidebarWidth
     implicitHeight: anchorItem.QsWindow.window ? anchorItem.QsWindow.window.screen.height : 1
     visible: false
     color: "transparent"
@@ -109,7 +109,7 @@ PopupWindow {
 
     Rectangle {
         anchors.fill: parent
-        color: Qt.rgba(rootPowerPanel.theme.calendarBackground.r, rootPowerPanel.theme.calendarBackground.g, rootPowerPanel.theme.calendarBackground.b, rootPowerPanel.theme.powerSidebarOpacity)
+        color: Qt.rgba(rootPowerPanel.theme.calendarBackground.r, rootPowerPanel.theme.calendarBackground.g, rootPowerPanel.theme.calendarBackground.b, rootPowerPanel.theme.power.sidebarOpacity)
 
         Rectangle {
             id: sidebar
@@ -121,9 +121,9 @@ PopupWindow {
                 id: actionCard
 
                 anchors.centerIn: parent
-                width: rootPowerPanel.theme.powerCardWidth
-                height: (rootPowerPanel.pendingAction === null ? actionList.implicitHeight : confirmActionList.implicitHeight) + rootPowerPanel.theme.powerCardPadding * 2
-                radius: rootPowerPanel.theme.powerCardRadius
+                width: rootPowerPanel.theme.power.cardWidth
+                height: (rootPowerPanel.pendingAction === null ? actionList.implicitHeight : confirmActionList.implicitHeight) + rootPowerPanel.theme.power.cardPadding * 2
+                radius: rootPowerPanel.theme.power.cardRadius
                 color: rootPowerPanel.theme.moduleHoverBackground
 
                 Column {
@@ -134,9 +134,9 @@ PopupWindow {
                         left: parent.left
                         right: parent.right
                         top: parent.top
-                        margins: rootPowerPanel.theme.powerCardPadding
+                        margins: rootPowerPanel.theme.power.cardPadding
                     }
-                    spacing: rootPowerPanel.theme.powerActionSpacing
+                    spacing: rootPowerPanel.theme.power.actionSpacing
 
                     Repeater {
                         model: rootPowerPanel.actions
@@ -147,17 +147,17 @@ PopupWindow {
                             required property var modelData
 
                             width: parent.width
-                            height: rootPowerPanel.theme.powerActionHeight
-                            radius: rootPowerPanel.theme.powerActionRadius
+                            height: rootPowerPanel.theme.power.actionHeight
+                            radius: rootPowerPanel.theme.power.actionRadius
                             color: actionHover.hovered ? rootPowerPanel.theme.powerActionHoverBackground : rootPowerPanel.theme.powerActionBackground
 
                             Row {
                                 anchors.centerIn: parent
-                                spacing: rootPowerPanel.theme.powerActionContentSpacing
+                                spacing: rootPowerPanel.theme.power.actionContentSpacing
 
                                 Item {
-                                    width: rootPowerPanel.theme.powerActionIconSize
-                                    height: rootPowerPanel.theme.powerActionIconSize
+                                    width: rootPowerPanel.theme.power.actionIconSize
+                                    height: rootPowerPanel.theme.power.actionIconSize
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     IconImage {
@@ -171,17 +171,17 @@ PopupWindow {
                                     MultiEffect {
                                         anchors.fill: parent
                                         source: icon
-                                        colorization: rootPowerPanel.theme.powerActionIconColorization
-                                        brightness: rootPowerPanel.theme.powerActionIconBrightness
+                                        colorization: rootPowerPanel.theme.power.actionIconColorization
+                                        brightness: rootPowerPanel.theme.power.actionIconBrightness
                                         colorizationColor: rootPowerPanel.theme.powerActionIconColor
                                     }
                                 }
 
                                 Text {
-                                    width: rootPowerPanel.theme.powerActionLabelWidth
+                                    width: rootPowerPanel.theme.power.actionLabelWidth
                                     text: actionButton.modelData.label
                                     color: rootPowerPanel.theme.powerActionText
-                                    font.pixelSize: rootPowerPanel.theme.powerActionTextPixelSize
+                                    font.pixelSize: rootPowerPanel.theme.power.actionTextPixelSize
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
                             }
@@ -214,15 +214,15 @@ PopupWindow {
                         left: parent.left
                         right: parent.right
                         top: parent.top
-                        margins: rootPowerPanel.theme.powerCardPadding
+                        margins: rootPowerPanel.theme.power.cardPadding
                     }
-                    spacing: rootPowerPanel.theme.powerActionSpacing
+                    spacing: rootPowerPanel.theme.power.actionSpacing
 
                     Text {
                         width: parent.width
                         text: rootPowerPanel.pendingAction !== null ? rootPowerPanel.pendingAction.confirmTitle : ""
                         color: rootPowerPanel.theme.powerConfirmText
-                        font.pixelSize: rootPowerPanel.theme.powerConfirmTitlePixelSize
+                        font.pixelSize: rootPowerPanel.theme.power.confirmTitlePixelSize
                         font.bold: true
                         wrapMode: Text.Wrap
                     }
@@ -231,26 +231,26 @@ PopupWindow {
                         width: parent.width
                         text: rootPowerPanel.pendingAction !== null ? rootPowerPanel.pendingAction.confirmContent : ""
                         color: rootPowerPanel.theme.powerConfirmText
-                        font.pixelSize: rootPowerPanel.theme.powerConfirmContentPixelSize
+                        font.pixelSize: rootPowerPanel.theme.power.confirmContentPixelSize
                         wrapMode: Text.Wrap
-                        bottomPadding: rootPowerPanel.theme.powerConfirmContentBottomPadding
+                        bottomPadding: rootPowerPanel.theme.power.confirmContentBottomPadding
                     }
 
                     Row {
                         width: parent.width
-                        spacing: rootPowerPanel.theme.powerConfirmButtonSpacing
+                        spacing: rootPowerPanel.theme.power.confirmButtonSpacing
 
                         Rectangle {
                             width: (parent.width - parent.spacing) / 2
-                            height: rootPowerPanel.theme.powerActionHeight
-                            radius: rootPowerPanel.theme.powerActionRadius
+                            height: rootPowerPanel.theme.power.actionHeight
+                            radius: rootPowerPanel.theme.power.actionRadius
                             color: cancelHover.hovered ? rootPowerPanel.theme.powerActionHoverBackground : rootPowerPanel.theme.powerActionBackground
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"
                                 color: rootPowerPanel.theme.powerActionText
-                                font.pixelSize: rootPowerPanel.theme.powerActionTextPixelSize
+                                font.pixelSize: rootPowerPanel.theme.power.actionTextPixelSize
                             }
 
                             HoverHandler {
@@ -272,15 +272,15 @@ PopupWindow {
 
                         Rectangle {
                             width: (parent.width - parent.spacing) / 2
-                            height: rootPowerPanel.theme.powerActionHeight
-                            radius: rootPowerPanel.theme.powerActionRadius
+                            height: rootPowerPanel.theme.power.actionHeight
+                            radius: rootPowerPanel.theme.power.actionRadius
                             color: confirmHover.hovered ? rootPowerPanel.theme.powerActionHoverBackground : rootPowerPanel.theme.powerActionBackground
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "Confirm"
                                 color: rootPowerPanel.theme.powerActionText
-                                font.pixelSize: rootPowerPanel.theme.powerActionTextPixelSize
+                                font.pixelSize: rootPowerPanel.theme.power.actionTextPixelSize
                             }
 
                             HoverHandler {

@@ -26,6 +26,15 @@ QtObject {
     readonly property color powerActionIconColor: paletteColor("powerActionIconColor", "#3e4554")
     readonly property color powerConfirmText: paletteColor("powerConfirmText", "#d8dee9")
 
+    readonly property QtObject bar: BarTheme {}
+    readonly property QtObject module: ModuleTheme {}
+    readonly property QtObject clock: ClockTheme {}
+    readonly property QtObject power: PowerTheme {}
+    readonly property QtObject calendar: CalendarTheme {}
+    readonly property QtObject tooltip: TooltipTheme {}
+    readonly property QtObject osd: OsdTheme {}
+    readonly property QtObject borg: BorgTheme {}
+
     readonly property string iconFontFamily: "FiraCode Nerd Font"
     readonly property int animationFastDuration: 100
 
@@ -44,112 +53,6 @@ QtObject {
         warningColor: rootQreepTheme.logWarningColor
         errorColor: rootQreepTheme.logErrorColor
     }
-
-    readonly property int barHeight: 46
-    readonly property int pillLeftMargin: 4
-    readonly property int barPowerButtonRightMargin: 4
-
-    readonly property int moduleHeight: 48
-    readonly property int moduleRadius: 20
-    readonly property int moduleHorizontalPadding: 20
-    readonly property int moduleSpacing: 8
-
-    readonly property int clockTimePixelSize: 42
-    readonly property int clockDatePixelSize: 14
-    readonly property int clockSecondRefreshInterval: 1000
-    readonly property int clockMinuteRefreshInterval: 60000
-    readonly property int clockMinimumRefreshInterval: 50
-    readonly property int clockEventIndicatorSize: 8
-    readonly property int clockEventIndicatorRadius: 4
-    readonly property int clockEventIndicatorSpacing: 4
-    readonly property int clockMaxEventIndicators: 5
-
-    readonly property int powerButtonIconPixelSize: 20
-
-    readonly property int powerSidebarWidth: 360
-    readonly property real powerSidebarOpacity: 0.82
-    readonly property int powerCardWidth: 260
-    readonly property int powerCardPadding: 20
-    readonly property int powerCardRadius: 18
-    readonly property int powerActionHeight: 54
-    readonly property int powerActionRadius: 10
-    readonly property int powerActionSpacing: 8
-    readonly property int powerActionContentSpacing: 14
-    readonly property int powerActionIconSize: 30
-    readonly property real powerActionIconColorization: 1
-    readonly property real powerActionIconBrightness: 1.2
-    readonly property int powerActionLabelWidth: 92
-    readonly property int powerActionTextPixelSize: 14
-    readonly property int powerConfirmTitlePixelSize: 16
-    readonly property int powerConfirmContentPixelSize: 12
-    readonly property int powerConfirmContentBottomPadding: 10
-    readonly property int powerConfirmButtonSpacing: 10
-
-    readonly property int calendarPopupWidth: 590
-    readonly property int calendarPopupOffsetY: 6
-    readonly property int calendarPopupPadding: 16
-    readonly property int calendarAgendaDays: 5
-    readonly property int calendarSectionWidth: 264
-    readonly property int calendarSectionSpacing: 16
-    readonly property int calendarItemSpacing: 10
-    readonly property int calendarHeaderPixelSize: 18
-    readonly property int calendarWeekDayHeight: 24
-    readonly property int calendarWeekDayPixelSize: 12
-    readonly property int calendarMonthGridHeight: 180
-    readonly property int calendarDayCellHeight: 30
-    readonly property int calendarDayRadius: 8
-    readonly property int calendarDayPixelSize: 13
-    readonly property int calendarEventMarkerHeight: 2
-    readonly property int calendarEventMarkerRadius: 1
-    readonly property int calendarDividerWidth: 1
-    readonly property int agendaListReservedHeight: 34
-    readonly property int agendaItemSpacing: 8
-    readonly property int agendaRowSpacing: 10
-    readonly property int agendaDateWidth: 46
-    readonly property int agendaDetailsWidthOffset: 56
-    readonly property int agendaDatePixelSize: 12
-    readonly property int agendaTitlePixelSize: 13
-    readonly property int agendaTimePixelSize: 11
-    readonly property int agendaDetailsSpacing: 2
-
-    readonly property int tooltipOffsetY: 8
-    readonly property int tooltipMinimumWidth: 180
-    readonly property int tooltipHorizontalPadding: 16
-    readonly property int tooltipVerticalPadding: 12
-    readonly property int tooltipRadius: 10
-    readonly property int tooltipBorderWidth: 1
-    readonly property int tooltipPadding: 12
-    readonly property int tooltipSpacing: 4
-    readonly property int tooltipTitlePixelSize: 13
-    readonly property int tooltipContentPixelSize: 12
-    readonly property real tooltipContentLineHeight: 1.15
-    readonly property int tooltipShowDelay: 400
-    readonly property int tooltipHideDelay: 500
-    readonly property real tooltipPopScale: 1.2
-    readonly property int tooltipShowOutDuration: 120
-    readonly property int tooltipShowSettleDuration: 90
-    readonly property int tooltipHideOutDuration: 80
-    readonly property int tooltipHideInDuration: 120
-
-    readonly property int osdPanelHeight: 160
-    readonly property int osdTopMargin: 58
-    readonly property int osdScreenPadding: 24
-    readonly property int osdHorizontalPadding: 22
-    readonly property int osdVerticalPadding: 14
-    readonly property int osdRadius: 14
-    readonly property int osdBorderWidth: 1
-    readonly property real osdOpacity: 0.5
-    readonly property int osdTitleTextPixelSize: 15
-    readonly property int osdMessageTextPixelSize: 13
-    readonly property int osdIconSize: 30
-    readonly property int osdContentSpacing: 12
-    readonly property int osdTextSpacing: 3
-    readonly property int osdDefaultDuration: 1600
-    readonly property string osdDefaultPosition: "top"
-    readonly property int osdTestButtonLeftMargin: 4
-    readonly property int osdTestButtonTextPixelSize: 13
-
-    readonly property int borgIconPixelSize: 30
 
     function paletteColor(propertyName, fallbackColor) {
         const value = palette[propertyName];

@@ -12,6 +12,6 @@ Components.QreepModule {
         text: ""
         color: rootPowerButton.theme.primaryText
         font.family: rootPowerButton.theme.iconFontFamily
-        font.pixelSize: rootPowerButton.theme.powerButtonIconPixelSize
+        font.pixelSize: rootPowerButton.theme.power.buttonIconPixelSize
     }
 }

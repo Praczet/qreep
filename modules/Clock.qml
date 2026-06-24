@@ -29,11 +29,11 @@ Components.QreepModule {
         currentDate = new Date();
 
         const now = currentDate;
-        const refreshInterval = showSeconds ? rootClock.theme.clockSecondRefreshInterval : rootClock.theme.clockMinuteRefreshInterval;
-        const elapsedInInterval = showSeconds ? now.getMilliseconds() : now.getSeconds() * rootClock.theme.clockSecondRefreshInterval + now.getMilliseconds();
+        const refreshInterval = showSeconds ? rootClock.theme.clock.secondRefreshInterval : rootClock.theme.clock.minuteRefreshInterval;
+        const elapsedInInterval = showSeconds ? now.getMilliseconds() : now.getSeconds() * rootClock.theme.clock.secondRefreshInterval + now.getMilliseconds();
         const millisecondsToNextRefresh = refreshInterval - elapsedInInterval;
 
-        minuteTimer.interval = Math.max(rootClock.theme.clockMinimumRefreshInterval, millisecondsToNextRefresh);
+        minuteTimer.interval = Math.max(rootClock.theme.clock.minimumRefreshInterval, millisecondsToNextRefresh);
         minuteTimer.restart();
     }
 
@@ -45,12 +45,12 @@ Components.QreepModule {
     Row {
         id: clockContent
 
-        spacing: rootClock.theme.moduleSpacing
+        spacing: rootClock.theme.module.spacing
 
         Text {
             text: Qt.formatDateTime(rootClock.currentDate, rootClock.timeFormat)
             color: rootClock.theme.primaryText
-            font.pixelSize: rootClock.theme.clockTimePixelSize
+            font.pixelSize: rootClock.theme.clock.timePixelSize
             font.weight: Font.DemiBold
         }
 
@@ -58,7 +58,7 @@ Components.QreepModule {
             anchors.verticalCenter: parent.children[0].verticalCenter
             text: Qt.formatDateTime(rootClock.currentDate, rootClock.dateFormat)
             color: rootClock.theme.secondaryText
-            font.pixelSize: rootClock.theme.clockDatePixelSize
+            font.pixelSize: rootClock.theme.clock.datePixelSize
             font.weight: Font.Medium
         }
     }
@@ -69,18 +69,18 @@ Components.QreepModule {
             verticalCenter: parent.bottom
         }
 
-        spacing: rootClock.theme.clockEventIndicatorSpacing
+        spacing: rootClock.theme.clock.eventIndicatorSpacing
         visible: rootClock.visibleTodayEvents.length > 0
 
         Repeater {
-            model: Math.min(rootClock.visibleTodayEvents.length, rootClock.theme.clockMaxEventIndicators)
+            model: Math.min(rootClock.visibleTodayEvents.length, rootClock.theme.clock.maxEventIndicators)
 
             delegate: Rectangle {
                 required property int index
 
-                width: rootClock.theme.clockEventIndicatorSize
-                height: rootClock.theme.clockEventIndicatorSize
-                radius: rootClock.theme.clockEventIndicatorRadius
+                width: rootClock.theme.clock.eventIndicatorSize
+                height: rootClock.theme.clock.eventIndicatorSize
+                radius: rootClock.theme.clock.eventIndicatorRadius
                 color: rootClock.theme.eventIndicator
             }
         }

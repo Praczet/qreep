@@ -10,7 +10,7 @@ Components.QreepModule {
     Text {
         text: "OSD"
         color: rootOsdTestButton.theme.primaryText
-        font.pixelSize: rootOsdTestButton.theme.osdTestButtonTextPixelSize
+        font.pixelSize: rootOsdTestButton.theme.osd.testButtonTextPixelSize
         font.weight: Font.DemiBold
     }
 }

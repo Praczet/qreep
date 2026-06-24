@@ -12,6 +12,6 @@ Components.QreepModule {
         text: " "
         color: rootBorg.theme.primaryText
         font.family: rootBorg.theme.iconFontFamily
-        font.pixelSize: rootBorg.theme.borgIconPixelSize
+        font.pixelSize: rootBorg.theme.borg.iconPixelSize
     }
 }

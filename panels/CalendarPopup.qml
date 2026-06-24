@@ -11,15 +11,15 @@ PopupWindow {
 
     readonly property date today: new Date()
     readonly property var agendaEvents:
-        events.eventsForNextDays(today, rootCalendarPopup.theme.calendarAgendaDays)
+        events.eventsForNextDays(today, rootCalendarPopup.theme.calendar.agendaDays)
 
     anchor {
         item: rootCalendarPopup.anchorItem
         rect.x: rootCalendarPopup.anchorItem.width / 2 - rootCalendarPopup.width / 2
-        rect.y: rootCalendarPopup.anchorItem.height + rootCalendarPopup.theme.calendarPopupOffsetY
+        rect.y: rootCalendarPopup.anchorItem.height + rootCalendarPopup.theme.calendar.popupOffsetY
     }
 
-    implicitWidth: rootCalendarPopup.theme.calendarPopupWidth
+    implicitWidth: rootCalendarPopup.theme.calendar.popupWidth
     implicitHeight: calendarBackground.implicitHeight
     color: "transparent"
     grabFocus: true
@@ -28,8 +28,8 @@ PopupWindow {
         id: calendarBackground
 
         anchors.fill: parent
-        implicitHeight: popupLayout.implicitHeight + rootCalendarPopup.theme.calendarPopupPadding * 2
-        radius: rootCalendarPopup.theme.moduleRadius
+        implicitHeight: popupLayout.implicitHeight + rootCalendarPopup.theme.calendar.popupPadding * 2
+        radius: rootCalendarPopup.theme.module.radius
         color: rootCalendarPopup.theme.calendarBackground
         border.color: rootCalendarPopup.theme.moduleHoverBackground
 
@@ -40,21 +40,21 @@ PopupWindow {
                 top: parent.top
                 left: parent.left
                 right: parent.right
-                margins: rootCalendarPopup.theme.calendarPopupPadding
+                margins: rootCalendarPopup.theme.calendar.popupPadding
             }
-            spacing: rootCalendarPopup.theme.calendarSectionSpacing
+            spacing: rootCalendarPopup.theme.calendar.sectionSpacing
 
             Column {
                 id: calendarLayout
 
-                width: rootCalendarPopup.theme.calendarSectionWidth
-                spacing: rootCalendarPopup.theme.calendarItemSpacing
+                width: rootCalendarPopup.theme.calendar.sectionWidth
+                spacing: rootCalendarPopup.theme.calendar.itemSpacing
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: Qt.formatDate(rootCalendarPopup.today, "dddd, dd MMMM")
                     color: rootCalendarPopup.theme.calendarHeaderText
-                    font.pixelSize: rootCalendarPopup.theme.calendarHeaderPixelSize
+                    font.pixelSize: rootCalendarPopup.theme.calendar.headerPixelSize
                     font.weight: Font.DemiBold
                 }
 
@@ -62,7 +62,7 @@ PopupWindow {
                     id: weekDays
 
                     width: parent.width
-                    height: rootCalendarPopup.theme.calendarWeekDayHeight
+                    height: rootCalendarPopup.theme.calendar.weekDayHeight
                     locale: monthGrid.locale
 
                     delegate: Text {
@@ -72,7 +72,7 @@ PopupWindow {
                         color: rootCalendarPopup.theme.calendarMutedText
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: rootCalendarPopup.theme.calendarWeekDayPixelSize
+                        font.pixelSize: rootCalendarPopup.theme.calendar.weekDayPixelSize
                     }
                 }
 
@@ -80,7 +80,7 @@ PopupWindow {
                     id: monthGrid
 
                     width: parent.width
-                    height: rootCalendarPopup.theme.calendarMonthGridHeight
+                    height: rootCalendarPopup.theme.calendar.monthGridHeight
                     month: rootCalendarPopup.today.getMonth()
                     year: rootCalendarPopup.today.getFullYear()
 
@@ -90,15 +90,15 @@ PopupWindow {
                         readonly property int eventCount: rootCalendarPopup.events.eventCountForDate(model.date)
 
                         implicitWidth: monthGrid.width / 7
-                        implicitHeight: rootCalendarPopup.theme.calendarDayCellHeight
-                        radius: rootCalendarPopup.theme.calendarDayRadius
+                        implicitHeight: rootCalendarPopup.theme.calendar.dayCellHeight
+                        radius: rootCalendarPopup.theme.calendar.dayRadius
                         color: model.today ? rootCalendarPopup.theme.calendarTodayBackground : "transparent"
 
                         Text {
                             anchors.centerIn: parent
                             text: model.day
                             color: model.today ? rootCalendarPopup.theme.calendarTodayText : model.month === monthGrid.month ? rootCalendarPopup.theme.calendarDayText : rootCalendarPopup.theme.calendarMutedText
-                            font.pixelSize: rootCalendarPopup.theme.calendarDayPixelSize
+                            font.pixelSize: rootCalendarPopup.theme.calendar.dayPixelSize
                         }
 
                         Rectangle {
@@ -108,8 +108,8 @@ PopupWindow {
                                 bottom: parent.bottom
                             }
 
-                            height: rootCalendarPopup.theme.calendarEventMarkerHeight
-                            radius: rootCalendarPopup.theme.calendarEventMarkerRadius
+                            height: rootCalendarPopup.theme.calendar.eventMarkerHeight
+                            radius: rootCalendarPopup.theme.calendar.eventMarkerRadius
                             color: parent.eventCount > 0
                                 ? rootCalendarPopup.theme.eventIndicator
                                 : "transparent"
@@ -119,20 +119,20 @@ PopupWindow {
             }
 
             Rectangle {
-                width: rootCalendarPopup.theme.calendarDividerWidth
+                width: rootCalendarPopup.theme.calendar.dividerWidth
                 height: calendarLayout.height
                 color: rootCalendarPopup.theme.moduleHoverBackground
             }
 
             Column {
-                width: rootCalendarPopup.theme.calendarSectionWidth
+                width: rootCalendarPopup.theme.calendar.sectionWidth
                 height: calendarLayout.height
-                spacing: rootCalendarPopup.theme.calendarItemSpacing
+                spacing: rootCalendarPopup.theme.calendar.itemSpacing
 
                 Text {
-                    text: "Today + " + rootCalendarPopup.theme.calendarAgendaDays + " days"
+                    text: "Today + " + rootCalendarPopup.theme.calendar.agendaDays + " days"
                     color: rootCalendarPopup.theme.calendarHeaderText
-                    font.pixelSize: rootCalendarPopup.theme.calendarHeaderPixelSize
+                    font.pixelSize: rootCalendarPopup.theme.calendar.headerPixelSize
                     font.weight: Font.DemiBold
                 }
 
@@ -140,14 +140,14 @@ PopupWindow {
                     visible: rootCalendarPopup.agendaEvents.length === 0
                     text: "No events"
                     color: rootCalendarPopup.theme.calendarMutedText
-                    font.pixelSize: rootCalendarPopup.theme.agendaTitlePixelSize
+                    font.pixelSize: rootCalendarPopup.theme.calendar.agendaTitlePixelSize
                 }
 
                 ListView {
                     width: parent.width
-                    height: parent.height - rootCalendarPopup.theme.agendaListReservedHeight
+                    height: parent.height - rootCalendarPopup.theme.calendar.agendaListReservedHeight
                     clip: true
-                    spacing: rootCalendarPopup.theme.agendaItemSpacing
+                    spacing: rootCalendarPopup.theme.calendar.agendaItemSpacing
                     model: rootCalendarPopup.agendaEvents
 
                     delegate: Row {
@@ -155,30 +155,30 @@ PopupWindow {
 
                         width: ListView.view.width
                         height: eventDetails.implicitHeight
-                        spacing: rootCalendarPopup.theme.agendaRowSpacing
+                        spacing: rootCalendarPopup.theme.calendar.agendaRowSpacing
 
                         Text {
-                            width: rootCalendarPopup.theme.agendaDateWidth
+                            width: rootCalendarPopup.theme.calendar.agendaDateWidth
                             text: Qt.formatDate(
                                 new Date(modelData.date + "T00:00:00"),
                                 "ddd dd"
                             )
                             color: rootCalendarPopup.theme.eventIndicator
-                            font.pixelSize: rootCalendarPopup.theme.agendaDatePixelSize
+                            font.pixelSize: rootCalendarPopup.theme.calendar.agendaDatePixelSize
                             font.weight: Font.DemiBold
                         }
 
                         Column {
                             id: eventDetails
 
-                            width: parent.width - rootCalendarPopup.theme.agendaDetailsWidthOffset
-                            spacing: rootCalendarPopup.theme.agendaDetailsSpacing
+                            width: parent.width - rootCalendarPopup.theme.calendar.agendaDetailsWidthOffset
+                            spacing: rootCalendarPopup.theme.calendar.agendaDetailsSpacing
 
                             Text {
                                 width: parent.width
                                 text: modelData.title
                                 color: rootCalendarPopup.theme.calendarDayText
-                                font.pixelSize: rootCalendarPopup.theme.agendaTitlePixelSize
+                                font.pixelSize: rootCalendarPopup.theme.calendar.agendaTitlePixelSize
                                 elide: Text.ElideRight
                             }
 
@@ -187,7 +187,7 @@ PopupWindow {
                                     modelData
                                 )
                                 color: rootCalendarPopup.theme.calendarMutedText
-                                font.pixelSize: rootCalendarPopup.theme.agendaTimePixelSize
+                                font.pixelSize: rootCalendarPopup.theme.calendar.agendaTimePixelSize
                             }
                         }
                     }
