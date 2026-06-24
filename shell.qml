@@ -1,4 +1,5 @@
 import Quickshell
+import "features/osd" as OsdFeature
 import "panels" as Panels
 import "theme" as Theme
 
@@ -15,7 +16,7 @@ ShellRoot {
         onOsdTestRequested: (message, durationMs) => osd.showMessage(message, durationMs)
     }
 
-    Panels.Osd {
+    OsdFeature.Osd {
         id: osd
 
         theme: qreepTheme

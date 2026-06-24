@@ -1,12 +1,13 @@
 import QtQuick
 import Quickshell.Io
+import "../../core" as Core
 
 QtObject {
     id: rootPowerService
 
     property QtObject log
     readonly property Process commandRunner: Process {}
-    readonly property Log fallbackLog: Log {}
+    readonly property Core.Log fallbackLog: Core.Log {}
 
     function request(action) {
         switch (action) {

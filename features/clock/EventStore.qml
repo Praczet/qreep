@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../../core" as Core
 
 QtObject {
     id: rootEventStore
@@ -8,7 +9,7 @@ QtObject {
     property QtObject log
     property var events: []
 
-    readonly property Log fallbackLog: Log {}
+    readonly property Core.Log fallbackLog: Core.Log {}
 
     readonly property FileView eventFile: FileView {
         path: Quickshell.shellDir + "/events.json"

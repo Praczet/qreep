@@ -13,7 +13,7 @@ qreep/
 ├── shell.qml
 ├── core/
 ├── components/
-├── modules/
+├── features/
 ├── panels/
 └── theme/
 ```
@@ -87,19 +87,36 @@ Qreep is a Quickshell project. Prefer QML-first solutions unless there is a good
 
 Use this project layout:
 
-* `panels/` for top-level visible surfaces such as bar, dashboard, popups;
-* `modules/` for status modules such as clock, battery, audio, updates;
+* `features/` for feature-owned UI, state, services, and feature theme sections;
+* `panels/` for shared top-level surfaces such as the bar and shared tooltip;
 * `components/` for reusable UI pieces;
-* `theme/` for colors, spacing, font tokens;
-* `core/` for shared services/state once they actually exist.
+* `theme/` for the public theme object, shared theme sections, and generated colors;
+* `core/` for truly shared services/state once they actually exist.
+
+Current feature folders:
+
+```text
+features/
+├── borg/
+├── clock/
+├── osd/
+└── power/
+```
+
+Feature folders may contain their own QML UI, popup/panel pieces, state/service
+objects, and local theme section files. Keep shared wrappers and shared surfaces
+out of feature folders unless the ownership is obvious. The goal is fewer
+scavenger hunts, not a tiny bureaucracy with imports.
 
 Guidelines:
 
 * `shell.qml` should stay small.
-* Put visible shell surfaces in `panels/`.
+* Put shared visible shell surfaces in `panels/`.
+* Put feature-owned visible surfaces in their feature folder.
 * Put reusable wrappers in `components/`.
-* Put one feature per module where possible.
-* Keep theme tokens centralized.
+* Keep feature-owned files together where possible.
+* Keep the public theme entry point centralized in `theme/QreepTheme.qml`.
+* Put feature-specific size/spacing/timing tokens in the matching feature theme.
 * Avoid hardcoding colors once a theme object/file exists.
 * Prefer readable property names over clever abbreviations.
 * Use PascalCase for QML component files, for example `QreepModule.qml`.
@@ -296,7 +313,7 @@ Use:
 Good:
 
 ```text
-modules/Clock.qml
+features/clock/Clock.qml
 components/QreepModule.qml
 panels/Bar.qml
 theme/QreepTheme.qml
@@ -305,7 +322,7 @@ theme/QreepTheme.qml
 Bad:
 
 ```text
-modules/ChronoGoblinFinal.qml
+features/clock/ChronoGoblinFinal.qml
 components/NiceThingNew2.qml
 panels/BarButActuallyDashboard.qml
 ```
@@ -373,9 +390,10 @@ v0.1.0 - usable enough to judge Waybar quietly
 
 Qreep currently has:
 
-* a top `PanelWindow` bar with a centered clock and right-aligned power button;
+* a top `PanelWindow` bar with left, center, right, and overlay slots;
 * a reusable `QreepModule` wrapper with hover, click, right-click, overlay, and
   shared-tooltip request support;
+* an initial Borg status pill placeholder in the right bar slot;
 * a clock with optional seconds, current-day event dots, and JSON-backed event
   tooltip content;
 * a calendar popup with a month grid, event markers, and a six-day agenda
@@ -383,24 +401,23 @@ Qreep currently has:
 * one shared popup tooltip with delayed show/hide and scale animations;
 * a full-height power popup with themed system icons and outside-click/Escape
   dismissal;
-* centralized size and semantic color tokens in `QreepTheme.qml`;
+* confirmed power actions wired through `features/power/PowerService.qml`;
+* a Quickshell OSD with IPC methods for plain and JSON-backed messages;
+* feature-local theme sections exposed through `theme/QreepTheme.qml`;
 * an Unclaimed Bloom palette contract consisting of
   `theme/colors/template.qml` and
   `theme/colors/UnclaimedBloomColors.qml`;
-* a watched `events.json` source loaded through `core/EventStore.qml`.
-
-Power actions currently log their requested action. They do not lock, suspend,
-log out, reboot, or power off yet. This is deliberate. Accidentally discovering
-that the shutdown button works is a poor testing strategy.
+* a watched `events.json` source loaded through `features/clock/EventStore.qml`.
 
 ## Suggested next five steps
 
-1. **Add confirmation flow for destructive power actions.**
-   Keep lock immediate; require confirmation for logout, suspend, reboot, and
-   power off. Continue logging actions until the confirmation UI is proven.
-2. **Wire real power commands behind one small service.**
-   Put system commands in `core/PowerService.qml`, keep command selection
-   explicit, and test non-destructive actions first.
+1. **Build the Borg status feature properly.**
+   Prefer structured JSON from `borg-pulse` over parsing Waybar/Pango output.
+   Render the rich tooltip in QML, because that is the point of this little
+   migration-shaped incident.
+2. **Add IPC refresh for Borg.**
+   Let backup scripts call a Qreep IPC method after a backup finishes, while
+   keeping Waybar compatibility during the transition.
 3. **Finish the Unclaimed Bloom Qreep target.**
    Add the matching recipe, template deployment, and profile entry in
    Unclaimed Bloom so generated colors replace the current checked-in palette
@@ -409,9 +426,9 @@ that the shutdown button works is a poor testing strategy.
    Prefer audio volume or battery. Use `QreepModule`, the shared tooltip, and
    existing theme tokens before inventing another wrapper.
 5. **Add basic project documentation and validation notes.**
-   Fill `README.md` with the run command, current features, event JSON format,
-   required icon/theme assumptions, Hyprland popup blur rule, and known
-   Wayland limitations.
+   Fill `README.md` with the run command, current feature layout, event JSON
+   format, required icon/theme assumptions, Hyprland popup blur rule, IPC
+   examples, and known Wayland limitations.
 
 Keep these steps independent and reviewable. Qreep has enough moving pieces now
 that “one tiny cleanup while here” can reproduce when left unattended.

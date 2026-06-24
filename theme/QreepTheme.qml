@@ -1,5 +1,9 @@
 import QtQuick
 import "../core" as Core
+import "../features/borg" as BorgFeature
+import "../features/clock" as ClockFeature
+import "../features/osd" as OsdFeature
+import "../features/power" as PowerFeature
 import "colors" as Colors
 
 QtObject {
@@ -28,12 +32,12 @@ QtObject {
 
     readonly property QtObject bar: BarTheme {}
     readonly property QtObject module: ModuleTheme {}
-    readonly property QtObject clock: ClockTheme {}
-    readonly property QtObject power: PowerTheme {}
-    readonly property QtObject calendar: CalendarTheme {}
+    readonly property QtObject clock: ClockFeature.ClockTheme {}
+    readonly property QtObject power: PowerFeature.PowerTheme {}
+    readonly property QtObject calendar: ClockFeature.CalendarTheme {}
     readonly property QtObject tooltip: TooltipTheme {}
-    readonly property QtObject osd: OsdTheme {}
-    readonly property QtObject borg: BorgTheme {}
+    readonly property QtObject osd: OsdFeature.OsdTheme {}
+    readonly property QtObject borg: BorgFeature.BorgTheme {}
 
     readonly property string iconFontFamily: "FiraCode Nerd Font"
     readonly property int animationFastDuration: 100

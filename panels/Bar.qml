@@ -2,7 +2,10 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "../core" as Core
-import "../modules" as Modules
+import "../features/borg" as BorgFeature
+import "../features/clock" as ClockFeature
+import "../features/osd" as OsdFeature
+import "../features/power" as PowerFeature
 
 PanelWindow {
     id: rootBar
@@ -16,7 +19,7 @@ PanelWindow {
 
     signal osdTestRequested(string message, int durationMs)
 
-    Core.EventStore {
+    ClockFeature.EventStore {
         id: eventStore
         log: qreepLog
     }
@@ -32,7 +35,7 @@ PanelWindow {
         errorColor: rootBar.theme.logErrorColor
     }
 
-    Core.PowerService {
+    PowerFeature.PowerService {
         id: powerService
         log: qreepLog
     }
@@ -61,7 +64,7 @@ PanelWindow {
             }
             spacing: rootBar.theme.bar.itemSpacing
 
-            Modules.OsdTestButton {
+            OsdFeature.OsdTestButton {
                 id: osdTestButton
 
                 theme: rootBar.theme
@@ -78,7 +81,7 @@ PanelWindow {
             anchors.centerIn: parent
             spacing: rootBar.theme.bar.itemSpacing
 
-            Modules.Clock {
+            ClockFeature.Clock {
                 id: clock
 
                 theme: rootBar.theme
@@ -100,7 +103,7 @@ PanelWindow {
             }
             spacing: rootBar.theme.bar.itemSpacing
 
-            Modules.Borg {
+            BorgFeature.Borg {
                 id: borg
 
                 theme: rootBar.theme
@@ -112,7 +115,7 @@ PanelWindow {
                 onTooltipHideRequested: sharedTooltip.hideLater()
             }
 
-            Modules.PowerButton {
+            PowerFeature.PowerButton {
                 id: powerButton
 
                 theme: rootBar.theme
@@ -139,7 +142,7 @@ PanelWindow {
             theme: rootBar.theme
         }
 
-        CalendarPopup {
+        ClockFeature.CalendarPopup {
             id: calendarPopup
 
             theme: rootBar.theme
@@ -147,7 +150,7 @@ PanelWindow {
             events: eventStore
         }
 
-        PowerPanel {
+        PowerFeature.PowerPanel {
             id: powerPanel
 
             theme: rootBar.theme
