@@ -1,5 +1,5 @@
 import QtQuick
-import Quickshell.Io
+import "../core" as Core
 import "colors" as Colors
 
 QtObject {
@@ -7,7 +7,6 @@ QtObject {
 
     readonly property QtObject palette: Colors.UnclaimedBloomColors {}
     readonly property var requiredPaletteColors: ["barBackground", "moduleBackground", "moduleHoverBackground", "primaryText", "secondaryText", "calendarBackground", "calendarHeaderText", "calendarDayText", "calendarMutedText", "calendarTodayBackground", "calendarTodayText", "eventIndicator", "powerActionBackground", "powerActionHoverBackground", "powerActionText", "powerActionIconColor", "powerConfirmText"]
-    readonly property Process paletteErrorNotifier: Process {}
 
     readonly property color barBackground: paletteColor("barBackground", "#171b22")
     readonly property color moduleBackground: paletteColor("moduleBackground", "#2e3440")
@@ -29,6 +28,22 @@ QtObject {
 
     readonly property string iconFontFamily: "FiraCode Nerd Font"
     readonly property int animationFastDuration: 100
+
+    readonly property string logNotificationBackend: "notify-send"
+    readonly property bool logNotifyWarnings: true
+    readonly property bool logNotifyErrors: true
+    readonly property int logNotificationDuration: 5000
+    readonly property string logWarningColor: "rgb(f9e2af)"
+    readonly property string logErrorColor: "rgb(ffb4ab)"
+
+    readonly property Core.Log paletteLog: Core.Log {
+        notificationBackend: rootQreepTheme.logNotificationBackend
+        notifyWarnings: rootQreepTheme.logNotifyWarnings
+        notifyErrors: rootQreepTheme.logNotifyErrors
+        notificationDuration: rootQreepTheme.logNotificationDuration
+        warningColor: rootQreepTheme.logWarningColor
+        errorColor: rootQreepTheme.logErrorColor
+    }
 
     readonly property int barHeight: 46
     readonly property int barPowerButtonRightMargin: 4
@@ -127,10 +142,7 @@ QtObject {
             return;
         const message = "Missing generated palette properties: " + missingColors.join(", ");
 
-        console.error("Qreep theme error:", message);
-
-        paletteErrorNotifier.command = ["notify-send", "--urgency=critical", "--app-name=Qreep", "Qreep theme error", message];
-        paletteErrorNotifier.running = true;
+        paletteLog.error("Qreep theme error:", message);
     }
 
     Component.onCompleted: validatePalette()

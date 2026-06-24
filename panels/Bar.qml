@@ -14,6 +14,23 @@ PanelWindow {
 
     Core.EventStore {
         id: eventStore
+        log: qreepLog
+    }
+
+    Core.Log {
+        id: qreepLog
+
+        notificationBackend: qreepTheme.logNotificationBackend
+        notifyWarnings: qreepTheme.logNotifyWarnings
+        notifyErrors: qreepTheme.logNotifyErrors
+        notificationDuration: qreepTheme.logNotificationDuration
+        warningColor: qreepTheme.logWarningColor
+        errorColor: qreepTheme.logErrorColor
+    }
+
+    Core.PowerService {
+        id: powerService
+        log: qreepLog
     }
 
     anchors {
@@ -39,8 +56,7 @@ PanelWindow {
             events: eventStore
 
             onRightClicked: calendarPopup.visible = !calendarPopup.visible
-            onTooltipShowRequested: (anchorItem, title, content, style) =>
-                sharedTooltip.showFor(anchorItem, title, content, style)
+            onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
             onTooltipHideRequested: sharedTooltip.hideLater()
         }
 
@@ -55,11 +71,10 @@ PanelWindow {
             theme: qreepTheme
 
             onClicked: {
-                powerPanel.visible = !powerPanel.visible
-                sharedTooltip.hideLater()
+                powerPanel.visible = !powerPanel.visible;
+                sharedTooltip.hideLater();
             }
-            onTooltipShowRequested: (anchorItem, title, content, style) =>
-                sharedTooltip.showFor(anchorItem, title, content, style)
+            onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
             onTooltipHideRequested: sharedTooltip.hideLater()
         }
 
@@ -83,8 +98,7 @@ PanelWindow {
             theme: qreepTheme
             anchorItem: powerButton
 
-            onActionRequested: action =>
-                console.log("Power action requested:", action)
+            onActionRequested: action => powerService.request(action)
         }
     }
 }

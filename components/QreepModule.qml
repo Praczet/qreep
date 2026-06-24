@@ -13,34 +13,21 @@ Rectangle {
 
     signal clicked
     signal rightClicked
-    signal tooltipShowRequested(
-        Item anchorItem,
-        string title,
-        string content,
-        string style
-    )
+    signal tooltipShowRequested(Item anchorItem, string title, string content, string style)
     signal tooltipHideRequested
 
     onHoveredChanged: {
         if (hovered && (tooltipTitle.length > 0 || tooltipContent.length > 0)) {
-            tooltipShowRequested(
-                rootQreepModule,
-                tooltipTitle,
-                tooltipContent,
-                tooltipStyle
-            )
+            tooltipShowRequested(rootQreepModule, tooltipTitle, tooltipContent, tooltipStyle);
         } else {
-            tooltipHideRequested()
+            tooltipHideRequested();
         }
     }
 
-    implicitWidth:
-        contentContainer.implicitWidth + theme.moduleHorizontalPadding
+    implicitWidth: contentContainer.implicitWidth + theme.moduleHorizontalPadding
     implicitHeight: theme.moduleHeight
     radius: theme.moduleRadius
-    color: moduleHoverHandler.hovered
-        ? theme.moduleHoverBackground
-        : theme.moduleBackground
+    color: moduleHoverHandler.hovered ? theme.moduleHoverBackground : theme.moduleBackground
 
     Item {
         id: contentContainer

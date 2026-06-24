@@ -5,7 +5,10 @@ import Quickshell.Io
 QtObject {
     id: rootEventStore
 
+    property QtObject log
     property var events: []
+
+    readonly property Log fallbackLog: Log {}
 
     readonly property FileView eventFile: FileView {
         path: Quickshell.shellDir + "/events.json"
@@ -15,7 +18,7 @@ QtObject {
         onLoaded: rootEventStore.loadEvents()
         onTextChanged: rootEventStore.loadEvents()
         onLoadFailed: error => {
-            console.error("Qreep event error:", FileViewError.toString(error), path);
+            rootEventStore.reportError("Qreep event error:", FileViewError.toString(error), path);
             rootEventStore.events = [];
         }
     }
@@ -32,9 +35,22 @@ QtObject {
             const document = JSON.parse(contents);
             events = Array.isArray(document.events) ? document.events : [];
         } catch (error) {
-            console.error("Qreep event JSON error:", error);
+            reportError("Qreep event JSON error:", error);
             events = [];
         }
+    }
+
+    function reportError() {
+        (log || fallbackLog).error(messageText(arguments));
+    }
+
+    function messageText(messages) {
+        const parts = [];
+
+        for (let index = 0; index < messages.length; index++)
+            parts.push(String(messages[index]));
+
+        return parts.join(" ");
     }
 
     function dateKey(date) {
