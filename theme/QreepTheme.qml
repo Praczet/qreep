@@ -137,9 +137,14 @@ QtObject {
     readonly property int osdVerticalPadding: 14
     readonly property int osdRadius: 14
     readonly property int osdBorderWidth: 1
-    readonly property real osdOpacity: 0.92
-    readonly property int osdTextPixelSize: 16
+    readonly property real osdOpacity: 0.5
+    readonly property int osdTitleTextPixelSize: 15
+    readonly property int osdMessageTextPixelSize: 13
+    readonly property int osdIconSize: 30
+    readonly property int osdContentSpacing: 12
+    readonly property int osdTextSpacing: 3
     readonly property int osdDefaultDuration: 1600
+    readonly property string osdDefaultPosition: "top"
     readonly property int osdTestButtonLeftMargin: 4
     readonly property int osdTestButtonTextPixelSize: 13
 
