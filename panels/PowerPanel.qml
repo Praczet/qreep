@@ -10,34 +10,71 @@ PopupWindow {
     required property Item anchorItem
 
     signal actionRequested(string action)
+    property var pendingAction: null
 
     readonly property var actions: [
         {
             icon: "system-lock-screen-symbolic",
             label: "Lock",
-            action: "lock"
+            action: "lock",
+            destructive: false,
+            confirmTitle: "Lock the screen",
+            confirmContent: "Are you sure you want to lock the screen?"
         },
         {
             icon: "system-log-out-symbolic",
             label: "Log out",
-            action: "logout"
+            action: "logout",
+            destructive: true,
+            confirmTitle: "Log out",
+            confirmContent: "Are you sure you want to log out?"
         },
         {
             icon: "media-playback-pause-symbolic",
             label: "Suspend",
-            action: "suspend"
+            action: "suspend",
+            destructive: true,
+            confirmTitle: "Suspend the system",
+            confirmContent: "Are you sure you want to suspend the system?"
         },
         {
             icon: "system-reboot-symbolic",
             label: "Reboot",
-            action: "reboot"
+            action: "reboot",
+            destructive: true,
+            confirmTitle: "Reboot the system",
+            confirmContent: "Are you sure you want to reboot the system?"
         },
         {
             icon: "system-shutdown-symbolic",
             label: "Power off",
-            action: "poweroff"
+            action: "poweroff",
+            destructive: true,
+            confirmTitle: "Power off the system",
+            confirmContent: "Are you sure you want to power off the system?"
         }
     ]
+
+    function requestAction(action) {
+        if (!action.destructive) {
+            rootPowerPanel.actionRequested(action.action);
+            rootPowerPanel.visible = false;
+            return;
+        }
+        pendingAction = action;
+    }
+
+    function confirmPendingAction() {
+        if (pendingAction == null)
+            return;
+        rootPowerPanel.actionRequested(pendingAction.action);
+        rootPowerPanel.visible = false;
+        pendingAction = null;
+    }
+
+    function cancelPendingAction() {
+        pendingAction = null;
+    }
 
     anchor {
         item: rootPowerPanel.anchorItem
@@ -51,11 +88,23 @@ PopupWindow {
     color: "transparent"
     grabFocus: true
 
+    onVisibleChanged: {
+        if (!visible)
+            pendingAction = null;
+    }
+
     Shortcut {
         sequence: "Escape"
         context: Qt.WindowShortcut
         enabled: rootPowerPanel.visible
-        onActivated: rootPowerPanel.visible = false
+        onActivated: {
+            if (rootPowerPanel.pendingAction !== null) {
+                rootPowerPanel.cancelPendingAction();
+                return;
+            }
+
+            rootPowerPanel.visible = false;
+        }
     }
 
     Rectangle {
@@ -73,12 +122,13 @@ PopupWindow {
 
                 anchors.centerIn: parent
                 width: rootPowerPanel.theme.powerCardWidth
-                height: actionList.implicitHeight + rootPowerPanel.theme.powerCardPadding * 2
+                height: (rootPowerPanel.pendingAction === null ? actionList.implicitHeight : confirmActionList.implicitHeight) + rootPowerPanel.theme.powerCardPadding * 2
                 radius: rootPowerPanel.theme.powerCardRadius
                 color: rootPowerPanel.theme.moduleHoverBackground
 
                 Column {
                     id: actionList
+                    visible: rootPowerPanel.pendingAction === null
 
                     anchors {
                         left: parent.left
@@ -103,11 +153,11 @@ PopupWindow {
 
                             Row {
                                 anchors.centerIn: parent
-                                spacing: 14
+                                spacing: rootPowerPanel.theme.powerActionContentSpacing
 
                                 Item {
-                                    width: 30
-                                    height: 30
+                                    width: rootPowerPanel.theme.powerActionIconSize
+                                    height: rootPowerPanel.theme.powerActionIconSize
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     IconImage {
@@ -121,17 +171,17 @@ PopupWindow {
                                     MultiEffect {
                                         anchors.fill: parent
                                         source: icon
-                                        colorization: 1
-                                        brightness: 1.2
+                                        colorization: rootPowerPanel.theme.powerActionIconColorization
+                                        brightness: rootPowerPanel.theme.powerActionIconBrightness
                                         colorizationColor: rootPowerPanel.theme.powerActionIconColor
                                     }
                                 }
 
                                 Text {
-                                    width: 92
+                                    width: rootPowerPanel.theme.powerActionLabelWidth
                                     text: actionButton.modelData.label
                                     color: rootPowerPanel.theme.powerActionText
-                                    font.pixelSize: 14
+                                    font.pixelSize: rootPowerPanel.theme.powerActionTextPixelSize
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
                             }
@@ -144,14 +194,108 @@ PopupWindow {
 
                             TapHandler {
                                 onTapped: {
-                                    rootPowerPanel.actionRequested(actionButton.modelData.action);
-                                    rootPowerPanel.visible = false;
+                                    rootPowerPanel.requestAction(actionButton.modelData);
                                 }
                             }
 
                             Behavior on color {
                                 ColorAnimation {
-                                    duration: 100
+                                    duration: rootPowerPanel.theme.animationFastDuration
+                                }
+                            }
+                        }
+                    }
+                }
+                Column {
+                    id: confirmActionList
+                    visible: rootPowerPanel.pendingAction !== null
+
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
+                        margins: rootPowerPanel.theme.powerCardPadding
+                    }
+                    spacing: rootPowerPanel.theme.powerActionSpacing
+
+                    Text {
+                        width: parent.width
+                        text: rootPowerPanel.pendingAction !== null ? rootPowerPanel.pendingAction.confirmTitle : ""
+                        color: rootPowerPanel.theme.powerConfirmText
+                        font.pixelSize: rootPowerPanel.theme.powerConfirmTitlePixelSize
+                        font.bold: true
+                        wrapMode: Text.Wrap
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: rootPowerPanel.pendingAction !== null ? rootPowerPanel.pendingAction.confirmContent : ""
+                        color: rootPowerPanel.theme.powerConfirmText
+                        font.pixelSize: rootPowerPanel.theme.powerConfirmContentPixelSize
+                        wrapMode: Text.Wrap
+                        bottomPadding: rootPowerPanel.theme.powerConfirmContentBottomPadding
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: rootPowerPanel.theme.powerConfirmButtonSpacing
+
+                        Rectangle {
+                            width: (parent.width - parent.spacing) / 2
+                            height: rootPowerPanel.theme.powerActionHeight
+                            radius: rootPowerPanel.theme.powerActionRadius
+                            color: cancelHover.hovered ? rootPowerPanel.theme.powerActionHoverBackground : rootPowerPanel.theme.powerActionBackground
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Cancel"
+                                color: rootPowerPanel.theme.powerActionText
+                                font.pixelSize: rootPowerPanel.theme.powerActionTextPixelSize
+                            }
+
+                            HoverHandler {
+                                id: cancelHover
+
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            TapHandler {
+                                onTapped: rootPowerPanel.cancelPendingAction()
+                            }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: rootPowerPanel.theme.animationFastDuration
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: (parent.width - parent.spacing) / 2
+                            height: rootPowerPanel.theme.powerActionHeight
+                            radius: rootPowerPanel.theme.powerActionRadius
+                            color: confirmHover.hovered ? rootPowerPanel.theme.powerActionHoverBackground : rootPowerPanel.theme.powerActionBackground
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Confirm"
+                                color: rootPowerPanel.theme.powerActionText
+                                font.pixelSize: rootPowerPanel.theme.powerActionTextPixelSize
+                            }
+
+                            HoverHandler {
+                                id: confirmHover
+
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            TapHandler {
+                                onTapped: rootPowerPanel.confirmPendingAction()
+                            }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: rootPowerPanel.theme.animationFastDuration
                                 }
                             }
                         }

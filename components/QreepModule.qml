@@ -74,7 +74,7 @@ Rectangle {
 
     Behavior on color {
         ColorAnimation {
-            duration: 100
+            duration: rootQreepModule.theme.animationFastDuration
         }
     }
 }

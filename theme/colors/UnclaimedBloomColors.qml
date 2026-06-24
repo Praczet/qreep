@@ -19,4 +19,5 @@ QtObject {
     readonly property color powerActionHoverBackground: "#b8c7e8"
     readonly property color powerActionIconColor: "#3e4554"
     readonly property color powerActionText: "#2e3440"
+    readonly property color powerConfirmText: "#d8dee9"
 }

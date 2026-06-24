@@ -50,7 +50,7 @@ PanelWindow {
             anchors {
                 right: parent.right
                 verticalCenter: parent.verticalCenter
-                rightMargin: 4
+                rightMargin: qreepTheme.barPowerButtonRightMargin
             }
             theme: qreepTheme
 

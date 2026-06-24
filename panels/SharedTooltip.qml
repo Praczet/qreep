@@ -18,11 +18,11 @@ PopupWindow {
     anchor {
         item: rootSharedTooltip.anchorItem
         rect.x: rootSharedTooltip.anchorItem ? rootSharedTooltip.anchorItem.width / 2 - rootSharedTooltip.width / 2 : 0
-        rect.y: rootSharedTooltip.anchorItem ? rootSharedTooltip.anchorItem.height + 8 : 0
+        rect.y: rootSharedTooltip.anchorItem ? rootSharedTooltip.anchorItem.height + rootSharedTooltip.theme.tooltipOffsetY : 0
     }
 
-    implicitWidth: Math.max(180, tooltipTitle.implicitWidth + 32, tooltipText.implicitWidth + 32)
-    implicitHeight: tooltipLayout.implicitHeight + 24
+    implicitWidth: Math.max(rootSharedTooltip.theme.tooltipMinimumWidth, tooltipTitle.implicitWidth + rootSharedTooltip.theme.tooltipHorizontalPadding * 2, tooltipText.implicitWidth + rootSharedTooltip.theme.tooltipHorizontalPadding * 2)
+    implicitHeight: tooltipLayout.implicitHeight + rootSharedTooltip.theme.tooltipVerticalPadding * 2
     color: "transparent"
     grabFocus: false
 
@@ -70,9 +70,9 @@ PopupWindow {
         anchors.fill: parent
         transformOrigin: Item.Center
         scale: 0
-        radius: 10
+        radius: rootSharedTooltip.theme.tooltipRadius
         color: rootSharedTooltip.theme.calendarBackground
-        border.width: 1
+        border.width: rootSharedTooltip.theme.tooltipBorderWidth
         border.color: rootSharedTooltip.style === "warning" ? rootSharedTooltip.theme.eventIndicator : rootSharedTooltip.theme.moduleHoverBackground
 
         Column {
@@ -80,9 +80,9 @@ PopupWindow {
 
             anchors {
                 fill: parent
-                margins: 12
+                margins: rootSharedTooltip.theme.tooltipPadding
             }
-            spacing: 4
+            spacing: rootSharedTooltip.theme.tooltipSpacing
 
             Text {
                 id: tooltipTitle
@@ -90,7 +90,7 @@ PopupWindow {
                 visible: text.length > 0
                 text: rootSharedTooltip.title
                 color: rootSharedTooltip.theme.calendarHeaderText
-                font.pixelSize: 13
+                font.pixelSize: rootSharedTooltip.theme.tooltipTitlePixelSize
                 font.weight: Font.DemiBold
             }
 
@@ -99,8 +99,8 @@ PopupWindow {
 
                 text: rootSharedTooltip.content
                 color: rootSharedTooltip.theme.calendarDayText
-                font.pixelSize: 12
-                lineHeight: 1.15
+                font.pixelSize: rootSharedTooltip.theme.tooltipContentPixelSize
+                lineHeight: rootSharedTooltip.theme.tooltipContentLineHeight
             }
         }
     }
@@ -108,7 +108,7 @@ PopupWindow {
     Timer {
         id: showTimer
 
-        interval: 400
+        interval: rootSharedTooltip.theme.tooltipShowDelay
         repeat: false
         onTriggered: rootSharedTooltip.applyPendingRequest(true)
     }
@@ -116,7 +116,7 @@ PopupWindow {
     Timer {
         id: hideTimer
 
-        interval: 500
+        interval: rootSharedTooltip.theme.tooltipHideDelay
         repeat: false
         onTriggered: hideAnimation.restart()
     }
@@ -128,17 +128,17 @@ PopupWindow {
             target: tooltipBody
             property: "scale"
             from: 0
-            to: 1.2
-            duration: 120
+            to: rootSharedTooltip.theme.tooltipPopScale
+            duration: rootSharedTooltip.theme.tooltipShowOutDuration
             easing.type: Easing.OutCubic
         }
 
         NumberAnimation {
             target: tooltipBody
             property: "scale"
-            from: 1.2
+            from: rootSharedTooltip.theme.tooltipPopScale
             to: 1
-            duration: 90
+            duration: rootSharedTooltip.theme.tooltipShowSettleDuration
             easing.type: Easing.InOutCubic
         }
     }
@@ -150,17 +150,17 @@ PopupWindow {
             target: tooltipBody
             property: "scale"
             from: 1
-            to: 1.2
-            duration: 80
+            to: rootSharedTooltip.theme.tooltipPopScale
+            duration: rootSharedTooltip.theme.tooltipHideOutDuration
             easing.type: Easing.OutCubic
         }
 
         NumberAnimation {
             target: tooltipBody
             property: "scale"
-            from: 1.2
+            from: rootSharedTooltip.theme.tooltipPopScale
             to: 0
-            duration: 120
+            duration: rootSharedTooltip.theme.tooltipHideInDuration
             easing.type: Easing.InCubic
         }
 

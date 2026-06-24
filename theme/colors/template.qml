@@ -19,4 +19,5 @@ QtObject {
     readonly property color powerActionHoverBackground: "{{power_action_hover_background}}"
     readonly property color powerActionText: "{{power_action_text}}"
     readonly property color powerActionIconColor: "{{power_action_icon_color}}"
+    readonly property color powerConfirmText: "{{power_confirm_text}}"
 }

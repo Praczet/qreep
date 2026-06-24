@@ -11,7 +11,7 @@ Components.QreepModule {
     Text {
         text: ""
         color: rootPowerButton.theme.primaryText
-        font.family: "FiraCode Nerd Font"
-        font.pixelSize: 20
+        font.family: rootPowerButton.theme.iconFontFamily
+        font.pixelSize: rootPowerButton.theme.powerButtonIconPixelSize
     }
 }

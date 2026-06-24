@@ -29,11 +29,11 @@ Components.QreepModule {
         currentDate = new Date();
 
         const now = currentDate;
-        const refreshInterval = showSeconds ? 1000 : 60000;
-        const elapsedInInterval = showSeconds ? now.getMilliseconds() : now.getSeconds() * 1000 + now.getMilliseconds();
+        const refreshInterval = showSeconds ? rootClock.theme.clockSecondRefreshInterval : rootClock.theme.clockMinuteRefreshInterval;
+        const elapsedInInterval = showSeconds ? now.getMilliseconds() : now.getSeconds() * rootClock.theme.clockSecondRefreshInterval + now.getMilliseconds();
         const millisecondsToNextRefresh = refreshInterval - elapsedInInterval;
 
-        minuteTimer.interval = Math.max(50, millisecondsToNextRefresh);
+        minuteTimer.interval = Math.max(rootClock.theme.clockMinimumRefreshInterval, millisecondsToNextRefresh);
         minuteTimer.restart();
     }
 
@@ -69,18 +69,18 @@ Components.QreepModule {
             verticalCenter: parent.bottom
         }
 
-        spacing: 4
+        spacing: rootClock.theme.clockEventIndicatorSpacing
         visible: rootClock.visibleTodayEvents.length > 0
 
         Repeater {
-            model: Math.min(rootClock.visibleTodayEvents.length, 5)
+            model: Math.min(rootClock.visibleTodayEvents.length, rootClock.theme.clockMaxEventIndicators)
 
             delegate: Rectangle {
                 required property int index
 
-                width: 8
-                height: 8
-                radius: 4
+                width: rootClock.theme.clockEventIndicatorSize
+                height: rootClock.theme.clockEventIndicatorSize
+                radius: rootClock.theme.clockEventIndicatorRadius
                 color: rootClock.theme.eventIndicator
             }
         }
