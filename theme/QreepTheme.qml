@@ -130,6 +130,19 @@ QtObject {
     readonly property int tooltipHideOutDuration: 80
     readonly property int tooltipHideInDuration: 120
 
+    readonly property int osdPanelHeight: 160
+    readonly property int osdTopMargin: 58
+    readonly property int osdScreenPadding: 24
+    readonly property int osdHorizontalPadding: 22
+    readonly property int osdVerticalPadding: 14
+    readonly property int osdRadius: 14
+    readonly property int osdBorderWidth: 1
+    readonly property real osdOpacity: 0.92
+    readonly property int osdTextPixelSize: 16
+    readonly property int osdDefaultDuration: 1600
+    readonly property int osdTestButtonLeftMargin: 4
+    readonly property int osdTestButtonTextPixelSize: 13
+
     function paletteColor(propertyName, fallbackColor) {
         const value = palette[propertyName];
         return value === undefined ? fallbackColor : value;

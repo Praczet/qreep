@@ -3,14 +3,13 @@ import Quickshell
 import Quickshell.Wayland
 import "../core" as Core
 import "../modules" as Modules
-import "../theme" as Theme
 
 PanelWindow {
     id: rootBar
 
-    Theme.QreepTheme {
-        id: qreepTheme
-    }
+    required property QtObject theme
+
+    signal osdTestRequested(string message, int durationMs)
 
     Core.EventStore {
         id: eventStore
@@ -20,12 +19,12 @@ PanelWindow {
     Core.Log {
         id: qreepLog
 
-        notificationBackend: qreepTheme.logNotificationBackend
-        notifyWarnings: qreepTheme.logNotifyWarnings
-        notifyErrors: qreepTheme.logNotifyErrors
-        notificationDuration: qreepTheme.logNotificationDuration
-        warningColor: qreepTheme.logWarningColor
-        errorColor: qreepTheme.logErrorColor
+        notificationBackend: rootBar.theme.logNotificationBackend
+        notifyWarnings: rootBar.theme.logNotifyWarnings
+        notifyErrors: rootBar.theme.logNotifyErrors
+        notificationDuration: rootBar.theme.logNotificationDuration
+        warningColor: rootBar.theme.logWarningColor
+        errorColor: rootBar.theme.logErrorColor
     }
 
     Core.PowerService {
@@ -39,20 +38,35 @@ PanelWindow {
         right: true
     }
 
-    implicitHeight: qreepTheme.barHeight
+    implicitHeight: rootBar.theme.barHeight
     color: "transparent"
 
     WlrLayershell.namespace: "qreep-bar"
 
     Rectangle {
         anchors.fill: parent
-        color: qreepTheme.barBackground
+        color: rootBar.theme.barBackground
+
+        Modules.OsdTestButton {
+            id: osdTestButton
+
+            anchors {
+                left: parent.left
+                verticalCenter: parent.verticalCenter
+                leftMargin: rootBar.theme.osdTestButtonLeftMargin
+            }
+            theme: rootBar.theme
+
+            onClicked: rootBar.osdTestRequested("Qreep OSD test", rootBar.theme.osdDefaultDuration)
+            onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+            onTooltipHideRequested: sharedTooltip.hideLater()
+        }
 
         Modules.Clock {
             id: clock
 
             anchors.centerIn: parent
-            theme: qreepTheme
+            theme: rootBar.theme
             events: eventStore
 
             onRightClicked: calendarPopup.visible = !calendarPopup.visible
@@ -66,9 +80,9 @@ PanelWindow {
             anchors {
                 right: parent.right
                 verticalCenter: parent.verticalCenter
-                rightMargin: qreepTheme.barPowerButtonRightMargin
+                rightMargin: rootBar.theme.barPowerButtonRightMargin
             }
-            theme: qreepTheme
+            theme: rootBar.theme
 
             onClicked: {
                 powerPanel.visible = !powerPanel.visible;
@@ -81,13 +95,13 @@ PanelWindow {
         SharedTooltip {
             id: sharedTooltip
 
-            theme: qreepTheme
+            theme: rootBar.theme
         }
 
         CalendarPopup {
             id: calendarPopup
 
-            theme: qreepTheme
+            theme: rootBar.theme
             anchorItem: clock
             events: eventStore
         }
@@ -95,7 +109,7 @@ PanelWindow {
         PowerPanel {
             id: powerPanel
 
-            theme: qreepTheme
+            theme: rootBar.theme
             anchorItem: powerButton
 
             onActionRequested: action => powerService.request(action)
