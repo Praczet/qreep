@@ -42,7 +42,7 @@ if [[ -z "$geometry" ]]; then
 fi
 
 for ((remaining = delay_seconds; remaining > 0; remaining--)); do
-  show_osd "Screenshot in ${remaining}" 1000
+  show_osd "Screenshot in ${remaining}"
   sleep 1
 done
 

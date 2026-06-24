@@ -74,6 +74,22 @@ PanelWindow {
             onTooltipHideRequested: sharedTooltip.hideLater()
         }
 
+        Modules.Borg {
+            id: borg
+
+            anchors {
+                right: parent.right
+                verticalCenter: parent.verticalCenter
+            }
+            theme: rootBar.theme
+
+            onClicked: {
+                sharedTooltip.hideLater();
+            }
+            onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+            onTooltipHideRequested: sharedTooltip.hideLater()
+        }
+
         Modules.PowerButton {
             id: powerButton
 

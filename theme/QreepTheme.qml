@@ -46,6 +46,7 @@ QtObject {
     }
 
     readonly property int barHeight: 46
+    readonly property int pillLeftMargin: 4
     readonly property int barPowerButtonRightMargin: 4
 
     readonly property int moduleHeight: 48
@@ -147,6 +148,8 @@ QtObject {
     readonly property string osdDefaultPosition: "top"
     readonly property int osdTestButtonLeftMargin: 4
     readonly property int osdTestButtonTextPixelSize: 13
+
+    readonly property int borgIconPixelSize: 30
 
     function paletteColor(propertyName, fallbackColor) {
         const value = palette[propertyName];
