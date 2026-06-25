@@ -3,7 +3,7 @@ import QtQuick
 QtObject {
     id: rootPowerTheme
 
-    readonly property int buttonIconPixelSize: 20
+    readonly property int buttonIconPixelSize: 24
     readonly property int sidebarWidth: 360
     readonly property real sidebarOpacity: 0.82
     readonly property int cardWidth: 260

@@ -4,6 +4,7 @@ import "../features/borg" as BorgFeature
 import "../features/clock" as ClockFeature
 import "../features/osd" as OsdFeature
 import "../features/power" as PowerFeature
+import "../features/upchecker" as UpcheckerFeature
 import "colors" as Colors
 
 QtObject {
@@ -38,6 +39,7 @@ QtObject {
     readonly property QtObject tooltip: TooltipTheme {}
     readonly property QtObject osd: OsdFeature.OsdTheme {}
     readonly property QtObject borg: BorgFeature.BorgTheme {}
+    readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {}
 
     readonly property string iconFontFamily: "FiraCode Nerd Font"
     readonly property int animationFastDuration: 100

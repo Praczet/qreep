@@ -119,6 +119,9 @@ Guidelines:
 * Put feature-specific size/spacing/timing tokens in the matching feature theme.
 * Avoid hardcoding colors once a theme object/file exists.
 * Prefer readable property names over clever abbreviations.
+* If a bar pill can be refreshed through IPC, make the pill acknowledge that
+  refresh with a subtle animation. The user should know the command landed;
+  the bar should not perform dinner theatre.
 * Use PascalCase for QML component files, for example `QreepModule.qml`.
 * Name each QML root object `root` followed by the file name in PascalCase.
   For example, use `id: rootBar` in `Bar.qml`, `id: rootClock` in

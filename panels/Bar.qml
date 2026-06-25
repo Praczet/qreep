@@ -6,6 +6,7 @@ import "../features/borg" as BorgFeature
 import "../features/clock" as ClockFeature
 import "../features/osd" as OsdFeature
 import "../features/power" as PowerFeature
+import "../features/upchecker" as UpcheckerFeature
 
 PanelWindow {
     id: rootBar
@@ -46,6 +47,13 @@ PanelWindow {
         refreshInterval: rootBar.theme.borg.refreshInterval
         backupCommand: [rootBar.theme.borg.backupCommand]
         backupStatusBackend: rootBar.theme.borg.backupStatusBackend
+    }
+
+    UpcheckerFeature.UpcheckerService {
+        id: upcheckerService
+        log: qreepLog
+        updateTerminalCommand: rootBar.theme.upchecker.updateTerminalCommand
+        updateCommand: rootBar.theme.upchecker.updateCommand
     }
 
     anchors {
@@ -110,6 +118,20 @@ PanelWindow {
                 rightMargin: rootBar.theme.bar.sideMargin
             }
             spacing: rootBar.theme.bar.itemSpacing
+
+            UpcheckerFeature.UpcheckerButton {
+                id: upcheckerButton
+
+                theme: rootBar.theme
+                service: upcheckerService
+
+                onClicked: {
+                    upcheckerPanel.visible = !upcheckerPanel.visible;
+                    sharedTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+            }
 
             BorgFeature.Borg {
                 id: borg
@@ -182,6 +204,27 @@ PanelWindow {
             anchorItem: powerButton
 
             onActionRequested: action => powerService.request(action)
+        }
+
+        UpcheckerFeature.UpcheckerPanel {
+            id: upcheckerPanel
+
+            theme: rootBar.theme
+            anchorItem: overlayLayer
+            service: upcheckerService
+        }
+
+        Connections {
+            target: upcheckerService
+
+            function onToggleRequested() {
+                upcheckerPanel.visible = !upcheckerPanel.visible;
+                sharedTooltip.hideLater();
+            }
+
+            function onUpdateRequested() {
+                upcheckerPanel.visible = false;
+            }
         }
     }
 }

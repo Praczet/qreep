@@ -3,7 +3,7 @@ import QtQuick
 QtObject {
     id: rootBorgTheme
 
-    readonly property int iconPixelSize: 30
+    readonly property int iconPixelSize: 24
     readonly property int refreshInterval: 3600000
     readonly property string backupCommand: "borg-backup-notify"
     readonly property string backupStatusBackend: "qreep"
