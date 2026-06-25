@@ -91,7 +91,7 @@ PanelWindow {
         item: osdCard
     }
 
-    WlrLayershell.namespace: "qreep-osd"
+    WlrLayershell.namespace: "qreep-popup-osd"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     WlrLayershell.exclusiveZone: 0
