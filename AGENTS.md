@@ -99,8 +99,11 @@ Current feature folders:
 features/
 ├── borg/
 ├── clock/
+├── monitorprofile/
+├── mpris/
 ├── osd/
-└── power/
+├── power/
+└── upchecker/
 ```
 
 Feature folders may contain their own QML UI, popup/panel pieces, state/service
@@ -401,10 +404,16 @@ Qreep currently has:
   tooltip content;
 * a calendar popup with a month grid, event markers, and a six-day agenda
   covering today plus the next five days;
+* a MonitorProfile pill that watches runtime JSON, sorts monitors by position,
+  and shows internal/external display icons plus a plain tooltip;
+* an MPRIS pill in the center slot with current playback state, track columns,
+  animated notes, preview tooltip, and right-click player popup;
 * one shared popup tooltip with delayed show/hide and scale animations;
-* a full-height power popup with themed system icons and outside-click/Escape
-  dismissal;
+* a full-height power layer panel with its own `qreep-popup-power` namespace,
+  themed system icons, outside-click/Escape dismissal, margin, and rounded
+  sidebar;
 * confirmed power actions wired through `features/power/PowerService.qml`;
+* an Upchecker button and standalone `qreep-popup-upchecker` layer panel;
 * a Quickshell OSD with IPC methods for plain and JSON-backed messages;
 * feature-local theme sections exposed through `theme/QreepTheme.qml`;
 * an Unclaimed Bloom palette contract consisting of
@@ -425,14 +434,12 @@ Qreep currently has:
    Add the matching recipe, template deployment, and profile entry in
    Unclaimed Bloom so generated colors replace the current checked-in palette
    safely.
-4. **Finish the MonitorProfile feature.**
-   Wire the monitor profile button through `QreepModule`, keep its state and
-   theme bits in `features/monitorprofile/`, and make the active profile
-   obvious without turning the bar into a control panel with ambitions.
-5. **Add basic project documentation and validation notes.**
-   Fill `README.md` with the run command, current feature layout, event JSON
-   format, required icon/theme assumptions, Hyprland popup blur rule, IPC
-   examples, and known Wayland limitations.
+4. **Polish the MPRIS feature.**
+   Decide whether PipeWire output routing belongs in the tooltip, improve album
+   art fallbacks if players keep lying, and keep controls capability-aware.
+5. **Review layer rules after the popup split.**
+   Keep `qreep-bar` boring and unblurred. Give real popup/panel surfaces their
+   own namespaces and rules so `ignore_alpha` does not become a lifestyle.
 
 Keep these steps independent and reviewable. Qreep has enough moving pieces now
 that “one tiny cleanup while here” can reproduce when left unattended.
