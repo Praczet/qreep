@@ -1,17 +1,22 @@
 import QtQuick
 import QtQuick.Controls
 import Quickshell
+import Quickshell.Wayland
 
-PopupWindow {
+PanelWindow {
     id: rootUpcheckerPanel
 
     required property QtObject theme
-    required property Item anchorItem
     required property QtObject service
-    readonly property var screen: anchorItem.QsWindow.window.screen
-    readonly property point anchorScenePos: anchorItem.mapToItem(null, 0, 0)
-    readonly property int panelWidth: Math.max(1, Math.min(theme.upchecker.windowWidth, screen.width - theme.upchecker.screenMargin * 2))
-    readonly property int panelHeight: Math.max(1, screen.height - theme.upchecker.topMargin - theme.upchecker.bottomMargin)
+    property string filterText: ""
+    property bool filterVisible: false
+    readonly property string normalizedFilterText: filterText.trim()
+    readonly property bool excludeFilter: normalizedFilterText.charAt(0) === "~"
+    readonly property string filterNeedle: excludeFilter ? normalizedFilterText.slice(1).trim().toLowerCase() : normalizedFilterText.toLowerCase()
+    readonly property bool filterActive: filterNeedle.length > 0
+    readonly property var filteredUpdates: filteredUpdateList()
+    readonly property int panelWidth: Math.max(1, Math.min(theme.upchecker.windowWidth, width - theme.upchecker.screenMargin * 2))
+    readonly property int panelHeight: Math.max(1, height - theme.upchecker.topMargin - theme.upchecker.bottomMargin)
 
     function listPreview(values) {
         if (!Array.isArray(values) || values.length === 0)
@@ -22,29 +27,147 @@ PopupWindow {
         return values.length > limit ? shown + " +" + (values.length - limit) + " more" : shown;
     }
 
-    implicitWidth: rootUpcheckerPanel.screen.width
-    implicitHeight: rootUpcheckerPanel.screen.height
-    visible: false
-    color: "transparent"
-    grabFocus: true
-    onVisibleChanged: {
-        if (visible)
-            service.refresh();
+    function filteredUpdateList() {
+        const rows = [];
+
+        for (let index = 0; index < service.updates.length; index++) {
+            const update = service.updates[index];
+
+            if (matchesFilter(update))
+                rows.push({
+                    sourceIndex: index,
+                    name: update.name,
+                    oldVer: update.oldVer,
+                    newVer: update.newVer
+                });
+        }
+
+        return rows;
     }
 
-    anchor {
-        item: rootUpcheckerPanel.anchorItem
-        rect.x: -rootUpcheckerPanel.anchorScenePos.x
-        rect.y: -rootUpcheckerPanel.anchorScenePos.y
+    function matchesFilter(update) {
+        if (!filterActive)
+            return true;
+
+        const haystack = [update.name, update.oldVer, update.newVer].join(" ").toLowerCase();
+        const containsNeedle = haystack.indexOf(filterNeedle) >= 0;
+
+        return excludeFilter ? !containsNeedle : containsNeedle;
+    }
+
+    function currentFilteredIndex() {
+        for (let index = 0; index < filteredUpdates.length; index++) {
+            if (filteredUpdates[index].sourceIndex === service.selectedIndex)
+                return index;
+        }
+
+        return -1;
+    }
+
+    function selectFilteredIndex(index) {
+        if (filteredUpdates.length === 0)
+            return;
+
+        const boundedIndex = Math.max(0, Math.min(index, filteredUpdates.length - 1));
+        service.selectIndex(filteredUpdates[boundedIndex].sourceIndex);
+        updatesList.currentIndex = boundedIndex;
+        updatesList.positionViewAtIndex(boundedIndex, ListView.Contain);
+    }
+
+    function selectFilteredOffset(offset) {
+        const currentIndex = currentFilteredIndex();
+
+        if (currentIndex < 0) {
+            selectFilteredIndex(offset > 0 ? 0 : filteredUpdates.length - 1);
+            return;
+        }
+
+        selectFilteredIndex(currentIndex + offset);
+    }
+
+    function showFilter(initialText) {
+        filterVisible = true;
+        filterInput.forceActiveFocus();
+
+        if (initialText !== undefined && initialText.length > 0)
+            filterText += initialText;
+
+        filterInput.cursorPosition = filterInput.text.length;
+    }
+
+    function hideFilter() {
+        filterVisible = false;
+        background.forceActiveFocus();
+    }
+
+    function handleEscape() {
+        if (filterVisible) {
+            hideFilter();
+            return;
+        }
+
+        if (filterText.length > 0) {
+            filterText = "";
+            background.forceActiveFocus();
+            return;
+        }
+
+        visible = false;
+    }
+
+    function handlePanelKey(event) {
+        if (event.key === Qt.Key_Down) {
+            selectFilteredOffset(1);
+            event.accepted = true;
+            return;
+        }
+
+        if (event.key === Qt.Key_Up) {
+            selectFilteredOffset(-1);
+            event.accepted = true;
+            return;
+        }
+
+        if (event.modifiers !== Qt.NoModifier && event.modifiers !== Qt.ShiftModifier)
+            return;
+
+        if (event.text.length === 1 && event.text.charCodeAt(0) >= 32) {
+            showFilter(event.text);
+            event.accepted = true;
+            return;
+        }
+    }
+
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
+    }
+
+    visible: false
+    color: "transparent"
+
+    WlrLayershell.namespace: "qreep-popup-upchecker"
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    WlrLayershell.exclusiveZone: 0
+
+    onVisibleChanged: {
+        if (visible) {
+            service.refresh();
+            background.forceActiveFocus();
+        } else {
+            filterVisible = false;
+            filterText = "";
+        }
     }
 
     Shortcut {
         sequence: "Escape"
         context: Qt.WindowShortcut
         enabled: rootUpcheckerPanel.visible
-        onActivated: {
-            rootUpcheckerPanel.visible = false;
-        }
+        onActivated: rootUpcheckerPanel.handleEscape()
     }
 
     Rectangle {
@@ -52,6 +175,9 @@ PopupWindow {
 
         anchors.fill: parent
         color: "transparent"
+        focus: true
+
+        Keys.onPressed: event => rootUpcheckerPanel.handlePanelKey(event)
 
         TapHandler {
             onTapped: eventPoint => {
@@ -79,7 +205,9 @@ PopupWindow {
             Text {
                 id: title
 
-                text: "Updates Available: " + rootUpcheckerPanel.service.updates.length
+                text: rootUpcheckerPanel.filterActive
+                    ? "Updates Available: " + rootUpcheckerPanel.filteredUpdates.length + " / " + rootUpcheckerPanel.service.updates.length
+                    : "Updates Available: " + rootUpcheckerPanel.service.updates.length
                 color: theme.primaryText
                 font.pixelSize: theme.upchecker.titlePixelSize
                 font.weight: Font.DemiBold
@@ -91,6 +219,50 @@ PopupWindow {
                 }
             }
 
+            Rectangle {
+                id: restartBanner
+
+                visible: rootUpcheckerPanel.service.restartNeeded
+                anchors {
+                    top: title.bottom
+                    left: parent.left
+                    right: parent.right
+                    margins: theme.upchecker.contentPadding
+                    topMargin: theme.upchecker.titleBottomMargin
+                }
+                height: theme.upchecker.restartBannerHeight
+                radius: theme.upchecker.restartBannerRadius
+                color: Qt.rgba(theme.borg.warningColor.r, theme.borg.warningColor.g, theme.borg.warningColor.b, 0.16)
+                border.color: theme.borg.warningColor
+                border.width: theme.upchecker.borderWidth
+
+                Column {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: theme.upchecker.restartBannerPadding
+                        rightMargin: theme.upchecker.restartBannerPadding
+                    }
+                    spacing: 4
+
+                    Text {
+                        text: rootUpcheckerPanel.service.restartSummary
+                        color: theme.borg.warningColor
+                        font.pixelSize: theme.upchecker.restartTitlePixelSize
+                        font.weight: Font.DemiBold
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: rootUpcheckerPanel.service.restartDetails
+                        color: theme.calendarDayText
+                        font.pixelSize: theme.upchecker.restartDetailPixelSize
+                        elide: Text.ElideRight
+                    }
+                }
+            }
+
             Row {
                 id: content
 
@@ -99,7 +271,7 @@ PopupWindow {
                 anchors {
                     left: parent.left
                     right: parent.right
-                    top: title.bottom
+                    top: rootUpcheckerPanel.service.restartNeeded ? restartBanner.bottom : title.bottom
                     bottom: actions.top
                     margins: theme.upchecker.contentPadding
                     topMargin: theme.upchecker.titleBottomMargin
@@ -128,21 +300,29 @@ PopupWindow {
                         font.pixelSize: theme.upchecker.emptyTextPixelSize
                     }
 
+                    Text {
+                        visible: !rootUpcheckerPanel.service.loadingUpdates && rootUpcheckerPanel.service.updates.length > 0 && rootUpcheckerPanel.filteredUpdates.length === 0
+                        anchors.centerIn: parent
+                        text: "No updates match the filter."
+                        color: theme.secondaryText
+                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                    }
+
                     ListView {
                         id: updatesList
 
                         anchors.fill: parent
-                        visible: !rootUpcheckerPanel.service.loadingUpdates && rootUpcheckerPanel.service.updates.length > 0
+                        visible: !rootUpcheckerPanel.service.loadingUpdates && rootUpcheckerPanel.filteredUpdates.length > 0
                         clip: true
                         spacing: theme.upchecker.rowSpacing
-                        model: rootUpcheckerPanel.service.updates
+                        model: rootUpcheckerPanel.filteredUpdates
 
                         delegate: Rectangle {
                             id: updateRow
 
                             required property var modelData
                             required property int index
-                            readonly property bool selected: index === rootUpcheckerPanel.service.selectedIndex
+                            readonly property bool selected: modelData.sourceIndex === rootUpcheckerPanel.service.selectedIndex
 
                             width: ListView.view.width - theme.upchecker.scrollbarReserve
                             height: theme.upchecker.rowHeight
@@ -198,7 +378,7 @@ PopupWindow {
                             }
 
                             TapHandler {
-                                onTapped: rootUpcheckerPanel.service.selectIndex(updateRow.index)
+                                onTapped: rootUpcheckerPanel.selectFilteredIndex(updateRow.index)
                             }
                         }
 
@@ -455,6 +635,96 @@ PopupWindow {
 
                     TapHandler {
                         onTapped: rootUpcheckerPanel.service.update()
+                    }
+                }
+            }
+
+            Rectangle {
+                id: filterBar
+
+                x: (parent.width - width) / 2
+                y: rootUpcheckerPanel.filterVisible
+                    ? parent.height - theme.upchecker.filterBottomOffset - height
+                    : parent.height - theme.upchecker.filterHiddenBottomInset - height
+                width: Math.min(theme.upchecker.filterWidth, parent.width - theme.upchecker.contentPadding * 2)
+                height: theme.upchecker.filterHeight
+                radius: theme.upchecker.filterRadius
+                color: theme.moduleBackground
+                border.color: rootUpcheckerPanel.filterActive ? theme.eventIndicator : theme.moduleHoverBackground
+                border.width: theme.upchecker.borderWidth
+                opacity: rootUpcheckerPanel.filterVisible ? 1 : 0
+                z: 20
+
+                Behavior on y {
+                    NumberAnimation {
+                        duration: theme.upchecker.filterAnimationDuration
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: theme.upchecker.filterAnimationDuration
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Row {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: theme.upchecker.filterHorizontalPadding
+                        rightMargin: theme.upchecker.filterHorizontalPadding
+                    }
+                    spacing: theme.upchecker.versionSpacing
+
+                    Text {
+                        id: filterModeLabel
+
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: rootUpcheckerPanel.excludeFilter ? "hide" : "show"
+                        color: rootUpcheckerPanel.excludeFilter ? theme.borg.warningColor : theme.eventIndicator
+                        font.pixelSize: theme.upchecker.filterHintPixelSize
+                        font.weight: Font.DemiBold
+                    }
+
+                    Item {
+                        width: parent.width - filterModeLabel.width - parent.spacing
+                        height: filterInput.implicitHeight
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Text {
+                            visible: filterInput.text.length === 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "type to filter, prefix ~ to hide matches"
+                            color: theme.secondaryText
+                            font.pixelSize: theme.upchecker.filterHintPixelSize
+                        }
+
+                        TextInput {
+                            id: filterInput
+
+                            anchors.fill: parent
+                            text: rootUpcheckerPanel.filterText
+                            color: theme.calendarDayText
+                            selectionColor: theme.calendarTodayBackground
+                            selectedTextColor: theme.calendarTodayText
+                            font.pixelSize: theme.upchecker.filterTextPixelSize
+                            clip: true
+
+                            onTextChanged: {
+                                if (rootUpcheckerPanel.filterText !== text)
+                                    rootUpcheckerPanel.filterText = text;
+                            }
+
+                            Keys.onReturnPressed: rootUpcheckerPanel.hideFilter()
+                            Keys.onEnterPressed: rootUpcheckerPanel.hideFilter()
+                            Keys.onPressed: event => {
+                                if (event.key === Qt.Key_Down || event.key === Qt.Key_Up)
+                                    rootUpcheckerPanel.handlePanelKey(event);
+                            }
+                        }
                     }
                 }
             }

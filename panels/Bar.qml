@@ -54,6 +54,10 @@ PanelWindow {
         log: qreepLog
         updateTerminalCommand: rootBar.theme.upchecker.updateTerminalCommand
         updateCommand: rootBar.theme.upchecker.updateCommand
+        restartCheckCommand: rootBar.theme.upchecker.restartCheckCommand
+        restartCheckTimezone: rootBar.theme.upchecker.restartCheckTimezone
+        restartSessionPackages: rootBar.theme.upchecker.restartSessionPackages
+        restartRebootPackages: rootBar.theme.upchecker.restartRebootPackages
     }
 
     anchors {
@@ -210,7 +214,6 @@ PanelWindow {
             id: upcheckerPanel
 
             theme: rootBar.theme
-            anchorItem: overlayLayer
             service: upcheckerService
         }
 

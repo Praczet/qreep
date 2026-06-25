@@ -5,12 +5,12 @@ Components.QreepModule {
     id: rootUpcheckerButton
 
     required property QtObject service
+    readonly property bool restartOnly: service.updates.length === 0 && service.restartNeeded
+    readonly property color statusColor: restartOnly ? theme.borg.warningColor : theme.primaryText
 
     tooltipTitle: "Upchecker"
-    tooltipContent: service.updates.length + " package updates available"
+    tooltipContent: restartOnly ? service.restartSummary : service.updates.length + " package updates available"
     tooltipStyle: "warning"
-    transformOrigin: Item.Center
-
     function pulse() {
         pulseAnimation.restart();
     }
@@ -39,7 +39,7 @@ Components.QreepModule {
                 id: upcheckerIcon
 
                 text: "󰮯"
-                color: rootUpcheckerButton.theme.primaryText
+                color: rootUpcheckerButton.statusColor
                 font.family: rootUpcheckerButton.theme.iconFontFamily
                 font.pixelSize: rootUpcheckerButton.theme.upchecker.buttonIconPixelSize
             }
@@ -48,7 +48,7 @@ Components.QreepModule {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: rootUpcheckerButton.service.updates.length
-            color: rootUpcheckerButton.theme.primaryText
+            color: rootUpcheckerButton.statusColor
             font.pixelSize: rootUpcheckerButton.theme.upchecker.buttonTextPixelSize
             font.weight: Font.DemiBold
         }
@@ -59,7 +59,7 @@ Components.QreepModule {
 
         ParallelAnimation {
             NumberAnimation {
-                target: rootUpcheckerButton
+                target: upcheckerIconWrapper
                 property: "scale"
                 from: 1
                 to: rootUpcheckerButton.theme.upchecker.pulseScale
@@ -79,7 +79,7 @@ Components.QreepModule {
 
         ParallelAnimation {
             NumberAnimation {
-                target: rootUpcheckerButton
+                target: upcheckerIconWrapper
                 property: "scale"
                 from: rootUpcheckerButton.theme.upchecker.pulseScale
                 to: rootUpcheckerButton.theme.upchecker.pulseSettleScale
@@ -98,7 +98,7 @@ Components.QreepModule {
 
         ParallelAnimation {
             NumberAnimation {
-                target: rootUpcheckerButton
+                target: upcheckerIconWrapper
                 property: "scale"
                 from: rootUpcheckerButton.theme.upchecker.pulseSettleScale
                 to: 1
