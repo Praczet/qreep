@@ -5,6 +5,8 @@ import "../features/clock" as ClockFeature
 import "../features/osd" as OsdFeature
 import "../features/power" as PowerFeature
 import "../features/upchecker" as UpcheckerFeature
+import "../features/monitorprofile" as MonitorProfileFeature
+import "../features/mpris" as MprisFeature
 import "colors" as Colors
 
 QtObject {
@@ -40,6 +42,8 @@ QtObject {
     readonly property QtObject osd: OsdFeature.OsdTheme {}
     readonly property QtObject borg: BorgFeature.BorgTheme {}
     readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {}
+    readonly property QtObject monitorProfile: MonitorProfileFeature.MonitorProfileTheme {}
+    readonly property QtObject mpris: MprisFeature.MprisTheme {}
 
     readonly property string iconFontFamily: "FiraCode Nerd Font"
     readonly property int animationFastDuration: 100

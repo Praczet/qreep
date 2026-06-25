@@ -7,6 +7,8 @@ import "../features/clock" as ClockFeature
 import "../features/osd" as OsdFeature
 import "../features/power" as PowerFeature
 import "../features/upchecker" as UpcheckerFeature
+import "../features/monitorprofile" as MonitorProfileFeature
+import "../features/mpris" as MprisFeature
 
 PanelWindow {
     id: rootBar
@@ -41,6 +43,15 @@ PanelWindow {
         log: qreepLog
     }
 
+    MonitorProfileFeature.MonitorProfileService {
+        id: monitorProfileService
+        log: qreepLog
+    }
+
+    MprisFeature.MprisService {
+        id: mprisService
+    }
+
     BorgFeature.BorgService {
         id: borgService
         log: qreepLog
@@ -66,13 +77,21 @@ PanelWindow {
         right: true
     }
 
-    implicitHeight: rootBar.theme.bar.height
+    implicitHeight: rootBar.theme.bar.height + rootBar.theme.bar.topPadding
     color: "transparent"
 
     WlrLayershell.namespace: "qreep-bar"
 
     Rectangle {
-        anchors.fill: parent
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+            leftMargin: rootBar.theme.bar.horizontalPadding
+            rightMargin: rootBar.theme.bar.horizontalPadding
+        }
+        height: rootBar.theme.bar.height
+        radius: rootBar.theme.bar.backgroundRadius
         color: rootBar.theme.barBackground
 
         Row {
@@ -111,6 +130,29 @@ PanelWindow {
                 onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
                 onTooltipHideRequested: sharedTooltip.hideLater()
             }
+
+            MprisFeature.MprisButton {
+                id: mprisButton
+
+                theme: rootBar.theme
+                service: mprisService
+
+                onClicked: {
+                    mprisService.togglePlaying();
+                    sharedTooltip.hideLater();
+                    mprisTooltip.hideLater();
+                }
+                onRightClicked: {
+                    mprisPanel.visible = !mprisPanel.visible;
+                    sharedTooltip.hideLater();
+                    mprisTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => {
+                    sharedTooltip.hideLater();
+                    mprisTooltip.showFor(anchorItem);
+                }
+                onTooltipHideRequested: mprisTooltip.hideLater()
+            }
         }
 
         Row {
@@ -131,6 +173,20 @@ PanelWindow {
 
                 onClicked: {
                     upcheckerPanel.visible = !upcheckerPanel.visible;
+                    sharedTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+            }
+
+            MonitorProfileFeature.MonitorProfileButton {
+                id: monitorProfileButton
+
+                theme: rootBar.theme
+                service: monitorProfileService
+
+                onClicked: {
+                    // monitorProfileService.applyNextProfile();
                     sharedTooltip.hideLater();
                 }
                 onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
@@ -193,6 +249,13 @@ PanelWindow {
             theme: rootBar.theme
         }
 
+        MprisFeature.MprisTooltip {
+            id: mprisTooltip
+
+            theme: rootBar.theme
+            service: mprisService
+        }
+
         ClockFeature.CalendarPopup {
             id: calendarPopup
 
@@ -205,7 +268,6 @@ PanelWindow {
             id: powerPanel
 
             theme: rootBar.theme
-            anchorItem: powerButton
 
             onActionRequested: action => powerService.request(action)
         }
@@ -215,6 +277,14 @@ PanelWindow {
 
             theme: rootBar.theme
             service: upcheckerService
+        }
+
+        MprisFeature.MprisPanel {
+            id: mprisPanel
+
+            theme: rootBar.theme
+            service: mprisService
+            anchorItem: mprisButton
         }
 
         Connections {

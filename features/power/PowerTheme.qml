@@ -5,6 +5,9 @@ QtObject {
 
     readonly property int buttonIconPixelSize: 24
     readonly property int sidebarWidth: 360
+    readonly property int sidebarMargin: 15
+    readonly property int sidebarRadius: 18
+    readonly property int sidebarBorderWidth: 1
     readonly property real sidebarOpacity: 0.82
     readonly property int cardWidth: 260
     readonly property int cardPadding: 20

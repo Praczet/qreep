@@ -1,13 +1,13 @@
 import QtQuick
 import QtQuick.Effects
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Widgets
 
-PopupWindow {
+PanelWindow {
     id: rootPowerPanel
 
     required property QtObject theme
-    required property Item anchorItem
 
     signal actionRequested(string action)
     property var pendingAction: null
@@ -76,21 +76,27 @@ PopupWindow {
         pendingAction = null;
     }
 
-    anchor {
-        item: rootPowerPanel.anchorItem
-        rect.x: rootPowerPanel.anchorItem.width - rootPowerPanel.width
-        rect.y: -rootPowerPanel.anchorItem.y
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
     }
 
-    implicitWidth: theme.power.sidebarWidth
-    implicitHeight: anchorItem.QsWindow.window ? anchorItem.QsWindow.window.screen.height : 1
     visible: false
     color: "transparent"
-    grabFocus: true
+
+    WlrLayershell.namespace: "qreep-popup-power"
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    WlrLayershell.exclusiveZone: 0
 
     onVisibleChanged: {
-        if (!visible)
+        if (visible) {
+            background.forceActiveFocus();
+        } else {
             pendingAction = null;
+        }
     }
 
     Shortcut {
@@ -108,14 +114,36 @@ PopupWindow {
     }
 
     Rectangle {
+        id: background
+
         anchors.fill: parent
-        color: Qt.rgba(rootPowerPanel.theme.calendarBackground.r, rootPowerPanel.theme.calendarBackground.g, rootPowerPanel.theme.calendarBackground.b, rootPowerPanel.theme.power.sidebarOpacity)
+        color: "transparent"
+        focus: true
+
+        TapHandler {
+            onTapped: rootPowerPanel.visible = false
+        }
 
         Rectangle {
             id: sidebar
 
-            anchors.fill: parent
-            color: "transparent"
+            anchors {
+                top: parent.top
+                right: parent.right
+                bottom: parent.bottom
+                topMargin: rootPowerPanel.theme.power.sidebarMargin
+                rightMargin: rootPowerPanel.theme.power.sidebarMargin
+                bottomMargin: rootPowerPanel.theme.power.sidebarMargin
+            }
+            width: rootPowerPanel.theme.power.sidebarWidth
+            radius: rootPowerPanel.theme.power.sidebarRadius
+            color: Qt.rgba(rootPowerPanel.theme.calendarBackground.r, rootPowerPanel.theme.calendarBackground.g, rootPowerPanel.theme.calendarBackground.b, rootPowerPanel.theme.power.sidebarOpacity)
+            border.width: rootPowerPanel.theme.power.sidebarBorderWidth
+            border.color: rootPowerPanel.theme.moduleHoverBackground
+
+            TapHandler {
+                onTapped: eventPoint => eventPoint.accepted = true
+            }
 
             Rectangle {
                 id: actionCard

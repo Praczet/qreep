@@ -425,9 +425,10 @@ Qreep currently has:
    Add the matching recipe, template deployment, and profile entry in
    Unclaimed Bloom so generated colors replace the current checked-in palette
    safely.
-4. **Add one practical status module.**
-   Prefer audio volume or battery. Use `QreepModule`, the shared tooltip, and
-   existing theme tokens before inventing another wrapper.
+4. **Finish the MonitorProfile feature.**
+   Wire the monitor profile button through `QreepModule`, keep its state and
+   theme bits in `features/monitorprofile/`, and make the active profile
+   obvious without turning the bar into a control panel with ambitions.
 5. **Add basic project documentation and validation notes.**
    Fill `README.md` with the run command, current feature layout, event JSON
    format, required icon/theme assumptions, Hyprland popup blur rule, IPC
