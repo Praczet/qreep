@@ -22,11 +22,9 @@ Change default position, duration, icon sizing, and panel dimensions in
 
 ## Wiring
 
-`shell.qml` hosts `Osd.qml`. `shell.qml` hosts `Osd.qml`. `Bar.qml` hosts `OsdTestButton` and emits a test request.
+`shell.qml` hosts `Osd.qml`. `Bar.qml` hosts `OsdTestButton` and emits a test request.
 
 Note: This is a top-level module. Sources live under `modules/osd/`.
-
-Note: This is a bar-owned feature. Sources live under `modules/bar/features/osd/`.
 
 Theme is exposed through:
 
