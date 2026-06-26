@@ -138,9 +138,9 @@ PanelWindow {
             }
             width: rootPowerPanel.theme.power.sidebarWidth
             radius: rootPowerPanel.theme.power.sidebarRadius
-            color: Qt.rgba(rootPowerPanel.theme.calendarBackground.r, rootPowerPanel.theme.calendarBackground.g, rootPowerPanel.theme.calendarBackground.b, rootPowerPanel.theme.power.sidebarOpacity)
+            color: rootPowerPanel.theme.power.backgroundColor
             border.width: rootPowerPanel.theme.power.sidebarBorderWidth
-            border.color: rootPowerPanel.theme.moduleHoverBackground
+            border.color: rootPowerPanel.theme.power.borderColor
 
             MouseArea {
                 anchors.fill: parent

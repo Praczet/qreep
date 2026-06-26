@@ -1,5 +1,6 @@
 import QtQuick
 import "../core" as Core
+import "../modules/dashboard" as DashboardFeature
 import "../modules/bar/features/borg" as BorgFeature
 import "../modules/bar/features/clock" as ClockFeature
 import "../modules/osd" as OsdFeature
@@ -34,19 +35,34 @@ QtObject {
     readonly property color powerActionText: paletteColor("powerActionText", "#2e3440")
     readonly property color powerActionIconColor: paletteColor("powerActionIconColor", "#3e4554")
     readonly property color powerConfirmText: paletteColor("powerConfirmText", "#d8dee9")
+    readonly property color overlaySurfaceBackground: Qt.rgba(calendarBackground.r, calendarBackground.g, calendarBackground.b, power.sidebarOpacity)
+    readonly property color overlaySurfaceBorder: moduleHoverBackground
 
     readonly property QtObject bar: BarTheme {}
     readonly property QtObject module: ModuleTheme {}
     readonly property QtObject clock: ClockFeature.ClockTheme {}
-    readonly property QtObject power: PowerFeature.PowerTheme {}
+    readonly property QtObject dashboard: DashboardFeature.DashboardTheme {
+        backgroundColor: rootQreepTheme.overlaySurfaceBackground
+        borderColor: rootQreepTheme.overlaySurfaceBorder
+    }
+    readonly property QtObject power: PowerFeature.PowerTheme {
+        backgroundColor: rootQreepTheme.overlaySurfaceBackground
+        borderColor: rootQreepTheme.overlaySurfaceBorder
+    }
     readonly property QtObject calendar: ClockFeature.CalendarTheme {}
     readonly property QtObject tooltip: TooltipTheme {}
     readonly property QtObject osd: OsdFeature.OsdTheme {}
     readonly property QtObject borg: BorgFeature.BorgTheme {}
-    readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {}
+    readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {
+        backgroundColor: rootQreepTheme.overlaySurfaceBackground
+        borderColor: rootQreepTheme.overlaySurfaceBorder
+    }
     readonly property QtObject monitorProfile: MonitorProfileFeature.MonitorProfileTheme {}
     readonly property QtObject mpris: MprisFeature.MprisTheme {}
-    readonly property QtObject workspaces: WorkspacesFeature.WorkspacesTheme {}
+    readonly property QtObject workspaces: WorkspacesFeature.WorkspacesTheme {
+        backgroundColor: rootQreepTheme.overlaySurfaceBackground
+        borderColor: rootQreepTheme.overlaySurfaceBorder
+    }
     readonly property QtObject launcher: LauncherFeature.LauncherTheme {}
 
     readonly property string iconFontFamily: "FiraCode Nerd Font"

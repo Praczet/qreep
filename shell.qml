@@ -1,4 +1,5 @@
 import Quickshell
+import "modules/dashboard" as DashboardModule
 import "modules/osd" as OsdModule
 import "modules/bar" as BarModule
 import "theme" as Theme
@@ -11,6 +12,12 @@ ShellRoot {
     }
 
     BarModule.Bar {
+        theme: qreepTheme
+    }
+
+    DashboardModule.Dashboard {
+        id: dashboard
+
         theme: qreepTheme
     }
 

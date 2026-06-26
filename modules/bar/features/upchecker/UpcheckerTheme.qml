@@ -16,6 +16,8 @@ QtObject {
     readonly property int screenMargin: 48
     readonly property int topMargin: 104
     readonly property int bottomMargin: 48
+    property color backgroundColor: "#242933"
+    property color borderColor: "#3b4252"
     readonly property int radius: 16
     readonly property int borderWidth: 1
     readonly property int contentPadding: 20

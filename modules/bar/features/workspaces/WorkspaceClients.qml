@@ -1,8 +1,9 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Widgets
 
-PopupWindow {
+PanelWindow {
     id: rootWorkspaceClients
 
     required property QtObject theme
@@ -10,18 +11,49 @@ PopupWindow {
 
     property Item anchorItem
     property var workspace: ({ clients: [] })
+    property real popupX: 0
+    property real popupY: 0
     readonly property var clients: workspace && workspace.clients ? workspace.clients : []
+    readonly property real popupWidth: rootWorkspaceClients.theme.workspaces.tooltipWidth
+    readonly property real popupHeight: tooltipLayout.implicitHeight + rootWorkspaceClients.theme.tooltip.verticalPadding * 2
+    readonly property real popupMargin: rootWorkspaceClients.theme.bar.topPadding
 
-    anchor {
-        item: rootWorkspaceClients.anchorItem
-        rect.x: rootWorkspaceClients.anchorItem ? rootWorkspaceClients.anchorItem.width / 2 - rootWorkspaceClients.width / 2 : 0
-        rect.y: rootWorkspaceClients.anchorItem ? rootWorkspaceClients.anchorItem.height + rootWorkspaceClients.theme.tooltip.offsetY : 0
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
     }
 
-    implicitWidth: rootWorkspaceClients.theme.workspaces.tooltipWidth
-    implicitHeight: tooltipLayout.implicitHeight + rootWorkspaceClients.theme.tooltip.verticalPadding * 2
+    visible: false
     color: "transparent"
-    grabFocus: false
+
+    WlrLayershell.namespace: "qreep-popup-workspace-clients"
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    WlrLayershell.exclusiveZone: 0
+
+    onWidthChanged: {
+        if (visible)
+            updatePosition();
+    }
+
+    onHeightChanged: {
+        if (visible)
+            updatePosition();
+    }
+
+    onPopupHeightChanged: {
+        if (visible)
+            updatePosition();
+    }
+
+    onVisibleChanged: {
+        if (!visible) {
+            rootWorkspaceClients.anchorItem = null;
+            rootWorkspaceClients.workspace = ({ clients: [] });
+        }
+    }
 
     function showFor(anchorItem, workspace) {
         if (!anchorItem)
@@ -30,6 +62,8 @@ PopupWindow {
         rootWorkspaceClients.anchorItem = anchorItem;
         rootWorkspaceClients.workspace = workspace || ({ clients: [] });
         rootWorkspaceClients.visible = true;
+        rootWorkspaceClients.updatePosition();
+        background.forceActiveFocus();
     }
 
     function hideLater() {
@@ -38,8 +72,17 @@ PopupWindow {
 
     function finishHide() {
         rootWorkspaceClients.visible = false;
-        rootWorkspaceClients.anchorItem = null;
-        rootWorkspaceClients.workspace = ({ clients: [] });
+    }
+
+    function updatePosition() {
+        if (!rootWorkspaceClients.anchorItem)
+            return;
+
+        const anchorPoint = rootWorkspaceClients.anchorItem.mapToGlobal(Qt.point(rootWorkspaceClients.anchorItem.width / 2, 0));
+        const preferredX = anchorPoint.x - rootWorkspaceClients.popupWidth / 2 + rootWorkspaceClients.popupMargin;
+
+        rootWorkspaceClients.popupX = Math.max(rootWorkspaceClients.popupMargin, Math.min(preferredX, rootWorkspaceClients.width - rootWorkspaceClients.popupWidth - rootWorkspaceClients.popupMargin));
+        rootWorkspaceClients.popupY = rootWorkspaceClients.popupMargin;
     }
 
     function appLabel(client) {
@@ -61,15 +104,43 @@ PopupWindow {
         return title.length > 0 ? title : appLabel(client);
     }
 
+    Shortcut {
+        sequence: "Escape"
+        context: Qt.WindowShortcut
+        enabled: rootWorkspaceClients.visible
+        onActivated: rootWorkspaceClients.finishHide()
+    }
+
+    Rectangle {
+        id: background
+
+        anchors.fill: parent
+        color: "transparent"
+        focus: true
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: rootWorkspaceClients.finishHide()
+        }
+    }
+
     Rectangle {
         id: tooltipBody
 
-        anchors.fill: parent
+        x: rootWorkspaceClients.popupX
+        y: rootWorkspaceClients.popupY
+        width: rootWorkspaceClients.popupWidth
+        height: rootWorkspaceClients.popupHeight
         transformOrigin: Item.Center
         radius: rootWorkspaceClients.theme.tooltip.radius
-        color: rootWorkspaceClients.theme.calendarBackground
+        color: rootWorkspaceClients.theme.workspaces.backgroundColor
         border.width: rootWorkspaceClients.theme.tooltip.borderWidth
-        border.color: rootWorkspaceClients.theme.moduleHoverBackground
+        border.color: rootWorkspaceClients.theme.workspaces.borderColor
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: mouse => mouse.accepted = true
+        }
 
         Column {
             id: tooltipLayout

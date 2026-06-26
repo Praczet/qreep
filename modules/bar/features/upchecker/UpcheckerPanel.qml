@@ -198,8 +198,8 @@ PanelWindow {
             width: rootUpcheckerPanel.panelWidth
             height: rootUpcheckerPanel.panelHeight
             radius: theme.upchecker.radius
-            color: theme.moduleHoverBackground
-            border.color: theme.moduleBackground
+            color: theme.upchecker.backgroundColor
+            border.color: theme.upchecker.borderColor
             border.width: theme.upchecker.borderWidth
 
             Text {

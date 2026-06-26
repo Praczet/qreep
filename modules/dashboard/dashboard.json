@@ -1,0 +1,79 @@
+{
+  "blocks": [
+    {
+      "id": "clock-large",
+      "type": "fake",
+      "title": "Clock",
+      "text": "Large clock block placeholder",
+      "preset": "large",
+      "x": 80,
+      "y": 110,
+      "width": 380,
+      "height": 145,
+      "from": "left",
+      "showTitle": false,
+      "showBackground": true,
+      "showBorder": true
+    },
+    {
+      "id": "weather",
+      "type": "fake",
+      "title": "Weather",
+      "text": "Weather preview block. Real weather can wait until the canvas behaves.",
+      "preset": "compact",
+      "x": 80,
+      "y": 300,
+      "width": 380,
+      "height": 230,
+      "from": "bottom-left",
+      "showTitle": true,
+      "showBackground": true,
+      "showBorder": true
+    },
+    {
+      "id": "aegis-summary",
+      "type": "fake",
+      "title": "Aegis",
+      "text": "System overview preset placeholder.",
+      "preset": "wide",
+      "x": 500,
+      "y": 110,
+      "width": 720,
+      "height": 420,
+      "from": "top",
+      "showTitle": true,
+      "showBackground": true,
+      "showBorder": true
+    },
+    {
+      "id": "potato-weight",
+      "type": "fake",
+      "title": "POTATO weight",
+      "text": "Chart block placeholder for ~/.cache/potato/weight.svg.",
+      "preset": "chart",
+      "x": 1260,
+      "y": 110,
+      "width": 660,
+      "height": 260,
+      "from": "right",
+      "showTitle": true,
+      "showBackground": true,
+      "showBorder": true
+    },
+    {
+      "id": "potato-steps",
+      "type": "fake",
+      "title": "POTATO steps",
+      "text": "Another deliberately placed chart block.",
+      "preset": "chart",
+      "x": 1260,
+      "y": 400,
+      "width": 660,
+      "height": 260,
+      "from": "right",
+      "showTitle": true,
+      "showBackground": true,
+      "showBorder": true
+    }
+  ]
+}

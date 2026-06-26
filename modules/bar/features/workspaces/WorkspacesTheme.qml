@@ -12,6 +12,8 @@ QtObject {
     readonly property int refreshInterval: 10000
     readonly property int eventRefreshDelay: 60
     readonly property int refreshAfterDispatchDelay: 120
+    property color backgroundColor: "#242933"
+    property color borderColor: "#3b4252"
     readonly property real activeOpacity: 1
     readonly property real inactiveOpacity: 0.42
     readonly property real emptyOpacity: 0.16

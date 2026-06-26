@@ -9,6 +9,8 @@ QtObject {
     readonly property int sidebarRadius: 18
     readonly property int sidebarBorderWidth: 1
     readonly property real sidebarOpacity: 0.82
+    property color backgroundColor: "#242933"
+    property color borderColor: "#3b4252"
     readonly property int cardWidth: 260
     readonly property int cardPadding: 20
     readonly property int cardRadius: 18
