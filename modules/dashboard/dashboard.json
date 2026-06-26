@@ -1,10 +1,10 @@
 {
   "blocks": [
     {
-      "id": "clock-large",
-      "type": "fake",
+      "id": "clock-analog",
+      "type": "clock",
       "title": "Clock",
-      "text": "Large clock block placeholder",
+      "text": "",
       "preset": "large",
       "anchorPoint": "top-left",
       "dx": 80,
@@ -22,7 +22,7 @@
       "title": "Weather",
       "text": "Weather preview block. Real weather can wait until the canvas behaves.",
       "preset": "compact",
-      "anchorPoint": "top-left",
+      "anchorPoint": "top-center",
       "dx": 80,
       "dy": 285,
       "width": 426,
@@ -42,50 +42,7 @@
         "condition": "Overcast",
         "wind": "Wind 9 km/h",
         "icon": "weather-overcast-symbolic",
-        "forecast": [
-          {
-            "day": "Sat, Jun 27",
-            "low": 20,
-            "high": 38,
-            "icon": "weather-overcast-symbolic"
-          },
-          {
-            "day": "Sun, Jun 28",
-            "low": 24,
-            "high": 33,
-            "icon": "weather-clouds-symbolic"
-          },
-          {
-            "day": "Mon, Jun 29",
-            "low": 19,
-            "high": 25,
-            "icon": "weather-few-clouds-symbolic"
-          },
-          {
-            "day": "Tue, Jun 30",
-            "low": 16,
-            "high": 26,
-            "icon": "weather-showers-symbolic"
-          },
-          {
-            "day": "Wed, Jul 01",
-            "low": 15,
-            "high": 25,
-            "icon": "weather-clear-symbolic"
-          },
-          {
-            "day": "Thu, Jul 02",
-            "low": 16,
-            "high": 26,
-            "icon": "weather-clear-symbolic"
-          },
-          {
-            "day": "Fri, Jul 03",
-            "low": 17,
-            "high": 24,
-            "icon": "weather-showers-symbolic"
-          }
-        ]
+        "forecast": []
       }
     },
     {

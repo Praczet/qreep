@@ -1,5 +1,6 @@
 import QtQuick
 import "./features/weather" as WeatherFeature
+import "./features/clock" as ClockFeature
 
 Rectangle {
     id: rootDashboardCard
@@ -125,6 +126,13 @@ Rectangle {
 
         WeatherFeature.WeatherBlock {
             visible: rootDashboardCard.block.type === "weather"
+            width: parent.width
+            theme: rootDashboardCard.theme
+            config: rootDashboardCard.block.config || ({})
+        }
+
+        ClockFeature.ClockBlock {
+            visible: rootDashboardCard.block.type === "clock"
             width: parent.width
             theme: rootDashboardCard.theme
             config: rootDashboardCard.block.config || ({})
