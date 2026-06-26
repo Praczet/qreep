@@ -4,7 +4,7 @@ import Quickshell.Wayland
 import "../../core" as Core
 import "./features/borg" as BorgFeature
 import "./features/clock" as ClockFeature
-import "./features/osd" as OsdFeature
+import "../osd" as OsdFeature
 import "./features/power" as PowerFeature
 import "./features/upchecker" as UpcheckerFeature
 import "./features/monitorprofile" as MonitorProfileFeature

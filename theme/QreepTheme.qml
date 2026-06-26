@@ -2,7 +2,7 @@ import QtQuick
 import "../core" as Core
 import "../modules/bar/features/borg" as BorgFeature
 import "../modules/bar/features/clock" as ClockFeature
-import "../modules/bar/features/osd" as OsdFeature
+import "../modules/osd" as OsdFeature
 import "../modules/bar/features/power" as PowerFeature
 import "../modules/bar/features/upchecker" as UpcheckerFeature
 import "../modules/bar/features/monitorprofile" as MonitorProfileFeature
