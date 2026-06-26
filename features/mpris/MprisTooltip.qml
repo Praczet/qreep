@@ -116,31 +116,6 @@ PopupWindow {
                     font.pixelSize: rootMprisTooltip.theme.mpris.tooltipBodyPixelSize
                     lineHeight: rootMprisTooltip.theme.tooltip.contentLineHeight
                 }
-
-                Row {
-                    spacing: rootMprisTooltip.theme.mpris.controlSpacing
-
-                    MprisControlButton {
-                        theme: rootMprisTooltip.theme
-                        icon: ""
-                        enabled: rootMprisTooltip.service.canGoPrevious
-                        onTriggered: rootMprisTooltip.service.previous()
-                    }
-
-                    MprisControlButton {
-                        theme: rootMprisTooltip.theme
-                        icon: rootMprisTooltip.service.toggleActionIcon
-                        enabled: rootMprisTooltip.service.canTogglePlaying
-                        onTriggered: rootMprisTooltip.service.togglePlaying()
-                    }
-
-                    MprisControlButton {
-                        theme: rootMprisTooltip.theme
-                        icon: ""
-                        enabled: rootMprisTooltip.service.canGoNext
-                        onTriggered: rootMprisTooltip.service.next()
-                    }
-                }
             }
         }
     }
