@@ -9,6 +9,8 @@ import "../features/power" as PowerFeature
 import "../features/upchecker" as UpcheckerFeature
 import "../features/monitorprofile" as MonitorProfileFeature
 import "../features/mpris" as MprisFeature
+import "../features/workspaces" as WorkspacesFeature
+import "../features/launcher" as LauncherFeature
 
 PanelWindow {
     id: rootBar
@@ -50,6 +52,24 @@ PanelWindow {
 
     MprisFeature.MprisService {
         id: mprisService
+    }
+    LauncherFeature.LauncherService {
+        id: launcherService
+        log: qreepLog
+    }
+
+    WorkspacesFeature.WorkspaceService {
+        id: workspaceService
+        log: qreepLog
+        showEmptyWorkspaces: rootBar.theme.workspaces.showEmptyWorkspaces
+        showSpecialWorkspaces: rootBar.theme.workspaces.showSpecialWorkspaces
+        normalWorkspaceStart: rootBar.theme.workspaces.normalWorkspaceStart
+        normalWorkspaceEnd: rootBar.theme.workspaces.normalWorkspaceEnd
+        useHyprlandEvents: rootBar.theme.workspaces.useHyprlandEvents
+        refreshInterval: rootBar.theme.workspaces.refreshInterval
+        eventRefreshDelay: rootBar.theme.workspaces.eventRefreshDelay
+        refreshAfterDispatchDelay: rootBar.theme.workspaces.refreshAfterDispatchDelay
+        tooltipMaxWindows: rootBar.theme.workspaces.tooltipMaxWindows
     }
 
     BorgFeature.BorgService {
@@ -103,14 +123,30 @@ PanelWindow {
             }
             spacing: rootBar.theme.bar.itemSpacing
 
-            OsdFeature.OsdTestButton {
-                id: osdTestButton
+            LauncherFeature.LauncherButton {
+                id: launcherButton
 
                 theme: rootBar.theme
 
-                onClicked: rootBar.osdTestRequested("Qreep OSD test", rootBar.theme.osd.defaultDuration)
+                onClicked: {
+                    launcherService.launchLauncher();
+                    sharedTooltip.hideLater();
+                }
                 onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
                 onTooltipHideRequested: sharedTooltip.hideLater()
+            }
+            WorkspacesFeature.Workspaces {
+                id: workspaces
+
+                theme: rootBar.theme
+                service: workspaceService
+
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+                onWorkspaceTooltipShowRequested: (anchorItem, workspace) => {
+                    sharedTooltip.hideLater();
+                    workspaceClients.showFor(anchorItem, workspace);
+                }
             }
         }
 
@@ -254,6 +290,13 @@ PanelWindow {
 
             theme: rootBar.theme
             service: mprisService
+        }
+
+        WorkspacesFeature.WorkspaceClients {
+            id: workspaceClients
+
+            theme: rootBar.theme
+            service: workspaceService
         }
 
         ClockFeature.CalendarPopup {

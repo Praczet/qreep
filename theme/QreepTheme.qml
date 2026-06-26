@@ -7,6 +7,8 @@ import "../features/power" as PowerFeature
 import "../features/upchecker" as UpcheckerFeature
 import "../features/monitorprofile" as MonitorProfileFeature
 import "../features/mpris" as MprisFeature
+import "../features/workspaces" as WorkspacesFeature
+import "../features/launcher" as LauncherFeature
 import "colors" as Colors
 
 QtObject {
@@ -44,6 +46,8 @@ QtObject {
     readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {}
     readonly property QtObject monitorProfile: MonitorProfileFeature.MonitorProfileTheme {}
     readonly property QtObject mpris: MprisFeature.MprisTheme {}
+    readonly property QtObject workspaces: WorkspacesFeature.WorkspacesTheme {}
+    readonly property QtObject launcher: LauncherFeature.LauncherTheme {}
 
     readonly property string iconFontFamily: "FiraCode Nerd Font"
     readonly property int animationFastDuration: 100
