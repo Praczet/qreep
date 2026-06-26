@@ -20,8 +20,10 @@ JSON interpretation, sorting, tooltip text, or icon mapping in
 
 ## Wiring
 
-`panels/Bar.qml` creates `MonitorProfileService` and passes it to
+`modules/bar/Bar.qml` creates `MonitorProfileService` and passes it to
 `MonitorProfileButton`.
+
+Note: This is a bar-owned feature. Sources live under `modules/bar/features/monitorprofile/`.
 
 Theme is exposed through:
 

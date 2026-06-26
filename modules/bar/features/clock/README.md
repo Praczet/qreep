@@ -21,8 +21,10 @@ Change time/date sizing in `ClockTheme.qml`. Change calendar layout in
 
 ## Wiring
 
-`panels/Bar.qml` creates `EventStore`, passes it to `Clock`, and hosts
+`modules/bar/Bar.qml` creates `EventStore`, passes it to `Clock`, and hosts
 `CalendarPopup`.
+
+Note: This is a bar-owned feature. Sources live under `modules/bar/features/clock/`.
 
 Theme is exposed through:
 

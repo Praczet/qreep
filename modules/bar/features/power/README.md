@@ -23,8 +23,10 @@ commands in `PowerService.qml`.
 
 ## Wiring
 
-`panels/Bar.qml` creates `PowerService`, hosts `PowerButton`, and hosts
+`modules/bar/Bar.qml` creates `PowerService`, hosts `PowerButton`, and hosts
 `PowerPanel`.
+
+Note: This is a bar-owned feature. Sources live under `modules/bar/features/power/`.
 
 Theme is exposed through:
 

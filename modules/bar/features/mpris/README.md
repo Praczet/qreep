@@ -35,8 +35,10 @@ Change pill layout in `MprisButton.qml`. Change popup/tooltip layout in
 
 ## Wiring
 
-`panels/Bar.qml` creates `MprisService`, places `MprisButton` in the center slot,
+`modules/bar/Bar.qml` creates `MprisService`, places `MprisButton` in the center slot,
 and hosts `MprisTooltip` plus `MprisPanel`.
+
+Note: This is a bar-owned feature. Sources live under `modules/bar/features/mpris/`.
 
 Theme is exposed through:
 

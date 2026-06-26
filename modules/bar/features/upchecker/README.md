@@ -24,8 +24,10 @@ Change package parsing, restart logic, caching, and IPC in
 
 ## Wiring
 
-`panels/Bar.qml` creates `UpcheckerService`, passes it to `UpcheckerButton`, and
+`modules/bar/Bar.qml` creates `UpcheckerService`, passes it to `UpcheckerButton`, and
 hosts `UpcheckerPanel`.
+
+Note: This is a bar-owned feature. Sources live under `modules/bar/features/upchecker/`.
 
 Theme is exposed through:
 

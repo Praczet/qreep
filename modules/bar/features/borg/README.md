@@ -27,8 +27,10 @@ in `Borg.qml`. Change rich tooltip layout in `BorgTooltip.qml`.
 
 ## Wiring
 
-`panels/Bar.qml` creates `BorgService`, passes it to `Borg`, and hosts
+`modules/bar/Bar.qml` creates `BorgService`, passes it to `Borg`, and hosts
 `BorgTooltip`.
+
+Note: This is a bar-owned feature. Sources live under `modules/bar/features/borg/`.
 
 Theme is exposed through:
 
