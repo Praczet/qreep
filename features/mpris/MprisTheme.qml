@@ -13,7 +13,8 @@ QtObject {
     readonly property int pillMutedTextPixelSize: 11
     readonly property int noteLayerWidth: 36
     readonly property int notePixelSize: 11
-    readonly property int noteFadeDuration: 1300
+    readonly property int noteFadeDuration: 2300
+    readonly property int noteStaggerDuration: 260
     readonly property bool animatePlayingNotes: true
 
     readonly property int controlButtonSize: 34

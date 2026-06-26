@@ -89,14 +89,13 @@ Components.QreepModule {
                 property real peakOpacity: 0.45
                 property real spinFrom: 0
                 property real spinTo: 0
-                property int travelDuration: rootMprisButton.theme.mpris.noteFadeDuration
+                readonly property int travelDuration: rootMprisButton.theme.mpris.noteFadeDuration
 
                 function randomize() {
                     drift = -14 + Math.random() * 28;
                     peakOpacity = 0.25 + Math.random() * 0.45;
                     spinFrom = -22 + Math.random() * 44;
                     spinTo = spinFrom + (Math.random() > 0.5 ? 1 : -1) * (26 + Math.random() * 44);
-                    travelDuration = rootMprisButton.theme.mpris.noteFadeDuration + Math.floor(Math.random() * 600);
                 }
 
                 x: rootMprisButton.noteStartX
@@ -111,7 +110,7 @@ Components.QreepModule {
                     running: note.visible
                     loops: Animation.Infinite
                     PauseAnimation {
-                        duration: note.noteIndex * 260
+                        duration: note.noteIndex * rootMprisButton.theme.mpris.noteStaggerDuration
                     }
                     ScriptAction {
                         script: note.randomize()
@@ -128,7 +127,7 @@ Components.QreepModule {
                     running: note.visible
                     loops: Animation.Infinite
                     PauseAnimation {
-                        duration: note.noteIndex * 260
+                        duration: note.noteIndex * rootMprisButton.theme.mpris.noteStaggerDuration
                     }
                     NumberAnimation {
                         from: 0
@@ -146,7 +145,7 @@ Components.QreepModule {
                     running: note.visible
                     loops: Animation.Infinite
                     PauseAnimation {
-                        duration: note.noteIndex * 260
+                        duration: note.noteIndex * rootMprisButton.theme.mpris.noteStaggerDuration
                     }
                     NumberAnimation {
                         from: rootMprisButton.noteStartX
