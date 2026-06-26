@@ -16,8 +16,15 @@ QtObject {
     readonly property int iconSize: 30
     readonly property int contentSpacing: 12
     readonly property int textSpacing: 3
+    readonly property int progressCardWidth: 450
+    readonly property int progressIconSize: 84
+    readonly property int progressTitleTextPixelSize: 30
+    readonly property int progressMessageTextPixelSize: 18
+    readonly property int progressHeight: 8
+    readonly property int progressSpacing: 18
+    readonly property int playerQueryDelay: 120
     readonly property int defaultDuration: 1600
-    readonly property string defaultPosition: "top"
+    readonly property string defaultPosition: "bottom"
     readonly property int testButtonLeftMargin: 4
     readonly property int testButtonTextPixelSize: 13
 }
