@@ -120,8 +120,9 @@ PanelWindow {
         color: "transparent"
         focus: true
 
-        TapHandler {
-            onTapped: rootPowerPanel.visible = false
+        MouseArea {
+            anchors.fill: parent
+            onClicked: rootPowerPanel.visible = false
         }
 
         Rectangle {
@@ -141,8 +142,9 @@ PanelWindow {
             border.width: rootPowerPanel.theme.power.sidebarBorderWidth
             border.color: rootPowerPanel.theme.moduleHoverBackground
 
-            TapHandler {
-                onTapped: eventPoint => eventPoint.accepted = true
+            MouseArea {
+                anchors.fill: parent
+                onClicked: mouse => mouse.accepted = true
             }
 
             Rectangle {
@@ -220,8 +222,9 @@ PanelWindow {
                                 cursorShape: Qt.PointingHandCursor
                             }
 
-                            TapHandler {
-                                onTapped: {
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
                                     rootPowerPanel.requestAction(actionButton.modelData);
                                 }
                             }
@@ -287,8 +290,9 @@ PanelWindow {
                                 cursorShape: Qt.PointingHandCursor
                             }
 
-                            TapHandler {
-                                onTapped: rootPowerPanel.cancelPendingAction()
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: rootPowerPanel.cancelPendingAction()
                             }
 
                             Behavior on color {
@@ -317,8 +321,9 @@ PanelWindow {
                                 cursorShape: Qt.PointingHandCursor
                             }
 
-                            TapHandler {
-                                onTapped: rootPowerPanel.confirmPendingAction()
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: rootPowerPanel.confirmPendingAction()
                             }
 
                             Behavior on color {
