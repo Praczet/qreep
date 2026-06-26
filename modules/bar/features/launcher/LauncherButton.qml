@@ -1,5 +1,5 @@
 import QtQuick
-import "../../../components" as Components
+import "../../../../components" as Components
 
 Components.QreepModule {
     id: rootLauncherButton
