@@ -1,6 +1,6 @@
 import Quickshell
-import "modules/osd" as OsdFeature
-import "modules/bar" as Panels
+import "modules/osd" as OsdModule
+import "modules/bar" as BarModule
 import "theme" as Theme
 
 ShellRoot {
@@ -10,13 +10,11 @@ ShellRoot {
         id: qreepTheme
     }
 
-    Panels.Bar {
+    BarModule.Bar {
         theme: qreepTheme
-
-        onOsdTestRequested: (message, durationMs) => osd.showMessage(message, durationMs)
     }
 
-    OsdFeature.Osd {
+    OsdModule.Osd {
         id: osd
 
         theme: qreepTheme

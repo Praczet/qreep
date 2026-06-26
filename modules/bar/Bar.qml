@@ -22,7 +22,6 @@ PanelWindow {
     property alias rightSlotItems: rightSlot.data
     property alias overlayItems: overlayLayer.data
 
-    signal osdTestRequested(string message, int durationMs)
 
     ClockFeature.EventStore {
         id: eventStore
