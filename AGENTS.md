@@ -14,10 +14,24 @@ qreep/
 ├── core/
 ├── components/
 ├── modules/
-└── theme/
+│   ├── bar/
+│   └── osd/
+├── scripts/
+├── theme/
+└── events.json
 ```
 
 Keep this structure boring. The name is weird enough.
+
+Current direction:
+
+```text
+bar first, useful modules second, larger surfaces only when they earn the rent
+```
+
+Qreep is moving from "a bar that owns everything" toward "a bar that hosts small controls and routes into feature-owned surfaces." The bar should remain the daily visible shell piece. Larger things such as update panels, power panels, dashboards, wallpaper selection, and clipboard history should become feature-owned controllers/surfaces instead of turning `Bar.qml` into a storage unit with imports.
+
+Top-level modules are allowed when the feature is not naturally owned by the bar. `modules/osd/` is the current example: it is a shell-level surface with IPC, so `shell.qml` hosts it directly and the bar does not pretend to be its parent just because the bar exists.
 
 ## Voice and documentation style
 
@@ -88,21 +102,31 @@ Use this project layout:
 
 - `modules/` for top-level Qreep modules (for example: `bar`, `dashboard`);
 - `modules/bar/features/` for bar-owned pills, panels, services, and popups;
+- `modules/osd/` for the shell-level OSD surface and IPC service;
 - `components/` for reusable UI pieces;
 - `theme/` for the public theme object, shared theme sections, and generated colors;
 - `core/` for truly shared services/state once they actually exist.
 
-Current feature folders:
+Current bar feature folders:
 
 ```text
-features/
+modules/bar/features/
 ├── borg/
 ├── clock/
+├── launcher/
 ├── monitorprofile/
 ├── mpris/
-├── osd/
 ├── power/
-└── upchecker/
+├── upchecker/
+└── workspaces/
+```
+
+Current top-level module folders:
+
+```text
+modules/
+├── bar/
+└── osd/
 ```
 
 Feature folders may contain their own QML UI, popup/panel pieces, state/service objects, and local theme section files. Keep shared wrappers and shared surfaces out of feature folders unless the ownership is obvious. The goal is fewer scavenger hunts, not a tiny bureaucracy with imports.
@@ -110,7 +134,7 @@ Feature folders may contain their own QML UI, popup/panel pieces, state/service 
 Guidelines:
 
 - `shell.qml` should stay small.
-- Put shared visible shell surfaces in `panels/`.
+- Put shared visible shell surfaces in an owning module folder; introduce a `panels/` folder only when shared panel surfaces actually exist.
 - Put feature-owned visible surfaces in their feature folder.
 - Put reusable wrappers in `components/`.
 - Keep feature-owned files together where possible.
@@ -158,10 +182,11 @@ The bar itself should not be lazy-loaded. At least one real shell window must ex
 
 ## Feature controller pattern
 
-For larger features, prefer this shape:
+For larger features, prefer this shape inside the owning module:
 
 ```text
-features/name/
+modules/bar/features/name/        # when the feature is bar-owned
+modules/name/                     # when the feature is shell-level
 ├── Name.qml          # Scope/controller: state, IPC, loader, service ownership
 ├── NameButton.qml    # small bar-facing button, if the feature has one
 ├── NamePanel.qml     # actual PanelWindow/PopupWindow/large surface
@@ -250,14 +275,14 @@ Purpose:
 Possible structure:
 
 ```text
-features/dashboard/
+modules/dashboard/
 ├── Dashboard.qml
 ├── DashboardButton.qml
 ├── DashboardPanel.qml
 ├── DashboardService.qml
 └── DashboardTheme.qml
 
-features/aegis/
+modules/aegis/
 ├── Aegis.qml
 ├── AegisPanel.qml
 ├── AegisService.qml
@@ -266,7 +291,7 @@ features/aegis/
 
 Do not start by building a dashboard framework. Start with one useful view: system state, updates, backup status, media, monitor profile, or whatever makes the desktop feel less like a pile of unrelated goblins.
 
-If `Aegis` is only a dashboard page, keep it inside `features/dashboard/`. If it grows its own identity, IPC, service, or panel behavior, split it into `features/aegis/`. Do not split because the folder tree looked lonely.
+If `Aegis` is only a dashboard page, keep it inside `modules/dashboard/`. If it grows its own identity, IPC, service, or panel behavior, split it into `modules/aegis/`. Do not split because the folder tree looked lonely.
 
 ### Wallpaper selector
 
@@ -286,7 +311,7 @@ Purpose:
 Possible structure:
 
 ```text
-features/wallpaper/
+modules/wallpaper/
 ├── Wallpaper.qml
 ├── WallpaperButton.qml
 ├── WallpaperPanel.qml
@@ -309,7 +334,7 @@ Goal: a Pano-like clipboard manager, but Qreep-shaped instead of “let us inven
 Possible structure:
 
 ```text
-features/clipboard/
+modules/clipboard/
 ├── Clipboard.qml
 ├── ClipboardButton.qml
 ├── ClipboardPanel.qml
@@ -535,18 +560,18 @@ Use:
 Good:
 
 ```text
-features/clock/Clock.qml
+modules/bar/features/clock/Clock.qml
 components/QreepModule.qml
-panels/Bar.qml
+modules/bar/Bar.qml
 theme/QreepTheme.qml
 ```
 
 Bad:
 
 ```text
-features/clock/ChronoGoblinFinal.qml
+modules/bar/features/clock/ChronoGoblinFinal.qml
 components/NiceThingNew2.qml
-panels/BarButActuallyDashboard.qml
+modules/bar/BarButActuallyDashboard.qml
 ```
 
 ## UI and theme rules
@@ -578,10 +603,16 @@ unless working inside the theme file itself.
 
 ## Scope control
 
-This project starts with:
+This project started with:
 
 ```text
 bar → clock → colors → module wrapper → click action → real modules
+```
+
+That first phase is done enough to be dangerous. The current phase is:
+
+```text
+bar ownership map → feature controllers for large surfaces → one planned large feature → repeat only when boring
 ```
 
 Do not jump straight to:
@@ -608,7 +639,9 @@ Qreep currently has:
 
 - a top `PanelWindow` bar with left, center, right, and overlay slots;
 - a reusable `QreepModule` wrapper with hover, click, right-click, overlay, and shared-tooltip request support;
-- an initial Borg status pill placeholder in the right bar slot;
+- a launcher button in the left slot that delegates to `LauncherService`;
+- a Hyprland workspaces module in the left slot with active/occupied workspace state, click/scroll switching, and a clickable client popup;
+- a Borg status pill in the right bar slot with refresh, backup command, IPC, and a structured tooltip;
 - a clock with optional seconds, current-day event dots, and JSON-backed event tooltip content;
 - a calendar popup with a month grid, event markers, and a six-day agenda covering today plus the next five days;
 - a MonitorProfile pill that watches runtime JSON, sorts monitors by position, and shows internal/external display icons plus a plain tooltip;
@@ -617,18 +650,18 @@ Qreep currently has:
 - a full-height power layer panel with its own `qreep-popup-power` namespace, themed system icons, outside-click/Escape dismissal, margin, and rounded sidebar;
 - confirmed power actions wired through `modules/bar/features/power/PowerService.qml`;
 - an Upchecker button and standalone `qreep-popup-upchecker` layer panel;
-- a Quickshell OSD with IPC methods for plain and JSON-backed messages;
+- a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
 - a watched `events.json` source loaded through `modules/bar/features/clock/EventStore.qml`.
 
 ## Suggested next five steps
 
-1. **Document the current `Bar.qml` ownership map.** List which objects are small anchored bar parts, which are full panels, which are services, and which should survive while hidden.
-2. **Refactor `Upchecker` into a feature controller.** Add `features/upchecker/Upchecker.qml` as the `Scope` entry point, move panel creation behind a loader, and keep existing IPC/click behavior unchanged.
-3. **Refactor `Power` the same way.** Keep the action service clear and boring; lazy-load the full panel if that does not break dismissal behavior.
-4. **Create the first planned large feature skeleton.** Prefer `Dashboard`/`Aegis` first if the goal is system overview; prefer `Wallpaper` first if the goal is visual/theming joy; prefer `Clipboard` first if the goal is daily usefulness. Pick one. One is already plenty.
-5. **Repeat only after the first split is boring.** Once the pattern works twice, decide whether a tiny shared helper is justified. Until then, duplication is cheaper than premature architecture with a hat.
+1. **Document the current `Bar.qml` ownership map in the repo docs.** List services, small anchored modules, anchored popups, standalone layer panels, and shell-level modules. This is boring and therefore suspiciously useful.
+2. **Refactor `Upchecker` into a feature controller.** Add `modules/bar/features/upchecker/Upchecker.qml` as the `Scope` entry point, keep `UpcheckerService` always available for IPC, and move `UpcheckerPanel` creation behind a loader/lazy loader without changing existing click or IPC behavior.
+3. **Refactor `Power` the same way.** Keep `PowerService` clear and boring; let a controller own `PowerButton`/`PowerPanel` wiring if that reduces `Bar.qml` ownership without breaking Escape/outside-click dismissal.
+4. **Review whether `MPRIS` deserves a controller.** It already has a service, button, tooltip, panel, and controls. It is not urgent, but it is large enough to be watched before it starts wearing a little crown.
+5. **Create one planned large feature skeleton.** Prefer `Dashboard`/`Aegis` for system overview, `Wallpaper` for theme/wallpaper workflow, or `Clipboard` for daily utility. Pick one. One is plenty. The first version should be a useful surface, not a framework audition.
 
 Keep these steps independent and reviewable. Qreep has enough moving pieces now that “one tiny cleanup while here” can reproduce when left unattended.
 
