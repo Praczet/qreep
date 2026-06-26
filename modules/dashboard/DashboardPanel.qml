@@ -8,21 +8,18 @@ PanelWindow {
     required property QtObject theme
     required property QtObject service
 
-    signal closeRequested()
+    signal closeRequested
 
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
+    implicitWidth: screen.width
+    implicitHeight: screen.height
 
     color: Qt.rgba(rootDashboardPanel.theme.barBackground.r, rootDashboardPanel.theme.barBackground.g, rootDashboardPanel.theme.barBackground.b, rootDashboardPanel.theme.dashboard.overlayOpacity)
+    exclusionMode: ExclusionMode.Ignore
+    exclusiveZone: 0
 
     WlrLayershell.namespace: "qreep-dashboard"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-    WlrLayershell.exclusiveZone: 0
 
     Component.onCompleted: {
         background.forceActiveFocus();

@@ -222,8 +222,9 @@ QML-friendly widget model shape:
         "type": "clock",
         "title": "Clock",
         "showTitle": false,
-        "x": 64,
-        "y": 64,
+        "anchorPoint": "top-left",
+        "dx": 64,
+        "dy": 64,
         "width": 360,
         "height": 180,
         "preset": "large",
@@ -236,18 +237,19 @@ QML-friendly widget model shape:
 ]
 ```
 
-Coordinates should be panel-local pixels at first. Later, add responsive anchors/percent values if needed:
+Placement should prefer anchor-relative offsets so layouts can describe intent without caring whether the monitor is sensible or absurd:
 
 ```json
 {
-  "x": "8%",
-  "y": 72,
+  "anchorPoint": "middle-center",
+  "dx": -220,
+  "dy": 72,
   "width": 420,
   "height": 220
 }
 ```
 
-Do not start with flexbox, constraint solving, or a layout engine that wants a LinkedIn profile. A simple canvas with cards is enough for v0.
+Supported anchors: `top-left`, `top-center`, `top-right`, `middle-left`, `middle-center`, `middle-right`, `bottom-left`, `bottom-center`, and `bottom-right`. Legacy `x`/`y` can stay as fallback during the draft. Do not start with flexbox, constraint solving, or a layout engine that wants a LinkedIn profile. A simple canvas with cards is enough for v0.
 
 ## Live AGS Config Notes
 
@@ -292,8 +294,9 @@ Qreep should model this as native block presets:
   "showTitle": false,
   "showBackground": false,
   "showBorder": false,
-  "x": 980,
-  "y": 80,
+  "anchorPoint": "top-right",
+  "dx": -80,
+  "dy": 80,
   "width": 800,
   "height": 307,
   "from": "right",
@@ -504,7 +507,7 @@ Work:
 - outside click closes;
 - load a small JSON-like fake block model from `DashboardService`;
 - render several positioned fake cards;
-- support title/titleless, width, height, x/y, background, border, and animation direction.
+- support title/titleless, width, height, `anchorPoint`/`dx`/`dy`, legacy x/y fallback, background, border, and animation direction.
 
 Validation:
 
@@ -538,7 +541,8 @@ Work:
 
 - load dashboard config from a real file;
 - support model-driven block creation;
-- support `x`, `y`, `width`, `height`;
+- support `anchorPoint`, `dx`, `dy`, `width`, `height`;
+- keep `x`/`y` as a legacy top-left fallback during the draft;
 - support `preset`;
 - support `from` and later `to`;
 - support `showTitle`, `showBackground`, `showBorder`.
@@ -598,8 +602,9 @@ Suggested config:
     {
       "id": "clock",
       "type": "clock",
-      "x": 64,
-      "y": 64,
+      "anchorPoint": "top-left",
+      "dx": 64,
+      "dy": 64,
       "width": 360,
       "height": 180,
       "from": "top",

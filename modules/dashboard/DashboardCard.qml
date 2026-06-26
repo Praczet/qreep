@@ -1,4 +1,5 @@
 import QtQuick
+import "./features/weather" as WeatherFeature
 
 Rectangle {
     id: rootDashboardCard
@@ -7,14 +8,16 @@ Rectangle {
     required property var block
 
     property bool entered: false
-    readonly property real baseX: Number(block.x || 0)
-    readonly property real baseY: Number(block.y || 0)
+    readonly property real cardWidth: Number(block.width || theme.dashboard.defaultCardWidth)
+    readonly property real cardHeight: Number(block.height || theme.dashboard.defaultCardHeight)
+    readonly property real baseX: block.placementMode === "absolute" ? Number(block.x || 0) : anchorBaseX(block.anchorPoint) + Number(block.dx || 0)
+    readonly property real baseY: block.placementMode === "absolute" ? Number(block.y || 0) : anchorBaseY(block.anchorPoint) + Number(block.dy || 0)
     readonly property real enterOffset: theme.dashboard.enterOffset
 
     x: entered ? baseX : baseX + offsetX(block.from)
     y: entered ? baseY : baseY + offsetY(block.from)
-    width: Number(block.width || theme.dashboard.defaultCardWidth)
-    height: Number(block.height || theme.dashboard.defaultCardHeight)
+    width: cardWidth
+    height: cardHeight
     radius: theme.dashboard.cardRadius
     opacity: entered ? 1 : 0
     color: block.showBackground === false ? "transparent" : theme.dashboard.backgroundColor
@@ -51,6 +54,36 @@ Rectangle {
         }
     }
 
+    function anchorBaseX(anchorPoint) {
+        switch (String(anchorPoint || "top-left")) {
+        case "top-center":
+        case "middle-center":
+        case "bottom-center":
+            return (parent.width - cardWidth) / 2;
+        case "top-right":
+        case "middle-right":
+        case "bottom-right":
+            return parent.width - cardWidth;
+        default:
+            return 0;
+        }
+    }
+
+    function anchorBaseY(anchorPoint) {
+        switch (String(anchorPoint || "top-left")) {
+        case "middle-left":
+        case "middle-center":
+        case "middle-right":
+            return (parent.height - cardHeight) / 2;
+        case "bottom-left":
+        case "bottom-center":
+        case "bottom-right":
+            return parent.height - cardHeight;
+        default:
+            return 0;
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
         onClicked: mouse => mouse.accepted = true
@@ -82,6 +115,7 @@ Rectangle {
         }
 
         Text {
+            visible: rootDashboardCard.block.type !== "weather"
             width: parent.width
             text: String(rootDashboardCard.block.text || rootDashboardCard.block.type || "fake")
             color: rootDashboardCard.theme.calendarDayText
@@ -89,9 +123,17 @@ Rectangle {
             wrapMode: Text.Wrap
         }
 
-        Text {
+        WeatherFeature.WeatherBlock {
+            visible: rootDashboardCard.block.type === "weather"
             width: parent.width
-            text: "preset: " + String(rootDashboardCard.block.preset || "default") + " | from: " + String(rootDashboardCard.block.from || "center")
+            theme: rootDashboardCard.theme
+            config: rootDashboardCard.block.config || ({})
+        }
+
+        Text {
+            visible: rootDashboardCard.block.type === "fake"
+            width: parent.width
+            text: "preset: " + String(rootDashboardCard.block.preset || "default") + " | anchor: " + String(rootDashboardCard.block.anchorPoint || "absolute") + " | from: " + String(rootDashboardCard.block.from || "center")
             color: rootDashboardCard.theme.secondaryText
             font.pixelSize: rootDashboardCard.theme.dashboard.metaPixelSize
             wrapMode: Text.Wrap

@@ -27,6 +27,21 @@ This is repo-local for now so it can be reviewed with the module. User config ca
 move to `~/.config/quickshell/qreep/dashboard.json` once the schema is less
 likely to change every time someone looks at it funny.
 
+Blocks use explicit `width` and `height`. Preferred placement is anchored:
+
+```json
+{
+  "anchorPoint": "middle-center",
+  "dx": 0,
+  "dy": 0
+}
+```
+
+`anchorPoint` supports `top-left`, `top-center`, `top-right`, `middle-left`,
+`middle-center`, `middle-right`, `bottom-left`, `bottom-center`, and
+`bottom-right`. `dx` and `dy` offset from that anchor. Old `x`/`y` top-left
+placement still works as fallback while the draft is learning to behave.
+
 ## Hyprland
 
 Layer namespace:

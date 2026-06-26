@@ -6,8 +6,9 @@
       "title": "Clock",
       "text": "Large clock block placeholder",
       "preset": "large",
-      "x": 80,
-      "y": 110,
+      "anchorPoint": "top-left",
+      "dx": 80,
+      "dy": 110,
       "width": 380,
       "height": 145,
       "from": "left",
@@ -17,18 +18,75 @@
     },
     {
       "id": "weather",
-      "type": "fake",
+      "type": "weather",
       "title": "Weather",
       "text": "Weather preview block. Real weather can wait until the canvas behaves.",
       "preset": "compact",
-      "x": 80,
-      "y": 300,
-      "width": 380,
-      "height": 230,
-      "from": "bottom-left",
-      "showTitle": true,
+      "anchorPoint": "top-left",
+      "dx": 80,
+      "dy": 285,
+      "width": 426,
+      "height": 322,
+      "from": "bottom-right",
+      "showTitle": false,
       "showBackground": true,
-      "showBorder": true
+      "showBorder": true,
+      "config": {
+        "apiEnabled": true,
+        "location": "Bergem, Luxembourg",
+        "latitude": 49.5,
+        "longitude": 6.1,
+        "timezone": "Europe/Luxembourg",
+        "refreshInterval": 1800000,
+        "temperature": "37°C",
+        "condition": "Overcast",
+        "wind": "Wind 9 km/h",
+        "icon": "weather-overcast-symbolic",
+        "forecast": [
+          {
+            "day": "Sat, Jun 27",
+            "low": 20,
+            "high": 38,
+            "icon": "weather-overcast-symbolic"
+          },
+          {
+            "day": "Sun, Jun 28",
+            "low": 24,
+            "high": 33,
+            "icon": "weather-clouds-symbolic"
+          },
+          {
+            "day": "Mon, Jun 29",
+            "low": 19,
+            "high": 25,
+            "icon": "weather-few-clouds-symbolic"
+          },
+          {
+            "day": "Tue, Jun 30",
+            "low": 16,
+            "high": 26,
+            "icon": "weather-showers-symbolic"
+          },
+          {
+            "day": "Wed, Jul 01",
+            "low": 15,
+            "high": 25,
+            "icon": "weather-clear-symbolic"
+          },
+          {
+            "day": "Thu, Jul 02",
+            "low": 16,
+            "high": 26,
+            "icon": "weather-clear-symbolic"
+          },
+          {
+            "day": "Fri, Jul 03",
+            "low": 17,
+            "high": 24,
+            "icon": "weather-showers-symbolic"
+          }
+        ]
+      }
     },
     {
       "id": "aegis-summary",
@@ -36,8 +94,9 @@
       "title": "Aegis",
       "text": "System overview preset placeholder.",
       "preset": "wide",
-      "x": 500,
-      "y": 110,
+      "anchorPoint": "top-center",
+      "dx": -164,
+      "dy": 110,
       "width": 720,
       "height": 420,
       "from": "top",
@@ -51,8 +110,9 @@
       "title": "POTATO weight",
       "text": "Chart block placeholder for ~/.cache/potato/weight.svg.",
       "preset": "chart",
-      "x": 1260,
-      "y": 110,
+      "anchorPoint": "top-right",
+      "dx": -128,
+      "dy": 110,
       "width": 660,
       "height": 260,
       "from": "right",
@@ -66,8 +126,9 @@
       "title": "POTATO steps",
       "text": "Another deliberately placed chart block.",
       "preset": "chart",
-      "x": 1260,
-      "y": 400,
+      "anchorPoint": "top-right",
+      "dx": -128,
+      "dy": 400,
       "width": 660,
       "height": 260,
       "from": "right",
