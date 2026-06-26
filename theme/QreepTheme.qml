@@ -1,14 +1,14 @@
 import QtQuick
 import "../core" as Core
-import "../features/borg" as BorgFeature
-import "../features/clock" as ClockFeature
-import "../features/osd" as OsdFeature
-import "../features/power" as PowerFeature
-import "../features/upchecker" as UpcheckerFeature
-import "../features/monitorprofile" as MonitorProfileFeature
-import "../features/mpris" as MprisFeature
-import "../features/workspaces" as WorkspacesFeature
-import "../features/launcher" as LauncherFeature
+import "../modules/bar/features/borg" as BorgFeature
+import "../modules/bar/features/clock" as ClockFeature
+import "../modules/bar/features/osd" as OsdFeature
+import "../modules/bar/features/power" as PowerFeature
+import "../modules/bar/features/upchecker" as UpcheckerFeature
+import "../modules/bar/features/monitorprofile" as MonitorProfileFeature
+import "../modules/bar/features/mpris" as MprisFeature
+import "../modules/bar/features/workspaces" as WorkspacesFeature
+import "../modules/bar/features/launcher" as LauncherFeature
 import "colors" as Colors
 
 QtObject {

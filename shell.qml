@@ -1,5 +1,5 @@
 import Quickshell
-import "features/osd" as OsdFeature
+import "modules/bar/features/osd" as OsdFeature
 import "modules/bar" as Panels
 import "theme" as Theme
 
