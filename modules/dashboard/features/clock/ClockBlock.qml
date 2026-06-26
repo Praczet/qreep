@@ -25,8 +25,10 @@ Item {
     property color cardColor: colorValue(config.cardColor, "#303846")
     property color cardBorderColor: colorValue(config.cardBorderColor, "#3c4658")
 
-    property color faceBorderColor: colorValue(config.faceBorderColor, "#455068")
     property color tickColor: colorValue(config.tickColor, "#56617a")
+    property color faceBorderColor: colorValue(config.faceBorderColor, "#455068")
+    property color faceColor: colorValue(config.faceColor, "#2f3745")
+    property real faceOpacity: numberValue(config.faceOpacity, 0.5)
 
     property color hourHandColor: colorValue(config.hourHandColor, "#93a0c9")
     property color minuteHandColor: colorValue(config.minuteHandColor, "#a1add6")
@@ -97,8 +99,10 @@ Item {
                         ctx.arc(cx, cy, radius - 1, 0, Math.PI * 2, false);
                         ctx.lineWidth = 2;
                         ctx.strokeStyle = faceBorderColor;
-                        ctx.globalAlpha = 0.85;
+                        ctx.fillStyle = rootClockBlock.faceColor;
+                        ctx.globalAlpha = rootClockBlock.faceOpacity;
                         ctx.stroke();
+                        ctx.fill();
 
                         // Hour ticks
                         for (let i = 0; i < 12; i++) {
