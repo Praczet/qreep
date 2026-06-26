@@ -13,8 +13,7 @@ qreep/
 ├── shell.qml
 ├── core/
 ├── components/
-├── features/
-├── panels/
+├── modules/
 └── theme/
 ```
 
@@ -87,8 +86,8 @@ Qreep is a Quickshell project. Prefer QML-first solutions unless there is a good
 
 Use this project layout:
 
-- `features/` for feature-owned UI, state, services, and feature theme sections;
-- `panels/` for shared top-level surfaces such as the bar and shared tooltip;
+- `modules/` for top-level Qreep modules (for example: `bar`, `dashboard`);
+- `modules/bar/features/` for bar-owned pills, panels, services, and popups;
 - `components/` for reusable UI pieces;
 - `theme/` for the public theme object, shared theme sections, and generated colors;
 - `core/` for truly shared services/state once they actually exist.
@@ -480,9 +479,9 @@ or a syntax/check command if the project later adds one.
 Useful small checks:
 
 ```bash
-qmllint panels/Bar.qml
+qmllint modules/bar/Bar.qml
 qmllint theme/QreepTheme.qml
-qmllint features/*/*.qml
+qmllint modules/bar/features/*/*.qml
 ```
 
 If validation cannot be run in the current environment, say that clearly. Do not pretend it passed. Future Adam has enough problems without imaginary green checks.
@@ -616,12 +615,12 @@ Qreep currently has:
 - an MPRIS pill in the center slot with current playback state, track columns, animated notes, preview tooltip, and right-click player popup;
 - one shared popup tooltip with delayed show/hide and scale animations;
 - a full-height power layer panel with its own `qreep-popup-power` namespace, themed system icons, outside-click/Escape dismissal, margin, and rounded sidebar;
-- confirmed power actions wired through `features/power/PowerService.qml`;
+- confirmed power actions wired through `modules/bar/features/power/PowerService.qml`;
 - an Upchecker button and standalone `qreep-popup-upchecker` layer panel;
 - a Quickshell OSD with IPC methods for plain and JSON-backed messages;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
-- a watched `events.json` source loaded through `features/clock/EventStore.qml`.
+- a watched `events.json` source loaded through `modules/bar/features/clock/EventStore.qml`.
 
 ## Suggested next five steps
 

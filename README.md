@@ -27,19 +27,19 @@ Useful if you do not want a bar colony.
 shell.qml
 core/
 components/
-features/
-panels/
+modules/
 theme/
 ```
 
-Feature-owned UI, services, and theme sections live under `features/`.
-Shared shell surfaces live in `panels/`. Reusable wrappers live in
-`components/`. Theme entry points live in `theme/`.
+Top-level Qreep modules live under `modules/`. The bar module lives at
+`modules/bar/` and bar-owned pills, panels, services, and popups live under
+`modules/bar/features/`. Reusable wrappers remain in `components/`. Theme
+entry points remain in `theme/`.
 
-Current feature folders:
+Current bar-owned feature folders:
 
 ```text
-features/
+modules/bar/features/
 ├── borg/
 ├── clock/
 ├── monitorprofile/
@@ -51,7 +51,7 @@ features/
 
 ## Bar
 
-The main bar is `panels/Bar.qml`.
+The main bar is `modules/bar/Bar.qml`.
 
 It owns:
 
@@ -191,15 +191,15 @@ by position and renders a compact icon summary.
 Small useful checks:
 
 ```bash
-qmllint panels/Bar.qml
+qmllint modules/bar/Bar.qml
 qmllint theme/QreepTheme.qml
-qmllint features/mpris/MprisService.qml
+qmllint modules/bar/features/mpris/MprisService.qml
 ```
 
 For broader changes:
 
 ```bash
-qmllint panels/Bar.qml theme/QreepTheme.qml features/*/*.qml
+qmllint modules/bar/Bar.qml theme/QreepTheme.qml modules/bar/features/*/*.qml
 ```
 
 Runtime smoke test:
