@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell.Io
-import "../../core" as Core
+import "../../../core" as Core
 
 QtObject {
     id: rootPowerService
