@@ -1,6 +1,6 @@
 import Quickshell
 import "features/osd" as OsdFeature
-import "panels" as Panels
+import "modules/bar" as Panels
 import "theme" as Theme
 
 ShellRoot {
