@@ -10,9 +10,9 @@ Rectangle {
     signal tooltipHideRequested
     signal workspaceTooltipShowRequested(Item anchorItem, var workspace)
 
-    implicitWidth: workspaceRow.implicitWidth + theme.module.horizontalPadding
-    implicitHeight: theme.module.height
-    radius: theme.module.radius
+    implicitWidth: workspaceRow.implicitWidth + theme.modules.bar.pill.horizontalPadding
+    implicitHeight: theme.modules.bar.pill.height
+    radius: theme.modules.bar.pill.radius
     color: workspaceHover.hovered ? theme.moduleHoverBackground : theme.moduleBackground
 
     Row {

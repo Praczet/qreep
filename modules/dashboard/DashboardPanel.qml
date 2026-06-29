@@ -13,7 +13,7 @@ PanelWindow {
     implicitWidth: screen.width
     implicitHeight: screen.height
 
-    color: Qt.rgba(rootDashboardPanel.theme.barBackground.r, rootDashboardPanel.theme.barBackground.g, rootDashboardPanel.theme.barBackground.b, rootDashboardPanel.theme.dashboard.overlayOpacity)
+    color: Qt.rgba(rootDashboardPanel.theme.barBackground.r, rootDashboardPanel.theme.barBackground.g, rootDashboardPanel.theme.barBackground.b, rootDashboardPanel.theme.modules.dashboard.overlayOpacity)
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
 
@@ -78,13 +78,13 @@ PanelWindow {
         anchors {
             left: parent.left
             bottom: parent.bottom
-            margins: rootDashboardPanel.theme.dashboard.placementMargin
+            margins: rootDashboardPanel.theme.modules.dashboard.placementMargin
         }
-        width: Math.min(620, parent.width - rootDashboardPanel.theme.dashboard.placementMargin * 2)
-        height: errorText.implicitHeight + rootDashboardPanel.theme.dashboard.cardPadding * 2
-        radius: rootDashboardPanel.theme.dashboard.cardRadius
+        width: Math.min(620, parent.width - rootDashboardPanel.theme.modules.dashboard.placementMargin * 2)
+        height: errorText.implicitHeight + rootDashboardPanel.theme.modules.dashboard.cardPadding * 2
+        radius: rootDashboardPanel.theme.modules.dashboard.cardRadius
         color: Qt.rgba(rootDashboardPanel.theme.borg.errorColor.r, rootDashboardPanel.theme.borg.errorColor.g, rootDashboardPanel.theme.borg.errorColor.b, 0.16)
-        border.width: rootDashboardPanel.theme.dashboard.cardBorderWidth
+        border.width: rootDashboardPanel.theme.modules.dashboard.cardBorderWidth
         border.color: rootDashboardPanel.theme.borg.errorColor
 
         Text {
@@ -94,11 +94,11 @@ PanelWindow {
                 left: parent.left
                 right: parent.right
                 verticalCenter: parent.verticalCenter
-                margins: rootDashboardPanel.theme.dashboard.cardPadding
+                margins: rootDashboardPanel.theme.modules.dashboard.cardPadding
             }
             text: rootDashboardPanel.service.error
             color: rootDashboardPanel.theme.powerConfirmText
-            font.pixelSize: rootDashboardPanel.theme.dashboard.bodyPixelSize
+            font.pixelSize: rootDashboardPanel.theme.modules.dashboard.bodyPixelSize
             wrapMode: Text.Wrap
         }
     }

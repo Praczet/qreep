@@ -24,9 +24,9 @@ Rectangle {
         }
     }
 
-    implicitWidth: contentContainer.implicitWidth + theme.module.horizontalPadding
-    implicitHeight: theme.module.height
-    radius: theme.module.radius
+    implicitWidth: contentContainer.implicitWidth + theme.modules.bar.pill.horizontalPadding
+    implicitHeight: theme.modules.bar.pill.height
+    radius: theme.modules.bar.pill.radius
     color: moduleHoverHandler.hovered ? theme.moduleHoverBackground : theme.moduleBackground
 
     Item {

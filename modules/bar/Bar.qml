@@ -96,7 +96,7 @@ PanelWindow {
         right: true
     }
 
-    implicitHeight: rootBar.theme.bar.height + rootBar.theme.bar.topPadding
+    implicitHeight: rootBar.theme.modules.bar.height + rootBar.theme.modules.bar.topPadding
     color: "transparent"
 
     WlrLayershell.namespace: "qreep-bar"
@@ -106,11 +106,11 @@ PanelWindow {
             left: parent.left
             right: parent.right
             bottom: parent.bottom
-            leftMargin: rootBar.theme.bar.horizontalPadding
-            rightMargin: rootBar.theme.bar.horizontalPadding
+            leftMargin: rootBar.theme.modules.bar.horizontalPadding
+            rightMargin: rootBar.theme.modules.bar.horizontalPadding
         }
-        height: rootBar.theme.bar.height
-        radius: rootBar.theme.bar.backgroundRadius
+        height: rootBar.theme.modules.bar.height
+        radius: rootBar.theme.modules.bar.backgroundRadius
         color: rootBar.theme.barBackground
 
         Row {
@@ -118,9 +118,9 @@ PanelWindow {
             anchors {
                 left: parent.left
                 verticalCenter: parent.verticalCenter
-                leftMargin: rootBar.theme.bar.sideMargin
+                leftMargin: rootBar.theme.modules.bar.sideMargin
             }
-            spacing: rootBar.theme.bar.itemSpacing
+            spacing: rootBar.theme.modules.bar.itemSpacing
 
             LauncherFeature.LauncherButton {
                 id: launcherButton
@@ -153,7 +153,7 @@ PanelWindow {
             id: centerSlot
 
             anchors.centerIn: parent
-            spacing: rootBar.theme.bar.itemSpacing
+            spacing: rootBar.theme.modules.bar.itemSpacing
 
             ClockFeature.Clock {
                 id: clock
@@ -196,9 +196,9 @@ PanelWindow {
             anchors {
                 right: parent.right
                 verticalCenter: parent.verticalCenter
-                rightMargin: rootBar.theme.bar.sideMargin
+                rightMargin: rootBar.theme.modules.bar.sideMargin
             }
-            spacing: rootBar.theme.bar.itemSpacing
+            spacing: rootBar.theme.modules.bar.itemSpacing
 
             UpcheckerFeature.UpcheckerButton {
                 id: upcheckerButton

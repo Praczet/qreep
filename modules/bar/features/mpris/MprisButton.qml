@@ -5,7 +5,7 @@ Components.QreepModule {
     id: rootMprisButton
 
     required property QtObject service
-    readonly property real noteStartX: theme.module.horizontalPadding / 2 + theme.mpris.noteLayerWidth / 2
+    readonly property real noteStartX: theme.modules.bar.pill.horizontalPadding / 2 + theme.mpris.noteLayerWidth / 2
     readonly property real noteStartY: height / 2
 
     tooltipTitle: rootMprisButton.service.tooltipTitle

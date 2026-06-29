@@ -19,11 +19,11 @@ PopupWindow {
     anchor {
         item: rootBorgTooltip.anchorItem
         rect.x: rootBorgTooltip.anchorItem ? rootBorgTooltip.anchorItem.width / 2 - rootBorgTooltip.width / 2 : 0
-        rect.y: rootBorgTooltip.anchorItem ? rootBorgTooltip.anchorItem.height + rootBorgTooltip.theme.tooltip.offsetY : 0
+        rect.y: rootBorgTooltip.anchorItem ? rootBorgTooltip.anchorItem.height + rootBorgTooltip.theme.modules.bar.tooltip.offsetY : 0
     }
 
     implicitWidth: rootBorgTooltip.theme.borg.tooltipWidth
-    implicitHeight: tooltipLayout.implicitHeight + rootBorgTooltip.theme.tooltip.verticalPadding * 2
+    implicitHeight: tooltipLayout.implicitHeight + rootBorgTooltip.theme.modules.bar.tooltip.verticalPadding * 2
     color: "transparent"
     grabFocus: false
 
@@ -62,7 +62,7 @@ PopupWindow {
     }
 
     function rowSize(row) {
-        return Number(row.size || rootBorgTooltip.tooltip.default_size || rootBorgTooltip.theme.tooltip.contentPixelSize);
+        return Number(row.size || rootBorgTooltip.tooltip.default_size || rootBorgTooltip.theme.modules.bar.tooltip.contentPixelSize);
     }
 
     function rowList(tooltip) {
@@ -92,9 +92,9 @@ PopupWindow {
         anchors.fill: parent
         transformOrigin: Item.Center
         scale: 0
-        radius: rootBorgTooltip.theme.tooltip.radius
+        radius: rootBorgTooltip.theme.modules.bar.tooltip.radius
         color: rootBorgTooltip.theme.calendarBackground
-        border.width: rootBorgTooltip.theme.tooltip.borderWidth
+        border.width: rootBorgTooltip.theme.modules.bar.tooltip.borderWidth
         border.color: rootBorgTooltip.theme.borgClassColor(rootBorgTooltip.className)
 
         Column {
@@ -102,7 +102,7 @@ PopupWindow {
 
             anchors {
                 fill: parent
-                margins: rootBorgTooltip.theme.tooltip.padding
+                margins: rootBorgTooltip.theme.modules.bar.tooltip.padding
             }
             spacing: rootBorgTooltip.theme.borg.tooltipRowSpacing
 
@@ -215,7 +215,7 @@ PopupWindow {
     Timer {
         id: showTimer
 
-        interval: rootBorgTooltip.theme.tooltip.showDelay
+        interval: rootBorgTooltip.theme.modules.bar.tooltip.showDelay
         repeat: false
         onTriggered: {
             rootBorgTooltip.visible = true;
@@ -226,7 +226,7 @@ PopupWindow {
     Timer {
         id: hideTimer
 
-        interval: rootBorgTooltip.theme.tooltip.hideDelay
+        interval: rootBorgTooltip.theme.modules.bar.tooltip.hideDelay
         repeat: false
         onTriggered: hideAnimation.restart()
     }
@@ -238,17 +238,17 @@ PopupWindow {
             target: tooltipBody
             property: "scale"
             from: 0
-            to: rootBorgTooltip.theme.tooltip.popScale
-            duration: rootBorgTooltip.theme.tooltip.showOutDuration
+            to: rootBorgTooltip.theme.modules.bar.tooltip.popScale
+            duration: rootBorgTooltip.theme.modules.bar.tooltip.showOutDuration
             easing.type: Easing.OutCubic
         }
 
         NumberAnimation {
             target: tooltipBody
             property: "scale"
-            from: rootBorgTooltip.theme.tooltip.popScale
+            from: rootBorgTooltip.theme.modules.bar.tooltip.popScale
             to: 1
-            duration: rootBorgTooltip.theme.tooltip.showSettleDuration
+            duration: rootBorgTooltip.theme.modules.bar.tooltip.showSettleDuration
             easing.type: Easing.InOutCubic
         }
     }
@@ -260,17 +260,17 @@ PopupWindow {
             target: tooltipBody
             property: "scale"
             from: 1
-            to: rootBorgTooltip.theme.tooltip.popScale
-            duration: rootBorgTooltip.theme.tooltip.hideOutDuration
+            to: rootBorgTooltip.theme.modules.bar.tooltip.popScale
+            duration: rootBorgTooltip.theme.modules.bar.tooltip.hideOutDuration
             easing.type: Easing.OutCubic
         }
 
         NumberAnimation {
             target: tooltipBody
             property: "scale"
-            from: rootBorgTooltip.theme.tooltip.popScale
+            from: rootBorgTooltip.theme.modules.bar.tooltip.popScale
             to: 0
-            duration: rootBorgTooltip.theme.tooltip.hideInDuration
+            duration: rootBorgTooltip.theme.modules.bar.tooltip.hideInDuration
             easing.type: Easing.InCubic
         }
 

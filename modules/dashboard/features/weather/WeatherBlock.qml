@@ -69,7 +69,7 @@ Item {
                 width: parent.width
                 text: weatherService.location
                 color: rootWeatherBlock.theme.secondaryText
-                font.pixelSize: rootWeatherBlock.theme.dashboard.metaPixelSize
+                font.pixelSize: rootWeatherBlock.theme.modules.dashboard.metaPixelSize
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
             }
@@ -100,7 +100,7 @@ Item {
                 width: parent.width
                 text: weatherService.loading && weatherService.forecast.length === 0 ? "Updating..." : weatherService.condition
                 color: rootWeatherBlock.theme.calendarDayText
-                font.pixelSize: rootWeatherBlock.theme.dashboard.bodyPixelSize
+                font.pixelSize: rootWeatherBlock.theme.modules.dashboard.bodyPixelSize
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
             }
@@ -109,7 +109,7 @@ Item {
                 width: parent.width
                 text: weatherService.error.length > 0 ? weatherService.error : weatherService.wind
                 color: rootWeatherBlock.theme.secondaryText
-                font.pixelSize: rootWeatherBlock.theme.dashboard.metaPixelSize
+                font.pixelSize: rootWeatherBlock.theme.modules.dashboard.metaPixelSize
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
             }
@@ -134,7 +134,7 @@ Item {
                         Layout.alignment: Qt.AlignVCenter
                         text: String(parent.modelData.day || "")
                         color: rootWeatherBlock.theme.calendarDayText
-                        font.pixelSize: rootWeatherBlock.theme.dashboard.metaPixelSize
+                        font.pixelSize: rootWeatherBlock.theme.modules.dashboard.metaPixelSize
                         elide: Text.ElideRight
                     }
 
@@ -143,7 +143,7 @@ Item {
                         Layout.alignment: Qt.AlignVCenter
                         text: "[" + rootWeatherBlock.numberValue(parent.modelData.low, 0) + "°C, " + rootWeatherBlock.numberValue(parent.modelData.high, 0) + "°C]"
                         color: rootWeatherBlock.theme.eventIndicator
-                        font.pixelSize: rootWeatherBlock.theme.dashboard.metaPixelSize
+                        font.pixelSize: rootWeatherBlock.theme.modules.dashboard.metaPixelSize
                         elide: Text.ElideRight
                     }
 

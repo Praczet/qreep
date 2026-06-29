@@ -12,11 +12,11 @@ PopupWindow {
     anchor {
         item: rootMprisTooltip.anchorItem
         rect.x: rootMprisTooltip.anchorItem ? rootMprisTooltip.anchorItem.width / 2 - rootMprisTooltip.width / 2 : 0
-        rect.y: rootMprisTooltip.anchorItem ? rootMprisTooltip.anchorItem.height + rootMprisTooltip.theme.tooltip.offsetY : 0
+        rect.y: rootMprisTooltip.anchorItem ? rootMprisTooltip.anchorItem.height + rootMprisTooltip.theme.modules.bar.tooltip.offsetY : 0
     }
 
     implicitWidth: rootMprisTooltip.theme.mpris.tooltipWidth
-    implicitHeight: tooltipLayout.implicitHeight + rootMprisTooltip.theme.tooltip.verticalPadding * 2
+    implicitHeight: tooltipLayout.implicitHeight + rootMprisTooltip.theme.modules.bar.tooltip.verticalPadding * 2
     color: "transparent"
     grabFocus: false
 
@@ -46,9 +46,9 @@ PopupWindow {
         anchors.fill: parent
         transformOrigin: Item.Center
         scale: 0
-        radius: rootMprisTooltip.theme.tooltip.radius
+        radius: rootMprisTooltip.theme.modules.bar.tooltip.radius
         color: rootMprisTooltip.theme.calendarBackground
-        border.width: rootMprisTooltip.theme.tooltip.borderWidth
+        border.width: rootMprisTooltip.theme.modules.bar.tooltip.borderWidth
         border.color: rootMprisTooltip.theme.moduleHoverBackground
 
         Row {
@@ -56,7 +56,7 @@ PopupWindow {
 
             anchors {
                 fill: parent
-                margins: rootMprisTooltip.theme.tooltip.padding
+                margins: rootMprisTooltip.theme.modules.bar.tooltip.padding
             }
             spacing: rootMprisTooltip.theme.mpris.tooltipSpacing
 
@@ -114,7 +114,7 @@ PopupWindow {
                     color: rootMprisTooltip.theme.calendarDayText
                     wrapMode: Text.Wrap
                     font.pixelSize: rootMprisTooltip.theme.mpris.tooltipBodyPixelSize
-                    lineHeight: rootMprisTooltip.theme.tooltip.contentLineHeight
+                    lineHeight: rootMprisTooltip.theme.modules.bar.tooltip.contentLineHeight
                 }
             }
         }
@@ -123,7 +123,7 @@ PopupWindow {
     Timer {
         id: showTimer
 
-        interval: rootMprisTooltip.theme.tooltip.showDelay
+        interval: rootMprisTooltip.theme.modules.bar.tooltip.showDelay
         repeat: false
         onTriggered: {
             rootMprisTooltip.visible = true;
@@ -134,7 +134,7 @@ PopupWindow {
     Timer {
         id: hideTimer
 
-        interval: rootMprisTooltip.theme.tooltip.hideDelay
+        interval: rootMprisTooltip.theme.modules.bar.tooltip.hideDelay
         repeat: false
         onTriggered: hideAnimation.restart()
     }
@@ -146,17 +146,17 @@ PopupWindow {
             target: tooltipBody
             property: "scale"
             from: 0
-            to: rootMprisTooltip.theme.tooltip.popScale
-            duration: rootMprisTooltip.theme.tooltip.showOutDuration
+            to: rootMprisTooltip.theme.modules.bar.tooltip.popScale
+            duration: rootMprisTooltip.theme.modules.bar.tooltip.showOutDuration
             easing.type: Easing.OutCubic
         }
 
         NumberAnimation {
             target: tooltipBody
             property: "scale"
-            from: rootMprisTooltip.theme.tooltip.popScale
+            from: rootMprisTooltip.theme.modules.bar.tooltip.popScale
             to: 1
-            duration: rootMprisTooltip.theme.tooltip.showSettleDuration
+            duration: rootMprisTooltip.theme.modules.bar.tooltip.showSettleDuration
             easing.type: Easing.InOutCubic
         }
     }
@@ -168,17 +168,17 @@ PopupWindow {
             target: tooltipBody
             property: "scale"
             from: 1
-            to: rootMprisTooltip.theme.tooltip.popScale
-            duration: rootMprisTooltip.theme.tooltip.hideOutDuration
+            to: rootMprisTooltip.theme.modules.bar.tooltip.popScale
+            duration: rootMprisTooltip.theme.modules.bar.tooltip.hideOutDuration
             easing.type: Easing.OutCubic
         }
 
         NumberAnimation {
             target: tooltipBody
             property: "scale"
-            from: rootMprisTooltip.theme.tooltip.popScale
+            from: rootMprisTooltip.theme.modules.bar.tooltip.popScale
             to: 0
-            duration: rootMprisTooltip.theme.tooltip.hideInDuration
+            duration: rootMprisTooltip.theme.modules.bar.tooltip.hideInDuration
             easing.type: Easing.InCubic
         }
 

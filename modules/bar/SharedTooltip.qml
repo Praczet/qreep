@@ -18,11 +18,11 @@ PopupWindow {
     anchor {
         item: rootSharedTooltip.anchorItem
         rect.x: rootSharedTooltip.anchorItem ? rootSharedTooltip.anchorItem.width / 2 - rootSharedTooltip.width / 2 : 0
-        rect.y: rootSharedTooltip.anchorItem ? rootSharedTooltip.anchorItem.height + rootSharedTooltip.theme.tooltip.offsetY : 0
+        rect.y: rootSharedTooltip.anchorItem ? rootSharedTooltip.anchorItem.height + rootSharedTooltip.theme.modules.bar.tooltip.offsetY : 0
     }
 
-    implicitWidth: Math.max(rootSharedTooltip.theme.tooltip.minimumWidth, tooltipTitle.implicitWidth + rootSharedTooltip.theme.tooltip.horizontalPadding * 2, tooltipText.implicitWidth + rootSharedTooltip.theme.tooltip.horizontalPadding * 2)
-    implicitHeight: tooltipLayout.implicitHeight + rootSharedTooltip.theme.tooltip.verticalPadding * 2
+    implicitWidth: Math.max(rootSharedTooltip.theme.modules.bar.tooltip.minimumWidth, tooltipTitle.implicitWidth + rootSharedTooltip.theme.modules.bar.tooltip.horizontalPadding * 2, tooltipText.implicitWidth + rootSharedTooltip.theme.modules.bar.tooltip.horizontalPadding * 2)
+    implicitHeight: tooltipLayout.implicitHeight + rootSharedTooltip.theme.modules.bar.tooltip.verticalPadding * 2
     color: "transparent"
     grabFocus: false
 
@@ -70,9 +70,9 @@ PopupWindow {
         anchors.fill: parent
         transformOrigin: Item.Center
         scale: 0
-        radius: rootSharedTooltip.theme.tooltip.radius
+        radius: rootSharedTooltip.theme.modules.bar.tooltip.radius
         color: rootSharedTooltip.theme.calendarBackground
-        border.width: rootSharedTooltip.theme.tooltip.borderWidth
+        border.width: rootSharedTooltip.theme.modules.bar.tooltip.borderWidth
         border.color: rootSharedTooltip.style === "warning" ? rootSharedTooltip.theme.eventIndicator : rootSharedTooltip.theme.moduleHoverBackground
 
         Column {
@@ -80,9 +80,9 @@ PopupWindow {
 
             anchors {
                 fill: parent
-                margins: rootSharedTooltip.theme.tooltip.padding
+                margins: rootSharedTooltip.theme.modules.bar.tooltip.padding
             }
-            spacing: rootSharedTooltip.theme.tooltip.spacing
+            spacing: rootSharedTooltip.theme.modules.bar.tooltip.spacing
 
             Text {
                 id: tooltipTitle
@@ -90,7 +90,7 @@ PopupWindow {
                 visible: text.length > 0
                 text: rootSharedTooltip.title
                 color: rootSharedTooltip.theme.calendarHeaderText
-                font.pixelSize: rootSharedTooltip.theme.tooltip.titlePixelSize
+                font.pixelSize: rootSharedTooltip.theme.modules.bar.tooltip.titlePixelSize
                 font.weight: Font.DemiBold
             }
 
@@ -99,8 +99,8 @@ PopupWindow {
 
                 text: rootSharedTooltip.content
                 color: rootSharedTooltip.theme.calendarDayText
-                font.pixelSize: rootSharedTooltip.theme.tooltip.contentPixelSize
-                lineHeight: rootSharedTooltip.theme.tooltip.contentLineHeight
+                font.pixelSize: rootSharedTooltip.theme.modules.bar.tooltip.contentPixelSize
+                lineHeight: rootSharedTooltip.theme.modules.bar.tooltip.contentLineHeight
             }
         }
     }
@@ -108,7 +108,7 @@ PopupWindow {
     Timer {
         id: showTimer
 
-        interval: rootSharedTooltip.theme.tooltip.showDelay
+        interval: rootSharedTooltip.theme.modules.bar.tooltip.showDelay
         repeat: false
         onTriggered: rootSharedTooltip.applyPendingRequest(true)
     }
@@ -116,7 +116,7 @@ PopupWindow {
     Timer {
         id: hideTimer
 
-        interval: rootSharedTooltip.theme.tooltip.hideDelay
+        interval: rootSharedTooltip.theme.modules.bar.tooltip.hideDelay
         repeat: false
         onTriggered: hideAnimation.restart()
     }
@@ -128,17 +128,17 @@ PopupWindow {
             target: tooltipBody
             property: "scale"
             from: 0
-            to: rootSharedTooltip.theme.tooltip.popScale
-            duration: rootSharedTooltip.theme.tooltip.showOutDuration
+            to: rootSharedTooltip.theme.modules.bar.tooltip.popScale
+            duration: rootSharedTooltip.theme.modules.bar.tooltip.showOutDuration
             easing.type: Easing.OutCubic
         }
 
         NumberAnimation {
             target: tooltipBody
             property: "scale"
-            from: rootSharedTooltip.theme.tooltip.popScale
+            from: rootSharedTooltip.theme.modules.bar.tooltip.popScale
             to: 1
-            duration: rootSharedTooltip.theme.tooltip.showSettleDuration
+            duration: rootSharedTooltip.theme.modules.bar.tooltip.showSettleDuration
             easing.type: Easing.InOutCubic
         }
     }
@@ -150,17 +150,17 @@ PopupWindow {
             target: tooltipBody
             property: "scale"
             from: 1
-            to: rootSharedTooltip.theme.tooltip.popScale
-            duration: rootSharedTooltip.theme.tooltip.hideOutDuration
+            to: rootSharedTooltip.theme.modules.bar.tooltip.popScale
+            duration: rootSharedTooltip.theme.modules.bar.tooltip.hideOutDuration
             easing.type: Easing.OutCubic
         }
 
         NumberAnimation {
             target: tooltipBody
             property: "scale"
-            from: rootSharedTooltip.theme.tooltip.popScale
+            from: rootSharedTooltip.theme.modules.bar.tooltip.popScale
             to: 0
-            duration: rootSharedTooltip.theme.tooltip.hideInDuration
+            duration: rootSharedTooltip.theme.modules.bar.tooltip.hideInDuration
             easing.type: Easing.InCubic
         }
 

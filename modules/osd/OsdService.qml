@@ -88,7 +88,7 @@ QtObject {
     readonly property Timer playerQueryDelay: Timer {
         id: playerQueryDelay
 
-        interval: rootOsdService.theme.osd.playerQueryDelay
+        interval: rootOsdService.theme.modules.osd.playerQueryDelay
         repeat: false
         onTriggered: rootOsdService.queryPlayer()
     }
@@ -105,9 +105,9 @@ QtObject {
                 throw new Error("Missing required fields");
             }
 
-            showMessage(request.message, request.durationMs || theme.osd.defaultDuration, request.position || theme.osd.defaultPosition, request.title || "", request.icon || "", request.iconSize || theme.osd.iconSize, request.progress);
+            showMessage(request.message, request.durationMs || theme.modules.osd.defaultDuration, request.position || theme.modules.osd.defaultPosition, request.title || "", request.icon || "", request.iconSize || theme.modules.osd.iconSize, request.progress);
         } catch (e) {
-            showMessage("Invalid JSON payload", theme.osd.defaultDuration);
+            showMessage("Invalid JSON payload", theme.modules.osd.defaultDuration);
         }
     }
 
@@ -137,7 +137,7 @@ QtObject {
         const parsedValue = parseOptionalPercent(value);
 
         if (parsedValue === null) {
-            showMessage("Brightness unavailable", theme.osd.defaultDuration, theme.osd.defaultPosition, "Brightness", brightnessIcon(0), theme.osd.progressIconSize);
+            showMessage("Brightness unavailable", theme.modules.osd.defaultDuration, theme.modules.osd.defaultPosition, "Brightness", brightnessIcon(0), theme.modules.osd.progressIconSize);
             return;
         }
 
@@ -156,7 +156,7 @@ QtObject {
     }
 
     function showProgressMessage(title, message, icon, progress) {
-        showMessage(message, theme.osd.defaultDuration, theme.osd.defaultPosition, title, icon, theme.osd.progressIconSize, progress);
+        showMessage(message, theme.modules.osd.defaultDuration, theme.modules.osd.defaultPosition, title, icon, theme.modules.osd.progressIconSize, progress);
     }
 
     function queryAudio(kind, target) {
@@ -168,7 +168,7 @@ QtObject {
 
     function applyAudioOutput(stdoutText, stderrText, exitCode) {
         if (exitCode !== 0) {
-            showMessage(audioTitle(pendingAudioKind) + " unavailable", theme.osd.defaultDuration, theme.osd.defaultPosition, audioTitle(pendingAudioKind), audioIcon(pendingAudioKind, 0, false), theme.osd.progressIconSize);
+            showMessage(audioTitle(pendingAudioKind) + " unavailable", theme.modules.osd.defaultDuration, theme.modules.osd.defaultPosition, audioTitle(pendingAudioKind), audioIcon(pendingAudioKind, 0, false), theme.modules.osd.progressIconSize);
             return;
         }
 
@@ -192,7 +192,7 @@ QtObject {
         const fallbackIcon = playerActionIcon(pendingPlayerAction, "");
 
         if (exitCode !== 0) {
-            showMessage(playerActionTitle(pendingPlayerAction), theme.osd.defaultDuration, theme.osd.defaultPosition, "Player", fallbackIcon, theme.osd.progressIconSize);
+            showMessage(playerActionTitle(pendingPlayerAction), theme.modules.osd.defaultDuration, theme.modules.osd.defaultPosition, "Player", fallbackIcon, theme.modules.osd.progressIconSize);
             return;
         }
 
@@ -202,7 +202,7 @@ QtObject {
         const status = meta.status || "";
         const icon = playerActionIcon(pendingPlayerAction, status);
 
-        showMessage(artist, theme.osd.defaultDuration, theme.osd.defaultPosition, title, icon, theme.osd.progressIconSize);
+        showMessage(artist, theme.modules.osd.defaultDuration, theme.modules.osd.defaultPosition, title, icon, theme.modules.osd.progressIconSize);
     }
 
     function parseOptionalPercent(value) {

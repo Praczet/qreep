@@ -29,7 +29,7 @@ PopupWindow {
 
         anchors.fill: parent
         implicitHeight: popupLayout.implicitHeight + rootCalendarPopup.theme.calendar.popupPadding * 2
-        radius: rootCalendarPopup.theme.module.radius
+        radius: rootCalendarPopup.theme.modules.bar.pill.radius
         color: rootCalendarPopup.theme.calendarBackground
         border.color: rootCalendarPopup.theme.moduleHoverBackground
 

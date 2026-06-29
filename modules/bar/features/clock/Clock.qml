@@ -45,7 +45,7 @@ Components.QreepModule {
     Row {
         id: clockContent
 
-        spacing: rootClock.theme.module.spacing
+        spacing: rootClock.theme.modules.bar.pill.spacing
 
         Text {
             text: Qt.formatDateTime(rootClock.currentDate, rootClock.timeFormat)

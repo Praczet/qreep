@@ -36,7 +36,7 @@ Item {
             return;
         }
 
-        const mapped = anchorItem.mapToItem(rootWorkspacesTooltip, anchorItem.width / 2, anchorItem.height + rootWorkspacesTooltip.theme.tooltip.offsetY);
+        const mapped = anchorItem.mapToItem(rootWorkspacesTooltip, anchorItem.width / 2, anchorItem.height + rootWorkspacesTooltip.theme.modules.bar.tooltip.offsetY);
         const preferredX = mapped.x - rootWorkspacesTooltip.theme.workspaces.tooltipWidth / 2;
         const maxX = Math.max(0, rootWorkspacesTooltip.width - rootWorkspacesTooltip.theme.workspaces.tooltipWidth);
 
@@ -91,12 +91,12 @@ Item {
         y: rootWorkspacesTooltip.popupY
         z: 1
         width: rootWorkspacesTooltip.theme.workspaces.tooltipWidth
-        height: tooltipLayout.implicitHeight + rootWorkspacesTooltip.theme.tooltip.verticalPadding * 2
+        height: tooltipLayout.implicitHeight + rootWorkspacesTooltip.theme.modules.bar.tooltip.verticalPadding * 2
         transformOrigin: Item.Center
         scale: 0
-        radius: rootWorkspacesTooltip.theme.tooltip.radius
+        radius: rootWorkspacesTooltip.theme.modules.bar.tooltip.radius
         color: rootWorkspacesTooltip.theme.calendarBackground
-        border.width: rootWorkspacesTooltip.theme.tooltip.borderWidth
+        border.width: rootWorkspacesTooltip.theme.modules.bar.tooltip.borderWidth
         border.color: rootWorkspacesTooltip.theme.moduleHoverBackground
 
         Column {
@@ -104,7 +104,7 @@ Item {
 
             anchors {
                 fill: parent
-                margins: rootWorkspacesTooltip.theme.tooltip.padding
+                margins: rootWorkspacesTooltip.theme.modules.bar.tooltip.padding
             }
             spacing: rootWorkspacesTooltip.theme.workspaces.tooltipRowSpacing
 

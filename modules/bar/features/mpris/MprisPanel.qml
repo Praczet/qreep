@@ -34,7 +34,7 @@ PopupWindow {
         implicitHeight: playerLayout.implicitHeight + rootMprisPanel.theme.mpris.panelPadding * 2
         radius: rootMprisPanel.theme.mpris.panelRadius
         color: rootMprisPanel.theme.calendarBackground
-        border.width: rootMprisPanel.theme.tooltip.borderWidth
+        border.width: rootMprisPanel.theme.modules.bar.tooltip.borderWidth
         border.color: rootMprisPanel.theme.moduleHoverBackground
 
         Column {

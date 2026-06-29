@@ -15,8 +15,8 @@ PanelWindow {
     property real popupY: 0
     readonly property var clients: workspace && workspace.clients ? workspace.clients : []
     readonly property real popupWidth: rootWorkspaceClients.theme.workspaces.tooltipWidth
-    readonly property real popupHeight: tooltipLayout.implicitHeight + rootWorkspaceClients.theme.tooltip.verticalPadding * 2
-    readonly property real popupMargin: rootWorkspaceClients.theme.bar.topPadding
+    readonly property real popupHeight: tooltipLayout.implicitHeight + rootWorkspaceClients.theme.modules.bar.tooltip.verticalPadding * 2
+    readonly property real popupMargin: rootWorkspaceClients.theme.modules.bar.topPadding
 
     anchors {
         top: true
@@ -132,9 +132,9 @@ PanelWindow {
         width: rootWorkspaceClients.popupWidth
         height: rootWorkspaceClients.popupHeight
         transformOrigin: Item.Center
-        radius: rootWorkspaceClients.theme.tooltip.radius
+        radius: rootWorkspaceClients.theme.modules.bar.tooltip.radius
         color: rootWorkspaceClients.theme.workspaces.backgroundColor
-        border.width: rootWorkspaceClients.theme.tooltip.borderWidth
+        border.width: rootWorkspaceClients.theme.modules.bar.tooltip.borderWidth
         border.color: rootWorkspaceClients.theme.workspaces.borderColor
 
         MouseArea {
@@ -147,7 +147,7 @@ PanelWindow {
 
             anchors {
                 fill: parent
-                margins: rootWorkspaceClients.theme.tooltip.padding
+                margins: rootWorkspaceClients.theme.modules.bar.tooltip.padding
             }
             spacing: rootWorkspaceClients.theme.workspaces.tooltipRowSpacing
 

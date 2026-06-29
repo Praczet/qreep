@@ -13,8 +13,8 @@ PanelWindow {
     property string title
     property string message
     property bool active: false
-    property string position: theme.osd.defaultPosition
-    property int iconSize: theme.osd.iconSize
+    property string position: theme.modules.osd.defaultPosition
+    property int iconSize: theme.modules.osd.iconSize
     property real progress: -1
     readonly property string normalizedPosition: normalizePosition(position)
     readonly property bool isBottomPosition: normalizedPosition.indexOf("bottom") === 0
@@ -24,8 +24,8 @@ PanelWindow {
     readonly property bool hasTitle: title.length > 0
     readonly property bool hasProgress: progress >= 0
     readonly property real clampedProgress: Math.max(0, Math.min(1, progress))
-    readonly property int activeIconSize: hasProgress ? theme.osd.progressIconSize : iconSize
-    readonly property int maxTextWidth: Math.max(1, width - theme.osd.screenPadding * 2 - theme.osd.horizontalPadding * 2 - (hasIcon ? activeIconSize + theme.osd.contentSpacing : 0))
+    readonly property int activeIconSize: hasProgress ? theme.modules.osd.progressIconSize : iconSize
+    readonly property int maxTextWidth: Math.max(1, width - theme.modules.osd.screenPadding * 2 - theme.modules.osd.horizontalPadding * 2 - (hasIcon ? activeIconSize + theme.modules.osd.contentSpacing : 0))
 
     OsdService {
         id: osdService
@@ -37,10 +37,10 @@ PanelWindow {
     }
 
     function normalizePosition(position) {
-        const requestedPosition = String(position || rootOsd.theme.osd.defaultPosition).toLowerCase();
+        const requestedPosition = String(position || rootOsd.theme.modules.osd.defaultPosition).toLowerCase();
         const allowedPositions = ["top", "top-left", "top-right", "bottom", "bottom-left", "bottom-right"];
 
-        return allowedPositions.indexOf(requestedPosition) >= 0 ? requestedPosition : rootOsd.theme.osd.defaultPosition;
+        return allowedPositions.indexOf(requestedPosition) >= 0 ? requestedPosition : rootOsd.theme.modules.osd.defaultPosition;
     }
 
     function showMessage(message, durationMs, position, title, icon, iconSize, progress) {
@@ -53,9 +53,9 @@ PanelWindow {
         rootOsd.message = message;
         rootOsd.position = normalizePosition(position);
         rootOsd.active = true;
-        rootOsd.iconSize = Number.isFinite(parsedIconSize) && parsedIconSize > 0 ? parsedIconSize : rootOsd.theme.osd.iconSize;
+        rootOsd.iconSize = Number.isFinite(parsedIconSize) && parsedIconSize > 0 ? parsedIconSize : rootOsd.theme.modules.osd.iconSize;
         rootOsd.progress = Number.isFinite(parsedProgress) ? parsedProgress : -1;
-        hideTimer.interval = Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : rootOsd.theme.osd.defaultDuration;
+        hideTimer.interval = Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : rootOsd.theme.modules.osd.defaultDuration;
         hideTimer.restart();
     }
 
@@ -71,7 +71,7 @@ PanelWindow {
         right: true
     }
 
-    implicitHeight: Math.max(osdCard.height + rootOsd.theme.osd.topMargin * 2, rootOsd.theme.osd.panelHeight)
+    implicitHeight: Math.max(osdCard.height + rootOsd.theme.modules.osd.topMargin * 2, rootOsd.theme.modules.osd.panelHeight)
     visible: active
     color: "transparent"
     mask: Region {
@@ -86,36 +86,36 @@ PanelWindow {
     Rectangle {
         id: osdCard
 
-        width: rootOsd.hasProgress ? Math.min(rootOsd.theme.osd.progressCardWidth, rootOsd.width - rootOsd.theme.osd.screenPadding * 2) : Math.min(osdContent.implicitWidth + rootOsd.theme.osd.horizontalPadding * 2, rootOsd.width - rootOsd.theme.osd.screenPadding * 2)
-        height: osdLayout.implicitHeight + rootOsd.theme.osd.verticalPadding * 2
+        width: rootOsd.hasProgress ? Math.min(rootOsd.theme.modules.osd.progressCardWidth, rootOsd.width - rootOsd.theme.modules.osd.screenPadding * 2) : Math.min(osdContent.implicitWidth + rootOsd.theme.modules.osd.horizontalPadding * 2, rootOsd.width - rootOsd.theme.modules.osd.screenPadding * 2)
+        height: osdLayout.implicitHeight + rootOsd.theme.modules.osd.verticalPadding * 2
         x: {
             if (rootOsd.isLeftPosition)
-                return rootOsd.theme.osd.screenPadding;
+                return rootOsd.theme.modules.osd.screenPadding;
 
             if (rootOsd.isRightPosition)
-                return rootOsd.width - width - rootOsd.theme.osd.screenPadding;
+                return rootOsd.width - width - rootOsd.theme.modules.osd.screenPadding;
 
             return (rootOsd.width - width) / 2;
         }
-        y: rootOsd.isBottomPosition ? rootOsd.height - height - rootOsd.theme.osd.topMargin : rootOsd.theme.osd.topMargin
-        radius: rootOsd.theme.osd.radius
-        color: Qt.rgba(rootOsd.theme.calendarBackground.r, rootOsd.theme.calendarBackground.g, rootOsd.theme.calendarBackground.b, rootOsd.theme.osd.opacity)
-        border.width: rootOsd.theme.osd.borderWidth
-        border.color: rootOsd.theme.moduleHoverBackground
+        y: rootOsd.isBottomPosition ? rootOsd.height - height - rootOsd.theme.modules.osd.topMargin : rootOsd.theme.modules.osd.topMargin
+        radius: rootOsd.theme.modules.osd.radius
+        color: rootOsd.theme.modules.osd.backgroundColor
+        border.width: rootOsd.theme.modules.osd.borderWidth
+        border.color: rootOsd.theme.modules.osd.borderColor
 
         Column {
             id: osdLayout
 
             anchors.centerIn: parent
-            width: parent.width - rootOsd.theme.osd.horizontalPadding * 2
-            spacing: rootOsd.hasProgress ? rootOsd.theme.osd.progressSpacing : 0
+            width: parent.width - rootOsd.theme.modules.osd.horizontalPadding * 2
+            spacing: rootOsd.hasProgress ? rootOsd.theme.modules.osd.progressSpacing : 0
 
             Row {
                 id: osdContent
 
                 width: rootOsd.hasProgress ? parent.width : implicitWidth
                 height: Math.max(rootOsd.hasIcon ? rootOsd.activeIconSize : 0, osdTextLayout.implicitHeight)
-                spacing: rootOsd.theme.osd.contentSpacing
+                spacing: rootOsd.theme.modules.osd.contentSpacing
 
                 Item {
                     width: rootOsd.activeIconSize
@@ -146,7 +146,7 @@ PanelWindow {
                     id: osdTextLayout
 
                     width: Math.min(implicitWidth, rootOsd.maxTextWidth)
-                    spacing: rootOsd.theme.osd.textSpacing
+                    spacing: rootOsd.theme.modules.osd.textSpacing
                     anchors.verticalCenter: parent.verticalCenter
 
                     Text {
@@ -156,7 +156,7 @@ PanelWindow {
                         visible: rootOsd.hasTitle
                         text: rootOsd.title
                         color: rootOsd.theme.calendarHeaderText
-                        font.pixelSize: rootOsd.hasProgress ? rootOsd.theme.osd.progressTitleTextPixelSize : rootOsd.theme.osd.titleTextPixelSize
+                        font.pixelSize: rootOsd.hasProgress ? rootOsd.theme.modules.osd.progressTitleTextPixelSize : rootOsd.theme.modules.osd.titleTextPixelSize
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
@@ -167,7 +167,7 @@ PanelWindow {
                         width: rootOsd.hasProgress ? implicitWidth : Math.min(implicitWidth, rootOsd.maxTextWidth)
                         text: rootOsd.message
                         color: rootOsd.hasTitle ? rootOsd.theme.calendarDayText : rootOsd.theme.calendarHeaderText
-                        font.pixelSize: rootOsd.hasProgress ? rootOsd.theme.osd.progressMessageTextPixelSize : rootOsd.theme.osd.messageTextPixelSize
+                        font.pixelSize: rootOsd.hasProgress ? rootOsd.theme.modules.osd.progressMessageTextPixelSize : rootOsd.theme.modules.osd.messageTextPixelSize
                         font.weight: rootOsd.hasTitle ? Font.Normal : Font.DemiBold
                         wrapMode: Text.Wrap
                         horizontalAlignment: rootOsd.hasProgress ? Text.AlignHCenter : Text.AlignLeft
@@ -177,7 +177,7 @@ PanelWindow {
 
             Rectangle {
                 width: parent.width
-                height: rootOsd.theme.osd.progressHeight
+                height: rootOsd.theme.modules.osd.progressHeight
                 visible: rootOsd.hasProgress
                 radius: height / 2
                 color: rootOsd.theme.moduleHoverBackground
