@@ -141,6 +141,54 @@ Clock service:
 | `showSeconds` | boolean | `showSecondHand` | Uses second-level clock updates when true. This does not add seconds to the digital text. |
 | `fontFamily` | string | `""` | Optional font family for digital time and date text. |
 
+## Digital Clock Block
+
+Use `type: "digital-clock"` for the plain time/date dashboard widget. The outer
+dashboard block owns the rounded surface, border, placement, and animation. The
+digital block only renders text. Heroic restraint, somehow.
+
+```json
+{
+  "id": "clock-digital",
+  "type": "digital-clock",
+  "anchorPoint": "top-left",
+  "dx": 80,
+  "dy": 110,
+  "width": 426,
+  "height": 160,
+  "showTitle": false,
+  "showBackground": true,
+  "showBorder": false,
+  "config": {
+    "showTime": true,
+    "showDate": true,
+    "showSeconds": false
+  }
+}
+```
+
+Digital clock config:
+
+| Option | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `width` | number | `360` | Fallback implicit width. Dashboard block `width` is normally used. |
+| `height` | number | `140` | Fallback implicit height. Dashboard block `height` is normally used. |
+| `padding` | number | `18` | Inner padding inside the block. |
+| `textSpacing` | number | `8` | Space between time and date text. |
+| `showTime` | boolean | `true` | Shows the large time text. |
+| `showDate` | boolean | `true` | Shows formatted date below the time. |
+| `showDayOfWeek` | boolean | `false` | Shows only day-of-week when `showDate` is false. |
+| `showSeconds` | boolean | `false` | Shows seconds and uses second-level clock updates. |
+| `timeTextColor` | color | theme primary text | Time text color. |
+| `dateTextColor` | color | theme secondary text | Date text color. |
+| `timePixelSize` | number | auto | Fixed time font size. Overrides `timeTextScale`. |
+| `timeTextScale` | number | `0.48` | Time font size as a fraction of block auto size. |
+| `datePixelSize` | number | auto | Fixed date font size. Overrides `dateTextScale`. |
+| `dateTextScale` | number | `0.12` | Date font size as a fraction of block auto size. |
+| `timeFormat` | string | `"24h"` | Use `"12h"` for 12-hour time. |
+| `dateFormat` | string | `"dddd, yyyy-MM-dd"` | Qt date format used when `showDate` is true. |
+| `fontFamily` | string | `""` | Optional font family for both text rows. |
+
 ## Color Values
 
 Color options accept raw colors:

@@ -1,6 +1,30 @@
 {
   "blocks": [
     {
+      "id": "clock-digital",
+      "type": "digital-clock",
+      "title": "Digital Clock",
+      "text": "",
+      "preset": "wide",
+      "anchorPoint": "top-left",
+      "dx": 80,
+      "dy": 110,
+      "width": 426,
+      "height": 160,
+      "from": "left",
+      "showTitle": false,
+      "showBackground": true,
+      "showBorder": false,
+      "config": {
+        "showTime": true,
+        "showDate": true,
+        "showDayOfWeek": false,
+        "showSeconds": false,
+        "timeTextColor": "{{primary}}",
+        "dateTextColor": "{{secondary}}"
+      }
+    },
+    {
       "id": "clock-analog",
       "type": "clock",
       "title": "Clock",
