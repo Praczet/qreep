@@ -21,11 +21,26 @@ QtObject {
     readonly property int sideMargin: 4
     readonly property int itemSpacing: 4
 
-    readonly property QtObject pill: BarPillTheme {}
-    readonly property QtObject tooltip: TooltipTheme {}
+    readonly property color backgroundColor: "transparent"
+    readonly property color moduleBackgroundColor: qreep.background
+    readonly property color moduleHoverBackgroundColor: qreep.surfaceContainerHigh
+    readonly property color primaryTextColor: qreep.primary
+    readonly property color secondaryTextColor: qreep.on_surface_variant
+    readonly property color accentColor: qreep.primary
 
-    readonly property QtObject borg: BorgFeature.BorgTheme {}
-    readonly property QtObject calendar: ClockFeature.CalendarTheme {}
+    readonly property QtObject pill: BarPillTheme {
+        qreep: rootBarTheme.qreep
+    }
+    readonly property QtObject tooltip: TooltipTheme {
+        qreep: rootBarTheme.qreep
+    }
+
+    readonly property QtObject borg: BorgFeature.BorgTheme {
+        qreep: rootBarTheme.qreep
+    }
+    readonly property QtObject calendar: ClockFeature.CalendarTheme {
+        qreep: rootBarTheme.qreep
+    }
     readonly property QtObject clock: ClockFeature.ClockTheme {}
     readonly property QtObject launcher: LauncherFeature.LauncherTheme {}
     readonly property QtObject monitorProfile: MonitorProfileFeature.MonitorProfileTheme {}

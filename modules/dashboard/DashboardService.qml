@@ -45,6 +45,7 @@ QtObject {
 
     function applyConfig(document) {
         const rawBlocks = document && Array.isArray(document.blocks) ? document.blocks : [];
+        const cardStyle = document && typeof document.cardStyle === "object" ? document.cardStyle : ({});
 
         if (rawBlocks.length === 0) {
             blocks = defaultBlocks();
@@ -52,12 +53,13 @@ QtObject {
             return;
         }
 
-        blocks = rawBlocks.map((block, index) => normalizeBlock(block, index));
+        blocks = rawBlocks.map((block, index) => normalizeBlock(block, index, cardStyle));
         error = "";
     }
 
-    function normalizeBlock(block, index) {
+    function normalizeBlock(block, index, cardStyle) {
         const value = block || ({});
+        const style = cardStyle || ({});
         const usesAnchoredPlacement = typeof value.anchorPoint === "string" || value.dx !== undefined || value.dy !== undefined;
 
         return {
@@ -78,6 +80,12 @@ QtObject {
             showTitle: boolValue(value.showTitle, true),
             showBackground: boolValue(value.showBackground, true),
             showBorder: boolValue(value.showBorder, true),
+            color: stringValue(value.color, stringValue(style.color, "")),
+            backgroundColor: stringValue(value.backgroundColor, stringValue(style.backgroundColor, "")),
+            borderColor: stringValue(value.borderColor, stringValue(style.borderColor, "")),
+            radius: numberValue(value.radius, numberValue(style.radius, theme.modules.dashboard.cardRadius)),
+            borderWidth: numberValue(value.borderWidth, numberValue(style.borderWidth, theme.modules.dashboard.cardBorderWidth)),
+            padding: numberValue(value.padding, numberValue(style.padding, theme.modules.dashboard.cardPadding)),
             config: value.config || ({})
         };
     }

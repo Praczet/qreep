@@ -47,7 +47,7 @@ Item {
         visible: rootImageBlock.imagePath.length === 0 || chartImage.status === Image.Error
         width: parent.width
         text: rootImageBlock.imagePath.length === 0 ? "Missing image path" : "Image failed to load"
-        color: rootImageBlock.theme.secondaryText
+        color: rootImageBlock.theme.modules.dashboard.secondaryTextColor
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.Wrap
         font.pixelSize: rootImageBlock.theme.modules.dashboard.bodyPixelSize
@@ -70,34 +70,7 @@ Item {
         if (typeof value !== "string" || value.length === 0)
             return fallback;
 
-        switch (value) {
-        case "{{primary}}":
-            return theme.primaryText;
-        case "{{secondary}}":
-            return theme.secondaryText;
-        case "{{background}}":
-            return theme.barBackground;
-        case "{{surface}}":
-            return theme.modules.dashboard.backgroundColor;
-        case "{{surface_border}}":
-            return theme.modules.dashboard.borderColor;
-        case "{{accent}}":
-            return theme.eventIndicator;
-        case "{{module}}":
-            return theme.moduleBackground;
-        case "{{module_hover}}":
-            return theme.moduleHoverBackground;
-        case "{{calendar_background}}":
-            return theme.calendarBackground;
-        case "{{calendar_header}}":
-            return theme.calendarHeaderText;
-        case "{{calendar_day}}":
-            return theme.calendarDayText;
-        case "{{error}}":
-            return theme.borg.errorColor;
-        default:
-            return value;
-        }
+        return value.indexOf("{{") === 0 ? theme.colorToken(value, fallback) : value;
     }
 
     function expandPath(path) {

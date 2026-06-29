@@ -7,6 +7,7 @@ Scope {
 
     required property QtObject theme
     property bool open: false
+    readonly property bool panelLoaded: open || closeTimer.running
     readonly property alias service: dashboardService
 
     DashboardService {
@@ -38,30 +39,43 @@ Scope {
     LazyLoader {
         id: panelLoader
 
-        active: rootDashboard.open
+        active: rootDashboard.panelLoaded
 
         DashboardPanel {
             theme: rootDashboard.theme
             service: dashboardService
+            panelOpen: rootDashboard.open
 
             onCloseRequested: rootDashboard.hide()
         }
     }
 
+    Timer {
+        id: closeTimer
+
+        interval: rootDashboard.theme.modules.dashboard.animationDuration + 40
+        repeat: false
+    }
+
     function show() {
+        closeTimer.stop();
         dashboardService.reload();
         open = true;
     }
 
     function hide() {
+        if (!open)
+            return;
+
+        closeTimer.restart();
         open = false;
     }
 
     function toggle() {
-        if (!open)
-            dashboardService.reload();
-
-        open = !open;
+        if (open)
+            hide();
+        else
+            show();
     }
 
     function refresh() {

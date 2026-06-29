@@ -27,8 +27,8 @@ Item {
     property bool showDayOfWeek: boolValue(config.showDayOfWeek, false)
     property bool showSeconds: boolValue(config.showSeconds, false)
 
-    property color timeTextColor: colorValue(config.timeTextColor, theme.primaryText)
-    property color dateTextColor: colorValue(config.dateTextColor, theme.secondaryText)
+    property color timeTextColor: colorValue(config.timeTextColor, theme.modules.dashboard.primaryTextColor)
+    property color dateTextColor: colorValue(config.dateTextColor, theme.modules.dashboard.secondaryTextColor)
 
     readonly property string timeText: showSeconds ? clock.currentDateTime.timeWithSecondsText : clock.currentDateTime.timeText
     readonly property string dateDisplayText: showDate ? clock.currentDateTime.dateText : Qt.formatDateTime(clock.currentDateTime.raw, "dddd")
@@ -104,33 +104,6 @@ Item {
         if (typeof value !== "string" || value.length === 0)
             return fallback;
 
-        switch (value) {
-        case "{{primary}}":
-            return theme.primaryText;
-        case "{{secondary}}":
-            return theme.secondaryText;
-        case "{{background}}":
-            return theme.barBackground;
-        case "{{surface}}":
-            return theme.modules.dashboard.backgroundColor;
-        case "{{surface_border}}":
-            return theme.modules.dashboard.borderColor;
-        case "{{accent}}":
-            return theme.eventIndicator;
-        case "{{module}}":
-            return theme.moduleBackground;
-        case "{{module_hover}}":
-            return theme.moduleHoverBackground;
-        case "{{calendar_background}}":
-            return theme.calendarBackground;
-        case "{{calendar_header}}":
-            return theme.calendarHeaderText;
-        case "{{calendar_day}}":
-            return theme.calendarDayText;
-        case "{{error}}":
-            return theme.borg.errorColor;
-        default:
-            return value;
-        }
+        return value.indexOf("{{") === 0 ? theme.colorToken(value, fallback) : value;
     }
 }

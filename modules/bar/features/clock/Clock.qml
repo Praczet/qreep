@@ -29,11 +29,11 @@ Components.QreepModule {
         currentDate = new Date();
 
         const now = currentDate;
-        const refreshInterval = showSeconds ? rootClock.theme.clock.secondRefreshInterval : rootClock.theme.clock.minuteRefreshInterval;
-        const elapsedInInterval = showSeconds ? now.getMilliseconds() : now.getSeconds() * rootClock.theme.clock.secondRefreshInterval + now.getMilliseconds();
+        const refreshInterval = showSeconds ? rootClock.theme.modules.bar.clock.secondRefreshInterval : rootClock.theme.modules.bar.clock.minuteRefreshInterval;
+        const elapsedInInterval = showSeconds ? now.getMilliseconds() : now.getSeconds() * rootClock.theme.modules.bar.clock.secondRefreshInterval + now.getMilliseconds();
         const millisecondsToNextRefresh = refreshInterval - elapsedInInterval;
 
-        minuteTimer.interval = Math.max(rootClock.theme.clock.minimumRefreshInterval, millisecondsToNextRefresh);
+        minuteTimer.interval = Math.max(rootClock.theme.modules.bar.clock.minimumRefreshInterval, millisecondsToNextRefresh);
         minuteTimer.restart();
     }
 
@@ -49,16 +49,16 @@ Components.QreepModule {
 
         Text {
             text: Qt.formatDateTime(rootClock.currentDate, rootClock.timeFormat)
-            color: rootClock.theme.primaryText
-            font.pixelSize: rootClock.theme.clock.timePixelSize
+            color: rootClock.theme.modules.bar.primaryTextColor
+            font.pixelSize: rootClock.theme.modules.bar.clock.timePixelSize
             font.weight: Font.DemiBold
         }
 
         Text {
             anchors.verticalCenter: parent.children[0].verticalCenter
             text: Qt.formatDateTime(rootClock.currentDate, rootClock.dateFormat)
-            color: rootClock.theme.secondaryText
-            font.pixelSize: rootClock.theme.clock.datePixelSize
+            color: rootClock.theme.modules.bar.secondaryTextColor
+            font.pixelSize: rootClock.theme.modules.bar.clock.datePixelSize
             font.weight: Font.Medium
         }
     }
@@ -69,19 +69,19 @@ Components.QreepModule {
             verticalCenter: parent.bottom
         }
 
-        spacing: rootClock.theme.clock.eventIndicatorSpacing
+        spacing: rootClock.theme.modules.bar.clock.eventIndicatorSpacing
         visible: rootClock.visibleTodayEvents.length > 0
 
         Repeater {
-            model: Math.min(rootClock.visibleTodayEvents.length, rootClock.theme.clock.maxEventIndicators)
+            model: Math.min(rootClock.visibleTodayEvents.length, rootClock.theme.modules.bar.clock.maxEventIndicators)
 
             delegate: Rectangle {
                 required property int index
 
-                width: rootClock.theme.clock.eventIndicatorSize
-                height: rootClock.theme.clock.eventIndicatorSize
-                radius: rootClock.theme.clock.eventIndicatorRadius
-                color: rootClock.theme.eventIndicator
+                width: rootClock.theme.modules.bar.clock.eventIndicatorSize
+                height: rootClock.theme.modules.bar.clock.eventIndicatorSize
+                radius: rootClock.theme.modules.bar.clock.eventIndicatorRadius
+                color: rootClock.theme.modules.bar.accentColor
             }
         }
     }

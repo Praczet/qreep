@@ -16,16 +16,22 @@ Rectangle {
     readonly property real baseX: block.placementMode === "absolute" ? Number(block.x || 0) : anchorBaseX(block.anchorPoint) + Number(block.dx || 0)
     readonly property real baseY: block.placementMode === "absolute" ? Number(block.y || 0) : anchorBaseY(block.anchorPoint) + Number(block.dy || 0)
     readonly property real enterOffset: theme.modules.dashboard.enterOffset
+    readonly property color cardTextColor: colorValue(block.color, theme.modules.dashboard.primaryTextColor)
+    readonly property color cardBackgroundColor: colorValue(block.backgroundColor, theme.modules.dashboard.backgroundColor)
+    readonly property color cardBorderColor: colorValue(block.borderColor, theme.modules.dashboard.borderColor)
+    readonly property real cardRadius: Number.isFinite(Number(block.radius)) ? Number(block.radius) : theme.modules.dashboard.cardRadius
+    readonly property real cardBorderWidth: Number.isFinite(Number(block.borderWidth)) ? Number(block.borderWidth) : theme.modules.dashboard.cardBorderWidth
+    readonly property real cardPadding: Number.isFinite(Number(block.padding)) ? Number(block.padding) : theme.modules.dashboard.cardPadding
 
     x: entered ? baseX : baseX + offsetX(block.from)
     y: entered ? baseY : baseY + offsetY(block.from)
     width: cardWidth
     height: cardHeight
-    radius: theme.modules.dashboard.cardRadius
+    radius: cardRadius
     opacity: entered ? 1 : 0
-    color: block.showBackground === false ? "transparent" : theme.modules.dashboard.backgroundColor
-    border.width: block.showBorder === false ? 0 : theme.modules.dashboard.cardBorderWidth
-    border.color: theme.modules.dashboard.borderColor
+    color: block.showBackground === false ? "transparent" : cardBackgroundColor
+    border.width: block.showBorder === false ? 0 : cardBorderWidth
+    border.color: cardBorderColor
 
     function offsetX(from) {
         switch (String(from || "center")) {
@@ -87,6 +93,13 @@ Rectangle {
         }
     }
 
+    function colorValue(value, fallback) {
+        if (typeof value !== "string" || value.length === 0)
+            return fallback;
+
+        return value.indexOf("{{") === 0 ? theme.colorToken(value, fallback) : value;
+    }
+
     MouseArea {
         anchors.fill: parent
         onClicked: mouse => mouse.accepted = true
@@ -102,7 +115,7 @@ Rectangle {
     Column {
         anchors {
             fill: parent
-            margins: rootDashboardCard.theme.modules.dashboard.cardPadding
+            margins: rootDashboardCard.cardPadding
         }
         spacing: rootDashboardCard.theme.modules.dashboard.contentSpacing
 
@@ -110,7 +123,7 @@ Rectangle {
             visible: rootDashboardCard.block.showTitle !== false
             width: parent.width
             text: String(rootDashboardCard.block.title || rootDashboardCard.block.id || "Dashboard block")
-            color: rootDashboardCard.theme.calendarHeaderText
+            color: rootDashboardCard.cardTextColor
             font.pixelSize: rootDashboardCard.theme.modules.dashboard.titlePixelSize
             font.weight: Font.DemiBold
             elide: Text.ElideRight
@@ -119,8 +132,8 @@ Rectangle {
         Rectangle {
             visible: rootDashboardCard.block.showTitle !== false
             width: parent.width
-            height: rootDashboardCard.theme.modules.dashboard.dividerWidth
-            color: rootDashboardCard.theme.modules.dashboard.borderColor
+            height: Math.max(1, Math.min(rootDashboardCard.cardBorderWidth, rootDashboardCard.theme.modules.dashboard.dividerWidth))
+            color: rootDashboardCard.cardBorderColor
             opacity: 0.7
         }
 
@@ -128,7 +141,7 @@ Rectangle {
             visible: rootDashboardCard.block.type !== "weather" && rootDashboardCard.block.type !== "clock" && rootDashboardCard.block.type !== "digital-clock" && rootDashboardCard.block.type !== "image" && rootDashboardCard.block.type !== "word-of-the-day"
             width: parent.width
             text: String(rootDashboardCard.block.text || rootDashboardCard.block.type || "fake")
-            color: rootDashboardCard.theme.calendarDayText
+            color: rootDashboardCard.cardTextColor
             font.pixelSize: rootDashboardCard.theme.modules.dashboard.bodyPixelSize
             wrapMode: Text.Wrap
         }
@@ -168,7 +181,8 @@ Rectangle {
             visible: rootDashboardCard.block.type === "fake"
             width: parent.width
             text: "preset: " + String(rootDashboardCard.block.preset || "default") + " | anchor: " + String(rootDashboardCard.block.anchorPoint || "absolute") + " | from: " + String(rootDashboardCard.block.from || "center")
-            color: rootDashboardCard.theme.secondaryText
+            color: rootDashboardCard.cardTextColor
+            opacity: 0.72
             font.pixelSize: rootDashboardCard.theme.modules.dashboard.metaPixelSize
             wrapMode: Text.Wrap
         }

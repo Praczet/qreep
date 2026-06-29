@@ -71,9 +71,9 @@ PopupWindow {
         transformOrigin: Item.Center
         scale: 0
         radius: rootSharedTooltip.theme.modules.bar.tooltip.radius
-        color: rootSharedTooltip.theme.calendarBackground
+        color: rootSharedTooltip.theme.modules.bar.tooltip.backgroundColor
         border.width: rootSharedTooltip.theme.modules.bar.tooltip.borderWidth
-        border.color: rootSharedTooltip.style === "warning" ? rootSharedTooltip.theme.eventIndicator : rootSharedTooltip.theme.moduleHoverBackground
+        border.color: rootSharedTooltip.style === "warning" ? rootSharedTooltip.theme.modules.bar.tooltip.warningBorderColor : rootSharedTooltip.theme.modules.bar.tooltip.borderColor
 
         Column {
             id: tooltipLayout
@@ -89,7 +89,7 @@ PopupWindow {
 
                 visible: text.length > 0
                 text: rootSharedTooltip.title
-                color: rootSharedTooltip.theme.calendarHeaderText
+                color: rootSharedTooltip.theme.modules.bar.tooltip.titleTextColor
                 font.pixelSize: rootSharedTooltip.theme.modules.bar.tooltip.titlePixelSize
                 font.weight: Font.DemiBold
             }
@@ -98,7 +98,7 @@ PopupWindow {
                 id: tooltipText
 
                 text: rootSharedTooltip.content
-                color: rootSharedTooltip.theme.calendarDayText
+                color: rootSharedTooltip.theme.modules.bar.tooltip.contentTextColor
                 font.pixelSize: rootSharedTooltip.theme.modules.bar.tooltip.contentPixelSize
                 lineHeight: rootSharedTooltip.theme.modules.bar.tooltip.contentLineHeight
             }

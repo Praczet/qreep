@@ -18,8 +18,14 @@ QtObject {
     readonly property int screenMargin: 48
     readonly property int topMargin: 104
     readonly property int bottomMargin: 48
-    readonly property color backgroundColor: qreep.overlaySurfaceBackground
-    readonly property color borderColor: qreep.overlaySurfaceBorder
+    readonly property color backgroundColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, opacity)
+    readonly property color borderColor: qreep.outline
+    readonly property color selectedBackgroundColor: qreep.primaryContainer
+    readonly property color selectedTextColor: qreep.on_primary_container
+    readonly property color titleTextColor: qreep.on_surface
+    readonly property color rowTextColor: qreep.on_surface
+    readonly property color mutedTextColor: qreep.on_surface_variant
+    readonly property real opacity: 0.82
     readonly property int radius: 16
     readonly property int borderWidth: 1
     readonly property int contentPadding: 20

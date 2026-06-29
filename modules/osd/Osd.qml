@@ -136,9 +136,9 @@ PanelWindow {
                     MultiEffect {
                         anchors.fill: parent
                         source: osdIcon
-                        colorization: rootOsd.theme.power.actionIconColorization
-                        brightness: rootOsd.theme.power.actionIconBrightness
-                        colorizationColor: rootOsd.theme.powerActionIconColor
+                        colorization: rootOsd.theme.modules.osd.iconColorization
+                        brightness: rootOsd.theme.modules.osd.iconBrightness
+                        colorizationColor: rootOsd.theme.modules.osd.iconColor
                     }
                 }
 
@@ -155,7 +155,7 @@ PanelWindow {
                         width: rootOsd.hasProgress ? implicitWidth : Math.min(implicitWidth, rootOsd.maxTextWidth)
                         visible: rootOsd.hasTitle
                         text: rootOsd.title
-                        color: rootOsd.theme.calendarHeaderText
+                        color: rootOsd.theme.modules.osd.primaryTextColor
                         font.pixelSize: rootOsd.hasProgress ? rootOsd.theme.modules.osd.progressTitleTextPixelSize : rootOsd.theme.modules.osd.titleTextPixelSize
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
@@ -166,7 +166,7 @@ PanelWindow {
 
                         width: rootOsd.hasProgress ? implicitWidth : Math.min(implicitWidth, rootOsd.maxTextWidth)
                         text: rootOsd.message
-                        color: rootOsd.hasTitle ? rootOsd.theme.calendarDayText : rootOsd.theme.calendarHeaderText
+                        color: rootOsd.hasTitle ? rootOsd.theme.modules.osd.secondaryTextColor : rootOsd.theme.modules.osd.primaryTextColor
                         font.pixelSize: rootOsd.hasProgress ? rootOsd.theme.modules.osd.progressMessageTextPixelSize : rootOsd.theme.modules.osd.messageTextPixelSize
                         font.weight: rootOsd.hasTitle ? Font.Normal : Font.DemiBold
                         wrapMode: Text.Wrap
@@ -180,13 +180,13 @@ PanelWindow {
                 height: rootOsd.theme.modules.osd.progressHeight
                 visible: rootOsd.hasProgress
                 radius: height / 2
-                color: rootOsd.theme.moduleHoverBackground
+                color: rootOsd.theme.modules.osd.borderColor
 
                 Rectangle {
                     width: parent.width * rootOsd.clampedProgress
                     height: parent.height
                     radius: parent.radius
-                    color: rootOsd.theme.primaryText
+                    color: rootOsd.theme.modules.osd.primaryTextColor
                 }
             }
         }

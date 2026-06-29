@@ -37,8 +37,8 @@ Item {
         }
 
         const mapped = anchorItem.mapToItem(rootWorkspacesTooltip, anchorItem.width / 2, anchorItem.height + rootWorkspacesTooltip.theme.modules.bar.tooltip.offsetY);
-        const preferredX = mapped.x - rootWorkspacesTooltip.theme.workspaces.tooltipWidth / 2;
-        const maxX = Math.max(0, rootWorkspacesTooltip.width - rootWorkspacesTooltip.theme.workspaces.tooltipWidth);
+        const preferredX = mapped.x - rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipWidth / 2;
+        const maxX = Math.max(0, rootWorkspacesTooltip.width - rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipWidth);
 
         popupX = Math.max(0, Math.min(preferredX, maxX));
         popupY = mapped.y;
@@ -90,14 +90,14 @@ Item {
         x: rootWorkspacesTooltip.popupX
         y: rootWorkspacesTooltip.popupY
         z: 1
-        width: rootWorkspacesTooltip.theme.workspaces.tooltipWidth
+        width: rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipWidth
         height: tooltipLayout.implicitHeight + rootWorkspacesTooltip.theme.modules.bar.tooltip.verticalPadding * 2
         transformOrigin: Item.Center
         scale: 0
         radius: rootWorkspacesTooltip.theme.modules.bar.tooltip.radius
-        color: rootWorkspacesTooltip.theme.calendarBackground
+        color: rootWorkspacesTooltip.theme.modules.bar.tooltip.backgroundColor
         border.width: rootWorkspacesTooltip.theme.modules.bar.tooltip.borderWidth
-        border.color: rootWorkspacesTooltip.theme.moduleHoverBackground
+        border.color: rootWorkspacesTooltip.theme.modules.bar.moduleHoverBackgroundColor
 
         Column {
             id: tooltipLayout
@@ -106,13 +106,13 @@ Item {
                 fill: parent
                 margins: rootWorkspacesTooltip.theme.modules.bar.tooltip.padding
             }
-            spacing: rootWorkspacesTooltip.theme.workspaces.tooltipRowSpacing
+            spacing: rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipRowSpacing
 
             Text {
                 width: parent.width
                 text: rootWorkspacesTooltip.workspace.tooltipTitle || "Workspace"
-                color: rootWorkspacesTooltip.theme.calendarHeaderText
-                font.pixelSize: rootWorkspacesTooltip.theme.workspaces.tooltipTitlePixelSize
+                color: rootWorkspacesTooltip.theme.modules.bar.tooltip.titleTextColor
+                font.pixelSize: rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipTitlePixelSize
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
@@ -126,9 +126,9 @@ Item {
                     required property var modelData
 
                     width: tooltipLayout.width
-                    height: rootWorkspacesTooltip.theme.workspaces.tooltipRowHeight
-                    radius: rootWorkspacesTooltip.theme.workspaces.tooltipRowRadius
-                    color: rowMouseArea.containsMouse ? rootWorkspacesTooltip.theme.moduleHoverBackground : "transparent"
+                    height: rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipRowHeight
+                    radius: rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipRowRadius
+                    color: rowMouseArea.containsMouse ? rootWorkspacesTooltip.theme.modules.bar.moduleHoverBackgroundColor : "transparent"
 
                     Row {
                         anchors {
@@ -138,21 +138,21 @@ Item {
                             leftMargin: 8
                             rightMargin: 8
                         }
-                        spacing: rootWorkspacesTooltip.theme.workspaces.tooltipContentSpacing
+                        spacing: rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipContentSpacing
 
                         IconImage {
-                            width: rootWorkspacesTooltip.theme.workspaces.tooltipIconSize
+                            width: rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipIconSize
                             height: width
                             anchors.verticalCenter: parent.verticalCenter
                             source: Quickshell.iconPath(rootWorkspacesTooltip.iconName(windowRow.modelData), "application-x-executable-symbolic")
                         }
 
                         Text {
-                            width: parent.width - rootWorkspacesTooltip.theme.workspaces.tooltipIconSize - parent.spacing
+                            width: parent.width - rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipIconSize - parent.spacing
                             anchors.verticalCenter: parent.verticalCenter
                             text: rootWorkspacesTooltip.windowTitle(windowRow.modelData)
-                            color: rootWorkspacesTooltip.theme.calendarDayText
-                            font.pixelSize: rootWorkspacesTooltip.theme.workspaces.tooltipWindowPixelSize
+                            color: rootWorkspacesTooltip.theme.modules.bar.tooltip.contentTextColor
+                            font.pixelSize: rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipWindowPixelSize
                             elide: Text.ElideRight
                         }
                     }
@@ -181,8 +181,8 @@ Item {
                 width: parent.width
                 visible: rootWorkspacesTooltip.clients.length === 0
                 text: "No windows"
-                color: rootWorkspacesTooltip.theme.calendarMutedText
-                font.pixelSize: rootWorkspacesTooltip.theme.workspaces.tooltipWindowPixelSize
+                color: rootWorkspacesTooltip.theme.modules.bar.secondaryTextColor
+                font.pixelSize: rootWorkspacesTooltip.theme.modules.bar.workspaces.tooltipWindowPixelSize
             }
         }
 

@@ -35,9 +35,9 @@ Components.QreepModule {
             id: borgText
 
             text: rootBorg.service.text
-            color: rootBorg.theme.borgClassColor(rootBorg.service.className)
+            color: rootBorg.theme.modules.bar.borg.classColor(rootBorg.service.className)
             font.family: rootBorg.theme.iconFontFamily
-            font.pixelSize: rootBorg.theme.borg.iconPixelSize
+            font.pixelSize: rootBorg.theme.modules.bar.borg.iconPixelSize
         }
     }
 
@@ -49,16 +49,16 @@ Components.QreepModule {
                 target: rootBorg
                 property: "scale"
                 from: 1
-                to: rootBorg.theme.borg.pulseScale
-                duration: rootBorg.theme.borg.pulseOutDuration
+                to: rootBorg.theme.modules.bar.borg.pulseScale
+                duration: rootBorg.theme.modules.bar.borg.pulseOutDuration
                 easing.type: Easing.OutCubic
             }
 
             RotationAnimation {
                 target: borgTextWrapper
                 from: 0
-                to: rootBorg.theme.borg.pulseRotation
-                duration: rootBorg.theme.borg.pulseOutDuration
+                to: rootBorg.theme.modules.bar.borg.pulseRotation
+                duration: rootBorg.theme.modules.bar.borg.pulseOutDuration
                 direction: RotationAnimation.Clockwise
                 easing.type: Easing.OutCubic
             }
@@ -68,17 +68,17 @@ Components.QreepModule {
             NumberAnimation {
                 target: rootBorg
                 property: "scale"
-                from: rootBorg.theme.borg.pulseScale
-                to: rootBorg.theme.borg.pulseSettleScale
-                duration: rootBorg.theme.borg.pulseSettleDuration
+                from: rootBorg.theme.modules.bar.borg.pulseScale
+                to: rootBorg.theme.modules.bar.borg.pulseSettleScale
+                duration: rootBorg.theme.modules.bar.borg.pulseSettleDuration
                 easing.type: Easing.InOutCubic
             }
 
             RotationAnimation {
                 target: borgTextWrapper
-                from: rootBorg.theme.borg.pulseRotation
-                to: -rootBorg.theme.borg.pulseRotationSettle
-                duration: rootBorg.theme.borg.pulseSettleDuration
+                from: rootBorg.theme.modules.bar.borg.pulseRotation
+                to: -rootBorg.theme.modules.bar.borg.pulseRotationSettle
+                duration: rootBorg.theme.modules.bar.borg.pulseSettleDuration
                 easing.type: Easing.InOutCubic
             }
         }
@@ -87,17 +87,17 @@ Components.QreepModule {
             NumberAnimation {
                 target: rootBorg
                 property: "scale"
-                from: rootBorg.theme.borg.pulseSettleScale
+                from: rootBorg.theme.modules.bar.borg.pulseSettleScale
                 to: 1
-                duration: rootBorg.theme.borg.pulseInDuration
+                duration: rootBorg.theme.modules.bar.borg.pulseInDuration
                 easing.type: Easing.OutCubic
             }
 
             RotationAnimation {
                 target: borgTextWrapper
-                from: -rootBorg.theme.borg.pulseRotationSettle
+                from: -rootBorg.theme.modules.bar.borg.pulseRotationSettle
                 to: 0
-                duration: rootBorg.theme.borg.pulseInDuration
+                duration: rootBorg.theme.modules.bar.borg.pulseInDuration
                 easing.type: Easing.OutCubic
             }
         }

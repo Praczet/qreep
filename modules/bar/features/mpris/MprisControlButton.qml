@@ -8,18 +8,18 @@ Rectangle {
 
     signal triggered
 
-    width: theme.mpris.controlButtonSize
+    width: theme.modules.bar.mpris.controlButtonSize
     height: width
     radius: width / 2
-    color: controlHover.hovered && enabled ? theme.moduleBackground : "transparent"
-    opacity: enabled ? 1 : theme.mpris.disabledControlOpacity
+    color: controlHover.hovered && enabled ? theme.modules.bar.moduleBackgroundColor : "transparent"
+    opacity: enabled ? 1 : theme.modules.bar.mpris.disabledControlOpacity
 
     Text {
         anchors.centerIn: parent
         text: rootMprisControlButton.icon
-        color: rootMprisControlButton.theme.primaryText
+        color: rootMprisControlButton.theme.modules.bar.primaryTextColor
         font.family: rootMprisControlButton.theme.iconFontFamily
-        font.pixelSize: rootMprisControlButton.theme.mpris.controlIconPixelSize
+        font.pixelSize: rootMprisControlButton.theme.modules.bar.mpris.controlIconPixelSize
     }
 
     HoverHandler {

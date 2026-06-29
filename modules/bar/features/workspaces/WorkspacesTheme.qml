@@ -14,8 +14,9 @@ QtObject {
     readonly property int refreshInterval: 10000
     readonly property int eventRefreshDelay: 60
     readonly property int refreshAfterDispatchDelay: 120
-    readonly property color backgroundColor: qreep.overlaySurfaceBackground
-    readonly property color borderColor: qreep.overlaySurfaceBorder
+    readonly property color backgroundColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, opacity)
+    readonly property color borderColor: qreep.outline
+    readonly property real opacity: 0.82
     readonly property real activeOpacity: 1
     readonly property real inactiveOpacity: 0.42
     readonly property real emptyOpacity: 0.16

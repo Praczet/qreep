@@ -13,13 +13,13 @@ Rectangle {
     implicitWidth: workspaceRow.implicitWidth + theme.modules.bar.pill.horizontalPadding
     implicitHeight: theme.modules.bar.pill.height
     radius: theme.modules.bar.pill.radius
-    color: workspaceHover.hovered ? theme.moduleHoverBackground : theme.moduleBackground
+    color: workspaceHover.hovered ? theme.modules.bar.moduleHoverBackgroundColor : theme.modules.bar.moduleBackgroundColor
 
     Row {
         id: workspaceRow
 
         anchors.centerIn: parent
-        spacing: rootWorkspaces.theme.workspaces.itemSpacing
+        spacing: rootWorkspaces.theme.modules.bar.workspaces.itemSpacing
 
         Repeater {
             model: rootWorkspaces.service.workspaceModel
@@ -29,75 +29,75 @@ Rectangle {
 
                 required property var modelData
 
-                width: Math.max(rootWorkspaces.theme.workspaces.itemMinWidth, workspaceContent.implicitWidth + rootWorkspaces.theme.workspaces.itemHorizontalPadding)
-                height: rootWorkspaces.theme.workspaces.itemHeight
-                radius: rootWorkspaces.theme.workspaces.itemRadius
+                width: Math.max(rootWorkspaces.theme.modules.bar.workspaces.itemMinWidth, workspaceContent.implicitWidth + rootWorkspaces.theme.modules.bar.workspaces.itemHorizontalPadding)
+                height: rootWorkspaces.theme.modules.bar.workspaces.itemHeight
+                radius: rootWorkspaces.theme.modules.bar.workspaces.itemRadius
                 color: workspaceBackgroundColor()
-                border.width: modelData.specialActive ? rootWorkspaces.theme.workspaces.specialActiveBorderWidth : 0
+                border.width: modelData.specialActive ? rootWorkspaces.theme.modules.bar.workspaces.specialActiveBorderWidth : 0
                 border.color: specialActiveBorderColor()
-                scale: itemHover.hovered ? rootWorkspaces.theme.workspaces.hoverScale : 1
+                scale: itemHover.hovered ? rootWorkspaces.theme.modules.bar.workspaces.hoverScale : 1
                 transformOrigin: Item.Center
                 z: itemHover.hovered ? 1 : 0
 
                 function workspaceBackgroundColor() {
                     if (modelData.active)
-                        return rootWorkspaces.theme.primaryText;
+                        return rootWorkspaces.theme.modules.bar.primaryTextColor;
 
-                    const sourceColor = modelData.specialActive ? rootWorkspaces.theme.eventIndicator : rootWorkspaces.theme.primaryText;
-                    const backgroundOpacity = itemHover.hovered ? rootWorkspaces.theme.workspaces.hoverBackgroundOpacity : modelData.specialActive ? rootWorkspaces.theme.workspaces.specialActiveBackgroundOpacity : modelData.empty ? rootWorkspaces.theme.workspaces.emptyBackgroundOpacity : rootWorkspaces.theme.workspaces.inactiveBackgroundOpacity;
+                    const sourceColor = modelData.specialActive ? rootWorkspaces.theme.modules.bar.accentColor : rootWorkspaces.theme.modules.bar.primaryTextColor;
+                    const backgroundOpacity = itemHover.hovered ? rootWorkspaces.theme.modules.bar.workspaces.hoverBackgroundOpacity : modelData.specialActive ? rootWorkspaces.theme.modules.bar.workspaces.specialActiveBackgroundOpacity : modelData.empty ? rootWorkspaces.theme.modules.bar.workspaces.emptyBackgroundOpacity : rootWorkspaces.theme.modules.bar.workspaces.inactiveBackgroundOpacity;
 
                     return Qt.rgba(sourceColor.r, sourceColor.g, sourceColor.b, backgroundOpacity);
                 }
 
                 function specialActiveBorderColor() {
-                    const sourceColor = rootWorkspaces.theme.eventIndicator;
+                    const sourceColor = rootWorkspaces.theme.modules.bar.accentColor;
 
-                    return Qt.rgba(sourceColor.r, sourceColor.g, sourceColor.b, rootWorkspaces.theme.workspaces.specialActiveBorderOpacity);
+                    return Qt.rgba(sourceColor.r, sourceColor.g, sourceColor.b, rootWorkspaces.theme.modules.bar.workspaces.specialActiveBorderOpacity);
                 }
 
                 Row {
                     id: workspaceContent
 
                     anchors.centerIn: parent
-                    spacing: rootWorkspaces.theme.workspaces.contentSpacing
-                    opacity: itemHover.hovered ? rootWorkspaces.theme.workspaces.hoverOpacity : modelData.active ? rootWorkspaces.theme.workspaces.activeOpacity : modelData.empty ? rootWorkspaces.theme.workspaces.emptyOpacity : rootWorkspaces.theme.workspaces.inactiveOpacity
+                    spacing: rootWorkspaces.theme.modules.bar.workspaces.contentSpacing
+                    opacity: itemHover.hovered ? rootWorkspaces.theme.modules.bar.workspaces.hoverOpacity : modelData.active ? rootWorkspaces.theme.modules.bar.workspaces.activeOpacity : modelData.empty ? rootWorkspaces.theme.modules.bar.workspaces.emptyOpacity : rootWorkspaces.theme.modules.bar.workspaces.inactiveOpacity
 
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: rootWorkspaces.theme.workspaces.hoverAnimationDuration
+                            duration: rootWorkspaces.theme.modules.bar.workspaces.hoverAnimationDuration
                             easing.type: Easing.OutCubic
                         }
                     }
 
                     Text {
                         text: workspaceItem.modelData.displayName
-                        color: workspaceItem.modelData.active ? rootWorkspaces.theme.moduleBackground : rootWorkspaces.theme.primaryText
-                        font.pixelSize: workspaceItem.modelData.isSpecial ? rootWorkspaces.theme.workspaces.specialTextPixelSize : rootWorkspaces.theme.workspaces.numberTextPixelSize
+                        color: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.moduleBackgroundColor : rootWorkspaces.theme.modules.bar.primaryTextColor
+                        font.pixelSize: workspaceItem.modelData.isSpecial ? rootWorkspaces.theme.modules.bar.workspaces.specialTextPixelSize : rootWorkspaces.theme.modules.bar.workspaces.numberTextPixelSize
                         font.weight: workspaceItem.modelData.active ? Font.DemiBold : Font.Normal
                     }
 
                     Text {
-                        visible: rootWorkspaces.theme.workspaces.indicatorMode === "count" && workspaceItem.modelData.windowCount > 0
+                        visible: rootWorkspaces.theme.modules.bar.workspaces.indicatorMode === "count" && workspaceItem.modelData.windowCount > 0
                         text: workspaceItem.modelData.windowCount
-                        color: workspaceItem.modelData.active ? rootWorkspaces.theme.moduleBackground : rootWorkspaces.theme.secondaryText
-                        font.pixelSize: rootWorkspaces.theme.workspaces.countTextPixelSize
+                        color: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.moduleBackgroundColor : rootWorkspaces.theme.modules.bar.secondaryTextColor
+                        font.pixelSize: rootWorkspaces.theme.modules.bar.workspaces.countTextPixelSize
                         font.weight: Font.DemiBold
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     Row {
-                        visible: rootWorkspaces.theme.workspaces.indicatorMode === "dots" && workspaceItem.modelData.windowCount > 0
+                        visible: rootWorkspaces.theme.modules.bar.workspaces.indicatorMode === "dots" && workspaceItem.modelData.windowCount > 0
                         spacing: 2
                         anchors.verticalCenter: parent.verticalCenter
 
                         Repeater {
-                            model: Math.min(workspaceItem.modelData.windowCount, rootWorkspaces.theme.workspaces.maxDots)
+                            model: Math.min(workspaceItem.modelData.windowCount, rootWorkspaces.theme.modules.bar.workspaces.maxDots)
 
                             delegate: Rectangle {
-                                width: rootWorkspaces.theme.workspaces.dotSize
-                                height: rootWorkspaces.theme.workspaces.dotSize
+                                width: rootWorkspaces.theme.modules.bar.workspaces.dotSize
+                                height: rootWorkspaces.theme.modules.bar.workspaces.dotSize
                                 radius: width / 2
-                                color: workspaceItem.modelData.active ? rootWorkspaces.theme.moduleBackground : rootWorkspaces.theme.secondaryText
+                                color: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.moduleBackgroundColor : rootWorkspaces.theme.modules.bar.secondaryTextColor
                             }
                         }
                     }
@@ -131,21 +131,21 @@ Rectangle {
 
                 Behavior on scale {
                     NumberAnimation {
-                        duration: rootWorkspaces.theme.workspaces.hoverAnimationDuration
+                        duration: rootWorkspaces.theme.modules.bar.workspaces.hoverAnimationDuration
                         easing.type: Easing.OutCubic
                     }
                 }
 
                 Behavior on color {
                     ColorAnimation {
-                        duration: rootWorkspaces.theme.workspaces.hoverAnimationDuration
+                        duration: rootWorkspaces.theme.modules.bar.workspaces.hoverAnimationDuration
                         easing.type: Easing.OutCubic
                     }
                 }
 
                 Behavior on border.color {
                     ColorAnimation {
-                        duration: rootWorkspaces.theme.workspaces.hoverAnimationDuration
+                        duration: rootWorkspaces.theme.modules.bar.workspaces.hoverAnimationDuration
                         easing.type: Easing.OutCubic
                     }
                 }

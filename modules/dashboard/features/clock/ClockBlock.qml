@@ -35,18 +35,18 @@ Item {
     property color cardColor: colorValue(config.cardColor, theme.modules.dashboard.backgroundColor)
     property color cardBorderColor: colorValue(config.cardBorderColor, theme.modules.dashboard.borderColor)
 
-    property color tickColor: colorValue(config.tickColor, theme.secondaryText)
+    property color tickColor: colorValue(config.tickColor, theme.modules.dashboard.secondaryTextColor)
     property color faceBorderColor: colorValue(config.faceBorderColor, theme.modules.dashboard.borderColor)
-    property color faceColor: colorValue(config.faceColor, theme.moduleBackground)
+    property color faceColor: colorValue(config.faceColor, theme.modules.dashboard.containerColor)
     property real faceOpacity: numberValue(config.faceOpacity, 0.5)
 
-    property color hourHandColor: colorValue(config.hourHandColor, theme.primaryText)
-    property color minuteHandColor: colorValue(config.minuteHandColor, theme.calendarHeaderText)
-    property color secondHandColor: colorValue(config.secondHandColor, theme.eventIndicator)
-    property color centerDotColor: colorValue(config.centerDotColor, theme.primaryText)
+    property color hourHandColor: colorValue(config.hourHandColor, theme.modules.dashboard.primaryTextColor)
+    property color minuteHandColor: colorValue(config.minuteHandColor, theme.modules.dashboard.primaryTextColor)
+    property color secondHandColor: colorValue(config.secondHandColor, theme.modules.dashboard.accentColor)
+    property color centerDotColor: colorValue(config.centerDotColor, theme.modules.dashboard.primaryTextColor)
 
-    property color timeTextColor: colorValue(config.timeTextColor, theme.primaryText)
-    property color dateTextColor: colorValue(config.dateTextColor, theme.secondaryText)
+    property color timeTextColor: colorValue(config.timeTextColor, theme.modules.dashboard.primaryTextColor)
+    property color dateTextColor: colorValue(config.dateTextColor, theme.modules.dashboard.secondaryTextColor)
 
     property bool showHourHand: boolValue(config.showHourHand, true)
     property bool showMinuteHand: boolValue(config.showMinuteHand, true)
@@ -322,33 +322,6 @@ Item {
         if (typeof value !== "string" || value.length === 0)
             return fallback;
 
-        switch (value) {
-        case "{{primary}}":
-            return theme.primaryText;
-        case "{{secondary}}":
-            return theme.secondaryText;
-        case "{{background}}":
-            return theme.barBackground;
-        case "{{surface}}":
-            return theme.modules.dashboard.backgroundColor;
-        case "{{surface_border}}":
-            return theme.modules.dashboard.borderColor;
-        case "{{accent}}":
-            return theme.eventIndicator;
-        case "{{module}}":
-            return theme.moduleBackground;
-        case "{{module_hover}}":
-            return theme.moduleHoverBackground;
-        case "{{calendar_background}}":
-            return theme.calendarBackground;
-        case "{{calendar_header}}":
-            return theme.calendarHeaderText;
-        case "{{calendar_day}}":
-            return theme.calendarDayText;
-        case "{{error}}":
-            return theme.borg.errorColor;
-        default:
-            return value;
-        }
+        return value.indexOf("{{") === 0 ? theme.colorToken(value, fallback) : value;
     }
 }

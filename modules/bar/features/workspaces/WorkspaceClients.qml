@@ -14,7 +14,7 @@ PanelWindow {
     property real popupX: 0
     property real popupY: 0
     readonly property var clients: workspace && workspace.clients ? workspace.clients : []
-    readonly property real popupWidth: rootWorkspaceClients.theme.workspaces.tooltipWidth
+    readonly property real popupWidth: rootWorkspaceClients.theme.modules.bar.workspaces.tooltipWidth
     readonly property real popupHeight: tooltipLayout.implicitHeight + rootWorkspaceClients.theme.modules.bar.tooltip.verticalPadding * 2
     readonly property real popupMargin: rootWorkspaceClients.theme.modules.bar.topPadding
 
@@ -133,9 +133,9 @@ PanelWindow {
         height: rootWorkspaceClients.popupHeight
         transformOrigin: Item.Center
         radius: rootWorkspaceClients.theme.modules.bar.tooltip.radius
-        color: rootWorkspaceClients.theme.workspaces.backgroundColor
+        color: rootWorkspaceClients.theme.modules.bar.workspaces.backgroundColor
         border.width: rootWorkspaceClients.theme.modules.bar.tooltip.borderWidth
-        border.color: rootWorkspaceClients.theme.workspaces.borderColor
+        border.color: rootWorkspaceClients.theme.modules.bar.workspaces.borderColor
 
         MouseArea {
             anchors.fill: parent
@@ -149,13 +149,13 @@ PanelWindow {
                 fill: parent
                 margins: rootWorkspaceClients.theme.modules.bar.tooltip.padding
             }
-            spacing: rootWorkspaceClients.theme.workspaces.tooltipRowSpacing
+            spacing: rootWorkspaceClients.theme.modules.bar.workspaces.tooltipRowSpacing
 
             Text {
                 width: parent.width
                 text: rootWorkspaceClients.workspace.tooltipTitle || "Workspace"
-                color: rootWorkspaceClients.theme.calendarHeaderText
-                font.pixelSize: rootWorkspaceClients.theme.workspaces.tooltipTitlePixelSize
+                color: rootWorkspaceClients.theme.modules.bar.tooltip.titleTextColor
+                font.pixelSize: rootWorkspaceClients.theme.modules.bar.workspaces.tooltipTitlePixelSize
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
@@ -169,9 +169,9 @@ PanelWindow {
                     required property var modelData
 
                     width: tooltipLayout.width
-                    height: rootWorkspaceClients.theme.workspaces.tooltipRowHeight
-                    radius: rootWorkspaceClients.theme.workspaces.tooltipRowRadius
-                    color: rowMouseArea.containsMouse ? rootWorkspaceClients.theme.moduleHoverBackground : "transparent"
+                    height: rootWorkspaceClients.theme.modules.bar.workspaces.tooltipRowHeight
+                    radius: rootWorkspaceClients.theme.modules.bar.workspaces.tooltipRowRadius
+                    color: rowMouseArea.containsMouse ? rootWorkspaceClients.theme.modules.bar.moduleHoverBackgroundColor : "transparent"
 
                     Row {
                         anchors {
@@ -181,21 +181,21 @@ PanelWindow {
                             leftMargin: 8
                             rightMargin: 8
                         }
-                        spacing: rootWorkspaceClients.theme.workspaces.tooltipContentSpacing
+                        spacing: rootWorkspaceClients.theme.modules.bar.workspaces.tooltipContentSpacing
 
                         IconImage {
-                            width: rootWorkspaceClients.theme.workspaces.tooltipIconSize
+                            width: rootWorkspaceClients.theme.modules.bar.workspaces.tooltipIconSize
                             height: width
                             anchors.verticalCenter: parent.verticalCenter
                             source: Quickshell.iconPath(rootWorkspaceClients.iconName(windowRow.modelData), "application-x-executable-symbolic")
                         }
 
                         Text {
-                            width: parent.width - rootWorkspaceClients.theme.workspaces.tooltipIconSize - parent.spacing
+                            width: parent.width - rootWorkspaceClients.theme.modules.bar.workspaces.tooltipIconSize - parent.spacing
                             anchors.verticalCenter: parent.verticalCenter
                             text: rootWorkspaceClients.windowTitle(windowRow.modelData)
-                            color: rootWorkspaceClients.theme.calendarDayText
-                            font.pixelSize: rootWorkspaceClients.theme.workspaces.tooltipWindowPixelSize
+                            color: rootWorkspaceClients.theme.modules.bar.tooltip.contentTextColor
+                            font.pixelSize: rootWorkspaceClients.theme.modules.bar.workspaces.tooltipWindowPixelSize
                             elide: Text.ElideRight
                         }
                     }
@@ -224,8 +224,8 @@ PanelWindow {
                 width: parent.width
                 visible: rootWorkspaceClients.clients.length === 0
                 text: "No windows"
-                color: rootWorkspaceClients.theme.calendarMutedText
-                font.pixelSize: rootWorkspaceClients.theme.workspaces.tooltipWindowPixelSize
+                color: rootWorkspaceClients.theme.modules.bar.secondaryTextColor
+                font.pixelSize: rootWorkspaceClients.theme.modules.bar.workspaces.tooltipWindowPixelSize
             }
         }
     }

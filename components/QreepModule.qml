@@ -27,7 +27,7 @@ Rectangle {
     implicitWidth: contentContainer.implicitWidth + theme.modules.bar.pill.horizontalPadding
     implicitHeight: theme.modules.bar.pill.height
     radius: theme.modules.bar.pill.radius
-    color: moduleHoverHandler.hovered ? theme.moduleHoverBackground : theme.moduleBackground
+    color: moduleHoverHandler.hovered ? theme.modules.bar.pill.hoverBackgroundColor : theme.modules.bar.pill.backgroundColor
 
     Item {
         id: contentContainer

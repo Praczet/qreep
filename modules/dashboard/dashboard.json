@@ -1,4 +1,12 @@
 {
+  "cardStyle": {
+    "color": "{{on_surface}}",
+    "backgroundColor": "{{surface}}",
+    "borderColor": "{{outline}}",
+    "radius": 18,
+    "borderWidth": 1,
+    "padding": 20
+  },
   "blocks": [
     {
       "id": "clock-digital",
@@ -20,8 +28,8 @@
         "showDate": true,
         "showDayOfWeek": false,
         "showSeconds": false,
-        "timeTextColor": "{{primary}}",
-        "dateTextColor": "{{secondary}}"
+        "timeTextColor": "{{on_surface}}",
+        "dateTextColor": "{{on_surface_variant}}"
       }
     },
     {
@@ -40,7 +48,7 @@
       "showBackground": false,
       "showBorder": false,
       "config": {
-        "faceColor": "{{secondary}}",
+        "faceColor": "{{surface_container}}",
         "showBorder": false,
         "showBackground": false,
         "showHourHand": true,
@@ -97,14 +105,27 @@
       "showTitle": false,
       "showBackground": true,
       "showBorder": true,
+      "backgroundColor": "#2e3441",
+      "borderColor": "{{outline}}",
+      "radius": 18,
+      "padding": 20,
       "config": {
         "variant": "compact",
         "maxMeanings": 3,
-        "maxTranslations": 2,
+        "maxTranslations": 0,
         "maxWidth": 450,
         "minHeight": 300,
+        "showTitle": false,
         "showLang": false,
-        "showTitle": false
+        "showDate": false,
+        "showWord": true,
+        "showPronunciation": true,
+        "showPartOfSpeech": true,
+        "showDefinition": true,
+        "showMeanings": true,
+        "showTranslations": false,
+        "wordPixelSize": 36,
+        "spacing": 8
       }
     },
     {

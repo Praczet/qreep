@@ -5,8 +5,14 @@ QtObject {
 
     required property QtObject qreep
 
-    readonly property color backgroundColor: Qt.rgba(qreep.calendarBackground.r, qreep.calendarBackground.g, qreep.calendarBackground.b, opacity)
-    readonly property color borderColor: qreep.moduleHoverBackground
+    readonly property color backgroundColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, opacity)
+    readonly property color borderColor: qreep.outline
+    readonly property color primaryTextColor: qreep.on_surface
+    readonly property color secondaryTextColor: qreep.on_surface_variant
+    readonly property color accentColor: qreep.primary
+    readonly property color iconColor: qreep.on_primary
+    readonly property real iconColorization: 1
+    readonly property real iconBrightness: 1.2
     readonly property int panelHeight: 160
     readonly property int topMargin: 58
     readonly property int screenPadding: 24

@@ -6,7 +6,7 @@ Components.QreepModule {
 
     required property QtObject service
     readonly property bool restartOnly: service.updates.length === 0 && service.restartNeeded
-    readonly property color statusColor: restartOnly ? theme.borg.warningColor : theme.primaryText
+    readonly property color statusColor: restartOnly ? theme.modules.bar.borg.warningColor : theme.modules.bar.primaryTextColor
 
     tooltipTitle: "Upchecker"
     tooltipContent: restartOnly ? service.restartSummary : service.updates.length + " package updates available"
@@ -26,7 +26,7 @@ Components.QreepModule {
     Row {
         id: upcheckerContent
 
-        spacing: rootUpcheckerButton.theme.upchecker.buttonContentSpacing
+        spacing: rootUpcheckerButton.theme.modules.bar.upchecker.buttonContentSpacing
 
         Item {
             id: upcheckerIconWrapper
@@ -41,7 +41,7 @@ Components.QreepModule {
                 text: "󰮯"
                 color: rootUpcheckerButton.statusColor
                 font.family: rootUpcheckerButton.theme.iconFontFamily
-                font.pixelSize: rootUpcheckerButton.theme.upchecker.buttonIconPixelSize
+                font.pixelSize: rootUpcheckerButton.theme.modules.bar.upchecker.buttonIconPixelSize
             }
         }
 
@@ -49,7 +49,7 @@ Components.QreepModule {
             anchors.verticalCenter: parent.verticalCenter
             text: rootUpcheckerButton.service.updates.length
             color: rootUpcheckerButton.statusColor
-            font.pixelSize: rootUpcheckerButton.theme.upchecker.buttonTextPixelSize
+            font.pixelSize: rootUpcheckerButton.theme.modules.bar.upchecker.buttonTextPixelSize
             font.weight: Font.DemiBold
         }
     }
@@ -62,16 +62,16 @@ Components.QreepModule {
                 target: upcheckerIconWrapper
                 property: "scale"
                 from: 1
-                to: rootUpcheckerButton.theme.upchecker.pulseScale
-                duration: rootUpcheckerButton.theme.upchecker.pulseOutDuration
+                to: rootUpcheckerButton.theme.modules.bar.upchecker.pulseScale
+                duration: rootUpcheckerButton.theme.modules.bar.upchecker.pulseOutDuration
                 easing.type: Easing.OutCubic
             }
 
             RotationAnimation {
                 target: upcheckerIconWrapper
                 from: 0
-                to: rootUpcheckerButton.theme.upchecker.pulseRotation
-                duration: rootUpcheckerButton.theme.upchecker.pulseOutDuration
+                to: rootUpcheckerButton.theme.modules.bar.upchecker.pulseRotation
+                duration: rootUpcheckerButton.theme.modules.bar.upchecker.pulseOutDuration
                 direction: RotationAnimation.Clockwise
                 easing.type: Easing.OutCubic
             }
@@ -81,17 +81,17 @@ Components.QreepModule {
             NumberAnimation {
                 target: upcheckerIconWrapper
                 property: "scale"
-                from: rootUpcheckerButton.theme.upchecker.pulseScale
-                to: rootUpcheckerButton.theme.upchecker.pulseSettleScale
-                duration: rootUpcheckerButton.theme.upchecker.pulseSettleDuration
+                from: rootUpcheckerButton.theme.modules.bar.upchecker.pulseScale
+                to: rootUpcheckerButton.theme.modules.bar.upchecker.pulseSettleScale
+                duration: rootUpcheckerButton.theme.modules.bar.upchecker.pulseSettleDuration
                 easing.type: Easing.InOutCubic
             }
 
             RotationAnimation {
                 target: upcheckerIconWrapper
-                from: rootUpcheckerButton.theme.upchecker.pulseRotation
-                to: -rootUpcheckerButton.theme.upchecker.pulseRotationSettle
-                duration: rootUpcheckerButton.theme.upchecker.pulseSettleDuration
+                from: rootUpcheckerButton.theme.modules.bar.upchecker.pulseRotation
+                to: -rootUpcheckerButton.theme.modules.bar.upchecker.pulseRotationSettle
+                duration: rootUpcheckerButton.theme.modules.bar.upchecker.pulseSettleDuration
                 easing.type: Easing.InOutCubic
             }
         }
@@ -100,17 +100,17 @@ Components.QreepModule {
             NumberAnimation {
                 target: upcheckerIconWrapper
                 property: "scale"
-                from: rootUpcheckerButton.theme.upchecker.pulseSettleScale
+                from: rootUpcheckerButton.theme.modules.bar.upchecker.pulseSettleScale
                 to: 1
-                duration: rootUpcheckerButton.theme.upchecker.pulseInDuration
+                duration: rootUpcheckerButton.theme.modules.bar.upchecker.pulseInDuration
                 easing.type: Easing.OutCubic
             }
 
             RotationAnimation {
                 target: upcheckerIconWrapper
-                from: -rootUpcheckerButton.theme.upchecker.pulseRotationSettle
+                from: -rootUpcheckerButton.theme.modules.bar.upchecker.pulseRotationSettle
                 to: 0
-                duration: rootUpcheckerButton.theme.upchecker.pulseInDuration
+                duration: rootUpcheckerButton.theme.modules.bar.upchecker.pulseInDuration
                 easing.type: Easing.OutCubic
             }
         }

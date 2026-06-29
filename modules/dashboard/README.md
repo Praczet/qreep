@@ -42,6 +42,67 @@ Blocks use explicit `width` and `height`. Preferred placement is anchored:
 `bottom-right`. `dx` and `dy` offset from that anchor. Old `x`/`y` top-left
 placement still works as fallback while the draft is learning to behave.
 
+### Card Style
+
+Every block is rendered inside a `DashboardCard`. Shared card chrome can be set
+once with `cardStyle`, then overridden by any block that needs to be special.
+Special blocks should justify themselves quietly.
+
+```json
+{
+  "cardStyle": {
+    "color": "{{on_surface}}",
+    "backgroundColor": "{{surface}}",
+    "borderColor": "{{outline}}",
+    "radius": 18,
+    "borderWidth": 1,
+    "padding": 20
+  },
+  "blocks": [
+    {
+      "id": "plain-card",
+      "type": "fake",
+      "showBackground": true,
+      "showBorder": true
+    },
+    {
+      "id": "louder-card",
+      "type": "fake",
+      "color": "{{on_surface_variant}}",
+      "backgroundColor": "{{surface_container}}",
+      "borderColor": "{{primary}}",
+      "radius": 10,
+      "borderWidth": 2,
+      "padding": 16
+    }
+  ]
+}
+```
+
+Top-level block style options:
+
+| Option | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `showBackground` | boolean | `true` | Paints the outer card background. |
+| `showBorder` | boolean | `true` | Paints the outer card border. |
+| `color` | color string | `cardStyle.color`, then dashboard text color | Outer card title/body/meta text color. Feature blocks may still use their own colors. |
+| `backgroundColor` | color string | `cardStyle.backgroundColor`, then dashboard theme surface | Outer card background. |
+| `borderColor` | color string | `cardStyle.borderColor`, then dashboard theme border | Outer card border and title divider. |
+| `radius` | number | `cardStyle.radius`, then dashboard theme radius | Outer card corner radius. |
+| `borderWidth` | number | `cardStyle.borderWidth`, then dashboard theme border width | Outer card border width. |
+| `padding` | number | `cardStyle.padding`, then dashboard theme padding | Inner content margin. |
+
+Supported theme color tokens:
+
+```text
+{{background}}, {{surface}}, {{surface_variant}}, {{surface_container}},
+{{surface_container_high}}, {{surface_container_highest}}, {{primary}},
+{{primary_container}}, {{primary_fixed_dim}}, {{secondary}}, {{tertiary}},
+{{on_background}}, {{on_surface}}, {{on_surface_variant}}, {{on_primary}},
+{{on_primary_container}}, {{outline}}, {{outline_variant}}, {{error}},
+{{warning}}, {{success}}
+```
+
 ## Hyprland
 
 Layer namespace:

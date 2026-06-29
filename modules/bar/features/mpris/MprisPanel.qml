@@ -11,10 +11,10 @@ PopupWindow {
     anchor {
         item: rootMprisPanel.anchorItem
         rect.x: rootMprisPanel.anchorItem.width - rootMprisPanel.width
-        rect.y: rootMprisPanel.anchorItem.height + rootMprisPanel.theme.mpris.panelTopOffset
+        rect.y: rootMprisPanel.anchorItem.height + rootMprisPanel.theme.modules.bar.mpris.panelTopOffset
     }
 
-    implicitWidth: rootMprisPanel.theme.mpris.panelWidth
+    implicitWidth: rootMprisPanel.theme.modules.bar.mpris.panelWidth
     implicitHeight: playerCard.implicitHeight
     visible: false
     color: "transparent"
@@ -31,11 +31,11 @@ PopupWindow {
         id: playerCard
 
         width: rootMprisPanel.width
-        implicitHeight: playerLayout.implicitHeight + rootMprisPanel.theme.mpris.panelPadding * 2
-        radius: rootMprisPanel.theme.mpris.panelRadius
-        color: rootMprisPanel.theme.calendarBackground
+        implicitHeight: playerLayout.implicitHeight + rootMprisPanel.theme.modules.bar.mpris.panelPadding * 2
+        radius: rootMprisPanel.theme.modules.bar.mpris.panelRadius
+        color: rootMprisPanel.theme.modules.bar.tooltip.backgroundColor
         border.width: rootMprisPanel.theme.modules.bar.tooltip.borderWidth
-        border.color: rootMprisPanel.theme.moduleHoverBackground
+        border.color: rootMprisPanel.theme.modules.bar.moduleHoverBackgroundColor
 
         Column {
             id: playerLayout
@@ -44,19 +44,19 @@ PopupWindow {
                 left: parent.left
                 right: parent.right
                 top: parent.top
-                margins: rootMprisPanel.theme.mpris.panelPadding
+                margins: rootMprisPanel.theme.modules.bar.mpris.panelPadding
             }
-            spacing: rootMprisPanel.theme.mpris.panelRowSpacing
+            spacing: rootMprisPanel.theme.modules.bar.mpris.panelRowSpacing
 
             Row {
                 width: parent.width
-                spacing: rootMprisPanel.theme.mpris.panelRowSpacing
+                spacing: rootMprisPanel.theme.modules.bar.mpris.panelRowSpacing
 
                 Rectangle {
-                    width: rootMprisPanel.theme.mpris.panelArtSize
+                    width: rootMprisPanel.theme.modules.bar.mpris.panelArtSize
                     height: width
                     radius: 8
-                    color: rootMprisPanel.theme.moduleHoverBackground
+                    color: rootMprisPanel.theme.modules.bar.moduleHoverBackgroundColor
                     clip: true
 
                     Image {
@@ -72,22 +72,22 @@ PopupWindow {
                         anchors.centerIn: parent
                         visible: albumArt.status !== Image.Ready
                         text: ""
-                        color: rootMprisPanel.theme.secondaryText
+                        color: rootMprisPanel.theme.modules.bar.secondaryTextColor
                         font.family: rootMprisPanel.theme.iconFontFamily
                         font.pixelSize: 46
                     }
                 }
 
                 Column {
-                    width: parent.width - rootMprisPanel.theme.mpris.panelArtSize - parent.spacing
+                    width: parent.width - rootMprisPanel.theme.modules.bar.mpris.panelArtSize - parent.spacing
                     spacing: 8
                     anchors.verticalCenter: parent.verticalCenter
 
                     Text {
                         width: parent.width
                         text: rootMprisPanel.service.title
-                        color: rootMprisPanel.theme.calendarHeaderText
-                        font.pixelSize: rootMprisPanel.theme.mpris.panelTitlePixelSize
+                        color: rootMprisPanel.theme.modules.bar.tooltip.titleTextColor
+                        font.pixelSize: rootMprisPanel.theme.modules.bar.mpris.panelTitlePixelSize
                         font.weight: Font.DemiBold
                         wrapMode: Text.Wrap
                     }
@@ -95,16 +95,16 @@ PopupWindow {
                     Text {
                         width: parent.width
                         text: rootMprisPanel.service.artists
-                        color: rootMprisPanel.theme.calendarDayText
-                        font.pixelSize: rootMprisPanel.theme.mpris.panelBodyPixelSize
+                        color: rootMprisPanel.theme.modules.bar.tooltip.contentTextColor
+                        font.pixelSize: rootMprisPanel.theme.modules.bar.mpris.panelBodyPixelSize
                         wrapMode: Text.Wrap
                     }
 
                     Text {
                         width: parent.width
                         text: rootMprisPanel.service.album
-                        color: rootMprisPanel.theme.secondaryText
-                        font.pixelSize: rootMprisPanel.theme.mpris.panelBodyPixelSize
+                        color: rootMprisPanel.theme.modules.bar.secondaryTextColor
+                        font.pixelSize: rootMprisPanel.theme.modules.bar.mpris.panelBodyPixelSize
                         wrapMode: Text.Wrap
                     }
 
@@ -112,15 +112,15 @@ PopupWindow {
                         visible: rootMprisPanel.service.durationText.length > 0
                         width: parent.width
                         text: rootMprisPanel.service.durationText
-                        color: rootMprisPanel.theme.secondaryText
-                        font.pixelSize: rootMprisPanel.theme.mpris.panelBodyPixelSize
+                        color: rootMprisPanel.theme.modules.bar.secondaryTextColor
+                        font.pixelSize: rootMprisPanel.theme.modules.bar.mpris.panelBodyPixelSize
                     }
                 }
             }
 
             Row {
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: rootMprisPanel.theme.mpris.controlSpacing
+                spacing: rootMprisPanel.theme.modules.bar.mpris.controlSpacing
 
                 MprisControlButton {
                     theme: rootMprisPanel.theme

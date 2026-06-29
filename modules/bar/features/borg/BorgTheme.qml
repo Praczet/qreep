@@ -3,6 +3,8 @@ import QtQuick
 QtObject {
     id: rootBorgTheme
 
+    required property QtObject qreep
+
     readonly property int iconPixelSize: 24
     readonly property int refreshInterval: 3600000
     readonly property string backupCommand: "borg-backup-notify"
@@ -14,9 +16,9 @@ QtObject {
     readonly property int pulseOutDuration: 210
     readonly property int pulseSettleDuration: 190
     readonly property int pulseInDuration: 220
-    readonly property color okColor: "#88c0d0"
-    readonly property color warningColor: "#f9e2af"
-    readonly property color errorColor: "#ffb4ab"
+    readonly property color okColor: qreep.successColor
+    readonly property color warningColor: qreep.warningColor
+    readonly property color errorColor: qreep.error
     readonly property int tooltipWidth: 360
     readonly property int tooltipLabelWidth: 92
     readonly property int tooltipColumnGap: 10
@@ -26,4 +28,40 @@ QtObject {
     readonly property int tooltipHeroSpacing: 12
     readonly property int tooltipHeroIconWidth: 58
     readonly property int tooltipHeroTextSpacing: 3
+
+    function classColor(className) {
+        switch (className) {
+        case "ok":
+            return okColor;
+        case "warning":
+            return warningColor;
+        case "error":
+            return errorColor;
+        default:
+            return qreep.on_surface;
+        }
+    }
+
+    function tokenColor(token) {
+        switch (String(token || "")) {
+        case "{{primary}}":
+            return qreep.on_surface;
+        case "{{secondary}}":
+            return qreep.on_surface_variant;
+        case "{{tertiary}}":
+            return okColor;
+        case "{{on_surface}}":
+            return qreep.on_surface;
+        case "{{on_surface_variant}}":
+            return qreep.on_surface_variant;
+        case "{{error}}":
+            return errorColor;
+        case "{{warning}}":
+            return warningColor;
+        case "{{success}}":
+            return okColor;
+        default:
+            return qreep.on_surface;
+        }
+    }
 }

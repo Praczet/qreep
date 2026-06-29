@@ -71,7 +71,7 @@ Item {
             visible: rootWordOfTheDayBlock.card === null
             Layout.fillWidth: true
             text: rootWordOfTheDayBlock.error || "No word of the day."
-            color: rootWordOfTheDayBlock.theme.secondaryText
+            color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
             font.pixelSize: rootWordOfTheDayBlock.theme.modules.dashboard.bodyPixelSize
             wrapMode: Text.Wrap
             horizontalAlignment: Text.AlignHCenter
@@ -90,7 +90,7 @@ Item {
                     visible: rootWordOfTheDayBlock.showTitle && rootWordOfTheDayBlock.titleText.length > 0
                     Layout.fillWidth: true
                     text: rootWordOfTheDayBlock.titleText
-                    color: rootWordOfTheDayBlock.theme.secondaryText
+                    color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
@@ -100,7 +100,7 @@ Item {
                     visible: rootWordOfTheDayBlock.showDate && rootWordOfTheDayBlock.card && rootWordOfTheDayBlock.card.date
                     Layout.fillWidth: true
                     text: rootWordOfTheDayBlock.card ? String(rootWordOfTheDayBlock.card.date || "") : ""
-                    color: rootWordOfTheDayBlock.theme.secondaryText
+                    color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
                     opacity: 0.6
                     font.pixelSize: 12
                     elide: Text.ElideRight
@@ -110,7 +110,7 @@ Item {
             Text {
                 visible: rootWordOfTheDayBlock.showLang && rootWordOfTheDayBlock.langText.length > 0
                 text: rootWordOfTheDayBlock.langText
-                color: rootWordOfTheDayBlock.theme.secondaryText
+                color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
                 font.pixelSize: 12
                 horizontalAlignment: Text.AlignRight
             }
@@ -120,7 +120,7 @@ Item {
             visible: rootWordOfTheDayBlock.card !== null && rootWordOfTheDayBlock.showWord
             Layout.fillWidth: true
             text: rootWordOfTheDayBlock.card ? String(rootWordOfTheDayBlock.card.word || "") : ""
-            color: rootWordOfTheDayBlock.theme.primaryText
+            color: rootWordOfTheDayBlock.theme.modules.dashboard.primaryTextColor
             font.pixelSize: numberValue(rootWordOfTheDayBlock.config.wordPixelSize, rootWordOfTheDayBlock.variant === "compact" ? 36 : 38)
             font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
@@ -131,7 +131,7 @@ Item {
             visible: rootWordOfTheDayBlock.card !== null && rootWordOfTheDayBlock.showPronunciation && rootWordOfTheDayBlock.card && rootWordOfTheDayBlock.card.pronunciation
             Layout.fillWidth: true
             text: rootWordOfTheDayBlock.card ? String(rootWordOfTheDayBlock.card.pronunciation || "") : ""
-            color: rootWordOfTheDayBlock.theme.secondaryText
+            color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
             opacity: 0.7
             font.pixelSize: 14
             horizontalAlignment: Text.AlignHCenter
@@ -142,7 +142,7 @@ Item {
             visible: rootWordOfTheDayBlock.card !== null && rootWordOfTheDayBlock.showPartOfSpeech && rootWordOfTheDayBlock.partOfSpeechText.length > 0
             Layout.fillWidth: true
             text: rootWordOfTheDayBlock.variant === "card" ? "[" + rootWordOfTheDayBlock.partOfSpeechText + "]" : rootWordOfTheDayBlock.partOfSpeechText
-            color: rootWordOfTheDayBlock.theme.secondaryText
+            color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
             opacity: 0.45
             font.pixelSize: 13
             font.italic: true
@@ -153,7 +153,7 @@ Item {
             visible: rootWordOfTheDayBlock.card !== null && rootWordOfTheDayBlock.showDefinition && rootWordOfTheDayBlock.card && rootWordOfTheDayBlock.card.definition
             Layout.fillWidth: true
             text: rootWordOfTheDayBlock.card ? String(rootWordOfTheDayBlock.card.definition || "") : ""
-            color: rootWordOfTheDayBlock.theme.primaryText
+            color: rootWordOfTheDayBlock.theme.modules.dashboard.primaryTextColor
             font.pixelSize: 14
             wrapMode: Text.Wrap
         }
@@ -175,7 +175,7 @@ Item {
 
                     Text {
                         text: String(parent.modelData.index || "") + "."
-                        color: rootWordOfTheDayBlock.theme.secondaryText
+                        color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
                         font.pixelSize: 14
                         Layout.preferredWidth: 36
                         horizontalAlignment: Text.AlignRight
@@ -184,7 +184,7 @@ Item {
                     Text {
                         Layout.fillWidth: true
                         text: String(parent.modelData.text || "")
-                        color: rootWordOfTheDayBlock.theme.secondaryText
+                        color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
                         font.pixelSize: 14
                         wrapMode: Text.Wrap
                     }
@@ -205,7 +205,7 @@ Item {
 
                     Layout.fillWidth: true
                     text: "-> " + modelData
-                    color: rootWordOfTheDayBlock.theme.secondaryText
+                    color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
                     font.pixelSize: 13
                     wrapMode: Text.Wrap
                 }
@@ -216,7 +216,7 @@ Item {
             visible: rootWordOfTheDayBlock.card !== null && rootWordOfTheDayBlock.variant === "definition-only" && rootWordOfTheDayBlock.showTranslation && rootWordOfTheDayBlock.translations.length > 0
             Layout.fillWidth: true
             text: rootWordOfTheDayBlock.translations.length > 0 ? "-> " + rootWordOfTheDayBlock.translations[0] : ""
-            color: rootWordOfTheDayBlock.theme.secondaryText
+            color: rootWordOfTheDayBlock.theme.modules.dashboard.secondaryTextColor
             font.pixelSize: 13
             wrapMode: Text.Wrap
         }

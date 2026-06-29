@@ -15,7 +15,7 @@ PopupWindow {
         rect.y: rootMprisTooltip.anchorItem ? rootMprisTooltip.anchorItem.height + rootMprisTooltip.theme.modules.bar.tooltip.offsetY : 0
     }
 
-    implicitWidth: rootMprisTooltip.theme.mpris.tooltipWidth
+    implicitWidth: rootMprisTooltip.theme.modules.bar.mpris.tooltipWidth
     implicitHeight: tooltipLayout.implicitHeight + rootMprisTooltip.theme.modules.bar.tooltip.verticalPadding * 2
     color: "transparent"
     grabFocus: false
@@ -47,9 +47,9 @@ PopupWindow {
         transformOrigin: Item.Center
         scale: 0
         radius: rootMprisTooltip.theme.modules.bar.tooltip.radius
-        color: rootMprisTooltip.theme.calendarBackground
+        color: rootMprisTooltip.theme.modules.bar.tooltip.backgroundColor
         border.width: rootMprisTooltip.theme.modules.bar.tooltip.borderWidth
-        border.color: rootMprisTooltip.theme.moduleHoverBackground
+        border.color: rootMprisTooltip.theme.modules.bar.moduleHoverBackgroundColor
 
         Row {
             id: tooltipLayout
@@ -58,13 +58,13 @@ PopupWindow {
                 fill: parent
                 margins: rootMprisTooltip.theme.modules.bar.tooltip.padding
             }
-            spacing: rootMprisTooltip.theme.mpris.tooltipSpacing
+            spacing: rootMprisTooltip.theme.modules.bar.mpris.tooltipSpacing
 
             Rectangle {
-                width: rootMprisTooltip.theme.mpris.tooltipArtSize
+                width: rootMprisTooltip.theme.modules.bar.mpris.tooltipArtSize
                 height: width
                 radius: 6
-                color: rootMprisTooltip.theme.moduleHoverBackground
+                color: rootMprisTooltip.theme.modules.bar.moduleHoverBackgroundColor
                 clip: true
 
                 Image {
@@ -80,40 +80,40 @@ PopupWindow {
                     anchors.centerIn: parent
                     visible: albumArt.status !== Image.Ready
                     text: ""
-                    color: rootMprisTooltip.theme.secondaryText
+                    color: rootMprisTooltip.theme.modules.bar.secondaryTextColor
                     font.family: rootMprisTooltip.theme.iconFontFamily
                     font.pixelSize: 28
                 }
             }
 
             Column {
-                width: parent.width - rootMprisTooltip.theme.mpris.tooltipArtSize - parent.spacing
+                width: parent.width - rootMprisTooltip.theme.modules.bar.mpris.tooltipArtSize - parent.spacing
                 spacing: 6
                 anchors.verticalCenter: parent.verticalCenter
 
                 Text {
                     width: parent.width
                     text: "From: " + rootMprisTooltip.service.playerSource
-                    color: rootMprisTooltip.theme.secondaryText
+                    color: rootMprisTooltip.theme.modules.bar.secondaryTextColor
                     elide: Text.ElideRight
-                    font.pixelSize: rootMprisTooltip.theme.mpris.tooltipBodyPixelSize
+                    font.pixelSize: rootMprisTooltip.theme.modules.bar.mpris.tooltipBodyPixelSize
                 }
 
                 Text {
                     width: parent.width
                     text: rootMprisTooltip.service.tooltipSubtitle
-                    color: rootMprisTooltip.theme.calendarHeaderText
+                    color: rootMprisTooltip.theme.modules.bar.tooltip.titleTextColor
                     elide: Text.ElideRight
-                    font.pixelSize: rootMprisTooltip.theme.mpris.tooltipTitlePixelSize
+                    font.pixelSize: rootMprisTooltip.theme.modules.bar.mpris.tooltipTitlePixelSize
                     font.weight: Font.DemiBold
                 }
 
                 Text {
                     width: parent.width
                     text: rootMprisTooltip.service.tooltipDetail
-                    color: rootMprisTooltip.theme.calendarDayText
+                    color: rootMprisTooltip.theme.modules.bar.tooltip.contentTextColor
                     wrapMode: Text.Wrap
-                    font.pixelSize: rootMprisTooltip.theme.mpris.tooltipBodyPixelSize
+                    font.pixelSize: rootMprisTooltip.theme.modules.bar.mpris.tooltipBodyPixelSize
                     lineHeight: rootMprisTooltip.theme.modules.bar.tooltip.contentLineHeight
                 }
             }

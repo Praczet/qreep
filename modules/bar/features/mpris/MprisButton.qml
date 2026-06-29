@@ -5,7 +5,7 @@ Components.QreepModule {
     id: rootMprisButton
 
     required property QtObject service
-    readonly property real noteStartX: theme.modules.bar.pill.horizontalPadding / 2 + theme.mpris.noteLayerWidth / 2
+    readonly property real noteStartX: theme.modules.bar.pill.horizontalPadding / 2 + theme.modules.bar.mpris.noteLayerWidth / 2
     readonly property real noteStartY: height / 2
 
     tooltipTitle: rootMprisButton.service.tooltipTitle
@@ -21,13 +21,13 @@ Components.QreepModule {
         Row {
             id: pillRow
 
-            spacing: rootMprisButton.theme.mpris.pillContentSpacing
+            spacing: rootMprisButton.theme.modules.bar.mpris.pillContentSpacing
             anchors.verticalCenter: parent.verticalCenter
 
             Item {
                 id: iconLayer
 
-                width: Math.max(playbackIcon.implicitWidth, rootMprisButton.theme.mpris.noteLayerWidth)
+                width: Math.max(playbackIcon.implicitWidth, rootMprisButton.theme.modules.bar.mpris.noteLayerWidth)
                 height: playbackIcon.implicitHeight
 
                 Text {
@@ -35,38 +35,38 @@ Components.QreepModule {
 
                     anchors.centerIn: parent
                     text: rootMprisButton.service.playbackStateIcon
-                    color: rootMprisButton.theme.primaryText
+                    color: rootMprisButton.theme.modules.bar.primaryTextColor
                     font.family: rootMprisButton.theme.iconFontFamily
-                    font.pixelSize: rootMprisButton.theme.mpris.pillIconPixelSize
+                    font.pixelSize: rootMprisButton.theme.modules.bar.mpris.pillIconPixelSize
                 }
             }
 
             Text {
-                width: rootMprisButton.theme.mpris.pillAlbumWidth
+                width: rootMprisButton.theme.modules.bar.mpris.pillAlbumWidth
                 text: rootMprisButton.service.album
-                color: rootMprisButton.theme.secondaryText
+                color: rootMprisButton.theme.modules.bar.secondaryTextColor
                 elide: Text.ElideRight
-                font.pixelSize: rootMprisButton.theme.mpris.pillMutedTextPixelSize
+                font.pixelSize: rootMprisButton.theme.modules.bar.mpris.pillMutedTextPixelSize
                 horizontalAlignment: Text.AlignLeft
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             Text {
-                width: rootMprisButton.theme.mpris.pillTitleWidth
+                width: rootMprisButton.theme.modules.bar.mpris.pillTitleWidth
                 text: rootMprisButton.service.title
-                color: rootMprisButton.theme.primaryText
+                color: rootMprisButton.theme.modules.bar.primaryTextColor
                 elide: Text.ElideRight
-                font.pixelSize: rootMprisButton.theme.mpris.pillTextPixelSize
+                font.pixelSize: rootMprisButton.theme.modules.bar.mpris.pillTextPixelSize
                 horizontalAlignment: Text.AlignHCenter
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             Text {
-                width: rootMprisButton.theme.mpris.pillArtistWidth
+                width: rootMprisButton.theme.modules.bar.mpris.pillArtistWidth
                 text: rootMprisButton.service.artists
-                color: rootMprisButton.theme.secondaryText
+                color: rootMprisButton.theme.modules.bar.secondaryTextColor
                 elide: Text.ElideRight
-                font.pixelSize: rootMprisButton.theme.mpris.pillMutedTextPixelSize
+                font.pixelSize: rootMprisButton.theme.modules.bar.mpris.pillMutedTextPixelSize
                 horizontalAlignment: Text.AlignRight
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -76,7 +76,7 @@ Components.QreepModule {
     overlay: Item {
         anchors.fill: parent
         clip: false
-        visible: rootMprisButton.theme.mpris.animatePlayingNotes && rootMprisButton.service.isPlaying
+        visible: rootMprisButton.theme.modules.bar.mpris.animatePlayingNotes && rootMprisButton.service.isPlaying
 
         Repeater {
             model: 3
@@ -89,7 +89,7 @@ Components.QreepModule {
                 property real peakOpacity: 0.45
                 property real spinFrom: 0
                 property real spinTo: 0
-                readonly property int travelDuration: rootMprisButton.theme.mpris.noteFadeDuration
+                readonly property int travelDuration: rootMprisButton.theme.modules.bar.mpris.noteFadeDuration
 
                 function randomize() {
                     drift = -14 + Math.random() * 28;
@@ -101,23 +101,23 @@ Components.QreepModule {
                 x: rootMprisButton.noteStartX
                 y: rootMprisButton.noteStartY
                 text: noteIndex === 1 ? "♫" : "♪"
-                color: rootMprisButton.theme.primaryText
+                color: rootMprisButton.theme.modules.bar.primaryTextColor
                 opacity: 0
                 rotation: noteIndex * 18
-                font.pixelSize: rootMprisButton.theme.mpris.notePixelSize
+                font.pixelSize: rootMprisButton.theme.modules.bar.mpris.notePixelSize
 
                 SequentialAnimation on y {
                     running: note.visible
                     loops: Animation.Infinite
                     PauseAnimation {
-                        duration: note.noteIndex * rootMprisButton.theme.mpris.noteStaggerDuration
+                        duration: note.noteIndex * rootMprisButton.theme.modules.bar.mpris.noteStaggerDuration
                     }
                     ScriptAction {
                         script: note.randomize()
                     }
                     NumberAnimation {
                         from: rootMprisButton.noteStartY
-                        to: -rootMprisButton.theme.mpris.notePixelSize
+                        to: -rootMprisButton.theme.modules.bar.mpris.notePixelSize
                         duration: note.travelDuration
                         easing.type: Easing.OutCubic
                     }
@@ -127,7 +127,7 @@ Components.QreepModule {
                     running: note.visible
                     loops: Animation.Infinite
                     PauseAnimation {
-                        duration: note.noteIndex * rootMprisButton.theme.mpris.noteStaggerDuration
+                        duration: note.noteIndex * rootMprisButton.theme.modules.bar.mpris.noteStaggerDuration
                     }
                     NumberAnimation {
                         from: 0
@@ -145,7 +145,7 @@ Components.QreepModule {
                     running: note.visible
                     loops: Animation.Infinite
                     PauseAnimation {
-                        duration: note.noteIndex * rootMprisButton.theme.mpris.noteStaggerDuration
+                        duration: note.noteIndex * rootMprisButton.theme.modules.bar.mpris.noteStaggerDuration
                     }
                     NumberAnimation {
                         from: rootMprisButton.noteStartX

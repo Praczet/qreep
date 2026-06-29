@@ -3,6 +3,17 @@ import QtQuick
 QtObject {
     id: rootCalendarTheme
 
+    required property QtObject qreep
+
+    readonly property color backgroundColor: qreep.surface
+    readonly property color borderColor: qreep.surfaceContainerHigh
+    readonly property color headerTextColor: qreep.on_surface
+    readonly property color dayTextColor: qreep.on_surface
+    readonly property color mutedTextColor: qreep.on_surface_variant
+    readonly property color todayBackgroundColor: qreep.primaryContainer
+    readonly property color todayTextColor: qreep.on_primary_container
+    readonly property color eventIndicatorColor: qreep.primary
+
     readonly property int popupWidth: 590
     readonly property int popupOffsetY: 6
     readonly property int popupPadding: 16

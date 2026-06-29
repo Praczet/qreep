@@ -60,34 +60,34 @@ PanelWindow {
     WorkspacesFeature.WorkspaceService {
         id: workspaceService
         log: qreepLog
-        showEmptyWorkspaces: rootBar.theme.workspaces.showEmptyWorkspaces
-        showSpecialWorkspaces: rootBar.theme.workspaces.showSpecialWorkspaces
-        normalWorkspaceStart: rootBar.theme.workspaces.normalWorkspaceStart
-        normalWorkspaceEnd: rootBar.theme.workspaces.normalWorkspaceEnd
-        useHyprlandEvents: rootBar.theme.workspaces.useHyprlandEvents
-        refreshInterval: rootBar.theme.workspaces.refreshInterval
-        eventRefreshDelay: rootBar.theme.workspaces.eventRefreshDelay
-        refreshAfterDispatchDelay: rootBar.theme.workspaces.refreshAfterDispatchDelay
-        tooltipMaxWindows: rootBar.theme.workspaces.tooltipMaxWindows
+        showEmptyWorkspaces: rootBar.theme.modules.bar.workspaces.showEmptyWorkspaces
+        showSpecialWorkspaces: rootBar.theme.modules.bar.workspaces.showSpecialWorkspaces
+        normalWorkspaceStart: rootBar.theme.modules.bar.workspaces.normalWorkspaceStart
+        normalWorkspaceEnd: rootBar.theme.modules.bar.workspaces.normalWorkspaceEnd
+        useHyprlandEvents: rootBar.theme.modules.bar.workspaces.useHyprlandEvents
+        refreshInterval: rootBar.theme.modules.bar.workspaces.refreshInterval
+        eventRefreshDelay: rootBar.theme.modules.bar.workspaces.eventRefreshDelay
+        refreshAfterDispatchDelay: rootBar.theme.modules.bar.workspaces.refreshAfterDispatchDelay
+        tooltipMaxWindows: rootBar.theme.modules.bar.workspaces.tooltipMaxWindows
     }
 
     BorgFeature.BorgService {
         id: borgService
         log: qreepLog
-        refreshInterval: rootBar.theme.borg.refreshInterval
-        backupCommand: [rootBar.theme.borg.backupCommand]
-        backupStatusBackend: rootBar.theme.borg.backupStatusBackend
+        refreshInterval: rootBar.theme.modules.bar.borg.refreshInterval
+        backupCommand: [rootBar.theme.modules.bar.borg.backupCommand]
+        backupStatusBackend: rootBar.theme.modules.bar.borg.backupStatusBackend
     }
 
     UpcheckerFeature.UpcheckerService {
         id: upcheckerService
         log: qreepLog
-        updateTerminalCommand: rootBar.theme.upchecker.updateTerminalCommand
-        updateCommand: rootBar.theme.upchecker.updateCommand
-        restartCheckCommand: rootBar.theme.upchecker.restartCheckCommand
-        restartCheckTimezone: rootBar.theme.upchecker.restartCheckTimezone
-        restartSessionPackages: rootBar.theme.upchecker.restartSessionPackages
-        restartRebootPackages: rootBar.theme.upchecker.restartRebootPackages
+        updateTerminalCommand: rootBar.theme.modules.bar.upchecker.updateTerminalCommand
+        updateCommand: rootBar.theme.modules.bar.upchecker.updateCommand
+        restartCheckCommand: rootBar.theme.modules.bar.upchecker.restartCheckCommand
+        restartCheckTimezone: rootBar.theme.modules.bar.upchecker.restartCheckTimezone
+        restartSessionPackages: rootBar.theme.modules.bar.upchecker.restartSessionPackages
+        restartRebootPackages: rootBar.theme.modules.bar.upchecker.restartRebootPackages
     }
 
     anchors {
@@ -111,7 +111,7 @@ PanelWindow {
         }
         height: rootBar.theme.modules.bar.height
         radius: rootBar.theme.modules.bar.backgroundRadius
-        color: rootBar.theme.barBackground
+        color: rootBar.theme.modules.bar.backgroundColor
 
         Row {
             id: leftSlot

@@ -7,13 +7,16 @@ PanelWindow {
 
     required property QtObject theme
     required property QtObject service
+    required property bool panelOpen
+
+    property bool presented: false
 
     signal closeRequested
 
     implicitWidth: screen.width
     implicitHeight: screen.height
 
-    color: Qt.rgba(rootDashboardPanel.theme.barBackground.r, rootDashboardPanel.theme.barBackground.g, rootDashboardPanel.theme.barBackground.b, rootDashboardPanel.theme.modules.dashboard.overlayOpacity)
+    color: rootDashboardPanel.theme.modules.dashboard.overlayColor
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
 
@@ -23,7 +26,18 @@ PanelWindow {
 
     Component.onCompleted: {
         background.forceActiveFocus();
-        enterTimer.restart();
+        if (panelOpen)
+            enterTimer.restart();
+    }
+
+    onPanelOpenChanged: {
+        if (panelOpen) {
+            enterTimer.restart();
+            return;
+        }
+
+        enterTimer.stop();
+        presented = false;
     }
 
     Shortcut {
@@ -37,14 +51,7 @@ PanelWindow {
 
         interval: 16
         repeat: false
-        onTriggered: {
-            for (let index = 0; index < cardRepeater.count; index++) {
-                const card = cardRepeater.itemAt(index);
-
-                if (card)
-                    card.entered = true;
-            }
-        }
+        onTriggered: presented = true
     }
 
     Rectangle {
@@ -70,6 +77,7 @@ PanelWindow {
 
             theme: rootDashboardPanel.theme
             block: modelData
+            entered: rootDashboardPanel.presented
         }
     }
 
@@ -83,9 +91,9 @@ PanelWindow {
         width: Math.min(620, parent.width - rootDashboardPanel.theme.modules.dashboard.placementMargin * 2)
         height: errorText.implicitHeight + rootDashboardPanel.theme.modules.dashboard.cardPadding * 2
         radius: rootDashboardPanel.theme.modules.dashboard.cardRadius
-        color: Qt.rgba(rootDashboardPanel.theme.borg.errorColor.r, rootDashboardPanel.theme.borg.errorColor.g, rootDashboardPanel.theme.borg.errorColor.b, 0.16)
+        color: Qt.rgba(rootDashboardPanel.theme.modules.dashboard.errorColor.r, rootDashboardPanel.theme.modules.dashboard.errorColor.g, rootDashboardPanel.theme.modules.dashboard.errorColor.b, 0.16)
         border.width: rootDashboardPanel.theme.modules.dashboard.cardBorderWidth
-        border.color: rootDashboardPanel.theme.borg.errorColor
+        border.color: rootDashboardPanel.theme.modules.dashboard.errorColor
 
         Text {
             id: errorText
@@ -97,7 +105,7 @@ PanelWindow {
                 margins: rootDashboardPanel.theme.modules.dashboard.cardPadding
             }
             text: rootDashboardPanel.service.error
-            color: rootDashboardPanel.theme.powerConfirmText
+            color: rootDashboardPanel.theme.modules.dashboard.primaryTextColor
             font.pixelSize: rootDashboardPanel.theme.modules.dashboard.bodyPixelSize
             wrapMode: Text.Wrap
         }

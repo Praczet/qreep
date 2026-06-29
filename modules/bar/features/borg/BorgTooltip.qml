@@ -22,7 +22,7 @@ PopupWindow {
         rect.y: rootBorgTooltip.anchorItem ? rootBorgTooltip.anchorItem.height + rootBorgTooltip.theme.modules.bar.tooltip.offsetY : 0
     }
 
-    implicitWidth: rootBorgTooltip.theme.borg.tooltipWidth
+    implicitWidth: rootBorgTooltip.theme.modules.bar.borg.tooltipWidth
     implicitHeight: tooltipLayout.implicitHeight + rootBorgTooltip.theme.modules.bar.tooltip.verticalPadding * 2
     color: "transparent"
     grabFocus: false
@@ -93,9 +93,9 @@ PopupWindow {
         transformOrigin: Item.Center
         scale: 0
         radius: rootBorgTooltip.theme.modules.bar.tooltip.radius
-        color: rootBorgTooltip.theme.calendarBackground
+        color: rootBorgTooltip.theme.modules.bar.tooltip.backgroundColor
         border.width: rootBorgTooltip.theme.modules.bar.tooltip.borderWidth
-        border.color: rootBorgTooltip.theme.borgClassColor(rootBorgTooltip.className)
+        border.color: rootBorgTooltip.theme.modules.bar.borg.classColor(rootBorgTooltip.className)
 
         Column {
             id: tooltipLayout
@@ -104,21 +104,21 @@ PopupWindow {
                 fill: parent
                 margins: rootBorgTooltip.theme.modules.bar.tooltip.padding
             }
-            spacing: rootBorgTooltip.theme.borg.tooltipRowSpacing
+            spacing: rootBorgTooltip.theme.modules.bar.borg.tooltipRowSpacing
 
             Row {
                 id: heroLayout
 
                 width: parent.width
-                spacing: rootBorgTooltip.theme.borg.tooltipHeroSpacing
+                spacing: rootBorgTooltip.theme.modules.bar.borg.tooltipHeroSpacing
 
                 Text {
                     id: heroIcon
 
-                    width: rootBorgTooltip.theme.borg.tooltipHeroIconWidth
+                    width: rootBorgTooltip.theme.modules.bar.borg.tooltipHeroIconWidth
                     anchors.verticalCenter: parent.verticalCenter
                     text: String(rootBorgTooltip.heroIconRow.text || "")
-                    color: rootBorgTooltip.theme.borgTokenColor(rootBorgTooltip.heroIconRow.color)
+                    color: rootBorgTooltip.theme.modules.bar.borg.tokenColor(rootBorgTooltip.heroIconRow.color)
                     font.family: rootBorgTooltip.theme.iconFontFamily
                     font.pixelSize: rootBorgTooltip.rowSize(rootBorgTooltip.heroIconRow)
                     font.weight: rootBorgTooltip.heroIconRow.bold ? Font.DemiBold : Font.Normal
@@ -129,12 +129,12 @@ PopupWindow {
                 Column {
                     width: parent.width - heroIcon.width - parent.spacing
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: rootBorgTooltip.theme.borg.tooltipHeroTextSpacing
+                    spacing: rootBorgTooltip.theme.modules.bar.borg.tooltipHeroTextSpacing
 
                     Text {
                         width: parent.width
                         text: String(rootBorgTooltip.heroTitleRow.text || "")
-                        color: rootBorgTooltip.theme.borgTokenColor(rootBorgTooltip.heroTitleRow.color)
+                        color: rootBorgTooltip.theme.modules.bar.borg.tokenColor(rootBorgTooltip.heroTitleRow.color)
                         font.pixelSize: rootBorgTooltip.rowSize(rootBorgTooltip.heroTitleRow)
                         font.weight: rootBorgTooltip.heroTitleRow.bold ? Font.DemiBold : Font.Normal
                         horizontalAlignment: Text.AlignHCenter
@@ -144,7 +144,7 @@ PopupWindow {
                     Text {
                         width: parent.width
                         text: String(rootBorgTooltip.heroStatusRow.text || "")
-                        color: rootBorgTooltip.theme.borgTokenColor(rootBorgTooltip.heroStatusRow.color)
+                        color: rootBorgTooltip.theme.modules.bar.borg.tokenColor(rootBorgTooltip.heroStatusRow.color)
                         font.pixelSize: rootBorgTooltip.rowSize(rootBorgTooltip.heroStatusRow)
                         font.weight: rootBorgTooltip.heroStatusRow.bold ? Font.DemiBold : Font.Normal
                         horizontalAlignment: Text.AlignHCenter
@@ -165,7 +165,7 @@ PopupWindow {
 
                     width: tooltipLayout.width
                     height: isBlank
-                        ? rootBorgTooltip.theme.borg.tooltipBlankHeight
+                        ? rootBorgTooltip.theme.modules.bar.borg.tooltipBlankHeight
                         : rowHasColumns ? columnsRow.implicitHeight : textRow.implicitHeight
 
                     Text {
@@ -174,8 +174,8 @@ PopupWindow {
                         width: parent.width
                         visible: !parent.isBlank && !parent.rowHasColumns
                         text: String(parent.modelData.text || "")
-                        color: rootBorgTooltip.theme.borgTokenColor(parent.modelData.color)
-                        font.family: parent.modelData.size >= rootBorgTooltip.theme.borg.tooltipIconThreshold ? rootBorgTooltip.theme.iconFontFamily : ""
+                        color: rootBorgTooltip.theme.modules.bar.borg.tokenColor(parent.modelData.color)
+                        font.family: parent.modelData.size >= rootBorgTooltip.theme.modules.bar.borg.tooltipIconThreshold ? rootBorgTooltip.theme.iconFontFamily : ""
                         font.pixelSize: rootBorgTooltip.rowSize(parent.modelData)
                         font.weight: parent.modelData.bold ? Font.DemiBold : Font.Normal
                         horizontalAlignment: rootBorgTooltip.rowAlign(parent.modelData.align)
@@ -187,21 +187,21 @@ PopupWindow {
 
                         width: parent.width
                         visible: !parent.isBlank && parent.rowHasColumns
-                        spacing: rootBorgTooltip.theme.borg.tooltipColumnGap
+                        spacing: rootBorgTooltip.theme.modules.bar.borg.tooltipColumnGap
 
                         Text {
-                            width: rootBorgTooltip.theme.borg.tooltipLabelWidth
+                            width: rootBorgTooltip.theme.modules.bar.borg.tooltipLabelWidth
                             text: String(parent.parent.firstColumn.text || "")
-                            color: rootBorgTooltip.theme.borgTokenColor(parent.parent.firstColumn.color)
+                            color: rootBorgTooltip.theme.modules.bar.borg.tokenColor(parent.parent.firstColumn.color)
                             font.pixelSize: rootBorgTooltip.rowSize(parent.parent.firstColumn)
                             font.weight: parent.parent.firstColumn.bold ? Font.DemiBold : Font.Normal
                             horizontalAlignment: Text.AlignRight
                         }
 
                         Text {
-                            width: parent.width - rootBorgTooltip.theme.borg.tooltipLabelWidth - parent.spacing
+                            width: parent.width - rootBorgTooltip.theme.modules.bar.borg.tooltipLabelWidth - parent.spacing
                             text: String(parent.parent.secondColumn.text || "")
-                            color: rootBorgTooltip.theme.borgTokenColor(parent.parent.secondColumn.color)
+                            color: rootBorgTooltip.theme.modules.bar.borg.tokenColor(parent.parent.secondColumn.color)
                             font.pixelSize: rootBorgTooltip.rowSize(parent.parent.secondColumn)
                             font.weight: parent.parent.secondColumn.bold ? Font.DemiBold : Font.Normal
                             wrapMode: Text.Wrap

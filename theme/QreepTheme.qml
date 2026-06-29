@@ -7,47 +7,38 @@ QtObject {
     id: rootQreepTheme
 
     readonly property QtObject palette: Colors.UnclaimedBloomColors {}
-    readonly property var requiredPaletteColors: ["barBackground", "moduleBackground", "moduleHoverBackground", "primaryText", "secondaryText", "calendarBackground", "calendarHeaderText", "calendarDayText", "calendarMutedText", "calendarTodayBackground", "calendarTodayText", "eventIndicator", "powerActionBackground", "powerActionHoverBackground", "powerActionText", "powerActionIconColor", "powerConfirmText"]
+    readonly property var requiredPaletteColors: ["background", "surface", "surfaceContainer", "surfaceContainerHigh", "surfaceContainerHighest", "primary", "primaryContainer", "primaryFixedDim", "on_surface", "on_surface_variant", "on_primary", "on_primary_container", "outline", "outlineVariant", "error", "warningColor", "successColor"]
 
-    readonly property color barBackground: paletteColor("barBackground", "#171b22")
-    readonly property color moduleBackground: paletteColor("moduleBackground", "#2e3440")
-    readonly property color moduleHoverBackground: paletteColor("moduleHoverBackground", "#3b4252")
-    readonly property color primaryText: paletteColor("primaryText", "#b8c7e8")
-    readonly property color secondaryText: paletteColor("secondaryText", "#697386")
-    readonly property color calendarBackground: paletteColor("calendarBackground", "#242933")
-    readonly property color calendarHeaderText: paletteColor("calendarHeaderText", "#d8dee9")
-    readonly property color calendarDayText: paletteColor("calendarDayText", "#b8c7e8")
-    readonly property color calendarMutedText: paletteColor("calendarMutedText", "#697386")
-    readonly property color calendarTodayBackground: paletteColor("calendarTodayBackground", "#5e81ac")
-    readonly property color calendarTodayText: paletteColor("calendarTodayText", "#eceff4")
-    readonly property color eventIndicator: paletteColor("eventIndicator", "#88c0d0")
-    readonly property color powerActionBackground: paletteColor("powerActionBackground", "#9aadd4")
-    readonly property color powerActionHoverBackground: paletteColor("powerActionHoverBackground", "#b8c7e8")
-    readonly property color powerActionText: paletteColor("powerActionText", "#2e3440")
-    readonly property color powerActionIconColor: paletteColor("powerActionIconColor", "#3e4554")
-    readonly property color powerConfirmText: paletteColor("powerConfirmText", "#d8dee9")
-    readonly property color overlaySurfaceBackground: Qt.rgba(calendarBackground.r, calendarBackground.g, calendarBackground.b, power.sidebarOpacity)
-    readonly property color overlaySurfaceBorder: moduleHoverBackground
+    readonly property color background: paletteColor("background", "#171b22")
+    readonly property color surface: paletteColor("surface", "#242933")
+    readonly property color surfaceVariant: paletteColor("surfaceVariant", "#3b4252")
+    readonly property color surfaceContainer: paletteColor("surfaceContainer", "#2e3440")
+    readonly property color surfaceContainerLow: paletteColor("surfaceContainerLow", "#242933")
+    readonly property color surfaceContainerLowest: paletteColor("surfaceContainerLowest", "#171b22")
+    readonly property color surfaceContainerHigh: paletteColor("surfaceContainerHigh", "#3b4252")
+    readonly property color surfaceContainerHighest: paletteColor("surfaceContainerHighest", "#3b4252")
+
+    readonly property color primary: paletteColor("primary", "#88c0d0")
+    readonly property color primaryContainer: paletteColor("primaryContainer", "#5e81ac")
+    readonly property color primaryFixedDim: paletteColor("primaryFixedDim", "#b8c7e8")
+    readonly property color secondary: paletteColor("secondary", "#b8c7e8")
+    readonly property color tertiary: paletteColor("tertiary", "#a8be97")
+
+    readonly property color on_background: paletteColor("on_background", "#b8c7e8")
+    readonly property color on_surface: paletteColor("on_surface", "#b8c7e8")
+    readonly property color on_surface_variant: paletteColor("on_surface_variant", "#697386")
+    readonly property color on_primary: paletteColor("on_primary", "#2e3440")
+    readonly property color on_primary_container: paletteColor("on_primary_container", "#eceff4")
+
+    readonly property color outline: paletteColor("outline", "#3b4252")
+    readonly property color outlineVariant: paletteColor("outlineVariant", "#3b4252")
+    readonly property color error: paletteColor("error", "#ff9898")
+    readonly property color warningColor: paletteColor("warningColor", "#f9e2af")
+    readonly property color successColor: paletteColor("successColor", "#a8be97")
 
     readonly property QtObject modules: Modules.ModulesTheme {
         qreep: rootQreepTheme
     }
-
-    readonly property QtObject bar: modules.bar
-    readonly property QtObject dashboard: modules.dashboard
-    readonly property QtObject osd: modules.osd
-
-    readonly property QtObject module: modules.bar.pill
-    readonly property QtObject tooltip: modules.bar.tooltip
-    readonly property QtObject clock: modules.bar.clock
-    readonly property QtObject calendar: modules.bar.calendar
-    readonly property QtObject power: modules.bar.power
-    readonly property QtObject borg: modules.bar.borg
-    readonly property QtObject upchecker: modules.bar.upchecker
-    readonly property QtObject monitorProfile: modules.bar.monitorProfile
-    readonly property QtObject mpris: modules.bar.mpris
-    readonly property QtObject workspaces: modules.bar.workspaces
-    readonly property QtObject launcher: modules.bar.launcher
 
     readonly property string iconFontFamily: "FiraCode Nerd Font"
     readonly property int animationFastDuration: 100
@@ -73,35 +64,52 @@ QtObject {
         return value === undefined ? fallbackColor : value;
     }
 
-    function borgClassColor(className) {
-        switch (className) {
-        case "ok":
-            return borg.okColor;
-        case "warning":
-            return borg.warningColor;
-        case "error":
-            return borg.errorColor;
-        default:
-            return primaryText;
-        }
-    }
-
-    function borgTokenColor(token) {
+    function colorToken(token, fallbackColor) {
         switch (String(token || "")) {
+        case "{{background}}":
+            return background;
+        case "{{surface}}":
+            return surface;
+        case "{{surface_variant}}":
+            return surfaceVariant;
+        case "{{surface_container}}":
+            return surfaceContainer;
+        case "{{surface_container_high}}":
+            return surfaceContainerHigh;
+        case "{{surface_container_highest}}":
+            return surfaceContainerHighest;
         case "{{primary}}":
-            return primaryText;
+            return primary;
+        case "{{primary_container}}":
+            return primaryContainer;
+        case "{{primary_fixed_dim}}":
+            return primaryFixedDim;
         case "{{secondary}}":
-            return secondaryText;
+            return secondary;
         case "{{tertiary}}":
-            return borg.okColor;
+            return tertiary;
+        case "{{on_background}}":
+            return on_background;
         case "{{on_surface}}":
-            return calendarHeaderText;
+            return on_surface;
         case "{{on_surface_variant}}":
-            return calendarMutedText;
+            return on_surface_variant;
+        case "{{on_primary}}":
+            return on_primary;
+        case "{{on_primary_container}}":
+            return on_primary_container;
+        case "{{outline}}":
+            return outline;
+        case "{{outline_variant}}":
+            return outlineVariant;
         case "{{error}}":
-            return borg.errorColor;
+            return error;
+        case "{{warning}}":
+            return warningColor;
+        case "{{success}}":
+            return successColor;
         default:
-            return calendarDayText;
+            return fallbackColor;
         }
     }
 

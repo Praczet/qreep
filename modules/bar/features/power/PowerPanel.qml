@@ -132,15 +132,15 @@ PanelWindow {
                 top: parent.top
                 right: parent.right
                 bottom: parent.bottom
-                topMargin: rootPowerPanel.theme.power.sidebarMargin
-                rightMargin: rootPowerPanel.theme.power.sidebarMargin
-                bottomMargin: rootPowerPanel.theme.power.sidebarMargin
+                topMargin: rootPowerPanel.theme.modules.bar.power.sidebarMargin
+                rightMargin: rootPowerPanel.theme.modules.bar.power.sidebarMargin
+                bottomMargin: rootPowerPanel.theme.modules.bar.power.sidebarMargin
             }
-            width: rootPowerPanel.theme.power.sidebarWidth
-            radius: rootPowerPanel.theme.power.sidebarRadius
-            color: rootPowerPanel.theme.power.backgroundColor
-            border.width: rootPowerPanel.theme.power.sidebarBorderWidth
-            border.color: rootPowerPanel.theme.power.borderColor
+            width: rootPowerPanel.theme.modules.bar.power.sidebarWidth
+            radius: rootPowerPanel.theme.modules.bar.power.sidebarRadius
+            color: rootPowerPanel.theme.modules.bar.power.backgroundColor
+            border.width: rootPowerPanel.theme.modules.bar.power.sidebarBorderWidth
+            border.color: rootPowerPanel.theme.modules.bar.power.borderColor
 
             MouseArea {
                 anchors.fill: parent
@@ -151,10 +151,10 @@ PanelWindow {
                 id: actionCard
 
                 anchors.centerIn: parent
-                width: rootPowerPanel.theme.power.cardWidth
-                height: (rootPowerPanel.pendingAction === null ? actionList.implicitHeight : confirmActionList.implicitHeight) + rootPowerPanel.theme.power.cardPadding * 2
-                radius: rootPowerPanel.theme.power.cardRadius
-                color: rootPowerPanel.theme.moduleHoverBackground
+                width: rootPowerPanel.theme.modules.bar.power.cardWidth
+                height: (rootPowerPanel.pendingAction === null ? actionList.implicitHeight : confirmActionList.implicitHeight) + rootPowerPanel.theme.modules.bar.power.cardPadding * 2
+                radius: rootPowerPanel.theme.modules.bar.power.cardRadius
+                color: rootPowerPanel.theme.modules.bar.moduleHoverBackgroundColor
 
                 Column {
                     id: actionList
@@ -164,9 +164,9 @@ PanelWindow {
                         left: parent.left
                         right: parent.right
                         top: parent.top
-                        margins: rootPowerPanel.theme.power.cardPadding
+                        margins: rootPowerPanel.theme.modules.bar.power.cardPadding
                     }
-                    spacing: rootPowerPanel.theme.power.actionSpacing
+                    spacing: rootPowerPanel.theme.modules.bar.power.actionSpacing
 
                     Repeater {
                         model: rootPowerPanel.actions
@@ -177,17 +177,17 @@ PanelWindow {
                             required property var modelData
 
                             width: parent.width
-                            height: rootPowerPanel.theme.power.actionHeight
-                            radius: rootPowerPanel.theme.power.actionRadius
-                            color: actionHover.hovered ? rootPowerPanel.theme.powerActionHoverBackground : rootPowerPanel.theme.powerActionBackground
+                            height: rootPowerPanel.theme.modules.bar.power.actionHeight
+                            radius: rootPowerPanel.theme.modules.bar.power.actionRadius
+                            color: actionHover.hovered ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
 
                             Row {
                                 anchors.centerIn: parent
-                                spacing: rootPowerPanel.theme.power.actionContentSpacing
+                                spacing: rootPowerPanel.theme.modules.bar.power.actionContentSpacing
 
                                 Item {
-                                    width: rootPowerPanel.theme.power.actionIconSize
-                                    height: rootPowerPanel.theme.power.actionIconSize
+                                    width: rootPowerPanel.theme.modules.bar.power.actionIconSize
+                                    height: rootPowerPanel.theme.modules.bar.power.actionIconSize
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     IconImage {
@@ -201,17 +201,17 @@ PanelWindow {
                                     MultiEffect {
                                         anchors.fill: parent
                                         source: icon
-                                        colorization: rootPowerPanel.theme.power.actionIconColorization
-                                        brightness: rootPowerPanel.theme.power.actionIconBrightness
-                                        colorizationColor: rootPowerPanel.theme.powerActionIconColor
+                                        colorization: rootPowerPanel.theme.modules.bar.power.actionIconColorization
+                                        brightness: rootPowerPanel.theme.modules.bar.power.actionIconBrightness
+                                        colorizationColor: rootPowerPanel.theme.modules.bar.power.actionIconColor
                                     }
                                 }
 
                                 Text {
-                                    width: rootPowerPanel.theme.power.actionLabelWidth
+                                    width: rootPowerPanel.theme.modules.bar.power.actionLabelWidth
                                     text: actionButton.modelData.label
-                                    color: rootPowerPanel.theme.powerActionText
-                                    font.pixelSize: rootPowerPanel.theme.power.actionTextPixelSize
+                                    color: rootPowerPanel.theme.modules.bar.power.actionTextColor
+                                    font.pixelSize: rootPowerPanel.theme.modules.bar.power.actionTextPixelSize
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
                             }
@@ -245,15 +245,15 @@ PanelWindow {
                         left: parent.left
                         right: parent.right
                         top: parent.top
-                        margins: rootPowerPanel.theme.power.cardPadding
+                        margins: rootPowerPanel.theme.modules.bar.power.cardPadding
                     }
-                    spacing: rootPowerPanel.theme.power.actionSpacing
+                    spacing: rootPowerPanel.theme.modules.bar.power.actionSpacing
 
                     Text {
                         width: parent.width
                         text: rootPowerPanel.pendingAction !== null ? rootPowerPanel.pendingAction.confirmTitle : ""
-                        color: rootPowerPanel.theme.powerConfirmText
-                        font.pixelSize: rootPowerPanel.theme.power.confirmTitlePixelSize
+                        color: rootPowerPanel.theme.modules.bar.power.confirmTextColor
+                        font.pixelSize: rootPowerPanel.theme.modules.bar.power.confirmTitlePixelSize
                         font.bold: true
                         wrapMode: Text.Wrap
                     }
@@ -261,27 +261,27 @@ PanelWindow {
                     Text {
                         width: parent.width
                         text: rootPowerPanel.pendingAction !== null ? rootPowerPanel.pendingAction.confirmContent : ""
-                        color: rootPowerPanel.theme.powerConfirmText
-                        font.pixelSize: rootPowerPanel.theme.power.confirmContentPixelSize
+                        color: rootPowerPanel.theme.modules.bar.power.confirmTextColor
+                        font.pixelSize: rootPowerPanel.theme.modules.bar.power.confirmContentPixelSize
                         wrapMode: Text.Wrap
-                        bottomPadding: rootPowerPanel.theme.power.confirmContentBottomPadding
+                        bottomPadding: rootPowerPanel.theme.modules.bar.power.confirmContentBottomPadding
                     }
 
                     Row {
                         width: parent.width
-                        spacing: rootPowerPanel.theme.power.confirmButtonSpacing
+                        spacing: rootPowerPanel.theme.modules.bar.power.confirmButtonSpacing
 
                         Rectangle {
                             width: (parent.width - parent.spacing) / 2
-                            height: rootPowerPanel.theme.power.actionHeight
-                            radius: rootPowerPanel.theme.power.actionRadius
-                            color: cancelHover.hovered ? rootPowerPanel.theme.powerActionHoverBackground : rootPowerPanel.theme.powerActionBackground
+                            height: rootPowerPanel.theme.modules.bar.power.actionHeight
+                            radius: rootPowerPanel.theme.modules.bar.power.actionRadius
+                            color: cancelHover.hovered ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"
-                                color: rootPowerPanel.theme.powerActionText
-                                font.pixelSize: rootPowerPanel.theme.power.actionTextPixelSize
+                                color: rootPowerPanel.theme.modules.bar.power.actionTextColor
+                                font.pixelSize: rootPowerPanel.theme.modules.bar.power.actionTextPixelSize
                             }
 
                             HoverHandler {
@@ -304,15 +304,15 @@ PanelWindow {
 
                         Rectangle {
                             width: (parent.width - parent.spacing) / 2
-                            height: rootPowerPanel.theme.power.actionHeight
-                            radius: rootPowerPanel.theme.power.actionRadius
-                            color: confirmHover.hovered ? rootPowerPanel.theme.powerActionHoverBackground : rootPowerPanel.theme.powerActionBackground
+                            height: rootPowerPanel.theme.modules.bar.power.actionHeight
+                            radius: rootPowerPanel.theme.modules.bar.power.actionRadius
+                            color: confirmHover.hovered ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "Confirm"
-                                color: rootPowerPanel.theme.powerActionText
-                                font.pixelSize: rootPowerPanel.theme.power.actionTextPixelSize
+                                color: rootPowerPanel.theme.modules.bar.power.actionTextColor
+                                font.pixelSize: rootPowerPanel.theme.modules.bar.power.actionTextPixelSize
                             }
 
                             HoverHandler {

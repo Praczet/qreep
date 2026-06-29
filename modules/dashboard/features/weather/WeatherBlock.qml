@@ -68,7 +68,7 @@ Item {
             Text {
                 width: parent.width
                 text: weatherService.location
-                color: rootWeatherBlock.theme.secondaryText
+                color: rootWeatherBlock.theme.modules.dashboard.secondaryTextColor
                 font.pixelSize: rootWeatherBlock.theme.modules.dashboard.metaPixelSize
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
@@ -90,7 +90,7 @@ Item {
 
                 Text {
                     text: weatherService.temperature
-                    color: rootWeatherBlock.theme.borg.errorColor
+                    color: rootWeatherBlock.theme.modules.dashboard.errorColor
                     font.pixelSize: 34
                     font.weight: Font.DemiBold
                 }
@@ -99,7 +99,7 @@ Item {
             Text {
                 width: parent.width
                 text: weatherService.loading && weatherService.forecast.length === 0 ? "Updating..." : weatherService.condition
-                color: rootWeatherBlock.theme.calendarDayText
+                color: rootWeatherBlock.theme.modules.dashboard.primaryTextColor
                 font.pixelSize: rootWeatherBlock.theme.modules.dashboard.bodyPixelSize
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
@@ -108,7 +108,7 @@ Item {
             Text {
                 width: parent.width
                 text: weatherService.error.length > 0 ? weatherService.error : weatherService.wind
-                color: rootWeatherBlock.theme.secondaryText
+                color: rootWeatherBlock.theme.modules.dashboard.secondaryTextColor
                 font.pixelSize: rootWeatherBlock.theme.modules.dashboard.metaPixelSize
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
@@ -133,7 +133,7 @@ Item {
                         Layout.preferredWidth: 92
                         Layout.alignment: Qt.AlignVCenter
                         text: String(parent.modelData.day || "")
-                        color: rootWeatherBlock.theme.calendarDayText
+                        color: rootWeatherBlock.theme.modules.dashboard.primaryTextColor
                         font.pixelSize: rootWeatherBlock.theme.modules.dashboard.metaPixelSize
                         elide: Text.ElideRight
                     }
@@ -142,7 +142,7 @@ Item {
                         Layout.preferredWidth: 92
                         Layout.alignment: Qt.AlignVCenter
                         text: "[" + rootWeatherBlock.numberValue(parent.modelData.low, 0) + "°C, " + rootWeatherBlock.numberValue(parent.modelData.high, 0) + "°C]"
-                        color: rootWeatherBlock.theme.eventIndicator
+                        color: rootWeatherBlock.theme.modules.dashboard.accentColor
                         font.pixelSize: rootWeatherBlock.theme.modules.dashboard.metaPixelSize
                         elide: Text.ElideRight
                     }
@@ -170,7 +170,7 @@ Item {
                             width: rangeChart.normalEndX - rangeChart.normalStartX
                             height: 3
                             radius: height / 2
-                            color: rootWeatherBlock.theme.eventIndicator
+                            color: rootWeatherBlock.theme.modules.dashboard.accentColor
                             opacity: 0.9
                         }
 
@@ -181,7 +181,7 @@ Item {
                             width: rangeChart.warmEndX - rangeChart.warmStartX
                             height: 3
                             radius: height / 2
-                            color: rootWeatherBlock.theme.borg.errorColor
+                            color: rootWeatherBlock.theme.modules.dashboard.errorColor
                             opacity: 0.85
                         }
 
@@ -191,7 +191,7 @@ Item {
                             width: 2
                             height: 10
                             radius: 1
-                            color: rootWeatherBlock.theme.secondaryText
+                            color: rootWeatherBlock.theme.modules.dashboard.secondaryTextColor
                             opacity: 0.9
                         }
                     }

@@ -3,6 +3,14 @@ import QtQuick
 QtObject {
     id: rootTooltipTheme
 
+    required property QtObject qreep
+
+    readonly property color backgroundColor: qreep.surface
+    readonly property color borderColor: qreep.surfaceContainerHigh
+    readonly property color warningBorderColor: qreep.primary
+    readonly property color titleTextColor: qreep.on_surface
+    readonly property color contentTextColor: qreep.on_surface
+
     readonly property int offsetY: 8
     readonly property int minimumWidth: 180
     readonly property int horizontalPadding: 16

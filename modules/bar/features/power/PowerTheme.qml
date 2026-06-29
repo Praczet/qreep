@@ -11,8 +11,13 @@ QtObject {
     readonly property int sidebarRadius: 18
     readonly property int sidebarBorderWidth: 1
     readonly property real sidebarOpacity: 0.82
-    readonly property color backgroundColor: qreep.overlaySurfaceBackground
-    readonly property color borderColor: qreep.overlaySurfaceBorder
+    readonly property color backgroundColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, sidebarOpacity)
+    readonly property color borderColor: qreep.outline
+    readonly property color actionBackgroundColor: qreep.primary
+    readonly property color actionHoverBackgroundColor: qreep.primaryFixedDim
+    readonly property color actionTextColor: qreep.on_primary
+    readonly property color actionIconColor: qreep.on_primary
+    readonly property color confirmTextColor: qreep.on_surface
     readonly property int cardWidth: 260
     readonly property int cardPadding: 20
     readonly property int cardRadius: 18

@@ -15,14 +15,14 @@ PanelWindow {
     readonly property string filterNeedle: excludeFilter ? normalizedFilterText.slice(1).trim().toLowerCase() : normalizedFilterText.toLowerCase()
     readonly property bool filterActive: filterNeedle.length > 0
     readonly property var filteredUpdates: filteredUpdateList()
-    readonly property int panelWidth: Math.max(1, Math.min(theme.upchecker.windowWidth, width - theme.upchecker.screenMargin * 2))
-    readonly property int panelHeight: Math.max(1, height - theme.upchecker.topMargin - theme.upchecker.bottomMargin)
+    readonly property int panelWidth: Math.max(1, Math.min(theme.modules.bar.upchecker.windowWidth, width - theme.modules.bar.upchecker.screenMargin * 2))
+    readonly property int panelHeight: Math.max(1, height - theme.modules.bar.upchecker.topMargin - theme.modules.bar.upchecker.bottomMargin)
 
     function listPreview(values) {
         if (!Array.isArray(values) || values.length === 0)
             return "--";
 
-        const limit = rootUpcheckerPanel.theme.upchecker.dependencyPreviewLimit;
+        const limit = rootUpcheckerPanel.theme.modules.bar.upchecker.dependencyPreviewLimit;
         const shown = values.slice(0, limit).join(", ");
         return values.length > limit ? shown + " +" + (values.length - limit) + " more" : shown;
     }
@@ -194,13 +194,13 @@ PanelWindow {
             id: panel
 
             x: (parent.width - width) / 2
-            y: rootUpcheckerPanel.theme.upchecker.topMargin
+            y: rootUpcheckerPanel.theme.modules.bar.upchecker.topMargin
             width: rootUpcheckerPanel.panelWidth
             height: rootUpcheckerPanel.panelHeight
-            radius: theme.upchecker.radius
-            color: theme.upchecker.backgroundColor
-            border.color: theme.upchecker.borderColor
-            border.width: theme.upchecker.borderWidth
+            radius: theme.modules.bar.upchecker.radius
+            color: theme.modules.bar.upchecker.backgroundColor
+            border.color: theme.modules.bar.upchecker.borderColor
+            border.width: theme.modules.bar.upchecker.borderWidth
 
             Text {
                 id: title
@@ -208,14 +208,14 @@ PanelWindow {
                 text: rootUpcheckerPanel.filterActive
                     ? "Updates Available: " + rootUpcheckerPanel.filteredUpdates.length + " / " + rootUpcheckerPanel.service.updates.length
                     : "Updates Available: " + rootUpcheckerPanel.service.updates.length
-                color: theme.primaryText
-                font.pixelSize: theme.upchecker.titlePixelSize
+                color: theme.modules.bar.primaryTextColor
+                font.pixelSize: theme.modules.bar.upchecker.titlePixelSize
                 font.weight: Font.DemiBold
 
                 anchors {
                     top: parent.top
                     horizontalCenter: parent.horizontalCenter
-                    topMargin: theme.upchecker.contentPadding
+                    topMargin: theme.modules.bar.upchecker.contentPadding
                 }
             }
 
@@ -227,37 +227,37 @@ PanelWindow {
                     top: title.bottom
                     left: parent.left
                     right: parent.right
-                    margins: theme.upchecker.contentPadding
-                    topMargin: theme.upchecker.titleBottomMargin
+                    margins: theme.modules.bar.upchecker.contentPadding
+                    topMargin: theme.modules.bar.upchecker.titleBottomMargin
                 }
-                height: theme.upchecker.restartBannerHeight
-                radius: theme.upchecker.restartBannerRadius
-                color: Qt.rgba(theme.borg.warningColor.r, theme.borg.warningColor.g, theme.borg.warningColor.b, 0.16)
-                border.color: theme.borg.warningColor
-                border.width: theme.upchecker.borderWidth
+                height: theme.modules.bar.upchecker.restartBannerHeight
+                radius: theme.modules.bar.upchecker.restartBannerRadius
+                color: Qt.rgba(theme.modules.bar.borg.warningColor.r, theme.modules.bar.borg.warningColor.g, theme.modules.bar.borg.warningColor.b, 0.16)
+                border.color: theme.modules.bar.borg.warningColor
+                border.width: theme.modules.bar.upchecker.borderWidth
 
                 Column {
                     anchors {
                         left: parent.left
                         right: parent.right
                         verticalCenter: parent.verticalCenter
-                        leftMargin: theme.upchecker.restartBannerPadding
-                        rightMargin: theme.upchecker.restartBannerPadding
+                        leftMargin: theme.modules.bar.upchecker.restartBannerPadding
+                        rightMargin: theme.modules.bar.upchecker.restartBannerPadding
                     }
                     spacing: 4
 
                     Text {
                         text: rootUpcheckerPanel.service.restartSummary
-                        color: theme.borg.warningColor
-                        font.pixelSize: theme.upchecker.restartTitlePixelSize
+                        color: theme.modules.bar.borg.warningColor
+                        font.pixelSize: theme.modules.bar.upchecker.restartTitlePixelSize
                         font.weight: Font.DemiBold
                     }
 
                     Text {
                         width: parent.width
                         text: rootUpcheckerPanel.service.restartDetails
-                        color: theme.calendarDayText
-                        font.pixelSize: theme.upchecker.restartDetailPixelSize
+                        color: theme.modules.bar.upchecker.rowTextColor
+                        font.pixelSize: theme.modules.bar.upchecker.restartDetailPixelSize
                         elide: Text.ElideRight
                     }
                 }
@@ -266,16 +266,16 @@ PanelWindow {
             Row {
                 id: content
 
-                spacing: theme.upchecker.paneSpacing
+                spacing: theme.modules.bar.upchecker.paneSpacing
 
                 anchors {
                     left: parent.left
                     right: parent.right
                     top: rootUpcheckerPanel.service.restartNeeded ? restartBanner.bottom : title.bottom
                     bottom: actions.top
-                    margins: theme.upchecker.contentPadding
-                    topMargin: theme.upchecker.titleBottomMargin
-                    bottomMargin: theme.upchecker.contentPadding
+                    margins: theme.modules.bar.upchecker.contentPadding
+                    topMargin: theme.modules.bar.upchecker.titleBottomMargin
+                    bottomMargin: theme.modules.bar.upchecker.contentPadding
                 }
 
                 Rectangle {
@@ -288,24 +288,24 @@ PanelWindow {
                         visible: rootUpcheckerPanel.service.loadingUpdates
                         anchors.centerIn: parent
                         text: "Checking for updates..."
-                        color: theme.secondaryText
-                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                        color: theme.modules.bar.secondaryTextColor
+                        font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
                     }
 
                     Text {
                         visible: !rootUpcheckerPanel.service.loadingUpdates && rootUpcheckerPanel.service.updates.length === 0
                         anchors.centerIn: parent
                         text: rootUpcheckerPanel.service.error.length > 0 ? "Could not load updates." : "No updates available."
-                        color: rootUpcheckerPanel.service.error.length > 0 ? theme.borg.errorColor : theme.secondaryText
-                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                        color: rootUpcheckerPanel.service.error.length > 0 ? theme.modules.bar.borg.errorColor : theme.modules.bar.secondaryTextColor
+                        font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
                     }
 
                     Text {
                         visible: !rootUpcheckerPanel.service.loadingUpdates && rootUpcheckerPanel.service.updates.length > 0 && rootUpcheckerPanel.filteredUpdates.length === 0
                         anchors.centerIn: parent
                         text: "No updates match the filter."
-                        color: theme.secondaryText
-                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                        color: theme.modules.bar.secondaryTextColor
+                        font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
                     }
 
                     ListView {
@@ -314,7 +314,7 @@ PanelWindow {
                         anchors.fill: parent
                         visible: !rootUpcheckerPanel.service.loadingUpdates && rootUpcheckerPanel.filteredUpdates.length > 0
                         clip: true
-                        spacing: theme.upchecker.rowSpacing
+                        spacing: theme.modules.bar.upchecker.rowSpacing
                         model: rootUpcheckerPanel.filteredUpdates
 
                         delegate: Rectangle {
@@ -324,39 +324,39 @@ PanelWindow {
                             required property int index
                             readonly property bool selected: modelData.sourceIndex === rootUpcheckerPanel.service.selectedIndex
 
-                            width: ListView.view.width - theme.upchecker.scrollbarReserve
-                            height: theme.upchecker.rowHeight
-                            radius: theme.upchecker.rowRadius
-                            color: selected ? theme.calendarTodayBackground : theme.moduleBackground
-                            border.width: selected ? theme.upchecker.selectedBorderWidth : 0
-                            border.color: theme.eventIndicator
+                            width: ListView.view.width - theme.modules.bar.upchecker.scrollbarReserve
+                            height: theme.modules.bar.upchecker.rowHeight
+                            radius: theme.modules.bar.upchecker.rowRadius
+                            color: selected ? theme.modules.bar.upchecker.selectedBackgroundColor : theme.modules.bar.moduleBackgroundColor
+                            border.width: selected ? theme.modules.bar.upchecker.selectedBorderWidth : 0
+                            border.color: theme.modules.bar.accentColor
 
                             Row {
-                                spacing: theme.upchecker.versionSpacing
+                                spacing: theme.modules.bar.upchecker.versionSpacing
 
                                 anchors {
                                     left: parent.left
                                     right: parent.right
                                     verticalCenter: parent.verticalCenter
-                                    leftMargin: theme.upchecker.rowHorizontalPadding
-                                    rightMargin: theme.upchecker.rowHorizontalPadding
+                                    leftMargin: theme.modules.bar.upchecker.rowHorizontalPadding
+                                    rightMargin: theme.modules.bar.upchecker.rowHorizontalPadding
                                 }
 
                                 Text {
                                     width: parent.width - oldVersion.width - newVersion.width - parent.spacing * 2
                                     text: updateRow.modelData.name
-                                    color: theme.calendarDayText
-                                    font.pixelSize: theme.upchecker.rowTextPixelSize
+                                    color: theme.modules.bar.upchecker.rowTextColor
+                                    font.pixelSize: theme.modules.bar.upchecker.rowTextPixelSize
                                     elide: Text.ElideRight
                                 }
 
                                 Text {
                                     id: oldVersion
 
-                                    width: theme.upchecker.versionWidth
+                                    width: theme.modules.bar.upchecker.versionWidth
                                     text: updateRow.modelData.oldVer
-                                    color: theme.secondaryText
-                                    font.pixelSize: theme.upchecker.rowTextPixelSize
+                                    color: theme.modules.bar.secondaryTextColor
+                                    font.pixelSize: theme.modules.bar.upchecker.rowTextPixelSize
                                     horizontalAlignment: Text.AlignRight
                                     elide: Text.ElideRight
                                 }
@@ -364,10 +364,10 @@ PanelWindow {
                                 Text {
                                     id: newVersion
 
-                                    width: theme.upchecker.versionWidth
+                                    width: theme.modules.bar.upchecker.versionWidth
                                     text: updateRow.modelData.newVer
-                                    color: theme.calendarHeaderText
-                                    font.pixelSize: theme.upchecker.rowTextPixelSize
+                                    color: theme.modules.bar.upchecker.titleTextColor
+                                    font.pixelSize: theme.modules.bar.upchecker.rowTextPixelSize
                                     horizontalAlignment: Text.AlignRight
                                     elide: Text.ElideRight
                                 }
@@ -396,69 +396,69 @@ PanelWindow {
                         visible: rootUpcheckerPanel.service.detailsView === "empty"
                         anchors.centerIn: parent
                         text: "Select a package to see details."
-                        color: theme.secondaryText
-                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                        color: theme.modules.bar.secondaryTextColor
+                        font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
                     }
 
                     Text {
                         visible: rootUpcheckerPanel.service.detailsView === "nodata"
                         anchors.centerIn: parent
                         text: "No details yet."
-                        color: theme.secondaryText
-                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                        color: theme.modules.bar.secondaryTextColor
+                        font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
                     }
 
                     Text {
                         visible: rootUpcheckerPanel.service.detailsView === "loading"
                         anchors.centerIn: parent
                         text: rootUpcheckerPanel.service.loadingUpdates ? "Checking for updates..." : "Loading package information..."
-                        color: theme.secondaryText
-                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                        color: theme.modules.bar.secondaryTextColor
+                        font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
                     }
 
                     Text {
                         visible: rootUpcheckerPanel.service.detailsView === "error"
                         anchors.centerIn: parent
-                        width: parent.width - theme.upchecker.detailPadding * 2
+                        width: parent.width - theme.modules.bar.upchecker.detailPadding * 2
                         text: rootUpcheckerPanel.service.error
-                        color: theme.borg.errorColor
-                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                        color: theme.modules.bar.borg.errorColor
+                        font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
                         wrapMode: Text.Wrap
                         horizontalAlignment: Text.AlignHCenter
                     }
 
                     Column {
                         visible: rootUpcheckerPanel.service.detailsView === "details"
-                        spacing: theme.upchecker.detailSpacing
+                        spacing: theme.modules.bar.upchecker.detailSpacing
 
                         anchors {
                             top: parent.top
                             left: parent.left
                             right: parent.right
-                            margins: theme.upchecker.detailPadding
+                            margins: theme.modules.bar.upchecker.detailPadding
                         }
 
                         Rectangle {
                             width: parent.width
-                            height: theme.upchecker.detailHeaderHeight
-                            radius: theme.upchecker.rowRadius
-                            color: theme.powerActionBackground
+                            height: theme.modules.bar.upchecker.detailHeaderHeight
+                            radius: theme.modules.bar.upchecker.rowRadius
+                            color: theme.modules.bar.power.actionBackgroundColor
 
                             Row {
-                                spacing: theme.upchecker.versionSpacing
+                                spacing: theme.modules.bar.upchecker.versionSpacing
 
                                 anchors {
                                     left: parent.left
                                     right: parent.right
                                     verticalCenter: parent.verticalCenter
-                                    margins: theme.upchecker.detailHeaderPadding
+                                    margins: theme.modules.bar.upchecker.detailHeaderPadding
                                 }
 
                                 Text {
                                     width: parent.width - detailOldVersion.width - detailArrow.width - detailNewVersion.width - parent.spacing * 3
                                     text: rootUpcheckerPanel.service.details.name || "---"
-                                    color: theme.powerActionText
-                                    font.pixelSize: theme.upchecker.detailTitlePixelSize
+                                    color: theme.modules.bar.power.actionTextColor
+                                    font.pixelSize: theme.modules.bar.upchecker.detailTitlePixelSize
                                     font.weight: Font.DemiBold
                                     elide: Text.ElideRight
                                 }
@@ -466,11 +466,11 @@ PanelWindow {
                                 Text {
                                     id: detailOldVersion
 
-                                    width: theme.upchecker.detailVersionWidth
+                                    width: theme.modules.bar.upchecker.detailVersionWidth
                                     text: rootUpcheckerPanel.service.selectedItem ? rootUpcheckerPanel.service.selectedItem.oldVer : ""
-                                    color: theme.powerActionText
-                                    opacity: theme.upchecker.dimOpacity
-                                    font.pixelSize: theme.upchecker.detailVersionPixelSize
+                                    color: theme.modules.bar.power.actionTextColor
+                                    opacity: theme.modules.bar.upchecker.dimOpacity
+                                    font.pixelSize: theme.modules.bar.upchecker.detailVersionPixelSize
                                     horizontalAlignment: Text.AlignRight
                                     elide: Text.ElideRight
                                 }
@@ -479,18 +479,18 @@ PanelWindow {
                                     id: detailArrow
 
                                     text: "->"
-                                    color: theme.powerActionText
-                                    opacity: theme.upchecker.dimOpacity
-                                    font.pixelSize: theme.upchecker.detailVersionPixelSize
+                                    color: theme.modules.bar.power.actionTextColor
+                                    opacity: theme.modules.bar.upchecker.dimOpacity
+                                    font.pixelSize: theme.modules.bar.upchecker.detailVersionPixelSize
                                 }
 
                                 Text {
                                     id: detailNewVersion
 
-                                    width: theme.upchecker.detailVersionWidth
+                                    width: theme.modules.bar.upchecker.detailVersionWidth
                                     text: rootUpcheckerPanel.service.selectedItem ? rootUpcheckerPanel.service.selectedItem.newVer : ""
-                                    color: theme.powerActionText
-                                    font.pixelSize: theme.upchecker.detailVersionPixelSize
+                                    color: theme.modules.bar.power.actionTextColor
+                                    font.pixelSize: theme.modules.bar.upchecker.detailVersionPixelSize
                                     horizontalAlignment: Text.AlignRight
                                     elide: Text.ElideRight
                                 }
@@ -498,11 +498,11 @@ PanelWindow {
                         }
 
                         Text {
-                            width: parent.width - theme.upchecker.descriptionHorizontalInset * 2
+                            width: parent.width - theme.modules.bar.upchecker.descriptionHorizontalInset * 2
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: rootUpcheckerPanel.service.details.desc || ""
-                            color: theme.calendarMutedText
-                            font.pixelSize: theme.upchecker.descriptionPixelSize
+                            color: theme.modules.bar.upchecker.mutedTextColor
+                            font.pixelSize: theme.modules.bar.upchecker.descriptionPixelSize
                             wrapMode: Text.Wrap
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -545,21 +545,21 @@ PanelWindow {
                                 required property var modelData
 
                                 width: parent.width
-                                spacing: theme.upchecker.versionSpacing
+                                spacing: theme.modules.bar.upchecker.versionSpacing
 
                                 Text {
-                                    width: theme.upchecker.metaLabelWidth
+                                    width: theme.modules.bar.upchecker.metaLabelWidth
                                     text: modelData.label
-                                    color: theme.secondaryText
-                                    font.pixelSize: theme.upchecker.metaTextPixelSize
+                                    color: theme.modules.bar.secondaryTextColor
+                                    font.pixelSize: theme.modules.bar.upchecker.metaTextPixelSize
                                     horizontalAlignment: Text.AlignRight
                                 }
 
                                 Text {
-                                    width: parent.width - theme.upchecker.metaLabelWidth - parent.spacing
+                                    width: parent.width - theme.modules.bar.upchecker.metaLabelWidth - parent.spacing
                                     text: modelData.value
-                                    color: modelData.accent ? theme.eventIndicator : theme.calendarDayText
-                                    font.pixelSize: theme.upchecker.metaTextPixelSize
+                                    color: modelData.accent ? theme.modules.bar.accentColor : theme.modules.bar.upchecker.rowTextColor
+                                    font.pixelSize: theme.modules.bar.upchecker.metaTextPixelSize
                                     wrapMode: modelData.accent ? Text.WrapAnywhere : Text.Wrap
                                 }
                             }
@@ -571,28 +571,28 @@ PanelWindow {
             Row {
                 id: actions
 
-                height: theme.upchecker.actionButtonHeight
+                height: theme.modules.bar.upchecker.actionButtonHeight
 
                 anchors {
                     left: parent.left
                     right: parent.right
                     bottom: parent.bottom
-                    margins: theme.upchecker.contentPadding
+                    margins: theme.modules.bar.upchecker.contentPadding
                 }
 
                 Rectangle {
                     id: refreshButton
 
-                    width: theme.upchecker.actionButtonWidth
+                    width: theme.modules.bar.upchecker.actionButtonWidth
                     height: parent.height
-                    radius: theme.upchecker.actionButtonRadius
-                    color: refreshHover.hovered ? theme.powerActionHoverBackground : theme.powerActionBackground
+                    radius: theme.modules.bar.upchecker.actionButtonRadius
+                    color: refreshHover.hovered ? theme.modules.bar.power.actionHoverBackgroundColor : theme.modules.bar.power.actionBackgroundColor
 
                     Text {
                         anchors.centerIn: parent
                         text: rootUpcheckerPanel.service.loadingUpdates ? "..." : "Refresh"
-                        color: theme.powerActionText
-                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                        color: theme.modules.bar.power.actionTextColor
+                        font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
                     }
 
                     HoverHandler {
@@ -615,16 +615,16 @@ PanelWindow {
                 Rectangle {
                     id: updateButton
 
-                    width: theme.upchecker.actionButtonWidth
+                    width: theme.modules.bar.upchecker.actionButtonWidth
                     height: parent.height
-                    radius: theme.upchecker.actionButtonRadius
-                    color: updateHover.hovered ? theme.powerActionHoverBackground : theme.powerActionBackground
+                    radius: theme.modules.bar.upchecker.actionButtonRadius
+                    color: updateHover.hovered ? theme.modules.bar.power.actionHoverBackgroundColor : theme.modules.bar.power.actionBackgroundColor
 
                     Text {
                         anchors.centerIn: parent
                         text: "Update"
-                        color: theme.powerActionText
-                        font.pixelSize: theme.upchecker.emptyTextPixelSize
+                        color: theme.modules.bar.power.actionTextColor
+                        font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
                     }
 
                     HoverHandler {
@@ -644,27 +644,27 @@ PanelWindow {
 
                 x: (parent.width - width) / 2
                 y: rootUpcheckerPanel.filterVisible
-                    ? parent.height - theme.upchecker.filterBottomOffset - height
-                    : parent.height - theme.upchecker.filterHiddenBottomInset - height
-                width: Math.min(theme.upchecker.filterWidth, parent.width - theme.upchecker.contentPadding * 2)
-                height: theme.upchecker.filterHeight
-                radius: theme.upchecker.filterRadius
-                color: theme.moduleBackground
-                border.color: rootUpcheckerPanel.filterActive ? theme.eventIndicator : theme.moduleHoverBackground
-                border.width: theme.upchecker.borderWidth
+                    ? parent.height - theme.modules.bar.upchecker.filterBottomOffset - height
+                    : parent.height - theme.modules.bar.upchecker.filterHiddenBottomInset - height
+                width: Math.min(theme.modules.bar.upchecker.filterWidth, parent.width - theme.modules.bar.upchecker.contentPadding * 2)
+                height: theme.modules.bar.upchecker.filterHeight
+                radius: theme.modules.bar.upchecker.filterRadius
+                color: theme.modules.bar.moduleBackgroundColor
+                border.color: rootUpcheckerPanel.filterActive ? theme.modules.bar.accentColor : theme.modules.bar.moduleHoverBackgroundColor
+                border.width: theme.modules.bar.upchecker.borderWidth
                 opacity: rootUpcheckerPanel.filterVisible ? 1 : 0
                 z: 20
 
                 Behavior on y {
                     NumberAnimation {
-                        duration: theme.upchecker.filterAnimationDuration
+                        duration: theme.modules.bar.upchecker.filterAnimationDuration
                         easing.type: Easing.OutCubic
                     }
                 }
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: theme.upchecker.filterAnimationDuration
+                        duration: theme.modules.bar.upchecker.filterAnimationDuration
                         easing.type: Easing.OutCubic
                     }
                 }
@@ -674,18 +674,18 @@ PanelWindow {
                         left: parent.left
                         right: parent.right
                         verticalCenter: parent.verticalCenter
-                        leftMargin: theme.upchecker.filterHorizontalPadding
-                        rightMargin: theme.upchecker.filterHorizontalPadding
+                        leftMargin: theme.modules.bar.upchecker.filterHorizontalPadding
+                        rightMargin: theme.modules.bar.upchecker.filterHorizontalPadding
                     }
-                    spacing: theme.upchecker.versionSpacing
+                    spacing: theme.modules.bar.upchecker.versionSpacing
 
                     Text {
                         id: filterModeLabel
 
                         anchors.verticalCenter: parent.verticalCenter
                         text: rootUpcheckerPanel.excludeFilter ? "hide" : "show"
-                        color: rootUpcheckerPanel.excludeFilter ? theme.borg.warningColor : theme.eventIndicator
-                        font.pixelSize: theme.upchecker.filterHintPixelSize
+                        color: rootUpcheckerPanel.excludeFilter ? theme.modules.bar.borg.warningColor : theme.modules.bar.accentColor
+                        font.pixelSize: theme.modules.bar.upchecker.filterHintPixelSize
                         font.weight: Font.DemiBold
                     }
 
@@ -698,8 +698,8 @@ PanelWindow {
                             visible: filterInput.text.length === 0
                             anchors.verticalCenter: parent.verticalCenter
                             text: "type to filter, prefix ~ to hide matches"
-                            color: theme.secondaryText
-                            font.pixelSize: theme.upchecker.filterHintPixelSize
+                            color: theme.modules.bar.secondaryTextColor
+                            font.pixelSize: theme.modules.bar.upchecker.filterHintPixelSize
                         }
 
                         TextInput {
@@ -707,10 +707,10 @@ PanelWindow {
 
                             anchors.fill: parent
                             text: rootUpcheckerPanel.filterText
-                            color: theme.calendarDayText
-                            selectionColor: theme.calendarTodayBackground
-                            selectedTextColor: theme.calendarTodayText
-                            font.pixelSize: theme.upchecker.filterTextPixelSize
+                            color: theme.modules.bar.upchecker.rowTextColor
+                            selectionColor: theme.modules.bar.upchecker.selectedBackgroundColor
+                            selectedTextColor: theme.modules.bar.upchecker.selectedTextColor
+                            font.pixelSize: theme.modules.bar.upchecker.filterTextPixelSize
                             clip: true
 
                             onTextChanged: {

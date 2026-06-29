@@ -47,7 +47,7 @@ Inner clock widget flags live under `config`:
   "showBackground": false,
   "showBorder": false,
   "config": {
-    "faceColor": "{{secondary}}",
+    "faceColor": "{{on_surface_variant}}",
     "showBackground": false,
     "showBorder": false,
     "showHourHand": true,
@@ -203,18 +203,21 @@ They also accept theme tokens:
 
 | Token | Meaning |
 | --- | --- |
-| `{{primary}}` | Main text color. |
-| `{{secondary}}` | Secondary text color. |
-| `{{background}}` | Bar/root background color. |
-| `{{surface}}` | Dashboard card surface color. |
-| `{{surface_border}}` | Dashboard card border color. |
-| `{{accent}}` | Event/accent color. |
-| `{{module}}` | Bar module background color. |
-| `{{module_hover}}` | Bar module hover background color. |
-| `{{calendar_background}}` | Calendar background color. |
-| `{{calendar_header}}` | Calendar header text color. |
-| `{{calendar_day}}` | Calendar day text color. |
+| `{{background}}` | Root background color. |
+| `{{surface}}` | Surface color. |
+| `{{surface_variant}}` | Variant surface color. |
+| `{{surface_container}}` | Container surface color. |
+| `{{surface_container_high}}` | Raised container surface color. |
+| `{{primary}}` | Primary accent color. |
+| `{{secondary}}` | Secondary accent color. |
+| `{{tertiary}}` | Tertiary accent color. |
+| `{{on_surface}}` | Primary text color on surfaces. |
+| `{{on_surface_variant}}` | Secondary text color on surfaces. |
+| `{{outline}}` | Border/outline color. |
+| `{{outline_variant}}` | Muted border/outline color. |
 | `{{error}}` | Error color. |
+| `{{warning}}` | Warning color. |
+| `{{success}}` | Success color. |
 
 ## Reloading
 

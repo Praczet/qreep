@@ -10,8 +10,8 @@ Components.QreepModule {
 
     Text {
         text: ""
-        color: rootLauncherButton.theme.primaryText
+        color: rootLauncherButton.theme.modules.bar.primaryTextColor
         font.family: rootLauncherButton.theme.iconFontFamily
-        font.pixelSize: rootLauncherButton.theme.launcher.buttonIconPixelSize
+        font.pixelSize: rootLauncherButton.theme.modules.bar.launcher.buttonIconPixelSize
     }
 }

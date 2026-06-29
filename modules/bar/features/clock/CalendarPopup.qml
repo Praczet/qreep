@@ -11,15 +11,15 @@ PopupWindow {
 
     readonly property date today: new Date()
     readonly property var agendaEvents:
-        events.eventsForNextDays(today, rootCalendarPopup.theme.calendar.agendaDays)
+        events.eventsForNextDays(today, rootCalendarPopup.theme.modules.bar.calendar.agendaDays)
 
     anchor {
         item: rootCalendarPopup.anchorItem
         rect.x: rootCalendarPopup.anchorItem.width / 2 - rootCalendarPopup.width / 2
-        rect.y: rootCalendarPopup.anchorItem.height + rootCalendarPopup.theme.calendar.popupOffsetY
+        rect.y: rootCalendarPopup.anchorItem.height + rootCalendarPopup.theme.modules.bar.calendar.popupOffsetY
     }
 
-    implicitWidth: rootCalendarPopup.theme.calendar.popupWidth
+    implicitWidth: rootCalendarPopup.theme.modules.bar.calendar.popupWidth
     implicitHeight: calendarBackground.implicitHeight
     color: "transparent"
     grabFocus: true
@@ -28,10 +28,10 @@ PopupWindow {
         id: calendarBackground
 
         anchors.fill: parent
-        implicitHeight: popupLayout.implicitHeight + rootCalendarPopup.theme.calendar.popupPadding * 2
+        implicitHeight: popupLayout.implicitHeight + rootCalendarPopup.theme.modules.bar.calendar.popupPadding * 2
         radius: rootCalendarPopup.theme.modules.bar.pill.radius
-        color: rootCalendarPopup.theme.calendarBackground
-        border.color: rootCalendarPopup.theme.moduleHoverBackground
+        color: rootCalendarPopup.theme.modules.bar.calendar.backgroundColor
+        border.color: rootCalendarPopup.theme.modules.bar.moduleHoverBackgroundColor
 
         Row {
             id: popupLayout
@@ -40,21 +40,21 @@ PopupWindow {
                 top: parent.top
                 left: parent.left
                 right: parent.right
-                margins: rootCalendarPopup.theme.calendar.popupPadding
+                margins: rootCalendarPopup.theme.modules.bar.calendar.popupPadding
             }
-            spacing: rootCalendarPopup.theme.calendar.sectionSpacing
+            spacing: rootCalendarPopup.theme.modules.bar.calendar.sectionSpacing
 
             Column {
                 id: calendarLayout
 
-                width: rootCalendarPopup.theme.calendar.sectionWidth
-                spacing: rootCalendarPopup.theme.calendar.itemSpacing
+                width: rootCalendarPopup.theme.modules.bar.calendar.sectionWidth
+                spacing: rootCalendarPopup.theme.modules.bar.calendar.itemSpacing
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: Qt.formatDate(rootCalendarPopup.today, "dddd, dd MMMM")
-                    color: rootCalendarPopup.theme.calendarHeaderText
-                    font.pixelSize: rootCalendarPopup.theme.calendar.headerPixelSize
+                    color: rootCalendarPopup.theme.modules.bar.calendar.headerTextColor
+                    font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.headerPixelSize
                     font.weight: Font.DemiBold
                 }
 
@@ -62,17 +62,17 @@ PopupWindow {
                     id: weekDays
 
                     width: parent.width
-                    height: rootCalendarPopup.theme.calendar.weekDayHeight
+                    height: rootCalendarPopup.theme.modules.bar.calendar.weekDayHeight
                     locale: monthGrid.locale
 
                     delegate: Text {
                         required property var model
 
                         text: model.shortName
-                        color: rootCalendarPopup.theme.calendarMutedText
+                        color: rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: rootCalendarPopup.theme.calendar.weekDayPixelSize
+                        font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.weekDayPixelSize
                     }
                 }
 
@@ -80,7 +80,7 @@ PopupWindow {
                     id: monthGrid
 
                     width: parent.width
-                    height: rootCalendarPopup.theme.calendar.monthGridHeight
+                    height: rootCalendarPopup.theme.modules.bar.calendar.monthGridHeight
                     month: rootCalendarPopup.today.getMonth()
                     year: rootCalendarPopup.today.getFullYear()
 
@@ -90,15 +90,15 @@ PopupWindow {
                         readonly property int eventCount: rootCalendarPopup.events.eventCountForDate(model.date)
 
                         implicitWidth: monthGrid.width / 7
-                        implicitHeight: rootCalendarPopup.theme.calendar.dayCellHeight
-                        radius: rootCalendarPopup.theme.calendar.dayRadius
-                        color: model.today ? rootCalendarPopup.theme.calendarTodayBackground : "transparent"
+                        implicitHeight: rootCalendarPopup.theme.modules.bar.calendar.dayCellHeight
+                        radius: rootCalendarPopup.theme.modules.bar.calendar.dayRadius
+                        color: model.today ? rootCalendarPopup.theme.modules.bar.calendar.todayBackgroundColor : "transparent"
 
                         Text {
                             anchors.centerIn: parent
                             text: model.day
-                            color: model.today ? rootCalendarPopup.theme.calendarTodayText : model.month === monthGrid.month ? rootCalendarPopup.theme.calendarDayText : rootCalendarPopup.theme.calendarMutedText
-                            font.pixelSize: rootCalendarPopup.theme.calendar.dayPixelSize
+                            color: model.today ? rootCalendarPopup.theme.modules.bar.calendar.todayTextColor : model.month === monthGrid.month ? rootCalendarPopup.theme.modules.bar.calendar.dayTextColor : rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
+                            font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.dayPixelSize
                         }
 
                         Rectangle {
@@ -108,10 +108,10 @@ PopupWindow {
                                 bottom: parent.bottom
                             }
 
-                            height: rootCalendarPopup.theme.calendar.eventMarkerHeight
-                            radius: rootCalendarPopup.theme.calendar.eventMarkerRadius
+                            height: rootCalendarPopup.theme.modules.bar.calendar.eventMarkerHeight
+                            radius: rootCalendarPopup.theme.modules.bar.calendar.eventMarkerRadius
                             color: parent.eventCount > 0
-                                ? rootCalendarPopup.theme.eventIndicator
+                                ? rootCalendarPopup.theme.modules.bar.accentColor
                                 : "transparent"
                         }
                     }
@@ -119,35 +119,35 @@ PopupWindow {
             }
 
             Rectangle {
-                width: rootCalendarPopup.theme.calendar.dividerWidth
+                width: rootCalendarPopup.theme.modules.bar.calendar.dividerWidth
                 height: calendarLayout.height
-                color: rootCalendarPopup.theme.moduleHoverBackground
+                color: rootCalendarPopup.theme.modules.bar.moduleHoverBackgroundColor
             }
 
             Column {
-                width: rootCalendarPopup.theme.calendar.sectionWidth
+                width: rootCalendarPopup.theme.modules.bar.calendar.sectionWidth
                 height: calendarLayout.height
-                spacing: rootCalendarPopup.theme.calendar.itemSpacing
+                spacing: rootCalendarPopup.theme.modules.bar.calendar.itemSpacing
 
                 Text {
-                    text: "Today + " + rootCalendarPopup.theme.calendar.agendaDays + " days"
-                    color: rootCalendarPopup.theme.calendarHeaderText
-                    font.pixelSize: rootCalendarPopup.theme.calendar.headerPixelSize
+                    text: "Today + " + rootCalendarPopup.theme.modules.bar.calendar.agendaDays + " days"
+                    color: rootCalendarPopup.theme.modules.bar.calendar.headerTextColor
+                    font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.headerPixelSize
                     font.weight: Font.DemiBold
                 }
 
                 Text {
                     visible: rootCalendarPopup.agendaEvents.length === 0
                     text: "No events"
-                    color: rootCalendarPopup.theme.calendarMutedText
-                    font.pixelSize: rootCalendarPopup.theme.calendar.agendaTitlePixelSize
+                    color: rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
+                    font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTitlePixelSize
                 }
 
                 ListView {
                     width: parent.width
-                    height: parent.height - rootCalendarPopup.theme.calendar.agendaListReservedHeight
+                    height: parent.height - rootCalendarPopup.theme.modules.bar.calendar.agendaListReservedHeight
                     clip: true
-                    spacing: rootCalendarPopup.theme.calendar.agendaItemSpacing
+                    spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaItemSpacing
                     model: rootCalendarPopup.agendaEvents
 
                     delegate: Row {
@@ -155,30 +155,30 @@ PopupWindow {
 
                         width: ListView.view.width
                         height: eventDetails.implicitHeight
-                        spacing: rootCalendarPopup.theme.calendar.agendaRowSpacing
+                        spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaRowSpacing
 
                         Text {
-                            width: rootCalendarPopup.theme.calendar.agendaDateWidth
+                            width: rootCalendarPopup.theme.modules.bar.calendar.agendaDateWidth
                             text: Qt.formatDate(
                                 new Date(modelData.date + "T00:00:00"),
                                 "ddd dd"
                             )
-                            color: rootCalendarPopup.theme.eventIndicator
-                            font.pixelSize: rootCalendarPopup.theme.calendar.agendaDatePixelSize
+                            color: rootCalendarPopup.theme.modules.bar.accentColor
+                            font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaDatePixelSize
                             font.weight: Font.DemiBold
                         }
 
                         Column {
                             id: eventDetails
 
-                            width: parent.width - rootCalendarPopup.theme.calendar.agendaDetailsWidthOffset
-                            spacing: rootCalendarPopup.theme.calendar.agendaDetailsSpacing
+                            width: parent.width - rootCalendarPopup.theme.modules.bar.calendar.agendaDetailsWidthOffset
+                            spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaDetailsSpacing
 
                             Text {
                                 width: parent.width
                                 text: modelData.title
-                                color: rootCalendarPopup.theme.calendarDayText
-                                font.pixelSize: rootCalendarPopup.theme.calendar.agendaTitlePixelSize
+                                color: rootCalendarPopup.theme.modules.bar.calendar.dayTextColor
+                                font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTitlePixelSize
                                 elide: Text.ElideRight
                             }
 
@@ -186,8 +186,8 @@ PopupWindow {
                                 text: rootCalendarPopup.events.eventTimeLabel(
                                     modelData
                                 )
-                                color: rootCalendarPopup.theme.calendarMutedText
-                                font.pixelSize: rootCalendarPopup.theme.calendar.agendaTimePixelSize
+                                color: rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
+                                font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTimePixelSize
                             }
                         }
                     }
