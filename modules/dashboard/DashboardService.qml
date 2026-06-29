@@ -14,8 +14,8 @@ QtObject {
         preload: true
         watchChanges: true
 
-        onLoaded: rootDashboardService.reload()
-        onTextChanged: rootDashboardService.reload()
+        onLoaded: rootDashboardService.loadConfig()
+        onTextChanged: rootDashboardService.loadConfig()
         onLoadFailed: error => {
             rootDashboardService.error = "Dashboard config load failed: " + FileViewError.toString(error);
             rootDashboardService.blocks = rootDashboardService.defaultBlocks();
@@ -23,6 +23,10 @@ QtObject {
     }
 
     function reload() {
+        configFile.reload();
+    }
+
+    function loadConfig() {
         const contents = configFile.text();
 
         if (contents.length === 0) {

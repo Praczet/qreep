@@ -49,6 +49,7 @@ Scope {
     }
 
     function show() {
+        dashboardService.reload();
         open = true;
     }
 
@@ -57,6 +58,9 @@ Scope {
     }
 
     function toggle() {
+        if (!open)
+            dashboardService.reload();
+
         open = !open;
     }
 

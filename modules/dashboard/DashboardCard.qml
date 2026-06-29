@@ -116,7 +116,7 @@ Rectangle {
         }
 
         Text {
-            visible: rootDashboardCard.block.type !== "weather"
+            visible: rootDashboardCard.block.type !== "weather" && rootDashboardCard.block.type !== "clock"
             width: parent.width
             text: String(rootDashboardCard.block.text || rootDashboardCard.block.type || "fake")
             color: rootDashboardCard.theme.calendarDayText
@@ -134,6 +134,7 @@ Rectangle {
         ClockFeature.ClockBlock {
             visible: rootDashboardCard.block.type === "clock"
             width: parent.width
+            height: Math.max(1, parent.height - y)
             theme: rootDashboardCard.theme
             config: rootDashboardCard.block.config || ({})
         }
