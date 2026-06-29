@@ -3,8 +3,10 @@ import QtQuick
 QtObject {
     id: rootDashboardTheme
 
-    property color backgroundColor: "#242933"
-    property color borderColor: "#3b4252"
+    required property QtObject qreep
+
+    readonly property color backgroundColor: qreep.overlaySurfaceBackground
+    readonly property color borderColor: qreep.overlaySurfaceBorder
     readonly property real overlayOpacity: 0.35
     readonly property int placementMargin: 48
     readonly property int defaultCardWidth: 320

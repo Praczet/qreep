@@ -1,15 +1,6 @@
 import QtQuick
 import "../core" as Core
-import "../modules/dashboard" as DashboardFeature
-import "../modules/bar/features/borg" as BorgFeature
-import "../modules/bar/features/clock" as ClockFeature
-import "../modules/osd" as OsdFeature
-import "../modules/bar/features/power" as PowerFeature
-import "../modules/bar/features/upchecker" as UpcheckerFeature
-import "../modules/bar/features/monitorprofile" as MonitorProfileFeature
-import "../modules/bar/features/mpris" as MprisFeature
-import "../modules/bar/features/workspaces" as WorkspacesFeature
-import "../modules/bar/features/launcher" as LauncherFeature
+import "../modules" as Modules
 import "colors" as Colors
 
 QtObject {
@@ -38,32 +29,25 @@ QtObject {
     readonly property color overlaySurfaceBackground: Qt.rgba(calendarBackground.r, calendarBackground.g, calendarBackground.b, power.sidebarOpacity)
     readonly property color overlaySurfaceBorder: moduleHoverBackground
 
-    readonly property QtObject bar: BarTheme {}
-    readonly property QtObject module: ModuleTheme {}
-    readonly property QtObject clock: ClockFeature.ClockTheme {}
-    readonly property QtObject dashboard: DashboardFeature.DashboardTheme {
-        backgroundColor: rootQreepTheme.overlaySurfaceBackground
-        borderColor: rootQreepTheme.overlaySurfaceBorder
+    readonly property QtObject modules: Modules.ModulesTheme {
+        qreep: rootQreepTheme
     }
-    readonly property QtObject power: PowerFeature.PowerTheme {
-        backgroundColor: rootQreepTheme.overlaySurfaceBackground
-        borderColor: rootQreepTheme.overlaySurfaceBorder
-    }
-    readonly property QtObject calendar: ClockFeature.CalendarTheme {}
-    readonly property QtObject tooltip: TooltipTheme {}
-    readonly property QtObject osd: OsdFeature.OsdTheme {}
-    readonly property QtObject borg: BorgFeature.BorgTheme {}
-    readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {
-        backgroundColor: rootQreepTheme.overlaySurfaceBackground
-        borderColor: rootQreepTheme.overlaySurfaceBorder
-    }
-    readonly property QtObject monitorProfile: MonitorProfileFeature.MonitorProfileTheme {}
-    readonly property QtObject mpris: MprisFeature.MprisTheme {}
-    readonly property QtObject workspaces: WorkspacesFeature.WorkspacesTheme {
-        backgroundColor: rootQreepTheme.overlaySurfaceBackground
-        borderColor: rootQreepTheme.overlaySurfaceBorder
-    }
-    readonly property QtObject launcher: LauncherFeature.LauncherTheme {}
+
+    readonly property QtObject bar: modules.bar
+    readonly property QtObject dashboard: modules.dashboard
+    readonly property QtObject osd: modules.osd
+
+    readonly property QtObject module: modules.bar.pill
+    readonly property QtObject tooltip: modules.bar.tooltip
+    readonly property QtObject clock: modules.bar.clock
+    readonly property QtObject calendar: modules.bar.calendar
+    readonly property QtObject power: modules.bar.power
+    readonly property QtObject borg: modules.bar.borg
+    readonly property QtObject upchecker: modules.bar.upchecker
+    readonly property QtObject monitorProfile: modules.bar.monitorProfile
+    readonly property QtObject mpris: modules.bar.mpris
+    readonly property QtObject workspaces: modules.bar.workspaces
+    readonly property QtObject launcher: modules.bar.launcher
 
     readonly property string iconFontFamily: "FiraCode Nerd Font"
     readonly property int animationFastDuration: 100

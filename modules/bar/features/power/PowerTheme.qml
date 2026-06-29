@@ -3,14 +3,16 @@ import QtQuick
 QtObject {
     id: rootPowerTheme
 
+    required property QtObject qreep
+
     readonly property int buttonIconPixelSize: 24
     readonly property int sidebarWidth: 360
     readonly property int sidebarMargin: 15
     readonly property int sidebarRadius: 18
     readonly property int sidebarBorderWidth: 1
     readonly property real sidebarOpacity: 0.82
-    property color backgroundColor: "#242933"
-    property color borderColor: "#3b4252"
+    readonly property color backgroundColor: qreep.overlaySurfaceBackground
+    readonly property color borderColor: qreep.overlaySurfaceBorder
     readonly property int cardWidth: 260
     readonly property int cardPadding: 20
     readonly property int cardRadius: 18

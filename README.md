@@ -108,19 +108,32 @@ blur halos around rounded transparent surfaces.
 
 The public theme object is `theme/QreepTheme.qml`.
 
-Shared theme files:
+Root theme files:
 
-* `theme/BarTheme.qml`
-* `theme/ModuleTheme.qml`
-* `theme/TooltipTheme.qml`
 * `theme/colors/UnclaimedBloomColors.qml`
 * `theme/colors/template.qml`
 
-Feature theme files are exposed through `QreepTheme.qml`, for example:
+Module theme files live with their owning module:
+
+* `modules/ModulesTheme.qml`
+* `modules/bar/BarTheme.qml`
+* `modules/bar/BarPillTheme.qml`
+* `modules/bar/TooltipTheme.qml`
+* `modules/dashboard/DashboardTheme.qml`
+* `modules/osd/OsdTheme.qml`
+
+`QreepTheme.qml` exposes global semantic colors and the aggregated module theme:
 
 ```qml
-readonly property QtObject mpris: MprisFeature.MprisTheme {}
+readonly property QtObject modules: Modules.ModulesTheme {
+    qreep: rootQreepTheme
+}
 ```
+
+Old paths such as `theme.module`, `theme.tooltip`, and `theme.dashboard` remain
+as compatibility aliases for now. New module-specific code should prefer paths
+like `theme.modules.bar.pill`, `theme.modules.bar.tooltip`, and
+`theme.modules.dashboard`.
 
 If a feature needs sizes, spacing, timing, or command names, put them in that
 feature's theme file. Hardcoding in the button is how the next tweak becomes a

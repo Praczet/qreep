@@ -3,6 +3,8 @@ import QtQuick
 QtObject {
     id: rootWorkspacesTheme
 
+    required property QtObject qreep
+
     readonly property bool showEmptyWorkspaces: false
     readonly property bool showSpecialWorkspaces: true
     readonly property string indicatorMode: "count"
@@ -12,8 +14,8 @@ QtObject {
     readonly property int refreshInterval: 10000
     readonly property int eventRefreshDelay: 60
     readonly property int refreshAfterDispatchDelay: 120
-    property color backgroundColor: "#242933"
-    property color borderColor: "#3b4252"
+    readonly property color backgroundColor: qreep.overlaySurfaceBackground
+    readonly property color borderColor: qreep.overlaySurfaceBorder
     readonly property real activeOpacity: 1
     readonly property real inactiveOpacity: 0.42
     readonly property real emptyOpacity: 0.16

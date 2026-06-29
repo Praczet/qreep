@@ -1,7 +1,7 @@
 import QtQuick
 
 QtObject {
-    id: rootModuleTheme
+    id: rootBarPillTheme
 
     readonly property int height: 48
     readonly property int radius: 20

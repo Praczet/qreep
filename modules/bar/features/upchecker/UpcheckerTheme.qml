@@ -3,6 +3,8 @@ import QtQuick
 QtObject {
     id: rootUpcheckerTheme
 
+    required property QtObject qreep
+
     readonly property int buttonIconPixelSize: 24
     readonly property int buttonTextPixelSize: 14
     readonly property int buttonContentSpacing: 8
@@ -16,8 +18,8 @@ QtObject {
     readonly property int screenMargin: 48
     readonly property int topMargin: 104
     readonly property int bottomMargin: 48
-    property color backgroundColor: "#242933"
-    property color borderColor: "#3b4252"
+    readonly property color backgroundColor: qreep.overlaySurfaceBackground
+    readonly property color borderColor: qreep.overlaySurfaceBorder
     readonly property int radius: 16
     readonly property int borderWidth: 1
     readonly property int contentPadding: 20
