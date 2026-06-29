@@ -19,13 +19,37 @@ QtObject {
     readonly property string album: hasPlayer ? valueOrFallback(activePlayer.trackAlbum, "Unknown album") : "MPRIS"
     readonly property string artists: hasPlayer ? valueOrFallback(activePlayer.trackArtists || activePlayer.trackArtist, "Unknown artist") : "No active player"
     readonly property string artUrl: hasPlayer ? activePlayer.trackArtUrl : ""
-    readonly property string artSource: imageSource(artUrl)
+    readonly property string currentTrackKey: hasPlayer ? playerSource + "|" + title + "|" + album + "|" + artists : ""
+    readonly property string currentImageSource: imageSource(artUrl)
+    readonly property string artSource: currentTrackKey.length > 0 && currentTrackKey === cachedArtTrackKey ? cachedArtSource : currentImageSource
     readonly property string playerName: hasPlayer ? valueOrFallback(activePlayer.identity, "Unknown player") : "No player"
     readonly property string playerSource: hasPlayer ? sourceText(activePlayer) : "No player"
     readonly property string tooltipTitle: hasPlayer ? playerName : "MPRIS"
     readonly property string tooltipSubtitle: hasPlayer ? title : "No active player"
     readonly property string tooltipDetail: hasPlayer ? artists + "\n" + album + "\n" + statusText : "Start a media player and it should appear here."
     readonly property string durationText: hasPlayer && activePlayer.lengthSupported ? timeText(activePlayer.position) + " / " + timeText(activePlayer.length) : ""
+
+    property string cachedArtTrackKey
+    property string cachedArtSource
+
+    onCurrentImageSourceChanged: updateCachedArtSource()
+    onCurrentTrackKeyChanged: updateCachedArtSource()
+
+    Component.onCompleted: updateCachedArtSource()
+
+    function updateCachedArtSource() {
+        if (currentTrackKey.length === 0) {
+            cachedArtTrackKey = "";
+            cachedArtSource = "";
+            return;
+        }
+
+        if (currentImageSource.length === 0)
+            return;
+
+        cachedArtTrackKey = currentTrackKey;
+        cachedArtSource = currentImageSource;
+    }
 
     function chooseActivePlayer() {
         if (!players || players.length === 0)
