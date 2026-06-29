@@ -84,52 +84,94 @@
       }
     },
     {
-      "id": "aegis-summary",
-      "type": "fake",
-      "title": "Aegis",
-      "text": "System overview preset placeholder.",
+      "id": "wotd-compact",
+      "type": "word-of-the-day",
+      "title": "Word of the Day",
       "preset": "wide",
       "anchorPoint": "top-center",
       "dx": -164,
       "dy": 110,
-      "width": 720,
-      "height": 420,
+      "width": 490,
+      "height": 340,
       "from": "top",
-      "showTitle": true,
+      "showTitle": false,
       "showBackground": true,
-      "showBorder": true
+      "showBorder": true,
+      "config": {
+        "variant": "compact",
+        "maxMeanings": 3,
+        "maxTranslations": 2,
+        "maxWidth": 450,
+        "minHeight": 300,
+        "showLang": false,
+        "showTitle": false
+      }
     },
     {
       "id": "potato-weight",
-      "type": "fake",
+      "type": "image",
       "title": "POTATO weight",
-      "text": "Chart block placeholder for ~/.cache/potato/weight.svg.",
       "preset": "chart",
       "anchorPoint": "top-right",
       "dx": -128,
       "dy": 110,
-      "width": 660,
-      "height": 260,
+      "width": 800,
+      "height": 307,
       "from": "right",
-      "showTitle": true,
-      "showBackground": true,
-      "showBorder": true
+      "showTitle": false,
+      "showBackground": false,
+      "showBorder": false,
+      "config": {
+        "path": "~/.cache/potato/weight.svg",
+        "fillMode": "preserveAspectFit",
+        "showBackground": true,
+        "backgroundColor": "#2e3440",
+        "radius": 18
+      }
     },
     {
       "id": "potato-steps",
-      "type": "fake",
+      "type": "image",
       "title": "POTATO steps",
-      "text": "Another deliberately placed chart block.",
       "preset": "chart",
       "anchorPoint": "top-right",
       "dx": -128,
       "dy": 400,
-      "width": 660,
-      "height": 260,
+      "width": 800,
+      "height": 307,
       "from": "right",
-      "showTitle": true,
-      "showBackground": true,
-      "showBorder": true
+      "showTitle": false,
+      "showBackground": false,
+      "showBorder": false,
+      "config": {
+        "path": "~/.cache/potato/steps.svg",
+        "fillMode": "preserveAspectFit",
+        "showBackground": true,
+        "backgroundColor": "#2e3440",
+        "radius": 18
+      }
+    },
+    {
+      "id": "potato-fasting",
+      "type": "image",
+      "title": "POTATO fasting",
+      "preset": "chart",
+      "anchorPoint": "top-right",
+      "dx": -128,
+      "dy": 720,
+      "width": 800,
+      "height": 307,
+      "from": "right",
+      "showTitle": false,
+      "showBackground": false,
+      "showBorder": false,
+      "config": {
+        "path": "~/.cache/potato/fasting.svg",
+        "fillMode": "preserveAspectFit",
+        "showBackground": true,
+        "backgroundColor": "#2e3440",
+        "radius": 18
+      }
     }
   ]
 }
