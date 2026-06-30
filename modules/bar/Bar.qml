@@ -9,6 +9,7 @@ import "./features/power" as PowerFeature
 import "./features/upchecker" as UpcheckerFeature
 import "./features/monitorprofile" as MonitorProfileFeature
 import "./features/mpris" as MprisFeature
+import "./features/network" as NetworkFeature
 import "./features/workspaces" as WorkspacesFeature
 import "./features/launcher" as LauncherFeature
 import "./features/battery" as BatteryFeature
@@ -64,6 +65,10 @@ PanelWindow {
     BatteryFeature.BatteryService {
         id: batteryService
         log: qreepLog
+    }
+
+    NetworkFeature.NetworkService {
+        id: networkService
     }
 
     readonly property Process audioMixerRunner: Process {}
@@ -287,6 +292,20 @@ PanelWindow {
                 onTooltipHideRequested: sharedTooltip.hideLater()
             }
 
+            NetworkFeature.NetworkButton {
+                id: networkButton
+
+                theme: rootBar.theme
+                service: networkService
+
+                onClicked: {
+                    networkPanel.visible = !networkPanel.visible;
+                    sharedTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+            }
+
             VolumeFeature.VolumeButton {
                 id: volumeButton
 
@@ -383,6 +402,14 @@ PanelWindow {
             theme: rootBar.theme
             service: mprisService
             anchorItem: mprisButton
+        }
+
+        NetworkFeature.NetworkPanel {
+            id: networkPanel
+
+            theme: rootBar.theme
+            service: networkService
+            anchorItem: networkButton
         }
 
         Connections {

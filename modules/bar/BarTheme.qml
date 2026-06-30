@@ -5,6 +5,7 @@ import "./features/clock" as ClockFeature
 import "./features/launcher" as LauncherFeature
 import "./features/monitorprofile" as MonitorProfileFeature
 import "./features/mpris" as MprisFeature
+import "./features/network" as NetworkFeature
 import "./features/power" as PowerFeature
 import "./features/upchecker" as UpcheckerFeature
 import "./features/volume" as VolumeFeature
@@ -47,6 +48,9 @@ QtObject {
     readonly property QtObject launcher: LauncherFeature.LauncherTheme {}
     readonly property QtObject monitorProfile: MonitorProfileFeature.MonitorProfileTheme {}
     readonly property QtObject mpris: MprisFeature.MprisTheme {}
+    readonly property QtObject network: NetworkFeature.NetworkTheme {
+        qreep: rootBarTheme.qreep
+    }
     readonly property QtObject power: PowerFeature.PowerTheme {
         qreep: rootBarTheme.qreep
     }
