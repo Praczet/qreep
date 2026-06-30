@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Widgets
 import "../../../../components" as Components
 
 Components.QreepModule {
@@ -41,10 +40,15 @@ Components.QreepModule {
             height: rootBatteryButton.iconSize
             transformOrigin: Item.Center
 
-            IconImage {
+            Text {
                 id: batteryIcon
-                anchors.fill: parent
-                source: rootBatteryButton.service.icon
+
+                anchors.centerIn: parent
+                text: rootBatteryButton.service.icon
+                color: rootBatteryButton.statusColor
+                font.family: rootBatteryButton.theme.iconFontFamily
+                font.pixelSize: rootBatteryButton.iconSize
+                lineHeight: 1
             }
         }
         Text {
