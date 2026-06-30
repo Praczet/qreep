@@ -638,6 +638,14 @@ v0.1.0 - usable enough to judge Waybar quietly
 Qreep currently has:
 
 - a top `PanelWindow` bar with left, center, right, and overlay slots;
+- bar mode runtime state in `modules/bar/BarModeService.qml`, exposed through IPC target `qreep-bar`;
+- current bar modes:
+  - `reserved`: normal bar, keeps layer-shell exclusive zone;
+  - `overlay`: normal bar, no exclusive zone;
+  - `collapsed`: compact top strip unless a visible pinned pill needs overlay space;
+- first runtime pill state in `modules/bar/BarPillStateService.qml`, exposed through IPC target `qreep-bar-pill`;
+- `clock` and `workspaces` are the first test pills for runtime `show`/`hide`/`toggle`/`pin` behavior;
+- pinned `clock` or `workspaces` stays full-size in collapsed mode, overlays content, uses no top padding, and does not reserve Hyprland space;
 - a reusable `QreepModule` wrapper with hover, click, right-click, overlay, and shared-tooltip request support;
 - a launcher button in the left slot that delegates to `LauncherService`;
 - a Hyprland workspaces module in the left slot with active/occupied workspace state, click/scroll switching, and a clickable client popup;
@@ -654,6 +662,36 @@ Qreep currently has:
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
 - a watched `events.json` source loaded through `modules/bar/features/clock/EventStore.qml`.
+
+Useful bar IPC commands:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar getMode
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar setReserved
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar setOverlay
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar setCollapsed
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar toggleOverlay
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar toggleCollapsed
+```
+
+Useful pill IPC commands:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill state clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill hidePill clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill showPill clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill togglePill clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill pin clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill unpin clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill togglePinned clock
+```
+
+Current pickup point:
+
+- Today’s bar mode/pill-state work is intentionally a small runtime slice, not the final bar layout config system.
+- Next session should pick up from `BarModeService.qml`, `BarPillStateService.qml`, and the `clock`/`workspaces` wiring in `Bar.qml`.
+- The next likely step is to generalize pill ids without making `Bar.qml` worse: either add a tiny local registration helper or start the first boring `bar.json` shape after the runtime behavior feels correct.
+- Do not rush persistence. Runtime state first, persisted layout second. Past Adam does not need a config file that explains a bug with confidence.
 
 ## Suggested next five steps
 

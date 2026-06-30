@@ -26,8 +26,13 @@ PanelWindow {
     property alias overlayItems: overlayLayer.data
     readonly property bool collapsed: barModeService.collapsed
     readonly property bool reservedMode: barModeService.reserved
-    readonly property int activeBarHeight: collapsed ? rootBar.theme.modules.bar.collapsedHeight : rootBar.theme.modules.bar.height
+    readonly property bool visiblePinnedPillActive: collapsed && ((barPillStateService.isVisible("workspaces") && barPillStateService.isPinned("workspaces")) || (barPillStateService.isVisible("clock") && barPillStateService.isPinned("clock")))
+    readonly property bool compactCollapsed: collapsed && !visiblePinnedPillActive
+    readonly property int activeBarHeight: compactCollapsed ? rootBar.theme.modules.bar.collapsedHeight : rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
+    readonly property bool leftSlotActive: !collapsed || barPillStateService.isPinned("workspaces")
+    readonly property bool centerSlotActive: !collapsed || barPillStateService.isPinned("clock")
+    readonly property bool rightSlotActive: !collapsed
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
     signal audioMixerRequested
@@ -50,6 +55,10 @@ PanelWindow {
 
     BarModeService {
         id: barModeService
+    }
+
+    BarPillStateService {
+        id: barPillStateService
     }
 
     PowerFeature.PowerService {
@@ -91,6 +100,10 @@ PanelWindow {
         audioMixerRunner.running = false;
         audioMixerRunner.command = ["pavucontrol"];
         audioMixerRunner.startDetached();
+    }
+
+    function pillVisible(id) {
+        return barPillStateService.isVisible(id) && (!rootBar.collapsed || barPillStateService.isPinned(id));
     }
 
     WorkspacesFeature.WorkspaceService {
@@ -147,9 +160,9 @@ PanelWindow {
             rightMargin: rootBar.theme.modules.bar.horizontalPadding
         }
         height: rootBar.activeBarHeight
-        radius: rootBar.collapsed ? 0 : rootBar.theme.modules.bar.backgroundRadius
+        radius: rootBar.compactCollapsed ? 0 : rootBar.theme.modules.bar.backgroundRadius
         color: rootBar.theme.modules.bar.backgroundColor
-        clip: rootBar.collapsed
+        clip: rootBar.compactCollapsed
 
         Behavior on height {
             NumberAnimation {
@@ -166,12 +179,13 @@ PanelWindow {
                 leftMargin: rootBar.theme.modules.bar.sideMargin
             }
             spacing: rootBar.theme.modules.bar.itemSpacing
-            scale: rootBar.collapsed ? 0.01 : 1
-            opacity: rootBar.collapsed ? 0 : 1
+            scale: rootBar.leftSlotActive ? 1 : 0.01
+            opacity: rootBar.leftSlotActive ? 1 : 0
 
             LauncherFeature.LauncherButton {
                 id: launcherButton
 
+                visible: !rootBar.collapsed
                 theme: rootBar.theme
 
                 onClicked: {
@@ -184,6 +198,7 @@ PanelWindow {
             WorkspacesFeature.Workspaces {
                 id: workspaces
 
+                visible: rootBar.pillVisible("workspaces")
                 theme: rootBar.theme
                 service: workspaceService
 
@@ -201,12 +216,13 @@ PanelWindow {
 
             anchors.centerIn: parent
             spacing: rootBar.theme.modules.bar.itemSpacing
-            scale: rootBar.collapsed ? 0.01 : 1
-            opacity: rootBar.collapsed ? 0 : 1
+            scale: rootBar.centerSlotActive ? 1 : 0.01
+            opacity: rootBar.centerSlotActive ? 1 : 0
 
             ClockFeature.Clock {
                 id: clock
 
+                visible: rootBar.pillVisible("clock")
                 theme: rootBar.theme
                 events: eventStore
 
@@ -218,6 +234,7 @@ PanelWindow {
             MprisFeature.MprisButton {
                 id: mprisButton
 
+                visible: !rootBar.collapsed
                 theme: rootBar.theme
                 service: mprisService
 
@@ -248,8 +265,8 @@ PanelWindow {
                 rightMargin: rootBar.theme.modules.bar.sideMargin
             }
             spacing: rootBar.theme.modules.bar.itemSpacing
-            scale: rootBar.collapsed ? 0.01 : 1
-            opacity: rootBar.collapsed ? 0 : 1
+            scale: rootBar.rightSlotActive ? 1 : 0.01
+            opacity: rootBar.rightSlotActive ? 1 : 0
 
             UpcheckerFeature.UpcheckerButton {
                 id: upcheckerButton
@@ -453,6 +470,20 @@ PanelWindow {
 
             function onSinkFeedbackRequested(percent, muted) {
                 rootBar.volumeFeedbackRequested(percent, muted, soundService.volumeIcon(percent, muted));
+            }
+        }
+
+        Connections {
+            target: barPillStateService
+
+            function onPillStateChanged(id) {
+                if (id === "clock" && !barPillStateService.isVisible(id))
+                    calendarPopup.visible = false;
+
+                if (id === "workspaces" && !barPillStateService.isVisible(id))
+                    workspaceClients.visible = false;
+
+                sharedTooltip.hideLater();
             }
         }
     }
