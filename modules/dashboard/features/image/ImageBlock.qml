@@ -34,8 +34,8 @@ Item {
         anchors.fill: parent
         source: rootImageBlock.imagePath
         fillMode: rootImageBlock.imageFillMode
-        horizontalAlignment: rootImageBlock.imageHorizontalAlignment
-        verticalAlignment: rootImageBlock.imageVerticalAlignment
+        // horizontalAlignment: rootImageBlock.imageHorizontalAlignment
+        // verticalAlignment: rootImageBlock.imageVerticalAlignment
         smooth: boolValue(rootImageBlock.config.smooth, true)
         mipmap: boolValue(rootImageBlock.config.mipmap, true)
         cache: boolValue(rootImageBlock.config.cache, false)

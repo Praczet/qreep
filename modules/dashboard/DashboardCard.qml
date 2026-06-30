@@ -176,16 +176,6 @@ Rectangle {
             theme: rootDashboardCard.theme
             config: rootDashboardCard.block.config || ({})
         }
-
-        Text {
-            visible: rootDashboardCard.block.type === "fake"
-            width: parent.width
-            text: "preset: " + String(rootDashboardCard.block.preset || "default") + " | anchor: " + String(rootDashboardCard.block.anchorPoint || "absolute") + " | from: " + String(rootDashboardCard.block.from || "center")
-            color: rootDashboardCard.cardTextColor
-            opacity: 0.72
-            font.pixelSize: rootDashboardCard.theme.modules.dashboard.metaPixelSize
-            wrapMode: Text.Wrap
-        }
     }
 
     Behavior on x {
