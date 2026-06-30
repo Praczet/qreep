@@ -24,6 +24,10 @@ PanelWindow {
     property alias centerSlotItems: centerSlot.data
     property alias rightSlotItems: rightSlot.data
     property alias overlayItems: overlayLayer.data
+    readonly property bool collapsed: barModeService.collapsed
+    readonly property bool reservedMode: barModeService.reserved
+    readonly property int activeBarHeight: collapsed ? rootBar.theme.modules.bar.collapsedHeight : rootBar.theme.modules.bar.height
+    readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
     signal audioMixerRequested
@@ -42,6 +46,10 @@ PanelWindow {
         notificationDuration: rootBar.theme.logNotificationDuration
         warningColor: rootBar.theme.logWarningColor
         errorColor: rootBar.theme.logErrorColor
+    }
+
+    BarModeService {
+        id: barModeService
     }
 
     PowerFeature.PowerService {
@@ -124,10 +132,11 @@ PanelWindow {
         right: true
     }
 
-    implicitHeight: rootBar.theme.modules.bar.height + rootBar.theme.modules.bar.topPadding
+    implicitHeight: rootBar.activeBarHeight + rootBar.activeTopPadding
     color: "transparent"
 
     WlrLayershell.namespace: "qreep-bar"
+    WlrLayershell.exclusiveZone: rootBar.reservedMode ? rootBar.implicitHeight : 0
 
     Rectangle {
         anchors {
@@ -137,9 +146,17 @@ PanelWindow {
             leftMargin: rootBar.theme.modules.bar.horizontalPadding
             rightMargin: rootBar.theme.modules.bar.horizontalPadding
         }
-        height: rootBar.theme.modules.bar.height
-        radius: rootBar.theme.modules.bar.backgroundRadius
+        height: rootBar.activeBarHeight
+        radius: rootBar.collapsed ? 0 : rootBar.theme.modules.bar.backgroundRadius
         color: rootBar.theme.modules.bar.backgroundColor
+        clip: rootBar.collapsed
+
+        Behavior on height {
+            NumberAnimation {
+                duration: rootBar.theme.animationFastDuration
+                easing.type: Easing.OutCubic
+            }
+        }
 
         Row {
             id: leftSlot
@@ -149,6 +166,8 @@ PanelWindow {
                 leftMargin: rootBar.theme.modules.bar.sideMargin
             }
             spacing: rootBar.theme.modules.bar.itemSpacing
+            scale: rootBar.collapsed ? 0.01 : 1
+            opacity: rootBar.collapsed ? 0 : 1
 
             LauncherFeature.LauncherButton {
                 id: launcherButton
@@ -182,6 +201,8 @@ PanelWindow {
 
             anchors.centerIn: parent
             spacing: rootBar.theme.modules.bar.itemSpacing
+            scale: rootBar.collapsed ? 0.01 : 1
+            opacity: rootBar.collapsed ? 0 : 1
 
             ClockFeature.Clock {
                 id: clock
@@ -227,6 +248,8 @@ PanelWindow {
                 rightMargin: rootBar.theme.modules.bar.sideMargin
             }
             spacing: rootBar.theme.modules.bar.itemSpacing
+            scale: rootBar.collapsed ? 0.01 : 1
+            opacity: rootBar.collapsed ? 0 : 1
 
             UpcheckerFeature.UpcheckerButton {
                 id: upcheckerButton
@@ -431,6 +454,13 @@ PanelWindow {
             function onSinkFeedbackRequested(percent, muted) {
                 rootBar.volumeFeedbackRequested(percent, muted, soundService.volumeIcon(percent, muted));
             }
+        }
+    }
+
+    Behavior on implicitHeight {
+        NumberAnimation {
+            duration: rootBar.theme.animationFastDuration
+            easing.type: Easing.OutCubic
         }
     }
 }
