@@ -7,6 +7,7 @@ import "./features/monitorprofile" as MonitorProfileFeature
 import "./features/mpris" as MprisFeature
 import "./features/power" as PowerFeature
 import "./features/upchecker" as UpcheckerFeature
+import "./features/volume" as VolumeFeature
 import "./features/workspaces" as WorkspacesFeature
 import "./features/battery/" as BatteryFeature
 
@@ -50,6 +51,9 @@ QtObject {
         qreep: rootBarTheme.qreep
     }
     readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {
+        qreep: rootBarTheme.qreep
+    }
+    readonly property QtObject volume: VolumeFeature.VolumeTheme {
         qreep: rootBarTheme.qreep
     }
     readonly property QtObject workspaces: WorkspacesFeature.WorkspacesTheme {

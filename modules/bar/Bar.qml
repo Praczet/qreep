@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import "../../core" as Core
 import "./features/borg" as BorgFeature
@@ -11,6 +12,7 @@ import "./features/mpris" as MprisFeature
 import "./features/workspaces" as WorkspacesFeature
 import "./features/launcher" as LauncherFeature
 import "./features/battery" as BatteryFeature
+import "./features/volume" as VolumeFeature
 
 PanelWindow {
     id: rootBar
@@ -21,6 +23,9 @@ PanelWindow {
     property alias centerSlotItems: centerSlot.data
     property alias rightSlotItems: rightSlot.data
     property alias overlayItems: overlayLayer.data
+
+    signal volumeFeedbackRequested(int percent, bool muted, string icon)
+    signal audioMixerRequested
 
     ClockFeature.EventStore {
         id: eventStore
@@ -59,6 +64,20 @@ PanelWindow {
     BatteryFeature.BatteryService {
         id: batteryService
         log: qreepLog
+    }
+
+    readonly property Process audioMixerRunner: Process {}
+
+    Core.SoundService {
+        id: soundService
+        log: qreepLog
+    }
+
+    function openAudioMixer() {
+        qreepLog.info("Launching pavucontrol.");
+        audioMixerRunner.running = false;
+        audioMixerRunner.command = ["pavucontrol"];
+        audioMixerRunner.startDetached();
     }
 
     WorkspacesFeature.WorkspaceService {
@@ -268,6 +287,26 @@ PanelWindow {
                 onTooltipHideRequested: sharedTooltip.hideLater()
             }
 
+            VolumeFeature.VolumeButton {
+                id: volumeButton
+
+                theme: rootBar.theme
+                service: soundService
+
+                onClicked: {
+                    soundService.toggleMute();
+                    sharedTooltip.hideLater();
+                }
+                onRightClicked: {
+                    rootBar.openAudioMixer();
+                    rootBar.audioMixerRequested();
+                    sharedTooltip.hideLater();
+                }
+                onVolumeChangedByScroll: sharedTooltip.hideLater()
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+            }
+
             PowerFeature.PowerButton {
                 id: powerButton
 
@@ -356,6 +395,14 @@ PanelWindow {
 
             function onUpdateRequested() {
                 upcheckerPanel.visible = false;
+            }
+        }
+
+        Connections {
+            target: soundService
+
+            function onSinkFeedbackRequested(percent, muted) {
+                rootBar.volumeFeedbackRequested(percent, muted, soundService.volumeIcon(percent, muted));
             }
         }
     }

@@ -13,6 +13,10 @@ ShellRoot {
 
     BarModule.Bar {
         theme: qreepTheme
+
+        onVolumeFeedbackRequested: (percent, muted, icon) => {
+            osd.showMessage(percent + "%", qreepTheme.modules.osd.defaultDuration, qreepTheme.modules.osd.defaultPosition, muted ? "Volume (Muted)" : "Volume", icon, qreepTheme.modules.osd.progressIconSize, percent / 100);
+        }
     }
 
     DashboardModule.Dashboard {
