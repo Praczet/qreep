@@ -48,7 +48,8 @@
       "showBackground": false,
       "showBorder": false,
       "config": {
-        "faceColor": "{{surface_container}}",
+        "faceColor": "{{surface}}",
+        "faceOpacity": 1,
         "showBorder": false,
         "showBackground": false,
         "showHourHand": true,
@@ -105,7 +106,6 @@
       "showTitle": false,
       "showBackground": true,
       "showBorder": true,
-      "backgroundColor": "#2e3441",
       "borderColor": "{{outline}}",
       "radius": 18,
       "padding": 20,
@@ -140,13 +140,12 @@
       "height": 307,
       "from": "right",
       "showTitle": false,
-      "showBackground": false,
+      "showBackground": true,
       "showBorder": false,
       "config": {
         "path": "~/.cache/potato/weight.svg",
         "fillMode": "preserveAspectFit",
-        "showBackground": true,
-        "backgroundColor": "#2e3440",
+        "showBackground": false,
         "radius": 18
       }
     },
@@ -162,13 +161,11 @@
       "height": 307,
       "from": "right",
       "showTitle": false,
-      "showBackground": false,
+      "showBackground": true,
       "showBorder": false,
       "config": {
         "path": "~/.cache/potato/steps.svg",
         "fillMode": "preserveAspectFit",
-        "showBackground": true,
-        "backgroundColor": "#2e3440",
         "radius": 18
       }
     },
@@ -184,13 +181,11 @@
       "height": 307,
       "from": "right",
       "showTitle": false,
-      "showBackground": false,
+      "showBackground": true,
       "showBorder": false,
       "config": {
         "path": "~/.cache/potato/fasting.svg",
         "fillMode": "preserveAspectFit",
-        "showBackground": true,
-        "backgroundColor": "#2e3440",
         "radius": 18
       }
     }

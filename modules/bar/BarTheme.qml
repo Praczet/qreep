@@ -8,6 +8,7 @@ import "./features/mpris" as MprisFeature
 import "./features/power" as PowerFeature
 import "./features/upchecker" as UpcheckerFeature
 import "./features/workspaces" as WorkspacesFeature
+import "./features/battery/" as BatteryFeature
 
 QtObject {
     id: rootBarTheme
@@ -52,6 +53,9 @@ QtObject {
         qreep: rootBarTheme.qreep
     }
     readonly property QtObject workspaces: WorkspacesFeature.WorkspacesTheme {
+        qreep: rootBarTheme.qreep
+    }
+    readonly property QtObject battery: BatteryFeature.BatteryTheme {
         qreep: rootBarTheme.qreep
     }
 }

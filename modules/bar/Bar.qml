@@ -4,13 +4,13 @@ import Quickshell.Wayland
 import "../../core" as Core
 import "./features/borg" as BorgFeature
 import "./features/clock" as ClockFeature
-import "../osd" as OsdFeature
 import "./features/power" as PowerFeature
 import "./features/upchecker" as UpcheckerFeature
 import "./features/monitorprofile" as MonitorProfileFeature
 import "./features/mpris" as MprisFeature
 import "./features/workspaces" as WorkspacesFeature
 import "./features/launcher" as LauncherFeature
+import "./features/battery" as BatteryFeature
 
 PanelWindow {
     id: rootBar
@@ -21,7 +21,6 @@ PanelWindow {
     property alias centerSlotItems: centerSlot.data
     property alias rightSlotItems: rightSlot.data
     property alias overlayItems: overlayLayer.data
-
 
     ClockFeature.EventStore {
         id: eventStore
@@ -54,6 +53,11 @@ PanelWindow {
     }
     LauncherFeature.LauncherService {
         id: launcherService
+        log: qreepLog
+    }
+
+    BatteryFeature.BatteryService {
+        id: batteryService
         log: qreepLog
     }
 
@@ -249,6 +253,19 @@ PanelWindow {
                     borgTooltip.showFor(anchorItem, borgService.tooltip, borgService.className);
                 }
                 onTooltipHideRequested: borgTooltip.hideLater()
+            }
+
+            BatteryFeature.BatteryButton {
+                id: battery
+
+                theme: rootBar.theme
+                service: batteryService
+
+                onClicked: {
+                    sharedTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
             }
 
             PowerFeature.PowerButton {
