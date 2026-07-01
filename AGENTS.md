@@ -15,6 +15,8 @@ qreep/
 ├── components/
 ├── modules/
 │   ├── bar/
+│   ├── clipboard/
+│   ├── dashboard/
 │   └── osd/
 ├── scripts/
 ├── theme/
@@ -100,7 +102,7 @@ Qreep is a Quickshell project. Prefer QML-first solutions unless there is a good
 
 Use this project layout:
 
-- `modules/` for top-level Qreep modules (for example: `bar`, `dashboard`);
+- `modules/` for top-level Qreep modules (for example: `bar`, `clipboard`, `dashboard`);
 - `modules/bar/features/` for bar-owned pills, panels, services, and popups;
 - `modules/osd/` for the shell-level OSD surface and IPC service;
 - `components/` for reusable UI pieces;
@@ -126,6 +128,8 @@ Current top-level module folders:
 ```text
 modules/
 ├── bar/
+├── clipboard/
+├── dashboard/
 └── osd/
 ```
 
@@ -254,7 +258,7 @@ Done means:
 
 ## Planned large features
 
-Qreep may grow three larger optional surfaces. These should use the feature-controller pattern from the start.
+Qreep may grow larger optional surfaces. These should use the feature-controller pattern from the start.
 
 ### Dashboard / Aegis
 
@@ -331,12 +335,12 @@ qreep-clipboard
 
 Goal: a Pano-like clipboard manager, but Qreep-shaped instead of “let us invent GNOME Shell in a trench coat”.
 
-This should be a top-level shell module, not a bar feature. It is opened by IPC
+This is a top-level shell module, not a bar feature. It is opened by IPC
 and a Hyprland binding such as `CTRL+SUPER+V`; do not add a bar button unless
 Adam explicitly asks. The clipboard is a work surface, not another tiny object
 trying to live in the right slot.
 
-Planned structure:
+Current structure:
 
 ```text
 modules/clipboard/
@@ -354,9 +358,9 @@ Backend:
 - do not invent QML clipboard persistence;
 - use `clipvault list` for recent entries;
 - use `clipvault get | wl-copy` to restore entries;
-- use `clipvault delete` for deletion if available;
+- use `clipvault delete` for deletion when available;
 - keep the AGS-inspired pinned JSON idea at `~/.local/share/clipvault/pinned.json`;
-- pinned entries should sort first, but v1 must not try to solve clipvault pruning.
+- pinned entries sort first, but v1 must not try to solve clipvault pruning.
 
 Pinned caveat:
 
@@ -375,7 +379,7 @@ Panel behavior:
 - `shell.qml` hosts the module like dashboard and OSD;
 - no bar button;
 - Escape closes;
-- outside click closes if implemented cleanly without eating the whole desktop;
+- outside click closes;
 - refresh entries when shown.
 
 IPC:
@@ -407,23 +411,26 @@ apparently we enjoy taxes.
 Visual/content scope:
 
 - card grid inspired by the AGS screenshot, not a one-to-one port;
-- search can be visible at the top for v1, with type-to-search overlay as a later improvement if it feels better;
-- support text, code, and color cards first;
-- image entries are important visually, but may start as placeholder/metadata if thumbnail extraction gets annoying;
-- real image previews should be the first follow-up after the text/code/color flow works;
+- search is visible at the top for v1, with type-to-search overlay as a later improvement if it feels better;
+- support text, code, color, and image cards first;
+- image previews are exported to a runtime temp directory from `clipvault get`; do not turn that into a second clipboard store.
 - keep the UI calm and graphite-ish like the rest of Qreep.
 
-Implementation workflow:
+Current implementation:
 
-1. Create `modules/clipboard/Clipboard.qml` with `Scope`, IPC, open state, `ClipboardService`, and lazy `ClipboardPanel`.
-2. Add `ClipboardTheme.qml` and expose it through `modules/ModulesTheme.qml` and `theme/QreepTheme.qml`.
-3. Host `Clipboard` in `shell.qml`.
-4. Implement `ClipboardService.qml` with `clipvault list`, parsing, filtering, selected index, and basic error state.
-5. Build `ClipboardPanel.qml` as a bottom `PanelWindow` with search and a keyboard-navigable `GridView`.
-6. Build `ClipboardCard.qml` for text/code/color cards.
-7. Add restore, delete, star/unstar actions.
-8. Add image preview support as the next pass.
-9. Add/update README with IPC, backend requirements, and Hyprland binding example.
+- `Clipboard.qml` is the `Scope`/controller with IPC, open state, `ClipboardService`, and lazy `ClipboardPanel`.
+- `ClipboardTheme.qml` is exposed through `modules/ModulesTheme.qml` and `theme/QreepTheme.qml`.
+- `shell.qml` hosts `Clipboard` directly.
+- `ClipboardService.qml` handles `clipvault list`, pinned JSON, filtering, selected index, image preview export, restore notifications, delete, and star/unstar actions.
+- `ClipboardPanel.qml` is a bottom overlay `PanelWindow` with search, pins filter, outside-click close, and a keyboard-navigable `GridView`.
+- `ClipboardCard.qml` renders text, code, color previews, and image previews.
+- `modules/clipboard/README.md` documents IPC and backend requirements.
+
+Next clipboard work:
+
+1. Watch image preview cost with large screenshot history.
+2. Decide whether pins should become durable content later, as a deliberate privacy-sensitive design.
+3. Consider a type-to-search overlay if the visible search row starts feeling too chunky.
 
 Minimum useful scope:
 
@@ -432,7 +439,7 @@ Minimum useful scope:
 - paste selected entry;
 - clear selected entry if the backend supports it;
 - star/unstar entries using the pinned JSON;
-- include image metadata or placeholders in v1 if real thumbnails need a second pass.
+- show image previews from runtime temp files exported out of `clipvault`.
 
 Privacy rule: clipboard history is sensitive. Do not add persistence, indexing, previews, or logging beyond the existing backend behavior unless Adam explicitly asks for it. The clipboard does not need to become a diary with paste support.
 
@@ -733,7 +740,7 @@ Qreep currently has:
 - a reusable `QreepModule` wrapper with hover, click, right-click, overlay, and shared-tooltip request support;
 - a launcher button in the left slot that delegates to `LauncherService`;
 - a Hyprland workspaces module in the left slot with active/occupied workspace state, click/scroll switching, and a clickable client popup;
-- a Borg status pill in the right bar slot with refresh, backup command, IPC, and a structured tooltip;
+- a Borg status pill in the right bar slot with refresh, backup command, IPC, a structured tooltip, and a watched backup progress popup driven by `~/.cache/qreep/borg/state.json`;
 - a clock with optional seconds, current-day event dots, and JSON-backed event tooltip content;
 - a calendar popup with a month grid, event markers, and a six-day agenda covering today plus the next five days;
 - a MonitorProfile pill that watches runtime JSON, sorts monitors by position, and shows internal/external display icons plus a plain tooltip;
@@ -742,6 +749,9 @@ Qreep currently has:
 - a Power feature controller in `modules/bar/features/power/Power.qml` that owns `PowerService` and lazy-loads the full-height `qreep-popup-power` panel;
 - confirmed power actions wired through `modules/bar/features/power/PowerService.qml`;
 - an Upchecker feature controller in `modules/bar/features/upchecker/Upchecker.qml` that owns `UpcheckerService` and lazy-loads the standalone `qreep-popup-upchecker` panel;
+- a top-level Dashboard module in `modules/dashboard/`, hosted directly by `shell.qml`;
+- a top-level Clipboard module in `modules/clipboard/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-clipboard`, and backed by `clipvault`;
+- the Clipboard panel currently supports a bottom overlay, search/filter, pins filter, keyboard navigation, text/code/color/image cards, runtime image previews, restore notifications, delete, and star/unstar metadata in `~/.local/share/clipvault/pinned.json`;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
@@ -771,20 +781,29 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pil
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill listPills
 ```
 
+Useful clipboard IPC commands:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard toggle
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard show
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard hide
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard refresh
+```
+
 Current pickup point:
 
-- Today’s bar mode/pill-state work is intentionally a small runtime slice, not the final bar layout config system.
-- Next session should pick up from `BarModeService.qml`, `BarPillStateService.qml`, and the registered pill wiring in `Bar.qml`.
-- The next likely step is a design choice: either split MPRIS behind a feature controller or decide whether `launcher` and `power` should join runtime pill state.
+- The Clipboard v1 shell module is done enough for now: IPC, search/filter, keyboard navigation, restore notifications, delete, pins, and image previews are implemented and documented in `modules/clipboard/README.md`.
+- Do not continue expanding Clipboard unless Adam asks. The remaining clipboard items are follow-ups, not the next default project direction.
+- Bar mode/pill-state work remains a separate runtime slice. If the next session returns to bar ownership cleanup, pick up from `BarModeService.qml`, `BarPillStateService.qml`, and the registered pill wiring in `Bar.qml`.
 - Do not rush persistence. Runtime state first, persisted layout second. Past Adam does not need a config file that explains a bug with confidence.
 
 ## Suggested next five steps
 
-1. **Split MPRIS behind a feature controller if the next session wants ownership cleanup.** It already has `MprisService`, `MprisButton`, `MprisTooltip`, `MprisPanel`, control buttons, and custom animation. Keep it bar-owned, but let `Mpris.qml` own the service, tooltip/panel wiring, and public actions.
+1. **Split MPRIS behind a feature controller if the next session wants bar ownership cleanup.** It already has `MprisService`, `MprisButton`, `MprisTooltip`, `MprisPanel`, control buttons, and custom animation.
 2. **Preserve current MPRIS behavior during any split.** Left-click toggles playback, right-click toggles the panel, hover shows the MPRIS tooltip, and disabling the `mpris` runtime pill closes the panel/tooltip.
 3. **Decide whether `launcher` and `power` should join runtime pill state.** Both are technically easy. Launcher and Power are also useful escape hatches, so hiding them should be a deliberate choice, not a side effect with icons.
 4. **Keep the ownership map current.** The map is only useful if it tells the truth, which is apparently a demanding requirement.
-5. **Do not add persistence yet.** Runtime behavior is still earning its shape; persisted layout config can wait until the model has stopped moving around like furniture on a bad floor.
+5. **Leave Clipboard alone unless a real issue appears.** The follow-ups live in `modules/clipboard/README.md`; they are not an invitation to build a tiny paste empire today.
 
 Keep these steps independent and reviewable. Qreep has enough moving pieces now that “one tiny cleanup while here” can reproduce when left unattended.
 

@@ -36,6 +36,16 @@ Top-level Qreep modules live under `modules/`. The bar module lives at
 `modules/bar/features/`. Reusable wrappers remain in `components/`. Theme
 entry points remain in `theme/`.
 
+Current top-level module folders:
+
+```text
+modules/
+├── bar/
+├── clipboard/
+├── dashboard/
+└── osd/
+```
+
 Current bar-owned feature folders:
 
 ```text
@@ -128,6 +138,7 @@ Module theme files live with their owning module:
 * `modules/bar/BarTheme.qml`
 * `modules/bar/BarPillTheme.qml`
 * `modules/bar/TooltipTheme.qml`
+* `modules/clipboard/ClipboardTheme.qml`
 * `modules/dashboard/DashboardTheme.qml`
 * `modules/osd/OsdTheme.qml`
 
@@ -154,9 +165,13 @@ Useful current targets:
 
 ```bash
 quickshell ipc call qreep-borg refresh
+quickshell ipc call qreep-borg showProgress
+quickshell ipc call qreep-borg hideProgress
+quickshell ipc call qreep-borg toggleProgress
 quickshell ipc call qreep-upchecker refresh
 quickshell ipc call qreep-upchecker toggle
 quickshell ipc call qreep-monitor-profile refresh
+quickshell ipc call qreep-clipboard toggle
 quickshell ipc call osd showMessage "Hello from the questionable future" 3000
 ```
 

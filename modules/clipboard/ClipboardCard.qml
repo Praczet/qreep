@@ -279,8 +279,77 @@ Item {
             }
         }
 
+        Rectangle {
+            id: imagePreview
+
+            visible: rootClipboardCard.entry.type === "image"
+
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: header.bottom
+                bottom: footer.top
+                margins: rootClipboardCard.theme.modules.clipboard.cardPadding
+            }
+
+            radius: 4
+            color: rootClipboardCard.theme.modules.clipboard.searchColor
+            border.width: 1
+            border.color: rootClipboardCard.theme.modules.clipboard.borderColor
+            clip: true
+
+            Image {
+                id: clipboardImage
+
+                anchors.fill: parent
+                source: rootClipboardCard.entry.imageSource || ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: false
+                smooth: true
+                mipmap: true
+                visible: rootClipboardCard.entry.imageReady && status === Image.Ready
+            }
+
+            Rectangle {
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+                height: 22
+                color: Qt.rgba(rootClipboardCard.theme.modules.clipboard.panelColor.r, rootClipboardCard.theme.modules.clipboard.panelColor.g, rootClipboardCard.theme.modules.clipboard.panelColor.b, 0.78)
+                visible: clipboardImage.visible
+
+                Text {
+                    anchors {
+                        fill: parent
+                        leftMargin: 6
+                        rightMargin: 6
+                    }
+                    text: imageMetaText()
+                    color: rootClipboardCard.theme.modules.clipboard.primaryTextColor
+                    font.pixelSize: rootClipboardCard.theme.modules.clipboard.metaPixelSize
+                    verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideRight
+                }
+            }
+
+            Text {
+                anchors.centerIn: parent
+                width: parent.width - 16
+                text: rootClipboardCard.entry.imageReady ? "image failed" : imageMetaText()
+                color: rootClipboardCard.theme.modules.clipboard.secondaryTextColor
+                font.pixelSize: rootClipboardCard.theme.modules.clipboard.bodyPixelSize
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.Wrap
+                visible: !clipboardImage.visible
+            }
+        }
+
         Text {
-            visible: rootClipboardCard.entry.type !== "color"
+            visible: rootClipboardCard.entry.type !== "color" && rootClipboardCard.entry.type !== "image"
             anchors {
                 left: parent.left
                 right: parent.right
@@ -323,6 +392,18 @@ Item {
             return "";
 
         return "󰉿";
+    }
+
+    function imageMetaText() {
+        const parts = [];
+
+        if (rootClipboardCard.entry.imageDimensions && rootClipboardCard.entry.imageDimensions.length > 0)
+            parts.push(rootClipboardCard.entry.imageDimensions);
+
+        if (rootClipboardCard.entry.imageMimeType && rootClipboardCard.entry.imageMimeType.length > 0)
+            parts.push(rootClipboardCard.entry.imageMimeType.replace("image/", ""));
+
+        return parts.length > 0 ? parts.join(" · ") : rootClipboardCard.entry.preview;
     }
 
     function srgbToLinear(value) {

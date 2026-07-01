@@ -16,8 +16,15 @@ QtObject {
     property int selectedIndex: filteredEntries.length > 0 ? 0 : -1
     property bool loading: false
     property string error: ""
+    property var imagePreviewQueue: []
+    property string currentImagePreviewId: ""
+    property string currentImagePreviewPath: ""
+    property var currentRestoreEntry: null
 
     readonly property string pinnedFile: Quickshell.env("HOME") + "/.local/share/clipvault/pinned.json"
+    readonly property string previewDir: (Quickshell.env("XDG_RUNTIME_DIR").length > 0 ? Quickshell.env("XDG_RUNTIME_DIR") : "/tmp") + "/qreep-clipboard-previews"
+    readonly property string restoreNotificationTitle: "Qreep-Clipboard"
+    readonly property string restoreNotificationIcon: "edit-paste-symbolic"
     readonly property Core.Log fallbackLog: Core.Log {}
 
     readonly property var namedColors: ({
@@ -119,9 +126,19 @@ QtObject {
         }
 
         onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0)
+            if (exitCode !== 0) {
                 rootClipboardService.reportError("Clipboard restore failed:", restoreStderr.text);
+                rootClipboardService.currentRestoreEntry = null;
+                return;
+            }
+
+            rootClipboardService.notifyRestored(rootClipboardService.currentRestoreEntry);
+            rootClipboardService.currentRestoreEntry = null;
         }
+    }
+
+    readonly property Process restoreNotifier: Process {
+        id: restoreNotifier
     }
 
     readonly property Process deleteRunner: Process {
@@ -159,6 +176,23 @@ QtObject {
             }
 
             rootClipboardService.applyFilter();
+        }
+    }
+
+    readonly property Process imagePreviewRunner: Process {
+        id: imagePreviewRunner
+
+        stderr: StdioCollector {
+            id: imagePreviewStderr
+
+            waitForEnd: true
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            rootClipboardService.applyImagePreviewOutput(rootClipboardService.currentImagePreviewId, rootClipboardService.currentImagePreviewPath, imagePreviewStderr.text, exitCode);
+            rootClipboardService.currentImagePreviewId = "";
+            rootClipboardService.currentImagePreviewPath = "";
+            rootClipboardService.exportNextImagePreview();
         }
     }
 
@@ -220,17 +254,26 @@ QtObject {
 
         entries = parsedEntries;
         applyFilter();
+        startImagePreviewExports(parsedEntries);
     }
 
     function normalizeEntry(id, preview, listIndex) {
         const type = detectType(preview);
         const color = type === "color" ? preview.trim() : "";
+        const imageMimeType = type === "image" ? imageMimeTypeFromPreview(preview) : "";
+        const imageDimensions = type === "image" ? imageDimensionsFromPreview(preview) : "";
+        const imagePath = type === "image" ? imagePreviewPath(id, imageMimeType) : "";
 
         return {
             id,
             preview,
             type,
             color,
+            imageMimeType,
+            imageDimensions,
+            imagePath,
+            imageSource: "",
+            imageReady: false,
             starred: pinnedIds.indexOf(id) !== -1,
             listIndex
         };
@@ -269,6 +312,7 @@ QtObject {
         if (!entry)
             return;
 
+        currentRestoreEntry = cloneEntry(entry);
         restoreRunner.running = false;
         restoreRunner.command = ["sh", "-c", "printf '%s\\t' " + shellQuote(entry.id) + " | clipvault get | wl-copy"];
         restoreRunner.running = true;
@@ -315,6 +359,54 @@ QtObject {
         pinnedWriter.running = true;
     }
 
+    function startImagePreviewExports(nextEntries) {
+        imagePreviewQueue = nextEntries.filter(entry => entry.type === "image");
+
+        if (!imagePreviewRunner.running)
+            exportNextImagePreview();
+    }
+
+    function exportNextImagePreview() {
+        if (imagePreviewRunner.running || imagePreviewQueue.length === 0)
+            return;
+
+        const nextQueue = imagePreviewQueue.slice();
+        const entry = nextQueue.shift();
+        imagePreviewQueue = nextQueue;
+
+        if (!entry || entry.imagePath.length === 0) {
+            exportNextImagePreview();
+            return;
+        }
+
+        currentImagePreviewId = entry.id;
+        currentImagePreviewPath = entry.imagePath;
+        imagePreviewRunner.command = ["sh", "-c", "mkdir -p " + shellQuote(previewDir) + " && clipvault get " + shellQuote(entry.id) + " > " + shellQuote(entry.imagePath)];
+        imagePreviewRunner.running = true;
+    }
+
+    function applyImagePreviewOutput(id, path, stderr, exitCode) {
+        if (id.length === 0)
+            return;
+
+        if (exitCode !== 0) {
+            warn("Clipboard image preview failed:", id, stderr.length > 0 ? stderr : "clipvault returned " + exitCode);
+            return;
+        }
+
+        entries = entries.map(entry => {
+            const copy = cloneEntry(entry);
+
+            if (copy.id === id) {
+                copy.imageSource = "file://" + path;
+                copy.imageReady = true;
+            }
+
+            return copy;
+        });
+        applyFilter();
+    }
+
     function entryAt(index) {
         if (index < 0 || index >= filteredEntries.length)
             return null;
@@ -341,6 +433,9 @@ QtObject {
         if (/binary data.*\.(jpg|jpeg|png|gif|bmp|webp)/i.test(trimmed))
             return "image";
 
+        if (/binary data.*image\/(?:jpeg|png|gif|bmp|webp)/i.test(trimmed))
+            return "image";
+
         if (preview.indexOf("\\n") !== -1 || /[{};]/.test(trimmed) || /\b(class|function|const|let|var|import|export|sudo|read)\b/.test(lower) || lower.indexOf("#!") === 0)
             return "code";
 
@@ -353,9 +448,76 @@ QtObject {
             preview: entry.preview,
             type: entry.type,
             color: entry.color,
+            imageMimeType: entry.imageMimeType || "",
+            imageDimensions: entry.imageDimensions || "",
+            imagePath: entry.imagePath || "",
+            imageSource: entry.imageSource || "",
+            imageReady: entry.imageReady === true,
             starred: entry.starred,
             listIndex: entry.listIndex
         };
+    }
+
+    function imageMimeTypeFromPreview(preview) {
+        const match = preview.match(/image\/(?:jpeg|png|gif|bmp|webp)/i);
+        return match ? match[0].toLowerCase() : "";
+    }
+
+    function imageDimensionsFromPreview(preview) {
+        const match = preview.match(/\b\d+x\d+\b/);
+        return match ? match[0] : "";
+    }
+
+    function imagePreviewPath(id, mimeType) {
+        return previewDir + "/" + id + "." + imageExtension(mimeType);
+    }
+
+    function imageExtension(mimeType) {
+        switch (mimeType) {
+        case "image/jpeg":
+            return "jpg";
+        case "image/gif":
+            return "gif";
+        case "image/bmp":
+            return "bmp";
+        case "image/webp":
+            return "webp";
+        default:
+            return "png";
+        }
+    }
+
+    function notifyRestored(entry) {
+        if (!entry)
+            return;
+
+        restoreNotifier.running = false;
+        restoreNotifier.command = [
+            "notify-send",
+            "--app-name=Qreep",
+            "--icon=" + restoreNotificationIcon,
+            restoreNotificationTitle,
+            restoredNotificationBody(entry)
+        ];
+        restoreNotifier.running = true;
+    }
+
+    function restoredNotificationBody(entry) {
+        return entryTypeLabel(entry.type) + " [" + entry.id + "] copied";
+    }
+
+    function entryTypeLabel(type) {
+        switch (type) {
+        case "image":
+            return "Image";
+        case "code":
+            return "Code";
+        case "color":
+        case "color-text":
+            return "Color";
+        default:
+            return "Text";
+        }
     }
 
     function shellQuote(value) {
@@ -365,6 +527,10 @@ QtObject {
     function reportError() {
         error = messageText(arguments);
         (log || fallbackLog).error(error);
+    }
+
+    function warn() {
+        (log || fallbackLog).warn.apply(log || fallbackLog, arguments);
     }
 
     function messageText(messages) {

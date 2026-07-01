@@ -16,11 +16,19 @@ Components.QreepModule {
         pulseAnimation.restart();
     }
 
+    function shake() {
+        shakeAnimation.restart();
+    }
+
     Connections {
         target: rootBorg.service
 
         function onPulseRequested() {
             rootBorg.pulse();
+        }
+
+        function onShakeRequested() {
+            rootBorg.shake();
         }
     }
 
@@ -98,6 +106,63 @@ Components.QreepModule {
                 from: -rootBorg.theme.modules.bar.borg.pulseRotationSettle
                 to: 0
                 duration: rootBorg.theme.modules.bar.borg.pulseInDuration
+                easing.type: Easing.OutCubic
+            }
+        }
+    }
+
+    SequentialAnimation {
+        id: shakeAnimation
+
+        ParallelAnimation {
+            NumberAnimation {
+                target: borgTextWrapper
+                property: "x"
+                from: 0
+                to: -rootBorg.theme.modules.bar.borg.shakeDistance
+                duration: rootBorg.theme.modules.bar.borg.shakeStepDuration
+                easing.type: Easing.OutCubic
+            }
+
+            RotationAnimation {
+                target: borgTextWrapper
+                from: 0
+                to: -rootBorg.theme.modules.bar.borg.shakeRotation
+                duration: rootBorg.theme.modules.bar.borg.shakeStepDuration
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        ParallelAnimation {
+            NumberAnimation {
+                target: borgTextWrapper
+                property: "x"
+                to: rootBorg.theme.modules.bar.borg.shakeDistance
+                duration: rootBorg.theme.modules.bar.borg.shakeStepDuration * 2
+                easing.type: Easing.InOutCubic
+            }
+
+            RotationAnimation {
+                target: borgTextWrapper
+                to: rootBorg.theme.modules.bar.borg.shakeRotation
+                duration: rootBorg.theme.modules.bar.borg.shakeStepDuration * 2
+                easing.type: Easing.InOutCubic
+            }
+        }
+
+        ParallelAnimation {
+            NumberAnimation {
+                target: borgTextWrapper
+                property: "x"
+                to: 0
+                duration: rootBorg.theme.modules.bar.borg.shakeStepDuration
+                easing.type: Easing.OutCubic
+            }
+
+            RotationAnimation {
+                target: borgTextWrapper
+                to: 0
+                duration: rootBorg.theme.modules.bar.borg.shakeStepDuration
                 easing.type: Easing.OutCubic
             }
         }

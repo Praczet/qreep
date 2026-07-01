@@ -153,6 +153,10 @@ PanelWindow {
         refreshInterval: rootBar.theme.modules.bar.borg.refreshInterval
         backupCommand: [rootBar.theme.modules.bar.borg.backupCommand]
         backupStatusBackend: rootBar.theme.modules.bar.borg.backupStatusBackend
+        backupStatePath: rootBar.theme.modules.bar.borg.backupStatePath
+        backupFinalPath: rootBar.theme.modules.bar.borg.backupFinalPath
+        backupPanelHideDelay: rootBar.theme.modules.bar.borg.backupPanelHideDelay
+        backupStatePollInterval: rootBar.theme.modules.bar.borg.backupStatePollInterval
     }
 
     UpcheckerFeature.Upchecker {
@@ -351,6 +355,9 @@ PanelWindow {
                     borgTooltip.hideLater();
                 }
                 onTooltipShowRequested: (anchorItem, title, content, style) => {
+                    if (borgService.backupPanelOpen)
+                        return;
+
                     sharedTooltip.hideLater();
                     borgTooltip.showFor(anchorItem, borgService.tooltip, borgService.className);
                 }
@@ -474,6 +481,19 @@ PanelWindow {
             id: borgTooltip
 
             theme: rootBar.theme
+        }
+
+        BorgFeature.BorgProgressPopup {
+            id: borgProgressPopup
+
+            theme: rootBar.theme
+            service: borgService
+            anchorItem: borg
+
+            onVisibleChanged: {
+                if (visible)
+                    borgTooltip.hideLater();
+            }
         }
 
         MprisFeature.MprisTooltip {
