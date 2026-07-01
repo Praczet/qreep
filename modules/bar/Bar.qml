@@ -371,6 +371,8 @@ PanelWindow {
 
                 theme: rootBar.theme
 
+                service: powerService
+
                 onClicked: {
                     powerPanel.visible = !powerPanel.visible;
                     sharedTooltip.hideLater();
@@ -425,6 +427,7 @@ PanelWindow {
             id: powerPanel
 
             theme: rootBar.theme
+            service: powerService
 
             onActionRequested: action => powerService.request(action)
         }
@@ -462,6 +465,14 @@ PanelWindow {
 
             function onUpdateRequested() {
                 upcheckerPanel.visible = false;
+            }
+        }
+        Connections {
+            target: powerService
+
+            function onToggleRequested() {
+                powerPanel.visible = !powerPanel.visible;
+                sharedTooltip.hideLater();
             }
         }
 

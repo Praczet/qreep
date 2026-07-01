@@ -4,9 +4,15 @@ import "../../../../components" as Components
 Components.QreepModule {
     id: rootPowerButton
 
+    required property QtObject service
+
     tooltipTitle: "Power"
     tooltipContent: "Open the power menu"
     tooltipStyle: "warning"
+
+    Connections {
+        target: rootPowerButton.service
+    }
 
     Text {
         text: ""

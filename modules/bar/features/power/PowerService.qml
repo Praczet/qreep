@@ -8,6 +8,15 @@ QtObject {
     property QtObject log
     readonly property Process commandRunner: Process {}
     readonly property Core.Log fallbackLog: Core.Log {}
+    signal toggleRequested
+
+    readonly property IpcHandler ipc: IpcHandler {
+        target: "qreep-power"
+
+        function toggle() {
+            rootPowerService.toggleRequested();
+        }
+    }
 
     function request(action) {
         switch (action) {

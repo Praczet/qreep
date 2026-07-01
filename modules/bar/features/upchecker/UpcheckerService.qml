@@ -143,15 +143,7 @@ QtObject {
 
         loadingRestartState = true;
         restartRunner.running = false;
-        restartRunner.command = [
-            restartCheckCommand,
-            "--timezone",
-            restartCheckTimezone,
-            "--restart-packages",
-            restartSessionPackages,
-            "--reboot-packages",
-            restartRebootPackages
-        ];
+        restartRunner.command = [restartCheckCommand, "--timezone", restartCheckTimezone, "--restart-packages", restartSessionPackages, "--reboot-packages", restartRebootPackages];
         restartRunner.running = true;
     }
 
@@ -254,9 +246,9 @@ QtObject {
 
     function applyRestartFailure(message) {
         restartReport = ({
-            actionNeeded: "unknown",
-            error: message
-        });
+                actionNeeded: "unknown",
+                error: message
+            });
         restartAction = "unknown";
         restartNeeded = false;
         restartSummary = "Restart state unknown";
@@ -297,8 +289,7 @@ QtObject {
 
     function restartDetailText(report) {
         if (report.kernel && report.kernel.changed) {
-            return "Kernel: installed " + (report.kernel.installed || "unknown")
-                + ", running " + (report.kernel.running || "unknown");
+            return "Kernel: installed " + (report.kernel.installed || "unknown") + ", running " + (report.kernel.running || "unknown");
         }
 
         if (Array.isArray(report.packages) && report.packages.length > 0) {

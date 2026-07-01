@@ -8,6 +8,7 @@ PanelWindow {
     id: rootPowerPanel
 
     required property QtObject theme
+    required property QtObject service
 
     signal actionRequested(string action)
     property var pendingAction: null

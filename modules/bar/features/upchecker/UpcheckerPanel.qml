@@ -170,6 +170,7 @@ PanelWindow {
         onActivated: rootUpcheckerPanel.handleEscape()
     }
 
+    // Root background
     Rectangle {
         id: background
 
@@ -190,24 +191,29 @@ PanelWindow {
             }
         }
 
+        // Main panel
         Rectangle {
             id: panel
 
             x: (parent.width - width) / 2
-            y: rootUpcheckerPanel.theme.modules.bar.upchecker.topMargin
+            anchors {
+                top: parent.top
+                bottom: parent.bottom
+                topMargin: rootUpcheckerPanel.theme.modules.bar.upchecker.topMargin
+                bottomMargin: rootUpcheckerPanel.theme.modules.bar.upchecker.topMargin
+            }
+
             width: rootUpcheckerPanel.panelWidth
             height: rootUpcheckerPanel.panelHeight
-            radius: theme.modules.bar.upchecker.radius
-            color: theme.modules.bar.upchecker.backgroundColor
-            border.color: theme.modules.bar.upchecker.borderColor
-            border.width: theme.modules.bar.upchecker.borderWidth
+            radius: rootUpcheckerPanel.theme.modules.bar.upchecker.radius
+            color: rootUpcheckerPanel.theme.modules.bar.upchecker.backgroundColor
+            border.color: rootUpcheckerPanel.theme.modules.bar.upchecker.borderColor
+            border.width: rootUpcheckerPanel.theme.modules.bar.upchecker.borderWidth
 
             Text {
                 id: title
 
-                text: rootUpcheckerPanel.filterActive
-                    ? "Updates Available: " + rootUpcheckerPanel.filteredUpdates.length + " / " + rootUpcheckerPanel.service.updates.length
-                    : "Updates Available: " + rootUpcheckerPanel.service.updates.length
+                text: rootUpcheckerPanel.filterActive ? "Updates Available: " + rootUpcheckerPanel.filteredUpdates.length + " / " + rootUpcheckerPanel.service.updates.length : "Updates Available: " + rootUpcheckerPanel.service.updates.length
                 color: theme.modules.bar.primaryTextColor
                 font.pixelSize: theme.modules.bar.upchecker.titlePixelSize
                 font.weight: Font.DemiBold
@@ -219,6 +225,7 @@ PanelWindow {
                 }
             }
 
+            // Restart banner
             Rectangle {
                 id: restartBanner
 
@@ -263,6 +270,7 @@ PanelWindow {
                 }
             }
 
+            // Content area
             Row {
                 id: content
 
@@ -568,6 +576,7 @@ PanelWindow {
                 }
             }
 
+            // Action buttons
             Row {
                 id: actions
 
@@ -639,13 +648,12 @@ PanelWindow {
                 }
             }
 
+            // Filter bar
             Rectangle {
                 id: filterBar
 
                 x: (parent.width - width) / 2
-                y: rootUpcheckerPanel.filterVisible
-                    ? parent.height - theme.modules.bar.upchecker.filterBottomOffset - height
-                    : parent.height - theme.modules.bar.upchecker.filterHiddenBottomInset - height
+                y: rootUpcheckerPanel.filterVisible ? parent.height - theme.modules.bar.upchecker.filterBottomOffset - height : parent.height - theme.modules.bar.upchecker.filterHiddenBottomInset - height
                 width: Math.min(theme.modules.bar.upchecker.filterWidth, parent.width - theme.modules.bar.upchecker.contentPadding * 2)
                 height: theme.modules.bar.upchecker.filterHeight
                 radius: theme.modules.bar.upchecker.filterRadius

@@ -16,7 +16,7 @@ QtObject {
     readonly property string restartRebootPackages: "systemd,linux-firmware,intel-ucode"
     readonly property int windowWidth: 1200
     readonly property int screenMargin: 48
-    readonly property int topMargin: 104
+    readonly property int topMargin: 15
     readonly property int bottomMargin: 48
     readonly property color backgroundColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, opacity)
     readonly property color borderColor: qreep.outline
