@@ -61,8 +61,10 @@ PanelWindow {
         knownPills: ["clock", "workspaces", "mpris", "upchecker", "borg", "battery", "volume"]
     }
 
-    PowerFeature.PowerService {
-        id: powerService
+    PowerFeature.Power {
+        id: power
+
+        theme: rootBar.theme
         log: qreepLog
     }
 
@@ -412,10 +414,10 @@ PanelWindow {
                 visible: !rootBar.collapsed
                 theme: rootBar.theme
 
-                service: powerService
+                service: power.service
 
                 onClicked: {
-                    powerPanel.visible = !powerPanel.visible;
+                    power.toggle();
                     sharedTooltip.hideLater();
                 }
                 onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
@@ -494,15 +496,6 @@ PanelWindow {
             events: eventStore
         }
 
-        PowerFeature.PowerPanel {
-            id: powerPanel
-
-            theme: rootBar.theme
-            service: powerService
-
-            onActionRequested: action => powerService.request(action)
-        }
-
         MprisFeature.MprisPanel {
             id: mprisPanel
 
@@ -528,10 +521,9 @@ PanelWindow {
         }
 
         Connections {
-            target: powerService
+            target: power.service
 
             function onToggleRequested() {
-                powerPanel.visible = !powerPanel.visible;
                 sharedTooltip.hideLater();
             }
         }

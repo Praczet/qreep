@@ -9,8 +9,10 @@ PanelWindow {
 
     required property QtObject theme
     required property QtObject service
+    property bool panelOpen: false
 
     signal actionRequested(string action)
+    signal closeRequested
     property var pendingAction: null
 
     readonly property var actions: [
@@ -59,7 +61,7 @@ PanelWindow {
     function requestAction(action) {
         if (!action.destructive) {
             rootPowerPanel.actionRequested(action.action);
-            rootPowerPanel.visible = false;
+            rootPowerPanel.closeRequested();
             return;
         }
         pendingAction = action;
@@ -69,7 +71,7 @@ PanelWindow {
         if (pendingAction == null)
             return;
         rootPowerPanel.actionRequested(pendingAction.action);
-        rootPowerPanel.visible = false;
+        rootPowerPanel.closeRequested();
         pendingAction = null;
     }
 
@@ -84,7 +86,7 @@ PanelWindow {
         right: true
     }
 
-    visible: false
+    visible: rootPowerPanel.panelOpen
     color: "transparent"
 
     WlrLayershell.namespace: "qreep-popup-power"
@@ -110,7 +112,7 @@ PanelWindow {
                 return;
             }
 
-            rootPowerPanel.visible = false;
+            rootPowerPanel.closeRequested();
         }
     }
 
@@ -123,7 +125,7 @@ PanelWindow {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: rootPowerPanel.visible = false
+            onClicked: rootPowerPanel.closeRequested()
         }
 
         Rectangle {

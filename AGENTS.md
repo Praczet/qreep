@@ -356,11 +356,11 @@ Privacy rule: clipboard history is sensitive. Do not add persistence, indexing, 
 
 Preferred next steps for the architectural split:
 
-1. **Inventory current ownership in `Bar.qml`.** List every feature object the bar creates directly, what it owns, and whether it is small, anchored, full-surface, or service-like.
-2. **Split `Upchecker` first.** It is already a standalone full-screen-ish panel with service behavior and IPC, so it is the best candidate for a clean `Scope + LazyLoader` extraction.
-3. **Split `Power` second.** Keep `PowerService` always available if needed, but let the full power panel be owned by a feature controller instead of the bar.
-4. **Leave small anchored popups alone.** Calendar, MPRIS popup, and shared tooltips can stay visible-toggled until there is real pain.
-5. **Create one large feature skeleton.** Start with `Dashboard`/`Aegis`, `Wallpaper`, or `Clipboard`, but only one. Skeleton first, behavior second, polish third. Confusing those steps is how “simple panel” becomes “legacy panel” before lunch.
+1. **Inventory current ownership in `Bar.qml`.** Done in `docs/bar-ownership-map.md`; keep it current or future Adam gets to cosplay as an archaeologist again.
+2. **Split `Upchecker` first.** Done: `modules/bar/features/upchecker/Upchecker.qml` owns service and lazy panel wiring.
+3. **Split `Power` second.** Done: `modules/bar/features/power/Power.qml` owns service and lazy panel wiring.
+4. **Leave small anchored popups alone.** Calendar, MPRIS popup, network panel, and shared tooltips can stay visible-toggled until there is real pain.
+5. **Create one large feature skeleton.** Dashboard exists as the first top-level surface; do not turn that into a framework audition unless the repetition earns it.
 
 After the first split works, repeat the same pattern. Do not invent a generic feature framework until at least three features have repeated the same shape and the duplication is boring enough to deserve extraction.
 
@@ -655,9 +655,9 @@ Qreep currently has:
 - a MonitorProfile pill that watches runtime JSON, sorts monitors by position, and shows internal/external display icons plus a plain tooltip;
 - an MPRIS pill in the center slot with current playback state, track columns, animated notes, preview tooltip, and right-click player popup;
 - one shared popup tooltip with delayed show/hide and scale animations;
-- a full-height power layer panel with its own `qreep-popup-power` namespace, themed system icons, outside-click/Escape dismissal, margin, and rounded sidebar;
+- a Power feature controller in `modules/bar/features/power/Power.qml` that owns `PowerService` and lazy-loads the full-height `qreep-popup-power` panel;
 - confirmed power actions wired through `modules/bar/features/power/PowerService.qml`;
-- an Upchecker button and standalone `qreep-popup-upchecker` layer panel;
+- an Upchecker feature controller in `modules/bar/features/upchecker/Upchecker.qml` that owns `UpcheckerService` and lazy-loads the standalone `qreep-popup-upchecker` panel;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
@@ -696,11 +696,11 @@ Current pickup point:
 
 ## Suggested next five steps
 
-1. **Document the current `Bar.qml` ownership map in the repo docs.** List services, small anchored modules, anchored popups, standalone layer panels, and shell-level modules. This is boring and therefore suspiciously useful.
-2. **Refactor `Upchecker` into a feature controller.** Add `modules/bar/features/upchecker/Upchecker.qml` as the `Scope` entry point, keep `UpcheckerService` always available for IPC, and move `UpcheckerPanel` creation behind a loader/lazy loader without changing existing click or IPC behavior.
-3. **Refactor `Power` the same way.** Keep `PowerService` clear and boring; let a controller own `PowerButton`/`PowerPanel` wiring if that reduces `Bar.qml` ownership without breaking Escape/outside-click dismissal.
-4. **Review whether `MPRIS` deserves a controller.** It already has a service, button, tooltip, panel, and controls. It is not urgent, but it is large enough to be watched before it starts wearing a little crown.
-5. **Create one planned large feature skeleton.** Prefer `Dashboard`/`Aegis` for system overview, `Wallpaper` for theme/wallpaper workflow, or `Clipboard` for daily utility. Pick one. One is plenty. The first version should be a useful surface, not a framework audition.
+1. **Review whether `MPRIS` deserves a controller.** It already has a service, button, tooltip, panel, and controls. It is not urgent, but it is large enough to be watched before it starts wearing a little crown.
+2. **Decide whether `network`, `monitorprofile`, `launcher`, and `power` should join runtime pill state.** Network and MonitorProfile are plausible. Launcher and Power should be deliberate choices, not accidents with icons.
+3. **Keep the ownership map current.** The map is only useful if it tells the truth, which is apparently a demanding requirement.
+4. **Improve runtime pill ergonomics if the IPC commands feel clunky in scripts.** Do not add persistence yet; runtime behavior is still earning its shape.
+5. **Create or refine one planned large feature surface.** Dashboard exists; Wallpaper or Clipboard can wait until there is a real daily workflow to justify them.
 
 Keep these steps independent and reviewable. Qreep has enough moving pieces now that “one tiny cleanup while here” can reproduce when left unattended.
 

@@ -40,7 +40,7 @@ popups, or panels:
 
 | Service | Consumers | Current shape |
 | --- | --- | --- |
-| `PowerService` | `PowerButton`, `PowerPanel` | Service plus standalone layer panel. Good controller candidate. |
+| `Power` | `PowerButton`, `PowerPanel` | Feature controller owns the service and lazy standalone layer panel. |
 | `MonitorProfileService` | `MonitorProfileButton` | Small button/service pair. Leave alone until it grows teeth. |
 | `MprisService` | `MprisButton`, `MprisTooltip`, `MprisPanel` | Larger anchored feature with button, tooltip, and panel. Watch it. |
 | `LauncherService` | `LauncherButton` | Small command launcher button. Fine where it is. |
@@ -129,12 +129,12 @@ The bar directly hosts these standalone layer panels:
 
 | Surface | Namespace | Current issue |
 | --- | --- | --- |
-| `PowerPanel` | `qreep-popup-power` | Full-height layer panel owned by `Bar.qml`. Should move behind a `Power.qml` controller after Upchecker. |
+| `PowerPanel` | `qreep-popup-power` | Full-height layer panel owned by `Power.qml` behind a `LazyLoader`. |
 | `UpcheckerPanel` | `qreep-popup-upchecker` | Standalone update panel owned by `Upchecker.qml` behind a `LazyLoader`. |
 
 These are the main reason this document exists. `Bar.qml` should route to these
-features, not personally hold the furniture. Upchecker has started behaving;
-Power is still standing in the hallway.
+features, not personally hold the furniture. Upchecker and Power have started
+behaving. Suspicious, but useful.
 
 ## Shell-Level Modules
 
@@ -151,8 +151,8 @@ This is the right direction for surfaces that are not naturally bar-owned.
 
 Recommended order:
 
-1. Move `PowerPanel` ownership behind `modules/bar/features/power/Power.qml`.
-2. Revisit `Mpris` only if the panel/tooltip/service wiring keeps expanding.
+1. Revisit `Mpris` only if the panel/tooltip/service wiring keeps expanding.
+2. Decide whether `network`, `monitorprofile`, `launcher`, and `power` should join runtime pill state or stay normal-mode-only for now.
 3. Leave small anchored popups alone until there is real pain.
 
 Keep each split as one reviewable unit. No renaming festival. No opportunistic

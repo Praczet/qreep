@@ -8,6 +8,7 @@ an accidental reboot because a pointer had opinions.
 
 ## Files
 
+* `Power.qml` - feature controller, service owner, and lazy panel host.
 * `PowerButton.qml` - bar button.
 * `PowerPanel.qml` - standalone layer panel with namespace `qreep-popup-power`.
 * `PowerService.qml` - executes system commands.
@@ -23,8 +24,10 @@ commands in `PowerService.qml`.
 
 ## Wiring
 
-`modules/bar/Bar.qml` creates `PowerService`, hosts `PowerButton`, and hosts
-`PowerPanel`.
+`modules/bar/Bar.qml` creates `Power`, passes `power.service` to `PowerButton`,
+and asks the controller to toggle the panel. The controller keeps `PowerService`
+always alive and creates `PowerPanel` through a `LazyLoader` only while the panel
+is open.
 
 Note: This is a bar-owned feature. Sources live under `modules/bar/features/power/`.
 
