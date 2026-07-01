@@ -212,35 +212,46 @@ PanelWindow {
                 bottomMargin: rootClipboardPanel.theme.modules.clipboard.panelPadding
             }
             model: rootClipboardPanel.service.filteredEntries
-            cellWidth: rootClipboardPanel.theme.modules.clipboard.cardWidth + rootClipboardPanel.theme.modules.clipboard.cardGap + 12
-            cellHeight: rootClipboardPanel.theme.modules.clipboard.cardHeight + rootClipboardPanel.theme.modules.clipboard.cardGap + 12
+            // Extra room for selected-card scale and shadow.
+            cellWidth: rootClipboardPanel.theme.modules.clipboard.cardWidth + rootClipboardPanel.theme.modules.clipboard.cardGap + 24
+            cellHeight: rootClipboardPanel.theme.modules.clipboard.cardHeight + rootClipboardPanel.theme.modules.clipboard.cardGap + 24
             currentIndex: rootClipboardPanel.service.selectedIndex
             clip: true
             boundsBehavior: Flickable.StopAtBounds
 
             onCurrentIndexChanged: rootClipboardPanel.service.setSelection(currentIndex)
 
-            delegate: ClipboardCard {
+            delegate: Item {
                 required property var modelData
                 required property int index
 
-                theme: rootClipboardPanel.theme
-                entry: modelData
-                selected: rootClipboardPanel.service.selectedIndex === index
+                width: grid.cellWidth
+                height: grid.cellHeight
+                z: rootClipboardPanel.service.selectedIndex === index ? 20 : 0
 
-                onClicked: {
-                    rootClipboardPanel.service.setSelection(index);
-                    rootClipboardPanel.restoreRequested(index);
-                }
+                ClipboardCard {
+                    id: card
 
-                onStarRequested: {
-                    rootClipboardPanel.service.setSelection(index);
-                    rootClipboardPanel.service.toggleStar(index);
-                }
+                    anchors.centerIn: parent
 
-                onDeleteRequested: {
-                    rootClipboardPanel.service.setSelection(index);
-                    rootClipboardPanel.service.deleteEntry(index);
+                    theme: rootClipboardPanel.theme
+                    entry: modelData
+                    selected: rootClipboardPanel.service.selectedIndex === index
+
+                    onClicked: {
+                        rootClipboardPanel.service.setSelection(index);
+                        rootClipboardPanel.restoreRequested(index);
+                    }
+
+                    onStarRequested: {
+                        rootClipboardPanel.service.setSelection(index);
+                        rootClipboardPanel.service.toggleStar(index);
+                    }
+
+                    onDeleteRequested: {
+                        rootClipboardPanel.service.setSelection(index);
+                        rootClipboardPanel.service.deleteEntry(index);
+                    }
                 }
             }
 
