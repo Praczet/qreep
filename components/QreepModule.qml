@@ -7,6 +7,8 @@ Rectangle {
     default property alias content: contentContainer.data
     property alias overlay: overlayContainer.data
     readonly property bool hovered: moduleHoverHandler.hovered
+    property bool collapsedPill: false
+    readonly property bool expandedPill: !collapsedPill || hovered
     property string tooltipTitle
     property string tooltipContent
     property string tooltipStyle: "normal"
@@ -25,9 +27,13 @@ Rectangle {
     }
 
     implicitWidth: contentContainer.implicitWidth + theme.modules.bar.pill.horizontalPadding
-    implicitHeight: theme.modules.bar.pill.height
-    radius: theme.modules.bar.pill.radius
+    implicitHeight: expandedPill ? theme.modules.bar.pill.height : theme.modules.bar.collapsedHeight
+    topLeftRadius: expandedPill ? theme.modules.bar.pill.radius : 0
+    topRightRadius: expandedPill ? theme.modules.bar.pill.radius : 0
+    bottomLeftRadius: expandedPill ? theme.modules.bar.pill.radius : theme.modules.bar.pill.collapsedRadius
+    bottomRightRadius: expandedPill ? theme.modules.bar.pill.radius : theme.modules.bar.pill.collapsedRadius
     color: moduleHoverHandler.hovered ? theme.modules.bar.pill.hoverBackgroundColor : theme.modules.bar.pill.backgroundColor
+    clip: collapsedPill && !expandedPill
 
     Item {
         id: contentContainer
@@ -35,12 +41,28 @@ Rectangle {
         anchors.centerIn: parent
         implicitWidth: childrenRect.width
         implicitHeight: childrenRect.height
+        opacity: rootQreepModule.expandedPill ? 1 : 0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: rootQreepModule.expandedPill ? rootQreepModule.theme.modules.bar.pill.expandDuration : rootQreepModule.theme.modules.bar.pill.collapseDuration
+                easing.type: rootQreepModule.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+            }
+        }
     }
 
     Item {
         id: overlayContainer
 
         anchors.fill: parent
+        opacity: rootQreepModule.expandedPill ? 1 : 0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: rootQreepModule.expandedPill ? rootQreepModule.theme.modules.bar.pill.expandDuration : rootQreepModule.theme.modules.bar.pill.collapseDuration
+                easing.type: rootQreepModule.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+            }
+        }
     }
 
     HoverHandler {
@@ -64,4 +86,40 @@ Rectangle {
             duration: rootQreepModule.theme.animationFastDuration
         }
     }
+
+    Behavior on implicitHeight {
+        NumberAnimation {
+            duration: rootQreepModule.expandedPill ? rootQreepModule.theme.modules.bar.pill.expandDuration : rootQreepModule.theme.modules.bar.pill.collapseDuration
+            easing.type: rootQreepModule.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
+    Behavior on topLeftRadius {
+        NumberAnimation {
+            duration: rootQreepModule.expandedPill ? rootQreepModule.theme.modules.bar.pill.expandDuration : rootQreepModule.theme.modules.bar.pill.collapseDuration
+            easing.type: rootQreepModule.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
+    Behavior on topRightRadius {
+        NumberAnimation {
+            duration: rootQreepModule.expandedPill ? rootQreepModule.theme.modules.bar.pill.expandDuration : rootQreepModule.theme.modules.bar.pill.collapseDuration
+            easing.type: rootQreepModule.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
+    Behavior on bottomLeftRadius {
+        NumberAnimation {
+            duration: rootQreepModule.expandedPill ? rootQreepModule.theme.modules.bar.pill.expandDuration : rootQreepModule.theme.modules.bar.pill.collapseDuration
+            easing.type: rootQreepModule.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
+    Behavior on bottomRightRadius {
+        NumberAnimation {
+            duration: rootQreepModule.expandedPill ? rootQreepModule.theme.modules.bar.pill.expandDuration : rootQreepModule.theme.modules.bar.pill.collapseDuration
+            easing.type: rootQreepModule.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
 }

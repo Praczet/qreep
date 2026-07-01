@@ -13,6 +13,9 @@ QtObject {
 
     readonly property int height: 48
     readonly property int radius: 20
+    readonly property int collapsedRadius: 8
+    readonly property int expandDuration: 140
+    readonly property int collapseDuration: 220
     readonly property int horizontalPadding: 20
     readonly property int spacing: 8
 }

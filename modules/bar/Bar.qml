@@ -26,12 +26,10 @@ PanelWindow {
     property alias overlayItems: overlayLayer.data
     readonly property bool collapsed: barModeService.collapsed
     readonly property bool reservedMode: barModeService.reserved
-    readonly property bool visiblePinnedPillActive: collapsed && ((barPillStateService.isVisible("workspaces") && barPillStateService.isPinned("workspaces")) || (barPillStateService.isVisible("clock") && barPillStateService.isPinned("clock")))
-    readonly property bool compactCollapsed: collapsed && !visiblePinnedPillActive
-    readonly property int activeBarHeight: compactCollapsed ? rootBar.theme.modules.bar.collapsedHeight : rootBar.theme.modules.bar.height
+    readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
-    readonly property bool leftSlotActive: !collapsed || barPillStateService.isPinned("workspaces")
-    readonly property bool centerSlotActive: !collapsed || barPillStateService.isPinned("clock")
+    readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
+    readonly property bool centerSlotActive: rootBar.pillSlotActive("clock")
     readonly property bool rightSlotActive: !collapsed
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
@@ -59,6 +57,8 @@ PanelWindow {
 
     BarPillStateService {
         id: barPillStateService
+
+        knownPills: ["clock", "workspaces"]
     }
 
     PowerFeature.PowerService {
@@ -102,8 +102,24 @@ PanelWindow {
         audioMixerRunner.startDetached();
     }
 
-    function pillVisible(id) {
-        return barPillStateService.isVisible(id) && (!rootBar.collapsed || barPillStateService.isPinned(id));
+    function pillEnabled(id) {
+        return barPillStateService.isVisible(id);
+    }
+
+    function pillPinned(id) {
+        return barPillStateService.isPinned(id);
+    }
+
+    function pillCollapsed(id) {
+        return rootBar.collapsed && pillEnabled(id) && !pillPinned(id);
+    }
+
+    function pillSlotActive(id) {
+        return !rootBar.collapsed || pillEnabled(id);
+    }
+
+    function slotY(slot) {
+        return rootBar.collapsed ? 0 : Math.max(0, (slot.parent.height - slot.height) / 2);
     }
 
     WorkspacesFeature.WorkspaceService {
@@ -128,15 +144,11 @@ PanelWindow {
         backupStatusBackend: rootBar.theme.modules.bar.borg.backupStatusBackend
     }
 
-    UpcheckerFeature.UpcheckerService {
-        id: upcheckerService
+    UpcheckerFeature.Upchecker {
+        id: upchecker
+
+        theme: rootBar.theme
         log: qreepLog
-        updateTerminalCommand: rootBar.theme.modules.bar.upchecker.updateTerminalCommand
-        updateCommand: rootBar.theme.modules.bar.upchecker.updateCommand
-        restartCheckCommand: rootBar.theme.modules.bar.upchecker.restartCheckCommand
-        restartCheckTimezone: rootBar.theme.modules.bar.upchecker.restartCheckTimezone
-        restartSessionPackages: rootBar.theme.modules.bar.upchecker.restartSessionPackages
-        restartRebootPackages: rootBar.theme.modules.bar.upchecker.restartRebootPackages
     }
 
     anchors {
@@ -147,6 +159,19 @@ PanelWindow {
 
     implicitHeight: rootBar.activeBarHeight + rootBar.activeTopPadding
     color: "transparent"
+    mask: Region {
+        regions: [
+            Region {
+                item: leftSlotMask
+            },
+            Region {
+                item: centerSlotMask
+            },
+            Region {
+                item: rightSlotMask
+            }
+        ]
+    }
 
     WlrLayershell.namespace: "qreep-bar"
     WlrLayershell.exclusiveZone: rootBar.reservedMode ? rootBar.implicitHeight : 0
@@ -160,24 +185,16 @@ PanelWindow {
             rightMargin: rootBar.theme.modules.bar.horizontalPadding
         }
         height: rootBar.activeBarHeight
-        radius: rootBar.compactCollapsed ? 0 : rootBar.theme.modules.bar.backgroundRadius
+        radius: rootBar.theme.modules.bar.backgroundRadius
         color: rootBar.theme.modules.bar.backgroundColor
-        clip: rootBar.compactCollapsed
-
-        Behavior on height {
-            NumberAnimation {
-                duration: rootBar.theme.animationFastDuration
-                easing.type: Easing.OutCubic
-            }
-        }
 
         Row {
             id: leftSlot
             anchors {
                 left: parent.left
-                verticalCenter: parent.verticalCenter
                 leftMargin: rootBar.theme.modules.bar.sideMargin
             }
+            y: rootBar.slotY(leftSlot)
             spacing: rootBar.theme.modules.bar.itemSpacing
             scale: rootBar.leftSlotActive ? 1 : 0.01
             opacity: rootBar.leftSlotActive ? 1 : 0
@@ -198,7 +215,8 @@ PanelWindow {
             WorkspacesFeature.Workspaces {
                 id: workspaces
 
-                visible: rootBar.pillVisible("workspaces")
+                visible: rootBar.pillEnabled("workspaces")
+                collapsedPill: rootBar.pillCollapsed("workspaces")
                 theme: rootBar.theme
                 service: workspaceService
 
@@ -214,7 +232,8 @@ PanelWindow {
         Row {
             id: centerSlot
 
-            anchors.centerIn: parent
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: rootBar.slotY(centerSlot)
             spacing: rootBar.theme.modules.bar.itemSpacing
             scale: rootBar.centerSlotActive ? 1 : 0.01
             opacity: rootBar.centerSlotActive ? 1 : 0
@@ -222,7 +241,8 @@ PanelWindow {
             ClockFeature.Clock {
                 id: clock
 
-                visible: rootBar.pillVisible("clock")
+                visible: rootBar.pillEnabled("clock")
+                collapsedPill: rootBar.pillCollapsed("clock")
                 theme: rootBar.theme
                 events: eventStore
 
@@ -272,10 +292,10 @@ PanelWindow {
                 id: upcheckerButton
 
                 theme: rootBar.theme
-                service: upcheckerService
+                service: upchecker.service
 
                 onClicked: {
-                    upcheckerPanel.visible = !upcheckerPanel.visible;
+                    upchecker.toggle();
                     sharedTooltip.hideLater();
                 }
                 onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
@@ -383,6 +403,36 @@ PanelWindow {
         }
 
         Item {
+            id: leftSlotMask
+
+            x: leftSlot.x
+            y: leftSlot.y
+            width: rootBar.leftSlotActive ? leftSlot.width : 0
+            height: rootBar.leftSlotActive ? leftSlot.height : 0
+            visible: width > 0 && height > 0
+        }
+
+        Item {
+            id: centerSlotMask
+
+            x: centerSlot.x
+            y: centerSlot.y
+            width: rootBar.centerSlotActive ? centerSlot.width : 0
+            height: rootBar.centerSlotActive ? centerSlot.height : 0
+            visible: width > 0 && height > 0
+        }
+
+        Item {
+            id: rightSlotMask
+
+            x: rightSlot.x
+            y: rightSlot.y
+            width: rootBar.rightSlotActive ? rightSlot.width : 0
+            height: rootBar.rightSlotActive ? rightSlot.height : 0
+            visible: width > 0 && height > 0
+        }
+
+        Item {
             id: overlayLayer
 
             anchors.fill: parent
@@ -432,13 +482,6 @@ PanelWindow {
             onActionRequested: action => powerService.request(action)
         }
 
-        UpcheckerFeature.UpcheckerPanel {
-            id: upcheckerPanel
-
-            theme: rootBar.theme
-            service: upcheckerService
-        }
-
         MprisFeature.MprisPanel {
             id: mprisPanel
 
@@ -456,17 +499,13 @@ PanelWindow {
         }
 
         Connections {
-            target: upcheckerService
+            target: upchecker.service
 
             function onToggleRequested() {
-                upcheckerPanel.visible = !upcheckerPanel.visible;
                 sharedTooltip.hideLater();
             }
-
-            function onUpdateRequested() {
-                upcheckerPanel.visible = false;
-            }
         }
+
         Connections {
             target: powerService
 
@@ -496,13 +535,6 @@ PanelWindow {
 
                 sharedTooltip.hideLater();
             }
-        }
-    }
-
-    Behavior on implicitHeight {
-        NumberAnimation {
-            duration: rootBar.theme.animationFastDuration
-            easing.type: Easing.OutCubic
         }
     }
 }

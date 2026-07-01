@@ -18,7 +18,7 @@ QtObject {
     required property QtObject qreep
 
     readonly property int height: 48
-    readonly property int collapsedHeight: 4
+    readonly property int collapsedHeight: 15
     readonly property int horizontalPadding: 8
     readonly property int topPadding: 15
     readonly property int backgroundRadius: 0

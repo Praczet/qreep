@@ -40,13 +40,17 @@ Current bar-owned feature folders:
 
 ```text
 modules/bar/features/
+├── battery/
 ├── borg/
 ├── clock/
+├── launcher/
 ├── monitorprofile/
 ├── mpris/
-├── osd/
+├── network/
 ├── power/
-└── upchecker/
+├── upchecker/
+├── volume/
+└── workspaces/
 ```
 
 ## Bar
@@ -59,6 +63,11 @@ It owns:
 * shared services used by bar modules;
 * shared tooltip surfaces;
 * feature panels/popups that are opened from bar buttons.
+
+The detailed ownership map lives in
+[`docs/bar-ownership-map.md`](docs/bar-ownership-map.md). Read that before
+moving feature surfaces around. It is cheaper than guessing, which remains a
+popular but poorly reviewed debugging strategy.
 
 The bar layer namespace is:
 
@@ -150,6 +159,23 @@ quickshell ipc call qreep-upchecker toggle
 quickshell ipc call qreep-monitor-profile refresh
 quickshell ipc call osd showMessage "Hello from the questionable future" 3000
 ```
+
+Pill state commands use two separate ideas:
+
+```bash
+quickshell ipc call qreep-bar-pill showPill clock      # add pill to the bar
+quickshell ipc call qreep-bar-pill hidePill clock      # remove pill from the bar
+quickshell ipc call qreep-bar-pill pin clock           # full-size in collapsed mode
+quickshell ipc call qreep-bar-pill unpin clock         # collapsed strip in collapsed mode
+quickshell ipc call qreep-bar-pill listPills           # list known pill state
+```
+
+So in collapsed mode, `showPill` makes the pill present, and `pin` makes it
+full-size. Separate switches. Fewer surprise side effects, which is a lifestyle
+choice.
+
+Current known runtime pills are `clock` and `workspaces`. Unknown pill IDs return
+an error instead of inventing state for `banana`, which is growth.
 
 Some Quickshell versions vary slightly in CLI syntax. If this bites, check:
 

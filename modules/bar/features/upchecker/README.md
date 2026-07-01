@@ -9,14 +9,15 @@ configured update command.
 ## Files
 
 * `UpcheckerButton.qml` - bar button.
+* `Upchecker.qml` - feature controller, service owner, and lazy panel host.
 * `UpcheckerPanel.qml` - standalone layer panel.
 * `UpcheckerService.qml` - update/restart checks, package details, commands.
 * `UpcheckerTheme.qml` - panel layout, command names, and visual tokens.
 
 ## Where To Change Things
 
-Change commands and restart package groups in `UpcheckerTheme.qml` or the
-matching service properties passed from `Bar.qml`.
+Change commands and restart package groups in `UpcheckerTheme.qml`. The
+controller passes those theme values into `UpcheckerService`.
 
 Change package parsing, restart logic, caching, and IPC in
 `UpcheckerService.qml`. Change panel layout and filter behavior in
@@ -24,8 +25,10 @@ Change package parsing, restart logic, caching, and IPC in
 
 ## Wiring
 
-`modules/bar/Bar.qml` creates `UpcheckerService`, passes it to `UpcheckerButton`, and
-hosts `UpcheckerPanel`.
+`modules/bar/Bar.qml` creates `Upchecker`, passes `upchecker.service` to
+`UpcheckerButton`, and asks the controller to toggle the panel. The controller
+keeps `UpcheckerService` always alive and creates `UpcheckerPanel` through a
+`LazyLoader` only while the panel is open.
 
 Note: This is a bar-owned feature. Sources live under `modules/bar/features/upchecker/`.
 

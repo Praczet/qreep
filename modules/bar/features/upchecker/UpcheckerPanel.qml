@@ -8,6 +8,7 @@ PanelWindow {
 
     required property QtObject theme
     required property QtObject service
+    property bool panelOpen: false
     property string filterText: ""
     property bool filterVisible: false
     readonly property string normalizedFilterText: filterText.trim()
@@ -17,6 +18,8 @@ PanelWindow {
     readonly property var filteredUpdates: filteredUpdateList()
     readonly property int panelWidth: Math.max(1, Math.min(theme.modules.bar.upchecker.windowWidth, width - theme.modules.bar.upchecker.screenMargin * 2))
     readonly property int panelHeight: Math.max(1, height - theme.modules.bar.upchecker.topMargin - theme.modules.bar.upchecker.bottomMargin)
+
+    signal closeRequested
 
     function listPreview(values) {
         if (!Array.isArray(values) || values.length === 0)
@@ -112,7 +115,7 @@ PanelWindow {
             return;
         }
 
-        visible = false;
+        closeRequested();
     }
 
     function handlePanelKey(event) {
@@ -145,7 +148,7 @@ PanelWindow {
         right: true
     }
 
-    visible: false
+    visible: rootUpcheckerPanel.panelOpen
     color: "transparent"
 
     WlrLayershell.namespace: "qreep-popup-upchecker"
@@ -155,7 +158,6 @@ PanelWindow {
 
     onVisibleChanged: {
         if (visible) {
-            service.refresh();
             background.forceActiveFocus();
         } else {
             filterVisible = false;
@@ -187,7 +189,7 @@ PanelWindow {
                 const insidePanel = clickX >= panel.x && clickX <= panel.x + panel.width && clickY >= panel.y && clickY <= panel.y + panel.height;
 
                 if (!insidePanel)
-                    rootUpcheckerPanel.visible = false;
+                    rootUpcheckerPanel.closeRequested();
             }
         }
 

@@ -4,6 +4,7 @@ import Quickshell.Io
 QtObject {
     id: rootBarPillStateService
 
+    property var knownPills: []
     property var hiddenPills: ({})
     property var pinnedPills: ({})
 
@@ -39,14 +40,20 @@ QtObject {
         function state(id: string): string {
             return rootBarPillStateService.state(id);
         }
+
+        function listPills(): string {
+            return rootBarPillStateService.listPills();
+        }
     }
 
     function isVisible(id) {
-        return !hiddenPills[normalizeId(id)];
+        const normalized = normalizeId(id);
+        return isKnownPill(normalized) && !hiddenPills[normalized];
     }
 
     function isPinned(id) {
-        return !!pinnedPills[normalizeId(id)];
+        const normalized = normalizeId(id);
+        return isKnownPill(normalized) && !!pinnedPills[normalized];
     }
 
     function show(id) {
@@ -54,6 +61,9 @@ QtObject {
 
         if (normalized.length === 0)
             return "";
+
+        if (!isKnownPill(normalized))
+            return unknownPillMessage(normalized);
 
         setFlag("hidden", normalized, false);
         return state(normalized);
@@ -65,6 +75,9 @@ QtObject {
         if (normalized.length === 0)
             return "";
 
+        if (!isKnownPill(normalized))
+            return unknownPillMessage(normalized);
+
         setFlag("hidden", normalized, true);
         return state(normalized);
     }
@@ -74,6 +87,9 @@ QtObject {
 
         if (normalized.length === 0)
             return "";
+
+        if (!isKnownPill(normalized))
+            return unknownPillMessage(normalized);
 
         setFlag("hidden", normalized, !hiddenPills[normalized]);
         return state(normalized);
@@ -85,6 +101,9 @@ QtObject {
         if (normalized.length === 0)
             return "";
 
+        if (!isKnownPill(normalized))
+            return unknownPillMessage(normalized);
+
         setFlag("pinned", normalized, true);
         return state(normalized);
     }
@@ -94,6 +113,9 @@ QtObject {
 
         if (normalized.length === 0)
             return "";
+
+        if (!isKnownPill(normalized))
+            return unknownPillMessage(normalized);
 
         setFlag("pinned", normalized, false);
         return state(normalized);
@@ -105,6 +127,9 @@ QtObject {
         if (normalized.length === 0)
             return "";
 
+        if (!isKnownPill(normalized))
+            return unknownPillMessage(normalized);
+
         setFlag("pinned", normalized, !pinnedPills[normalized]);
         return state(normalized);
     }
@@ -115,7 +140,23 @@ QtObject {
         if (normalized.length === 0)
             return "";
 
+        if (!isKnownPill(normalized))
+            return unknownPillMessage(normalized);
+
         return normalized + " visible=" + isVisible(normalized) + " pinned=" + isPinned(normalized);
+    }
+
+    function listPills() {
+        const rows = [];
+
+        for (let index = 0; index < knownPills.length; index++) {
+            const id = normalizeId(knownPills[index]);
+
+            if (id.length > 0)
+                rows.push(state(id));
+        }
+
+        return rows.join("\n");
     }
 
     function setFlag(kind, id, enabled) {
@@ -146,5 +187,33 @@ QtObject {
 
     function normalizeId(id) {
         return String(id || "").trim().toLowerCase();
+    }
+
+    function isKnownPill(id) {
+        const normalized = normalizeId(id);
+
+        for (let index = 0; index < knownPills.length; index++) {
+            if (normalizeId(knownPills[index]) === normalized)
+                return true;
+        }
+
+        return false;
+    }
+
+    function knownPillList() {
+        const ids = [];
+
+        for (let index = 0; index < knownPills.length; index++) {
+            const id = normalizeId(knownPills[index]);
+
+            if (id.length > 0)
+                ids.push(id);
+        }
+
+        return ids.join(", ");
+    }
+
+    function unknownPillMessage(id) {
+        return "unknown pill: " + id + " (known: " + knownPillList() + ")";
     }
 }

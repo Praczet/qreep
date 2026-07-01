@@ -1,0 +1,159 @@
+# Bar Ownership Map
+
+This is the current ownership map for `modules/bar/Bar.qml`. It is a snapshot,
+not a constitution. Update it when ownership moves, or future Adam gets to
+practice archaeology again.
+
+## Bar Surface
+
+`Bar.qml` is still the visible top bar and owns the layer-shell surface:
+
+```qml
+WlrLayershell.namespace: "qreep-bar"
+```
+
+It also owns the slot layout:
+
+- left slot;
+- center slot;
+- right slot;
+- overlay layer;
+- collapsed/reserved/overlay height and exclusive-zone behavior.
+
+That part belongs in the bar. The bar is allowed to be the bar. Brave stance.
+
+## Bar State
+
+The bar directly creates these bar-level state objects:
+
+| Object | Kind | Notes |
+| --- | --- | --- |
+| `BarModeService` | bar mode service | Owns reserved, overlay, and collapsed runtime mode state. |
+| `BarPillStateService` | pill state service | Owns runtime pill add/remove state and collapsed-mode pinning for `clock` and `workspaces`. |
+| `Core.Log` | shared support service | Used by bar-owned services for logging and notifications. |
+| `ClockFeature.EventStore` | shared feature data | Loaded for the clock and calendar. This is currently bar-owned because both consumers live in the bar. |
+
+## Feature Services
+
+The bar directly creates these feature services and passes them into buttons,
+popups, or panels:
+
+| Service | Consumers | Current shape |
+| --- | --- | --- |
+| `PowerService` | `PowerButton`, `PowerPanel` | Service plus standalone layer panel. Good controller candidate. |
+| `MonitorProfileService` | `MonitorProfileButton` | Small button/service pair. Leave alone until it grows teeth. |
+| `MprisService` | `MprisButton`, `MprisTooltip`, `MprisPanel` | Larger anchored feature with button, tooltip, and panel. Watch it. |
+| `LauncherService` | `LauncherButton` | Small command launcher button. Fine where it is. |
+| `BatteryService` | `BatteryButton` | Small status pill. Fine where it is. |
+| `NetworkService` | `NetworkButton`, `NetworkPanel` | Anchored button plus panel. Not as urgent as the full layer panels. |
+| `Core.SoundService` | `VolumeButton`, OSD signal bridge | Shared audio service plus bar button and OSD signal. Keep the shell bridge explicit. |
+| `WorkspaceService` | `Workspaces`, `WorkspaceClients` | Bar-owned workspace pill plus anchored client popup. |
+| `BorgService` | `Borg`, `BorgTooltip` | Bar-owned status pill plus tooltip and actions. |
+| `Upchecker` | `UpcheckerButton`, `UpcheckerPanel` | Feature controller owns the service and lazy standalone layer panel. First split done; suspiciously civilized. |
+
+## Small Bar Controls
+
+These visual controls are created directly in bar slots and are currently fine
+as bar-owned objects:
+
+| Slot | Object | Behavior |
+| --- | --- | --- |
+| Left | `LauncherButton` | Click launches the configured launcher. |
+| Left | `Workspaces` | Runtime pill visibility/pinning; shows workspace client popup. |
+| Center | `Clock` | Runtime pill visibility/pinning; right-click opens calendar. |
+| Center | `MprisButton` | Click toggles playback; right-click opens player panel. |
+| Right | `UpcheckerButton` | Click asks the `Upchecker` controller to toggle the update panel. |
+| Right | `MonitorProfileButton` | Shows monitor profile state. Apply-next is intentionally commented out. |
+| Right | `Borg` | Click refreshes, right-click runs backup. |
+| Right | `BatteryButton` | Shows battery state. |
+| Right | `NetworkButton` | Click toggles network panel. |
+| Right | `VolumeButton` | Click toggles mute, right-click opens `pavucontrol`, scroll adjusts volume. |
+| Right | `PowerButton` | Click toggles power panel. |
+
+Small controls can stay in `Bar.qml` until they need their own controller.
+The crime is not a button in a bar. The crime is making the bar remember every
+full-screen panel's childhood.
+
+## Runtime Pill State
+
+Runtime pill state has two independent flags:
+
+| Flag | IPC | Meaning |
+| --- | --- | --- |
+| enabled | `showPill` / `hidePill` / `togglePill` | Adds or removes the pill from the bar. |
+| pinned | `pin` / `unpin` / `togglePinned` | In collapsed mode, shows the pill full-size instead of as a collapsed strip. |
+
+Current behavior:
+
+| Bar mode | Enabled | Pinned | Result |
+| --- | --- | --- | --- |
+| reserved / overlay | false | any | Pill is absent. |
+| reserved / overlay | true | any | Pill is full-size. |
+| collapsed | false | any | Pill is absent. |
+| collapsed | true | false | Pill is a collapsed strip. |
+| collapsed | true | true | Pill is full-size. |
+
+Do not make `showPill` auto-pin. That sounds helpful for about four minutes,
+then the state model starts wearing a false mustache.
+
+`Bar.qml` currently registers known runtime pill IDs with
+`BarPillStateService`:
+
+```qml
+knownPills: ["clock", "workspaces"]
+```
+
+Unknown pill IDs return an error. `listPills` returns the current state for all
+known pills.
+
+## Anchored Popups And Tooltips
+
+The bar directly hosts these anchored or lightweight surfaces:
+
+| Surface | Anchor / owner | Notes |
+| --- | --- | --- |
+| `SharedTooltip` | shared | Generic delayed tooltip surface. |
+| `BorgTooltip` | `Borg` | Feature-specific structured tooltip. |
+| `MprisTooltip` | `MprisButton` | Feature-specific preview tooltip. |
+| `WorkspaceClients` | `Workspaces` | Anchored client list popup. |
+| `CalendarPopup` | `Clock` | Anchored calendar popup. |
+| `MprisPanel` | `MprisButton` | Anchored player panel. Larger than a tooltip, but still button-owned for now. |
+| `NetworkPanel` | `NetworkButton` | Anchored network panel. |
+
+These can remain visible-toggled for now. Destroying and recreating them would
+mostly add ceremony and bugs, a classic two-for-one.
+
+## Standalone Layer Panels
+
+The bar directly hosts these standalone layer panels:
+
+| Surface | Namespace | Current issue |
+| --- | --- | --- |
+| `PowerPanel` | `qreep-popup-power` | Full-height layer panel owned by `Bar.qml`. Should move behind a `Power.qml` controller after Upchecker. |
+| `UpcheckerPanel` | `qreep-popup-upchecker` | Standalone update panel owned by `Upchecker.qml` behind a `LazyLoader`. |
+
+These are the main reason this document exists. `Bar.qml` should route to these
+features, not personally hold the furniture. Upchecker has started behaving;
+Power is still standing in the hallway.
+
+## Shell-Level Modules
+
+These are hosted by `shell.qml`, not `Bar.qml`:
+
+| Module | Reason |
+| --- | --- |
+| `modules/dashboard/Dashboard.qml` | Top-level dashboard surface with its own IPC and panel. |
+| `modules/osd/Osd.qml` | Shell-level OSD surface and IPC service. |
+
+This is the right direction for surfaces that are not naturally bar-owned.
+
+## Next Splits
+
+Recommended order:
+
+1. Move `PowerPanel` ownership behind `modules/bar/features/power/Power.qml`.
+2. Revisit `Mpris` only if the panel/tooltip/service wiring keeps expanding.
+3. Leave small anchored popups alone until there is real pain.
+
+Keep each split as one reviewable unit. No renaming festival. No opportunistic
+cleanup buffet. We have seen where that road goes.

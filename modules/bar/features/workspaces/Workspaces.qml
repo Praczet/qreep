@@ -5,21 +5,36 @@ Rectangle {
 
     required property QtObject theme
     required property QtObject service
+    property bool collapsedPill: false
+    readonly property bool hovered: workspaceHover.hovered
+    readonly property bool expandedPill: !collapsedPill || hovered
 
     signal tooltipShowRequested(Item anchorItem, string title, string content, string style)
     signal tooltipHideRequested
     signal workspaceTooltipShowRequested(Item anchorItem, var workspace)
 
     implicitWidth: workspaceRow.implicitWidth + theme.modules.bar.pill.horizontalPadding
-    implicitHeight: theme.modules.bar.pill.height
-    radius: theme.modules.bar.pill.radius
+    implicitHeight: expandedPill ? theme.modules.bar.pill.height : theme.modules.bar.collapsedHeight
+    topLeftRadius: expandedPill ? theme.modules.bar.pill.radius : 0
+    topRightRadius: expandedPill ? theme.modules.bar.pill.radius : 0
+    bottomLeftRadius: expandedPill ? theme.modules.bar.pill.radius : theme.modules.bar.pill.collapsedRadius
+    bottomRightRadius: expandedPill ? theme.modules.bar.pill.radius : theme.modules.bar.pill.collapsedRadius
     color: workspaceHover.hovered ? theme.modules.bar.moduleHoverBackgroundColor : theme.modules.bar.moduleBackgroundColor
+    clip: collapsedPill && !expandedPill
 
     Row {
         id: workspaceRow
 
         anchors.centerIn: parent
         spacing: rootWorkspaces.theme.modules.bar.workspaces.itemSpacing
+        opacity: rootWorkspaces.expandedPill ? 1 : 0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: rootWorkspaces.expandedPill ? rootWorkspaces.theme.modules.bar.pill.expandDuration : rootWorkspaces.theme.modules.bar.pill.collapseDuration
+                easing.type: rootWorkspaces.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+            }
+        }
 
         Repeater {
             model: rootWorkspaces.service.workspaceModel
@@ -176,4 +191,40 @@ Rectangle {
             duration: rootWorkspaces.theme.animationFastDuration
         }
     }
+
+    Behavior on implicitHeight {
+        NumberAnimation {
+            duration: rootWorkspaces.expandedPill ? rootWorkspaces.theme.modules.bar.pill.expandDuration : rootWorkspaces.theme.modules.bar.pill.collapseDuration
+            easing.type: rootWorkspaces.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
+    Behavior on topLeftRadius {
+        NumberAnimation {
+            duration: rootWorkspaces.expandedPill ? rootWorkspaces.theme.modules.bar.pill.expandDuration : rootWorkspaces.theme.modules.bar.pill.collapseDuration
+            easing.type: rootWorkspaces.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
+    Behavior on topRightRadius {
+        NumberAnimation {
+            duration: rootWorkspaces.expandedPill ? rootWorkspaces.theme.modules.bar.pill.expandDuration : rootWorkspaces.theme.modules.bar.pill.collapseDuration
+            easing.type: rootWorkspaces.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
+    Behavior on bottomLeftRadius {
+        NumberAnimation {
+            duration: rootWorkspaces.expandedPill ? rootWorkspaces.theme.modules.bar.pill.expandDuration : rootWorkspaces.theme.modules.bar.pill.collapseDuration
+            easing.type: rootWorkspaces.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
+    Behavior on bottomRightRadius {
+        NumberAnimation {
+            duration: rootWorkspaces.expandedPill ? rootWorkspaces.theme.modules.bar.pill.expandDuration : rootWorkspaces.theme.modules.bar.pill.collapseDuration
+            easing.type: rootWorkspaces.expandedPill ? Easing.OutCubic : Easing.InOutCubic
+        }
+    }
+
 }
