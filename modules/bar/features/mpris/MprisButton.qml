@@ -10,7 +10,7 @@ Components.QreepModule {
 
     tooltipTitle: rootMprisButton.service.tooltipTitle
     tooltipContent: ""
-    clip: false
+    clip: rootMprisButton.collapsedPill && !rootMprisButton.expandedPill
 
     Item {
         id: pillContent

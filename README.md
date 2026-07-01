@@ -174,8 +174,9 @@ So in collapsed mode, `enablePill` makes the pill present, and `expandPill`
 makes it full-size. Separate switches. Fewer surprise side effects, which is a
 lifestyle choice.
 
-Current known runtime pills are `clock` and `workspaces`. Unknown pill IDs return
-an error instead of inventing state for `banana`, which is growth.
+Current known runtime pills are `clock`, `workspaces`, `mpris`, `upchecker`,
+`borg`, `battery`, and `volume`. Unknown pill IDs return an error instead of
+inventing state for `banana`, which is growth.
 
 Some Quickshell versions vary slightly in CLI syntax. If this bites, check:
 

@@ -29,7 +29,7 @@ The bar directly creates these bar-level state objects:
 | Object | Kind | Notes |
 | --- | --- | --- |
 | `BarModeService` | bar mode service | Owns reserved, overlay, and collapsed runtime mode state. |
-| `BarPillStateService` | pill state service | Owns runtime pill add/remove state and collapsed-mode pinning for `clock` and `workspaces`. |
+| `BarPillStateService` | pill state service | Owns runtime pill add/remove state and collapsed-mode pinning for the registered bar pills. |
 | `Core.Log` | shared support service | Used by bar-owned services for logging and notifications. |
 | `ClockFeature.EventStore` | shared feature data | Loaded for the clock and calendar. This is currently bar-owned because both consumers live in the bar. |
 
@@ -100,7 +100,7 @@ then the state model starts wearing a false mustache.
 `BarPillStateService`:
 
 ```qml
-knownPills: ["clock", "workspaces"]
+knownPills: ["clock", "workspaces", "mpris", "upchecker", "borg", "battery", "volume"]
 ```
 
 Unknown pill IDs return an error. `listPills` returns the current state for all

@@ -29,8 +29,8 @@ PanelWindow {
     readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
     readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
-    readonly property bool centerSlotActive: rootBar.pillSlotActive("clock")
-    readonly property bool rightSlotActive: !collapsed
+    readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["clock", "mpris"])
+    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "borg", "battery", "volume"])
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
     signal audioMixerRequested
@@ -58,7 +58,7 @@ PanelWindow {
     BarPillStateService {
         id: barPillStateService
 
-        knownPills: ["clock", "workspaces"]
+        knownPills: ["clock", "workspaces", "mpris", "upchecker", "borg", "battery", "volume"]
     }
 
     PowerFeature.PowerService {
@@ -116,6 +116,15 @@ PanelWindow {
 
     function pillSlotActive(id) {
         return !rootBar.collapsed || pillEnabled(id);
+    }
+
+    function anyPillEnabled(ids) {
+        for (let index = 0; index < ids.length; index++) {
+            if (pillEnabled(ids[index]))
+                return true;
+        }
+
+        return false;
     }
 
     function slotY(slot) {
@@ -254,7 +263,8 @@ PanelWindow {
             MprisFeature.MprisButton {
                 id: mprisButton
 
-                visible: !rootBar.collapsed
+                visible: rootBar.pillEnabled("mpris")
+                collapsedPill: rootBar.pillCollapsed("mpris")
                 theme: rootBar.theme
                 service: mprisService
 
@@ -281,9 +291,9 @@ PanelWindow {
 
             anchors {
                 right: parent.right
-                verticalCenter: parent.verticalCenter
                 rightMargin: rootBar.theme.modules.bar.sideMargin
             }
+            y: rootBar.slotY(rightSlot)
             spacing: rootBar.theme.modules.bar.itemSpacing
             scale: rootBar.rightSlotActive ? 1 : 0.01
             opacity: rootBar.rightSlotActive ? 1 : 0
@@ -291,6 +301,8 @@ PanelWindow {
             UpcheckerFeature.UpcheckerButton {
                 id: upcheckerButton
 
+                visible: rootBar.pillEnabled("upchecker")
+                collapsedPill: rootBar.pillCollapsed("upchecker")
                 theme: rootBar.theme
                 service: upchecker.service
 
@@ -305,6 +317,7 @@ PanelWindow {
             MonitorProfileFeature.MonitorProfileButton {
                 id: monitorProfileButton
 
+                visible: !rootBar.collapsed
                 theme: rootBar.theme
                 service: monitorProfileService
 
@@ -319,6 +332,8 @@ PanelWindow {
             BorgFeature.Borg {
                 id: borg
 
+                visible: rootBar.pillEnabled("borg")
+                collapsedPill: rootBar.pillCollapsed("borg")
                 theme: rootBar.theme
                 service: borgService
 
@@ -342,6 +357,8 @@ PanelWindow {
             BatteryFeature.BatteryButton {
                 id: battery
 
+                visible: rootBar.pillEnabled("battery")
+                collapsedPill: rootBar.pillCollapsed("battery")
                 theme: rootBar.theme
                 service: batteryService
 
@@ -355,6 +372,7 @@ PanelWindow {
             NetworkFeature.NetworkButton {
                 id: networkButton
 
+                visible: !rootBar.collapsed
                 theme: rootBar.theme
                 service: networkService
 
@@ -369,6 +387,8 @@ PanelWindow {
             VolumeFeature.VolumeButton {
                 id: volumeButton
 
+                visible: rootBar.pillEnabled("volume")
+                collapsedPill: rootBar.pillCollapsed("volume")
                 theme: rootBar.theme
                 service: soundService
 
@@ -389,6 +409,7 @@ PanelWindow {
             PowerFeature.PowerButton {
                 id: powerButton
 
+                visible: !rootBar.collapsed
                 theme: rootBar.theme
 
                 service: powerService
@@ -532,6 +553,17 @@ PanelWindow {
 
                 if (id === "workspaces" && !barPillStateService.isVisible(id))
                     workspaceClients.visible = false;
+
+                if (id === "mpris" && !barPillStateService.isVisible(id)) {
+                    mprisPanel.visible = false;
+                    mprisTooltip.hideLater();
+                }
+
+                if (id === "upchecker" && !barPillStateService.isVisible(id))
+                    upchecker.hide();
+
+                if (id === "borg" && !barPillStateService.isVisible(id))
+                    borgTooltip.hideLater();
 
                 sharedTooltip.hideLater();
             }

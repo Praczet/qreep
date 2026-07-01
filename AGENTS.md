@@ -643,9 +643,9 @@ Qreep currently has:
   - `reserved`: normal bar, keeps layer-shell exclusive zone;
   - `overlay`: normal bar, no exclusive zone;
   - `collapsed`: compact top strip unless a visible pinned pill needs overlay space;
-- first runtime pill state in `modules/bar/BarPillStateService.qml`, exposed through IPC target `qreep-bar-pill`;
-- `clock` and `workspaces` are the first test pills for runtime `show`/`hide`/`toggle`/`pin` behavior;
-- pinned `clock` or `workspaces` stays full-size in collapsed mode, overlays content, uses no top padding, and does not reserve Hyprland space;
+- runtime pill state in `modules/bar/BarPillStateService.qml`, exposed through IPC target `qreep-bar-pill`;
+- current runtime pill IDs: `clock`, `workspaces`, `mpris`, `upchecker`, `borg`, `battery`, and `volume`;
+- enabled unpinned pills become 15px collapsed strips in collapsed mode; expanded pinned pills stay full-size, overlay content, use no top padding, and do not reserve Hyprland space;
 - a reusable `QreepModule` wrapper with hover, click, right-click, overlay, and shared-tooltip request support;
 - a launcher button in the left slot that delegates to `LauncherService`;
 - a Hyprland workspaces module in the left slot with active/occupied workspace state, click/scroll switching, and a clickable client popup;
@@ -690,8 +690,8 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pil
 Current pickup point:
 
 - Today’s bar mode/pill-state work is intentionally a small runtime slice, not the final bar layout config system.
-- Next session should pick up from `BarModeService.qml`, `BarPillStateService.qml`, and the `clock`/`workspaces` wiring in `Bar.qml`.
-- The next likely step is to generalize pill ids without making `Bar.qml` worse: either add a tiny local registration helper or start the first boring `bar.json` shape after the runtime behavior feels correct.
+- Next session should pick up from `BarModeService.qml`, `BarPillStateService.qml`, and the registered pill wiring in `Bar.qml`.
+- The next likely step is to decide whether `network`, `monitorprofile`, `launcher`, and `power` should join runtime pill state or stay normal-mode-only for now.
 - Do not rush persistence. Runtime state first, persisted layout second. Past Adam does not need a config file that explains a bug with confidence.
 
 ## Suggested next five steps
