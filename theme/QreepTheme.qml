@@ -21,6 +21,7 @@ QtObject {
     readonly property color primary: paletteColor("primary", "#88c0d0")
     readonly property color primaryContainer: paletteColor("primaryContainer", "#5e81ac")
     readonly property color primaryFixedDim: paletteColor("primaryFixedDim", "#b8c7e8")
+    readonly property color primaryFixed: paletteColor("primaryFixed", "#b8c7e8")
     readonly property color secondary: paletteColor("secondary", "#b8c7e8")
     readonly property color tertiary: paletteColor("tertiary", "#a8be97")
 
@@ -84,6 +85,8 @@ QtObject {
             return primaryContainer;
         case "{{primary_fixed_dim}}":
             return primaryFixedDim;
+        case "{{primary_fixed}}":
+            return primaryFixed;
         case "{{secondary}}":
             return secondary;
         case "{{tertiary}}":

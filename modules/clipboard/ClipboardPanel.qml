@@ -175,7 +175,7 @@ PanelWindow {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "* pins"
+                    text: "󰐃 pins"
                     color: rootClipboardPanel.theme.modules.clipboard.primaryTextColor
                     font.pixelSize: rootClipboardPanel.theme.modules.clipboard.bodyPixelSize
                 }

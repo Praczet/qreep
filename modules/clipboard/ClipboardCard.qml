@@ -8,7 +8,12 @@ Item {
     required property var entry
     property bool selected: false
     property color textColor: rootClipboardCard.selected ? rootClipboardCard.theme.modules.clipboard.headerSelectedTextColor : rootClipboardCard.theme.modules.clipboard.secondaryTextColor
-    // property color textColor: selected ? rootClipboardCard.theme.modules.clipboard.qreep.error : rootClipboardCard.theme.modules.clipboard.secondaryTextColor
+    property bool hovered: hoverHandler.hovered
+    property bool active: selected || hovered
+
+    HoverHandler {
+        id: hoverHandler
+    }
 
     signal clicked
     signal starRequested
@@ -18,8 +23,8 @@ Item {
     height: rootClipboardCard.theme.modules.clipboard.cardHeight
 
     transformOrigin: Item.Center
-    scale: rootClipboardCard.selected ? 1.035 : 1.0
-    z: rootClipboardCard.selected ? 10 : 0
+    scale: selected ? 1.15 : hovered ? 1.1 : 1.0
+    z: selected ? 10 : hovered ? 5 : 0
 
     Behavior on scale {
         NumberAnimation {
@@ -27,7 +32,49 @@ Item {
             easing.type: Easing.OutCubic
         }
     }
+    Rectangle {
+        id: outerGlow
 
+        anchors.fill: cardSurface
+        radius: cardSurface.radius
+        color: "transparent"
+
+        visible: rootClipboardCard.selected || rootClipboardCard.hovered
+        border.width: 1
+        border.color: rootClipboardCard.selected ? rootClipboardCard.theme.modules.clipboard.cardGlowBorder : rootClipboardCard.theme.modules.clipboard.borderColor
+
+        layer.enabled: visible
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            autoPaddingEnabled: true
+            shadowHorizontalOffset: 0
+            shadowVerticalOffset: 0
+            shadowBlur: rootClipboardCard.selected ? 1.0 : 0.55
+            shadowColor: rootClipboardCard.selected ? rootClipboardCard.theme.modules.clipboard.cardGlowOuter : Qt.rgba(rootClipboardCard.theme.modules.clipboard.accentColor.r, rootClipboardCard.theme.modules.clipboard.accentColor.g, rootClipboardCard.theme.modules.clipboard.accentColor.b, 0.22)
+        }
+    }
+
+    Rectangle {
+        id: bloomGlow
+
+        anchors.fill: cardSurface
+        radius: cardSurface.radius
+        color: "transparent"
+
+        visible: rootClipboardCard.selected
+        border.width: 2
+        border.color: rootClipboardCard.theme.modules.clipboard.cardGlowBorderStrong
+
+        layer.enabled: visible
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            autoPaddingEnabled: true
+            shadowHorizontalOffset: 0
+            shadowVerticalOffset: 0
+            shadowBlur: 0.45
+            shadowColor: rootClipboardCard.theme.modules.clipboard.cardGlowBloom
+        }
+    }
     // Shadow-only layer. This item has no children, so the shadow is only the card shape,
     // not every Text/Button inside the card.
     Rectangle {
@@ -35,10 +82,11 @@ Item {
 
         anchors.fill: parent
         radius: rootClipboardCard.theme.modules.clipboard.cardRadius
-        color: rootClipboardCard.selected ? rootClipboardCard.theme.modules.clipboard.selectedCardColor : rootClipboardCard.theme.modules.clipboard.cardColor
-        visible: rootClipboardCard.selected
+        color: rootClipboardCard.active ? rootClipboardCard.theme.modules.clipboard.selectedCardColor : rootClipboardCard.theme.modules.clipboard.cardColor
+        visible: false
+        // visible: rootClipboardCard.active
 
-        layer.enabled: rootClipboardCard.selected
+        layer.enabled: rootClipboardCard.active
         layer.effect: MultiEffect {
             shadowEnabled: true
             autoPaddingEnabled: true
@@ -124,7 +172,7 @@ Item {
 
                     width: rootClipboardCard.theme.modules.clipboard.iconButtonSize
                     height: parent.height
-                    text: rootClipboardCard.entry.starred ? "" : ""
+                    text: rootClipboardCard.entry.starred ? "󰐃" : "󰤰"
                     color: rootClipboardCard.textColor
                     font.pixelSize: rootClipboardCard.theme.modules.clipboard.typePixelSize + 2
                     verticalAlignment: Text.AlignVCenter
@@ -184,18 +232,23 @@ Item {
                 id: checkerLayer
 
                 anchors.fill: parent
-                columns: Math.ceil(width / colorPreview.checkerSize)
-                rows: Math.ceil(height / colorPreview.checkerSize)
+
+                readonly property int safeWidth: Math.max(0, width)
+                readonly property int safeHeight: Math.max(0, height)
+
+                columns: Math.max(0, Math.ceil(safeWidth / colorPreview.checkerSize))
+                rows: Math.max(0, Math.ceil(safeHeight / colorPreview.checkerSize))
 
                 Repeater {
-                    model: checkerLayer.columns * checkerLayer.rows
+                    model: Math.max(0, checkerLayer.columns * checkerLayer.rows)
 
                     Rectangle {
                         width: colorPreview.checkerSize
                         height: colorPreview.checkerSize
 
-                        readonly property int col: index % checkerLayer.columns
-                        readonly property int row: Math.floor(index / checkerLayer.columns)
+                        readonly property int col: checkerLayer.columns > 0 ? index % checkerLayer.columns : 0
+
+                        readonly property int row: checkerLayer.columns > 0 ? Math.floor(index / checkerLayer.columns) : 0
 
                         color: (row + col) % 2 === 0 ? "#d0d0d0" : "#f2f2f2"
                     }
