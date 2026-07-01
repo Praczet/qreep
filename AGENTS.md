@@ -644,7 +644,7 @@ Qreep currently has:
   - `overlay`: normal bar, no exclusive zone;
   - `collapsed`: compact top strip unless a visible pinned pill needs overlay space;
 - runtime pill state in `modules/bar/BarPillStateService.qml`, exposed through IPC target `qreep-bar-pill`;
-- current runtime pill IDs: `clock`, `workspaces`, `mpris`, `upchecker`, `borg`, `battery`, and `volume`;
+- current runtime pill IDs: `clock`, `workspaces`, `mpris`, `upchecker`, `monitorprofile`, `borg`, `battery`, `network`, and `volume`;
 - enabled unpinned pills become 15px collapsed strips in collapsed mode; expanded pinned pills stay full-size, overlay content, use no top padding, and do not reserve Hyprland space;
 - a reusable `QreepModule` wrapper with hover, click, right-click, overlay, and shared-tooltip request support;
 - a launcher button in the left slot that delegates to `LauncherService`;
@@ -691,7 +691,7 @@ Current pickup point:
 
 - Today’s bar mode/pill-state work is intentionally a small runtime slice, not the final bar layout config system.
 - Next session should pick up from `BarModeService.qml`, `BarPillStateService.qml`, and the registered pill wiring in `Bar.qml`.
-- The next likely step is to decide whether `network`, `monitorprofile`, `launcher`, and `power` should join runtime pill state or stay normal-mode-only for now.
+- The next likely step is to decide whether `launcher` and `power` should join runtime pill state or stay normal-mode-only for now.
 - Do not rush persistence. Runtime state first, persisted layout second. Past Adam does not need a config file that explains a bug with confidence.
 
 ## Suggested next five steps

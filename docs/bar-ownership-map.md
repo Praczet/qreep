@@ -100,7 +100,7 @@ then the state model starts wearing a false mustache.
 `BarPillStateService`:
 
 ```qml
-knownPills: ["clock", "workspaces", "mpris", "upchecker", "borg", "battery", "volume"]
+knownPills: ["clock", "workspaces", "mpris", "upchecker", "monitorprofile", "borg", "battery", "network", "volume"]
 ```
 
 Unknown pill IDs return an error. `listPills` returns the current state for all

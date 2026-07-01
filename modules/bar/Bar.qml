@@ -30,7 +30,7 @@ PanelWindow {
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
     readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
     readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["clock", "mpris"])
-    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "borg", "battery", "volume"])
+    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "volume"])
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
     signal audioMixerRequested
@@ -58,7 +58,7 @@ PanelWindow {
     BarPillStateService {
         id: barPillStateService
 
-        knownPills: ["clock", "workspaces", "mpris", "upchecker", "borg", "battery", "volume"]
+        knownPills: ["clock", "workspaces", "mpris", "upchecker", "monitorprofile", "borg", "battery", "network", "volume"]
     }
 
     PowerFeature.Power {
@@ -319,7 +319,8 @@ PanelWindow {
             MonitorProfileFeature.MonitorProfileButton {
                 id: monitorProfileButton
 
-                visible: !rootBar.collapsed
+                visible: rootBar.pillEnabled("monitorprofile")
+                collapsedPill: rootBar.pillCollapsed("monitorprofile")
                 theme: rootBar.theme
                 service: monitorProfileService
 
@@ -374,7 +375,8 @@ PanelWindow {
             NetworkFeature.NetworkButton {
                 id: networkButton
 
-                visible: !rootBar.collapsed
+                visible: rootBar.pillEnabled("network")
+                collapsedPill: rootBar.pillCollapsed("network")
                 theme: rootBar.theme
                 service: networkService
 
@@ -556,6 +558,9 @@ PanelWindow {
 
                 if (id === "borg" && !barPillStateService.isVisible(id))
                     borgTooltip.hideLater();
+
+                if (id === "network" && !barPillStateService.isVisible(id))
+                    networkPanel.visible = false;
 
                 sharedTooltip.hideLater();
             }
