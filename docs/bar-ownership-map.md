@@ -80,8 +80,8 @@ Runtime pill state has two independent flags:
 
 | Flag | IPC | Meaning |
 | --- | --- | --- |
-| enabled | `showPill` / `hidePill` / `togglePill` | Adds or removes the pill from the bar. |
-| pinned | `pin` / `unpin` / `togglePinned` | In collapsed mode, shows the pill full-size instead of as a collapsed strip. |
+| enabled | `enablePill` / `disablePill` / `togglePill` | Adds or removes the pill from the bar. |
+| pinned | `expandPill` / `collapsePill` / `togglePinned` | In collapsed mode, shows the pill full-size instead of as a collapsed strip. |
 
 Current behavior:
 
@@ -93,7 +93,7 @@ Current behavior:
 | collapsed | true | false | Pill is a collapsed strip. |
 | collapsed | true | true | Pill is full-size. |
 
-Do not make `showPill` auto-pin. That sounds helpful for about four minutes,
+Do not make `enablePill` auto-expand. That sounds helpful for about four minutes,
 then the state model starts wearing a false mustache.
 
 `Bar.qml` currently registers known runtime pill IDs with

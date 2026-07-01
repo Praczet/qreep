@@ -13,28 +13,28 @@ QtObject {
     readonly property IpcHandler ipc: IpcHandler {
         target: "qreep-bar-pill"
 
-        function showPill(id: string): string {
-            return rootBarPillStateService.show(id);
-        }
-
-        function hidePill(id: string): string {
-            return rootBarPillStateService.hide(id);
-        }
-
         function togglePill(id: string): string {
             return rootBarPillStateService.toggle(id);
         }
 
-        function pin(id: string): string {
-            return rootBarPillStateService.pin(id);
+        function enablePill(id: string): string {
+            return rootBarPillStateService.show(id);
         }
 
-        function unpin(id: string): string {
-            return rootBarPillStateService.unpin(id);
+        function disablePill(id: string): string {
+            return rootBarPillStateService.hide(id);
         }
 
         function togglePinned(id: string): string {
             return rootBarPillStateService.togglePinned(id);
+        }
+
+        function expandPill(id: string): string {
+            return rootBarPillStateService.pin(id);
+        }
+
+        function collapsePill(id: string): string {
+            return rootBarPillStateService.unpin(id);
         }
 
         function state(id: string): string {

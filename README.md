@@ -163,16 +163,16 @@ quickshell ipc call osd showMessage "Hello from the questionable future" 3000
 Pill state commands use two separate ideas:
 
 ```bash
-quickshell ipc call qreep-bar-pill showPill clock      # add pill to the bar
-quickshell ipc call qreep-bar-pill hidePill clock      # remove pill from the bar
-quickshell ipc call qreep-bar-pill pin clock           # full-size in collapsed mode
-quickshell ipc call qreep-bar-pill unpin clock         # collapsed strip in collapsed mode
+quickshell ipc call qreep-bar-pill enablePill clock    # add pill to the bar
+quickshell ipc call qreep-bar-pill disablePill clock   # remove pill from the bar
+quickshell ipc call qreep-bar-pill expandPill clock    # full-size in collapsed mode
+quickshell ipc call qreep-bar-pill collapsePill clock  # collapsed strip in collapsed mode
 quickshell ipc call qreep-bar-pill listPills           # list known pill state
 ```
 
-So in collapsed mode, `showPill` makes the pill present, and `pin` makes it
-full-size. Separate switches. Fewer surprise side effects, which is a lifestyle
-choice.
+So in collapsed mode, `enablePill` makes the pill present, and `expandPill`
+makes it full-size. Separate switches. Fewer surprise side effects, which is a
+lifestyle choice.
 
 Current known runtime pills are `clock` and `workspaces`. Unknown pill IDs return
 an error instead of inventing state for `banana`, which is growth.

@@ -678,12 +678,13 @@ Useful pill IPC commands:
 
 ```bash
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill state clock
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill hidePill clock
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill showPill clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill disablePill clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill enablePill clock
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill togglePill clock
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill pin clock
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill unpin clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill expandPill clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill collapsePill clock
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill togglePinned clock
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill listPills
 ```
 
 Current pickup point:
