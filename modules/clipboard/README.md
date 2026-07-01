@@ -54,6 +54,7 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboa
 - refreshes entries when shown;
 - search filters immediately;
 - pins filter shows starred entries only;
+- type filters narrow results to image, text, code, and color entries;
 - pinned entries sort first;
 - text, code, color, and image cards;
 - image cards show runtime previews plus dimensions/mime metadata;

@@ -116,78 +116,146 @@ PanelWindow {
             onClicked: mouse => mouse.accepted = true
         }
 
-        Row {
+        Item {
             id: header
 
             anchors {
-                horizontalCenter: parent.horizontalCenter
+                left: parent.left
+                right: parent.right
                 top: parent.top
                 margins: rootClipboardPanel.theme.modules.clipboard.panelPadding
             }
             height: rootClipboardPanel.theme.modules.clipboard.headerHeight
-            spacing: 8
 
-            Rectangle {
-                width: rootClipboardPanel.theme.modules.clipboard.searchWidth
+            property int pinButtonWidth: 72
+            property int typeButtonCount: 4
+            property int typeGroupWidth: typeButtonCount * rootClipboardPanel.theme.modules.clipboard.typeFilterWidth + (typeButtonCount - 1) * typeFilters.spacing
+
+            Row {
+                id: headerControls
+
+                anchors.centerIn: parent
                 height: parent.height
-                radius: 6
-                color: rootClipboardPanel.theme.modules.clipboard.searchColor
-                border.width: 1
-                border.color: searchInput.activeFocus ? rootClipboardPanel.theme.modules.clipboard.selectedBorderColor : rootClipboardPanel.theme.modules.clipboard.borderColor
+                spacing: 8
 
-                TextInput {
-                    id: searchInput
+                Rectangle {
+                    width: rootClipboardPanel.theme.modules.clipboard.searchWidth
+                    height: parent.height
+                    radius: 6
+                    color: rootClipboardPanel.theme.modules.clipboard.searchColor
+                    border.width: 1
+                    border.color: searchInput.activeFocus ? rootClipboardPanel.theme.modules.clipboard.selectedBorderColor : rootClipboardPanel.theme.modules.clipboard.borderColor
 
-                    anchors {
-                        fill: parent
-                        leftMargin: 9
-                        rightMargin: 9
+                    TextInput {
+                        id: searchInput
+
+                        anchors {
+                            fill: parent
+                            leftMargin: 9
+                            rightMargin: 9
+                        }
+                        text: rootClipboardPanel.service.searchText
+                        color: rootClipboardPanel.theme.modules.clipboard.primaryTextColor
+                        selectionColor: rootClipboardPanel.theme.modules.clipboard.accentColor
+                        selectedTextColor: rootClipboardPanel.theme.modules.clipboard.panelColor
+                        font.pixelSize: rootClipboardPanel.theme.modules.clipboard.bodyPixelSize
+                        verticalAlignment: TextInput.AlignVCenter
+                        clip: true
+
+                        onTextEdited: rootClipboardPanel.service.searchText = text
+
+                        Keys.onPressed: event => {
+                            if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab) {
+                                grid.forceActiveFocus();
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                rootClipboardPanel.restoreRequested(rootClipboardPanel.service.selectedIndex);
+                                event.accepted = true;
+                            }
+                        }
                     }
-                    text: rootClipboardPanel.service.searchText
-                    color: rootClipboardPanel.theme.modules.clipboard.primaryTextColor
-                    selectionColor: rootClipboardPanel.theme.modules.clipboard.accentColor
-                    selectedTextColor: rootClipboardPanel.theme.modules.clipboard.panelColor
-                    font.pixelSize: rootClipboardPanel.theme.modules.clipboard.bodyPixelSize
-                    verticalAlignment: TextInput.AlignVCenter
-                    clip: true
+                }
 
-                    onTextEdited: rootClipboardPanel.service.searchText = text
+                Rectangle {
+                    width: header.pinButtonWidth
+                    height: parent.height
+                    radius: 6
+                    color: rootClipboardPanel.service.starredOnly ? rootClipboardPanel.theme.modules.clipboard.selectedCardColor : rootClipboardPanel.theme.modules.clipboard.searchColor
+                    border.width: 1
+                    border.color: rootClipboardPanel.service.starredOnly ? rootClipboardPanel.theme.modules.clipboard.selectedBorderColor : rootClipboardPanel.theme.modules.clipboard.borderColor
 
-                    Keys.onPressed: event => {
-                        if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab) {
-                            grid.forceActiveFocus();
-                            event.accepted = true;
-                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                            rootClipboardPanel.restoreRequested(rootClipboardPanel.service.selectedIndex);
-                            event.accepted = true;
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰐃 pins"
+                        color: rootClipboardPanel.theme.modules.clipboard.primaryTextColor
+                        font.pixelSize: rootClipboardPanel.theme.modules.clipboard.bodyPixelSize
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: rootClipboardPanel.service.starredOnly = !rootClipboardPanel.service.starredOnly
+                    }
+                }
+
+                Row {
+                    id: typeFilters
+
+                    width: header.typeGroupWidth
+                    height: parent.height
+                    spacing: 6
+
+                    Repeater {
+                        model: [
+                            {
+                                "key": "image",
+                                "label": "image"
+                            },
+                            {
+                                "key": "text",
+                                "label": "text"
+                            },
+                            {
+                                "key": "code",
+                                "label": "code"
+                            },
+                            {
+                                "key": "color",
+                                "label": "color"
+                            }
+                        ]
+
+                        Rectangle {
+                            required property var modelData
+
+                            width: rootClipboardPanel.theme.modules.clipboard.typeFilterWidth
+                            height: typeFilters.height
+                            radius: 6
+                            color: rootClipboardPanel.service.typeFilterActive(modelData.key) ? rootClipboardPanel.theme.modules.clipboard.selectedCardColor : rootClipboardPanel.theme.modules.clipboard.searchColor
+                            border.width: 1
+                            border.color: rootClipboardPanel.service.typeFilterActive(modelData.key) ? rootClipboardPanel.theme.modules.clipboard.selectedBorderColor : rootClipboardPanel.theme.modules.clipboard.borderColor
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData.label
+                                color: rootClipboardPanel.theme.modules.clipboard.primaryTextColor
+                                font.pixelSize: rootClipboardPanel.theme.modules.clipboard.bodyPixelSize
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: rootClipboardPanel.service.toggleTypeFilter(modelData.key)
+                            }
                         }
                     }
                 }
             }
 
-            Rectangle {
-                width: 72
-                height: parent.height
-                radius: 6
-                color: rootClipboardPanel.service.starredOnly ? rootClipboardPanel.theme.modules.clipboard.selectedCardColor : rootClipboardPanel.theme.modules.clipboard.searchColor
-                border.width: 1
-                border.color: rootClipboardPanel.service.starredOnly ? rootClipboardPanel.theme.modules.clipboard.selectedBorderColor : rootClipboardPanel.theme.modules.clipboard.borderColor
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "󰐃 pins"
-                    color: rootClipboardPanel.theme.modules.clipboard.primaryTextColor
-                    font.pixelSize: rootClipboardPanel.theme.modules.clipboard.bodyPixelSize
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: rootClipboardPanel.service.starredOnly = !rootClipboardPanel.service.starredOnly
-                }
-            }
-
             Text {
-                width: parent.width - rootClipboardPanel.theme.modules.clipboard.searchWidth - 72 - parent.spacing * 2
+                anchors {
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                }
+                width: 96
                 height: parent.height
                 text: statusText()
                 color: rootClipboardPanel.theme.modules.clipboard.secondaryTextColor

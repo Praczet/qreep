@@ -12,6 +12,7 @@ QtObject {
     readonly property int panelPadding: 10
     readonly property int headerHeight: 28
     readonly property int searchWidth: 260
+    readonly property int typeFilterWidth: 46
     readonly property int cardWidth: 150
     readonly property int cardHeight: 150
     readonly property int cardGap: 10

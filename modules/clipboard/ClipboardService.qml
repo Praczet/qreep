@@ -10,6 +10,7 @@ QtObject {
     property QtObject log
     property string searchText: ""
     property bool starredOnly: false
+    property var activeTypeFilters: []
     property var pinnedIds: []
     property var entries: []
     property var filteredEntries: []
@@ -20,6 +21,7 @@ QtObject {
     property string currentImagePreviewId: ""
     property string currentImagePreviewPath: ""
     property var currentRestoreEntry: null
+    property bool refreshAfterPinnedRead: false
 
     readonly property string pinnedFile: Quickshell.env("HOME") + "/.local/share/clipvault/pinned.json"
     readonly property string previewDir: (Quickshell.env("XDG_RUNTIME_DIR").length > 0 ? Quickshell.env("XDG_RUNTIME_DIR") : "/tmp") + "/qreep-clipboard-previews"
@@ -79,6 +81,9 @@ QtObject {
 
     onSearchTextChanged: applyFilter()
     onStarredOnlyChanged: applyFilter()
+    onActiveTypeFiltersChanged: applyFilter()
+
+    Component.onCompleted: readPinnedIds(false)
 
     readonly property Process pinnedReader: Process {
         id: pinnedReader
@@ -197,11 +202,21 @@ QtObject {
     }
 
     function refresh() {
-        if (pinnedReader.running || listRunner.running)
+        if (listRunner.running)
             return;
 
         loading = true;
         error = "";
+        readPinnedIds(true);
+    }
+
+    function readPinnedIds(thenRefresh) {
+        if (pinnedReader.running) {
+            refreshAfterPinnedRead = refreshAfterPinnedRead || thenRefresh;
+            return;
+        }
+
+        refreshAfterPinnedRead = thenRefresh;
         pinnedReader.command = ["sh", "-c", "cat " + shellQuote(pinnedFile) + " 2>/dev/null || printf '[]'"];
         pinnedReader.running = true;
     }
@@ -215,8 +230,31 @@ QtObject {
             pinnedIds = [];
         }
 
+        reapplyPinnedIds();
+
+        if (!refreshAfterPinnedRead) {
+            applyFilter();
+            return;
+        }
+
+        refreshAfterPinnedRead = false;
+        startListRunner();
+    }
+
+    function startListRunner() {
         listRunner.command = ["sh", "-c", "clipvault list | head -n " + Math.max(1, Number(theme.modules.clipboard.maxItems))];
         listRunner.running = true;
+    }
+
+    function reapplyPinnedIds() {
+        if (entries.length === 0)
+            return;
+
+        entries = entries.map(current => {
+            const copy = cloneEntry(current);
+            copy.starred = pinnedIds.indexOf(copy.id) !== -1;
+            return copy;
+        });
     }
 
     function applyListOutput(stdout, stderr, exitCode) {
@@ -285,6 +323,9 @@ QtObject {
 
         if (starredOnly)
             nextEntries = nextEntries.filter(entry => entry.starred);
+
+        if (activeTypeFilters.length > 0)
+            nextEntries = nextEntries.filter(entry => activeTypeFilters.indexOf(typeFilterKey(entry.type)) !== -1);
 
         if (needle.length > 0) {
             nextEntries = nextEntries.filter(entry => entry.preview.toLowerCase().indexOf(needle) !== -1 || entry.type.indexOf(needle) !== -1);
@@ -424,6 +465,37 @@ QtObject {
 
     function setSelection(index) {
         selectedIndex = Math.max(0, Math.min(filteredEntries.length - 1, index));
+    }
+
+    function toggleTypeFilter(type) {
+        const normalized = typeFilterKey(type);
+        const nextFilters = activeTypeFilters.slice();
+        const existingIndex = nextFilters.indexOf(normalized);
+
+        if (existingIndex === -1)
+            nextFilters.push(normalized);
+        else
+            nextFilters.splice(existingIndex, 1);
+
+        activeTypeFilters = nextFilters;
+    }
+
+    function typeFilterActive(type) {
+        return activeTypeFilters.indexOf(typeFilterKey(type)) !== -1;
+    }
+
+    function typeFilterKey(type) {
+        switch (type) {
+        case "image":
+            return "image";
+        case "code":
+            return "code";
+        case "color":
+        case "color-text":
+            return "color";
+        default:
+            return "text";
+        }
     }
 
     function detectType(preview) {
