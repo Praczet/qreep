@@ -1,4 +1,5 @@
 import Quickshell
+import "modules/clipboard" as ClipboardModule
 import "modules/dashboard" as DashboardModule
 import "modules/osd" as OsdModule
 import "modules/bar" as BarModule
@@ -21,6 +22,12 @@ ShellRoot {
 
     DashboardModule.Dashboard {
         id: dashboard
+
+        theme: qreepTheme
+    }
+
+    ClipboardModule.Clipboard {
+        id: clipboard
 
         theme: qreepTheme
     }
