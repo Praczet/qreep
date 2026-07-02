@@ -254,6 +254,22 @@ QtObject {
         const nextArchive = String(payload.archive || "");
         const archiveChanged = previousArchive.length > 0 && nextArchive.length > 0 && previousArchive !== nextArchive;
 
+        if (isTerminalBackupState(nextState)) {
+            const nextFinishedAt = String(payload.finishedAt || "");
+            const nextRc = numberValue(payload.rc, -1);
+            const terminalKey = backupTerminalKey(nextState, nextArchive, nextFinishedAt, nextRc);
+
+            if (terminalKey === handledBackupTerminalKey)
+                return;
+
+            handledBackupTerminalKey = terminalKey;
+
+            if (!backupWasRunning && previousState !== "running") {
+                backupStateInitialized = true;
+                return;
+            }
+        }
+
         backupStateInitialized = true;
         backupState = nextState;
         backupProfile = String(payload.profile || payload.target || "");
@@ -286,16 +302,6 @@ QtObject {
         }
 
         if (isTerminalBackupState(nextState)) {
-            const terminalKey = backupTerminalKey(nextState, nextArchive, backupFinishedAt, backupRc);
-
-            if (terminalKey === handledBackupTerminalKey)
-                return;
-
-            handledBackupTerminalKey = terminalKey;
-
-            if (!backupWasRunning && previousState !== "running")
-                return;
-
             backupPanelOpen = true;
             backupWasRunning = false;
             shakeRequested();
