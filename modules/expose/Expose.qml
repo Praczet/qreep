@@ -26,11 +26,11 @@ Scope {
             rootExpose.toggle();
         }
 
-        function showExpose() {
+        function showMe() {
             rootExpose.show();
         }
 
-        function hideExpose() {
+        function hideMe() {
             rootExpose.hide();
         }
 

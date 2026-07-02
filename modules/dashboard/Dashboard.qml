@@ -23,11 +23,11 @@ Scope {
             rootDashboard.toggle();
         }
 
-        function show() {
+        function showMe() {
             rootDashboard.show();
         }
 
-        function hide() {
+        function hideMe() {
             rootDashboard.hide();
         }
 

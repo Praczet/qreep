@@ -23,11 +23,11 @@ Scope {
             rootClipboard.toggle();
         }
 
-        function show() {
+        function showMe() {
             rootClipboard.show();
         }
 
-        function hide() {
+        function hideMe() {
             rootClipboard.hide();
         }
 
