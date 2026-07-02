@@ -1,4 +1,7 @@
 import QtQuick
+import QtQuick.Effects
+import Quickshell
+import Quickshell.Widgets
 
 Rectangle {
     id: rootWorkspaces
@@ -86,33 +89,94 @@ Rectangle {
 
                     Text {
                         text: workspaceItem.modelData.displayName
+                        anchors.verticalCenter: parent.verticalCenter
                         color: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.moduleBackgroundColor : rootWorkspaces.theme.modules.bar.primaryTextColor
                         font.pixelSize: workspaceItem.modelData.isSpecial ? rootWorkspaces.theme.modules.bar.workspaces.specialTextPixelSize : rootWorkspaces.theme.modules.bar.workspaces.numberTextPixelSize
                         font.weight: workspaceItem.modelData.active ? Font.DemiBold : Font.Normal
                     }
 
-                    Text {
-                        visible: rootWorkspaces.theme.modules.bar.workspaces.indicatorMode === "count" && workspaceItem.modelData.windowCount > 0
-                        text: workspaceItem.modelData.windowCount
-                        color: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.moduleBackgroundColor : rootWorkspaces.theme.modules.bar.secondaryTextColor
-                        font.pixelSize: rootWorkspaces.theme.modules.bar.workspaces.countTextPixelSize
-                        font.weight: Font.DemiBold
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
                     Row {
-                        visible: rootWorkspaces.theme.modules.bar.workspaces.indicatorMode === "dots" && workspaceItem.modelData.windowCount > 0
-                        spacing: 2
+                        visible: rootWorkspaces.theme.modules.bar.workspaces.indicatorMode === "apps" && workspaceItem.modelData.appGroups.length > 0
+                        spacing: rootWorkspaces.theme.modules.bar.workspaces.appIconSpacing
                         anchors.verticalCenter: parent.verticalCenter
 
                         Repeater {
-                            model: Math.min(workspaceItem.modelData.windowCount, rootWorkspaces.theme.modules.bar.workspaces.maxDots)
+                            model: workspaceItem.modelData.appGroups
 
-                            delegate: Rectangle {
-                                width: rootWorkspaces.theme.modules.bar.workspaces.dotSize
-                                height: rootWorkspaces.theme.modules.bar.workspaces.dotSize
-                                radius: width / 2
-                                color: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.moduleBackgroundColor : rootWorkspaces.theme.modules.bar.secondaryTextColor
+                            delegate: Item {
+                                id: appIconItem
+
+                                required property var modelData
+
+                                width: rootWorkspaces.theme.modules.bar.workspaces.appIconSlotSize
+                                height: rootWorkspaces.theme.modules.bar.workspaces.appIconSlotSize
+                                scale: appIconHover.hovered ? rootWorkspaces.theme.modules.bar.workspaces.appIconHoverScale : 1
+                                transformOrigin: Item.Center
+
+                                IconImage {
+                                    id: appIconImage
+
+                                    anchors.centerIn: parent
+                                    width: rootWorkspaces.theme.modules.bar.workspaces.appIconSize
+                                    height: width
+                                    source: Quickshell.iconPath(String(appIconItem.modelData.iconName || ""), "application-x-executable-symbolic")
+                                    visible: false
+                                }
+
+                                MultiEffect {
+                                    anchors.centerIn: parent
+                                    width: rootWorkspaces.theme.modules.bar.workspaces.appIconSize
+                                    height: width
+                                    source: appIconImage
+                                    opacity: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.workspaces.activeAppIconOpacity : rootWorkspaces.theme.modules.bar.workspaces.inactiveAppIconOpacity
+                                    colorization: rootWorkspaces.theme.modules.bar.workspaces.appIconColorization
+                                    brightness: rootWorkspaces.theme.modules.bar.workspaces.appIconBrightness
+                                    contrast: rootWorkspaces.theme.modules.bar.workspaces.appIconContrast
+                                    colorizationColor: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.workspaces.activeAppIconColor : rootWorkspaces.theme.modules.bar.workspaces.inactiveAppIconColor
+                                }
+
+                                Rectangle {
+                                    visible: Number(appIconItem.modelData.count || 0) > 1
+                                    width: Math.max(rootWorkspaces.theme.modules.bar.workspaces.appBadgeMinSize, appBadgeText.implicitWidth + rootWorkspaces.theme.modules.bar.workspaces.appBadgeHorizontalPadding)
+                                    height: rootWorkspaces.theme.modules.bar.workspaces.appBadgeMinSize
+                                    anchors.right: parent.right
+                                    anchors.bottom: parent.bottom
+                                    radius: height / 2
+                                    color: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.moduleBackgroundColor : rootWorkspaces.theme.modules.bar.accentColor
+                                    border.width: rootWorkspaces.theme.modules.bar.workspaces.appBadgeBorderWidth
+                                    border.color: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.primaryTextColor : rootWorkspaces.theme.modules.bar.moduleBackgroundColor
+
+                                    Text {
+                                        id: appBadgeText
+
+                                        anchors.centerIn: parent
+                                        text: String(appIconItem.modelData.count || "")
+                                        color: workspaceItem.modelData.active ? rootWorkspaces.theme.modules.bar.primaryTextColor : rootWorkspaces.theme.modules.bar.moduleBackgroundColor
+                                        font.pixelSize: rootWorkspaces.theme.modules.bar.workspaces.appBadgeTextPixelSize
+                                        font.weight: Font.DemiBold
+                                    }
+                                }
+
+                                HoverHandler {
+                                    id: appIconHover
+
+                                    cursorShape: Qt.PointingHandCursor
+                                }
+
+                                TapHandler {
+                                    acceptedButtons: Qt.LeftButton
+                                    onTapped: {
+                                        rootWorkspaces.tooltipHideRequested();
+                                        rootWorkspaces.service.focusClient(appIconItem.modelData.firstClient);
+                                    }
+                                }
+
+                                Behavior on scale {
+                                    NumberAnimation {
+                                        duration: rootWorkspaces.theme.modules.bar.workspaces.hoverAnimationDuration
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
                             }
                         }
                     }

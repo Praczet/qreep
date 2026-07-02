@@ -7,7 +7,7 @@ QtObject {
 
     readonly property bool showEmptyWorkspaces: false
     readonly property bool showSpecialWorkspaces: true
-    readonly property string indicatorMode: "count"
+    readonly property string indicatorMode: "apps"
     readonly property int normalWorkspaceStart: 1
     readonly property int normalWorkspaceEnd: 10
     readonly property bool useHyprlandEvents: true
@@ -40,6 +40,21 @@ QtObject {
     readonly property int countTextPixelSize: 11
     readonly property int dotSize: 4
     readonly property int maxDots: 4
+    readonly property int appIconSlotSize: 30
+    readonly property int appIconSize: 27
+    readonly property int appIconSpacing: 3
+    readonly property real appIconHoverScale: 1.2
+    readonly property real activeAppIconOpacity: 0.92
+    readonly property real inactiveAppIconOpacity: 0.78
+    readonly property real appIconColorization: 1
+    readonly property real appIconBrightness: 0.9
+    readonly property real appIconContrast: 0.7
+    readonly property color activeAppIconColor: qreep.surface
+    readonly property color inactiveAppIconColor: qreep.surface
+    readonly property int appBadgeMinSize: 13
+    readonly property int appBadgeHorizontalPadding: 4
+    readonly property int appBadgeTextPixelSize: 8
+    readonly property int appBadgeBorderWidth: 1
     readonly property int tooltipWidth: 360
     readonly property int tooltipRowHeight: 34
     readonly property int tooltipIconSize: 20

@@ -21,6 +21,11 @@ QtObject {
     property var rawMonitors: []
     property var activeWorkspace: ({ id: 0, name: "" })
     property string activeSpecialWorkspaceName
+    property var appIconAliases: ({
+        "zen": "app.zen_browser.zen",
+        "chrome-hnpfjngllnobngcgfapefoaidbinmjnm-default": "whatsapp-symbolic",
+        "whatsapp web": "whatsapp-symbolic"
+    })
     property var workspaceModel: []
     property var dispatchQueue: []
 
@@ -392,6 +397,7 @@ QtObject {
             empty: windowCount === 0,
             windowCount: windowCount,
             clients: clients,
+            appGroups: appGroups(clients),
             tooltipTitle: tooltipTitle(workspace, windowCount),
             tooltipContent: tooltipContent(workspace, clients, windowCount)
         };
@@ -487,6 +493,61 @@ QtObject {
             return "ghostty";
 
         return text;
+    }
+
+    function appIconName(client, label) {
+        const candidates = [
+            label,
+            client && client.class,
+            client && client.initialClass,
+            client && client.title,
+            client && client.initialTitle
+        ];
+
+        for (let index = 0; index < candidates.length; index++) {
+            const text = String(candidates[index] || "").trim().toLowerCase();
+            const alias = appIconAliases[text];
+
+            if (alias)
+                return alias;
+        }
+
+        const text = String(label || "application-x-executable-symbolic").toLowerCase();
+
+        if (text === "ghostty")
+            return "com.mitchellh.ghostty";
+
+        return text;
+    }
+
+    function appGroups(clients) {
+        const groupsByKey = {};
+        const groups = [];
+
+        for (let index = 0; index < clients.length; index++) {
+            const client = clients[index];
+            const label = appLabel(client);
+            const key = label.toLowerCase();
+
+            if (!groupsByKey[key]) {
+                groupsByKey[key] = {
+                    label: label,
+                    iconName: appIconName(client, label),
+                    count: 0,
+                    firstClient: client
+                };
+                groups.push(groupsByKey[key]);
+            }
+
+            groupsByKey[key].count++;
+        }
+
+        return groups.sort((left, right) => {
+            if (left.count !== right.count)
+                return right.count - left.count;
+
+            return left.label.localeCompare(right.label);
+        });
     }
 
     function parseJsonArray(text, fallback) {
