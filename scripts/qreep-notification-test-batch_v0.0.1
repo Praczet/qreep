@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# Description: Send a mixed batch of test notifications for Qreep notification center/card styling.
+# Usage: qreep-notification-test-batch_v0.0.1 [--delay seconds]
+# Install: install -Dm755 scripts/qreep-notification-test-batch_v0.0.1 "$HOME/.local/bin/qreep-notification-test-batch"
+
+set -euo pipefail
+
+delay_seconds="0.18"
+
+usage() {
+  printf 'Usage: %s [--delay seconds]\n' "${0##*/}"
+}
+
+while (($# > 0)); do
+  case "$1" in
+    --delay)
+      if (($# < 2)); then
+        usage >&2
+        exit 2
+      fi
+      delay_seconds="$2"
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if ! command -v notify-send >/dev/null 2>&1; then
+  printf 'Missing required command: notify-send\n' >&2
+  exit 127
+fi
+
+send_notification() {
+  notify-send "$@"
+  sleep "$delay_seconds"
+}
+
+send_notification \
+  --app-name="Color Picker" \
+  --app-icon="color-picker-symbolic" \
+  --icon="color-picker-symbolic" \
+  --urgency=normal \
+  --expire-time=9000 \
+  "Color Picker" \
+  "Selected color: #d4d8f0"
+
+send_notification \
+  --app-name="Color Picker" \
+  --app-icon="color-picker-symbolic" \
+  --icon="color-picker-symbolic" \
+  --urgency=normal \
+  --expire-time=9000 \
+  "Color Picker" \
+  "Selected color: #ff0000"
+
+send_notification \
+  --app-name="Hyprshot" \
+  --app-icon="applets-screenshooter-symbolic" \
+  --icon="applets-screenshooter-symbolic" \
+  --urgency=normal \
+  --expire-time=9000 \
+  "Screenshot saved" \
+  "Image saved in /home/adam/Pictures/Screenshots/test_hyprshot.png and copied to the clipboard."
+
+send_notification \
+  --app-name="notify-send" \
+  --app-icon="dialog-information-symbolic" \
+  --icon="dialog-information-symbolic" \
+  --urgency=normal \
+  --expire-time=9000 \
+  "Spam 1" \
+  "hello from test"
+
+send_notification \
+  --app-name="notify-send" \
+  --app-icon="dialog-information-symbolic" \
+  --icon="dialog-information-symbolic" \
+  --urgency=normal \
+  --expire-time=9000 \
+  "Spam 2" \
+  "hello from test"
+
+send_notification \
+  --app-name="notify-send" \
+  --app-icon="dialog-warning-symbolic" \
+  --icon="dialog-warning-symbolic" \
+  --urgency=critical \
+  --expire-time=12000 \
+  "Critical-ish test" \
+  "This should use the critical border treatment. Not actually on fire. Probably."
+
+send_notification \
+  --app-name="com.mitchellh.ghostty" \
+  --app-icon="com.mitchellh.ghostty" \
+  --icon="com.mitchellh.ghostty" \
+  --urgency=normal \
+  --expire-time=9000 \
+  "Ghostty" \
+  "Terminal notification with enough body text to check wrapping and eliding in the notification center."
+
+send_notification \
+  --app-name="Qreep Actions" \
+  --app-icon="preferences-system-symbolic" \
+  --icon="preferences-system-symbolic" \
+  --urgency=normal \
+  --expire-time=12000 \
+  --action=open=Open \
+  --action=dismiss=Dismiss \
+  "Action buttons" \
+  "This notification has actions so the footer buttons get some exercise."
+
+printf 'Sent Qreep notification test batch.\n'

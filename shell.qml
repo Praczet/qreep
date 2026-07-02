@@ -1,4 +1,5 @@
 import Quickshell
+import "modules/notification" as NotificationModule
 import "modules/clipboard" as ClipboardModule
 import "modules/dashboard" as DashboardModule
 import "modules/expose" as ExposeModule
@@ -11,6 +12,12 @@ ShellRoot {
 
     Theme.QreepTheme {
         id: qreepTheme
+    }
+
+    NotificationModule.Notification {
+        id: notification
+
+        theme: qreepTheme
     }
 
     BarModule.Bar {

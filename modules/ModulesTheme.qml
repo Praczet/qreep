@@ -4,6 +4,7 @@ import "bar" as BarModule
 import "clipboard" as ClipboardModule
 import "dashboard" as DashboardModule
 import "expose" as ExposeModule
+import "notification" as NotificationModule
 import "osd" as OsdModule
 
 QtObject {
@@ -24,6 +25,10 @@ QtObject {
     }
 
     readonly property QtObject expose: ExposeModule.ExposeTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject notification: NotificationModule.NotificationTheme {
         qreep: rootModulesTheme.qreep
     }
 
