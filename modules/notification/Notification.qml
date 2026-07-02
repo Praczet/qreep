@@ -83,8 +83,16 @@ Scope {
             panelOpen: rootNotification.popupOpen
 
             onCloseRequested: notification => notificationService.dismissNotification(notification)
+            onCloseIdRequested: (id, closeAll) => {
+                if (closeAll)
+                    notificationService.dismissAll();
+                else
+                    notificationService.dismissNotificationId(id);
+            }
             onCloseAllRequested: notificationService.dismissAll()
             onPopupExpired: notification => notificationService.expirePopup(notification)
+            onPopupExpiredId: id => notificationService.expirePopupId(id)
+            onActionInvoked: (id, action) => notificationService.invokePopupAction(id, action)
         }
     }
 

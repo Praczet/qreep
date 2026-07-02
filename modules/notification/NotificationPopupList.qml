@@ -12,8 +12,11 @@ PanelWindow {
     property bool presented: false
 
     signal closeRequested(var notification)
+    signal closeIdRequested(string id, bool closeAll)
     signal closeAllRequested
     signal popupExpired(var notification)
+    signal popupExpiredId(string id)
+    signal actionInvoked(string id, var action)
 
     implicitWidth: screen.width
     implicitHeight: screen.height
@@ -104,8 +107,11 @@ PanelWindow {
                         else
                             rootNotificationPopupList.closeRequested(notification);
                     }
+                    onCloseIdRequested: (id, closeAll) => rootNotificationPopupList.closeIdRequested(id, closeAll)
 
                     onExpired: notification => rootNotificationPopupList.popupExpired(notification)
+                    onExpiredId: id => rootNotificationPopupList.popupExpiredId(id)
+                    onActionInvoked: (id, action) => rootNotificationPopupList.actionInvoked(id, action)
                 }
             }
         }

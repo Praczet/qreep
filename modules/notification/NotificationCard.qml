@@ -11,6 +11,11 @@ Item {
     property bool popupMode: true
     property bool centerMode: !popupMode
     property bool hovered: false
+    property bool entered: true
+    property bool exiting: false
+    property bool pendingCloseAll: false
+    property bool pendingDismiss: false
+    property string stableNotificationId: ""
     readonly property string title: service.summary(notification)
     readonly property string body: service.body(notification)
     readonly property string appName: service.appLabel(notification)
@@ -27,10 +32,24 @@ Item {
     readonly property bool colorPickerCard: pickedColor.length > 0 && (title.toLowerCase().indexOf("color picker") !== -1 || appName.toLowerCase().indexOf("color picker") !== -1)
 
     signal closeRequested(var notification, bool closeAll)
+    signal closeIdRequested(string id, bool closeAll)
     signal expired(var notification)
+    signal expiredId(string id)
+    signal actionInvoked(string id, var action)
 
     implicitWidth: popupMode ? theme.modules.notification.popupWidth : parent ? parent.width : theme.modules.notification.centerWidth
     implicitHeight: card.implicitHeight
+    opacity: !popupMode || (entered && !exiting) ? 1 : 0
+    x: popupMode ? (!entered ? theme.modules.notification.popupCardEnterOffset : exiting ? theme.modules.notification.popupCardExitOffset : 0) : 0
+    scale: popupMode && !entered ? 0.985 : 1
+
+    Component.onCompleted: {
+        stableNotificationId = String(notification && notification.id || "");
+        if (popupMode && service.popupFresh(notification)) {
+            entered = false;
+            enterTimer.restart();
+        }
+    }
 
     Timer {
         id: popupTimer
@@ -38,7 +57,51 @@ Item {
         interval: rootNotificationCard.theme.modules.notification.popupTimeout
         repeat: false
         running: rootNotificationCard.popupMode && rootNotificationCard.visible && !rootNotificationCard.hasActions
-        onTriggered: rootNotificationCard.expired(rootNotificationCard.notification)
+        onTriggered: rootNotificationCard.requestExpire()
+    }
+
+    Timer {
+        id: enterTimer
+
+        interval: 16
+        repeat: false
+        onTriggered: rootNotificationCard.entered = true
+    }
+
+    Timer {
+        id: exitTimer
+
+        interval: rootNotificationCard.theme.modules.notification.popupExitDuration
+        repeat: false
+        onTriggered: {
+            if (rootNotificationCard.pendingCloseAll)
+                rootNotificationCard.closeIdRequested(rootNotificationCard.stableNotificationId, true);
+            else if (rootNotificationCard.pendingDismiss)
+                rootNotificationCard.closeIdRequested(rootNotificationCard.stableNotificationId, false);
+            else
+                rootNotificationCard.expiredId(rootNotificationCard.stableNotificationId);
+        }
+    }
+
+    Behavior on opacity {
+        NumberAnimation {
+            duration: rootNotificationCard.exiting ? rootNotificationCard.theme.modules.notification.popupExitDuration : rootNotificationCard.theme.modules.notification.popupEnterDuration
+            easing.type: rootNotificationCard.exiting ? Easing.InCubic : Easing.OutCubic
+        }
+    }
+
+    Behavior on x {
+        NumberAnimation {
+            duration: rootNotificationCard.exiting ? rootNotificationCard.theme.modules.notification.popupExitDuration : rootNotificationCard.theme.modules.notification.popupEnterDuration
+            easing.type: rootNotificationCard.exiting ? Easing.InCubic : Easing.OutCubic
+        }
+    }
+
+    Behavior on scale {
+        NumberAnimation {
+            duration: rootNotificationCard.theme.modules.notification.popupEnterDuration
+            easing.type: Easing.OutCubic
+        }
     }
 
     Rectangle {
@@ -120,7 +183,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         acceptedButtons: Qt.LeftButton
-                        onClicked: mouse => rootNotificationCard.closeRequested(rootNotificationCard.notification, (mouse.modifiers & Qt.ControlModifier) !== 0)
+                        onClicked: mouse => rootNotificationCard.requestClose((mouse.modifiers & Qt.ControlModifier) !== 0)
                     }
                 }
             }
@@ -146,7 +209,7 @@ Item {
 
                     Image {
                         anchors.fill: parent
-                        source: rootNotificationCard.notification.image
+                        source: rootNotificationCard.showImagePreview && rootNotificationCard.notification ? rootNotificationCard.notification.image : ""
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: false
@@ -228,8 +291,7 @@ Item {
                             anchors.fill: parent
                             acceptedButtons: Qt.LeftButton
                             onClicked: {
-                                parent.modelData.invoke();
-                                rootNotificationCard.closeRequested(rootNotificationCard.notification, false);
+                                rootNotificationCard.requestAction(parent.modelData);
                             }
                         }
                     }
@@ -292,7 +354,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         acceptedButtons: Qt.LeftButton
-                        onClicked: mouse => rootNotificationCard.closeRequested(rootNotificationCard.notification, (mouse.modifiers & Qt.ControlModifier) !== 0)
+                        onClicked: mouse => rootNotificationCard.requestClose((mouse.modifiers & Qt.ControlModifier) !== 0)
                     }
                 }
             }
@@ -368,5 +430,43 @@ Item {
     function extractColor(value) {
         const match = String(value || "").match(/#[0-9a-fA-F]{6}\b/);
         return match ? match[0].toLowerCase() : "";
+    }
+
+    function requestClose(closeAll) {
+        if (!popupMode) {
+            closeRequested(notification, closeAll);
+            return;
+        }
+
+        beginExit(true, closeAll);
+    }
+
+    function requestAction(action) {
+        if (!popupMode) {
+            if (action)
+                action.invoke();
+            return;
+        }
+
+        actionInvoked(stableNotificationId, action);
+    }
+
+    function requestExpire() {
+        if (!popupMode) {
+            expired(notification);
+            return;
+        }
+
+        beginExit(false, false);
+    }
+
+    function beginExit(dismiss, closeAll) {
+        if (exiting)
+            return;
+
+        pendingDismiss = dismiss;
+        pendingCloseAll = closeAll;
+        exiting = true;
+        exitTimer.restart();
     }
 }

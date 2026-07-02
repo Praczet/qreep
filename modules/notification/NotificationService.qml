@@ -7,6 +7,7 @@ Scope {
 
     required property QtObject theme
     property var popupNotifications: []
+    property var freshPopupIds: ({})
     property bool groupedByApp: true
     property var groupFoldOverrides: ({})
     readonly property var notificationValues: notifServer.trackedNotifications.values
@@ -39,15 +40,42 @@ Scope {
 
     function showPopupNotification(notification) {
         const nextNotifications = popupNotifications.filter(item => item && item.id !== notification.id);
+        const nextFreshPopupIds = Object.assign({}, freshPopupIds);
+
+        nextFreshPopupIds[String(notification.id)] = true;
+        freshPopupIds = nextFreshPopupIds;
+
         nextNotifications.unshift(notification);
         popupNotifications = nextNotifications.slice(0, theme.modules.notification.maxPopupItems);
+        freshPopupClearTimer.restart();
+    }
+
+    function popupFresh(notification) {
+        const id = String(notification && notification.id || "");
+
+        return !!freshPopupIds[id];
+    }
+
+    readonly property Timer freshPopupClearTimer: Timer {
+        interval: theme.modules.notification.popupEnterDuration + 80
+        repeat: false
+        onTriggered: freshPopupIds = ({})
     }
 
     function hidePopupNotification(notification) {
         if (!notification)
             return;
 
-        popupNotifications = popupNotifications.filter(item => item && item.id !== notification.id);
+        hidePopupNotificationId(String(notification.id));
+    }
+
+    function hidePopupNotificationId(id) {
+        const value = String(id || "");
+
+        if (value.length === 0)
+            return;
+
+        popupNotifications = popupNotifications.filter(item => item && String(item.id) !== value);
     }
 
     function dismissNotification(notification) {
@@ -56,6 +84,15 @@ Scope {
 
         hidePopupNotification(notification);
         notification.dismiss();
+    }
+
+    function dismissNotificationId(id) {
+        const value = String(id || "");
+        const notification = findNotification(value);
+
+        hidePopupNotificationId(value);
+        if (notification)
+            notification.dismiss();
     }
 
     function dismissAll() {
@@ -80,6 +117,32 @@ Scope {
 
     function expirePopup(notification) {
         hidePopupNotification(notification);
+    }
+
+    function expirePopupId(id) {
+        hidePopupNotificationId(id);
+    }
+
+    function invokePopupAction(id, action) {
+        hidePopupNotificationId(id);
+
+        if (action)
+            action.invoke();
+    }
+
+    function findNotification(id) {
+        const value = String(id || "");
+
+        if (value.length === 0)
+            return null;
+
+        for (let i = 0; i < notificationValues.length; i++) {
+            const notification = notificationValues[i];
+            if (notification && String(notification.id) === value)
+                return notification;
+        }
+
+        return null;
     }
 
     function closeFromPointer(notification, modifiers) {

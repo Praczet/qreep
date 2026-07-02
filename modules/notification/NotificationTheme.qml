@@ -6,6 +6,10 @@ QtObject {
     required property QtObject qreep
 
     readonly property int animationDuration: 150
+    readonly property int popupEnterDuration: 190
+    readonly property int popupExitDuration: 130
+    readonly property int popupCardEnterOffset: 28
+    readonly property int popupCardExitOffset: 18
     readonly property int maxPopupItems: 4
     readonly property int popupTimeout: 5200
     readonly property int popupWidth: 360
@@ -13,7 +17,7 @@ QtObject {
     readonly property int popupRightMargin: 12
     readonly property int centerWidth: 440
     readonly property int centerMargin: 12
-    readonly property int centerTopMargin: 48
+    readonly property int centerTopMargin: 80
     readonly property int panelPadding: 12
     readonly property int panelRadius: 8
     readonly property int cardPadding: 10
@@ -42,8 +46,8 @@ QtObject {
     readonly property int closePixelSize: 13
 
     readonly property color overlayColor: Qt.rgba(qreep.background.r, qreep.background.g, qreep.background.b, 0.42)
-    readonly property color panelColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, 0.92)
-    readonly property color cardColor: Qt.rgba(qreep.surfaceContainer.r, qreep.surfaceContainer.g, qreep.surfaceContainer.b, 0.88)
+    readonly property color panelColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, 0.22)
+    readonly property color cardColor: Qt.rgba(qreep.surfaceContainer.r, qreep.surfaceContainer.g, qreep.surfaceContainer.b, 0.58)
     readonly property color cardHoverColor: Qt.rgba(qreep.surfaceContainerHigh.r, qreep.surfaceContainerHigh.g, qreep.surfaceContainerHigh.b, 0.94)
     readonly property color groupColor: Qt.rgba(qreep.surfaceContainerLow.r, qreep.surfaceContainerLow.g, qreep.surfaceContainerLow.b, 0.72)
     readonly property color controlColor: Qt.rgba(qreep.surfaceContainerHighest.r, qreep.surfaceContainerHighest.g, qreep.surfaceContainerHighest.b, 0.72)
