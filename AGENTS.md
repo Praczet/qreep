@@ -443,6 +443,133 @@ Minimum useful scope:
 
 Privacy rule: clipboard history is sensitive. Do not add persistence, indexing, previews, or logging beyond the existing backend behavior unless Adam explicitly asks for it. The clipboard does not need to become a diary with paste support.
 
+### Expose / window overview
+
+Working name:
+
+```text
+qreep-expose
+```
+
+Purpose:
+
+- show a full-screen Expose-style overview;
+- make current-workspace windows the primary, large preview targets;
+- show other workspaces as smaller grouped clusters;
+- focus a window by click, `Enter`, or arrow-key selection;
+- later support type-to-search over class/title/app/workspace.
+
+This is a top-level shell module, not a bar feature. It should be opened by IPC
+and a Hyprland binding such as `SUPER+TAB`. Do not add a bar button unless Adam
+explicitly asks. Expose is a work surface, not another tiny pill looking for a
+chair.
+
+Expected structure:
+
+```text
+modules/expose/
+├── Expose.qml
+├── ExposePanel.qml
+├── ExposeService.qml
+├── ExposeClientCard.qml
+├── ExposeWorkspaceCluster.qml
+├── ExposeTheme.qml
+└── README.md
+```
+
+Use the existing shell-level pattern:
+
+- `Expose.qml` is the `Scope`/controller with IPC, open state, service, and
+  lazy panel.
+- `ExposePanel.qml` is the full-screen overlay.
+- `ExposeService.qml` owns Hyprland client/workspace data, grouping, selection,
+  and focus dispatch.
+- `shell.qml` hosts `Expose` directly, like Clipboard, Dashboard, and OSD.
+
+IPC:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose toggle
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose showExpose
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose hideExpose
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose refresh
+```
+
+V1 behavior:
+
+- full-screen `PanelWindow` overlay, `WlrLayer.Overlay`, exclusive zone `0`;
+- refresh clients when shown;
+- current workspace windows render as large cards;
+- other workspaces render as smaller clusters;
+- current workspace preview status is unresolved: `grim -g` works as a rectangle
+  capture but lies when floating windows overlap normal windows;
+- attempted live `ScreencopyView` previews from `Hyprland.toplevels` Wayland
+  handles, but they did not work well enough to keep fighting today;
+- current workspace cards may fall back to runtime `grim -g` thumbnails
+  under `~/.cache/qreep/expose/`;
+- click focuses the selected application/window and closes Expose;
+- arrow keys move selection;
+- `Enter` focuses the selected window and closes Expose;
+- `Escape` closes;
+- no search in v1, but keep the model ready for search filtering later.
+
+Preview strategy:
+
+1. Keep `Quickshell.Hyprland` / `hyprctl clients -j` as the reliable metadata
+   and focus path because it gives geometry, class, floating state, workspace
+   id/name, and address.
+2. Use `Hyprland.toplevels` only where it helps; do not make selection/focus
+   depend on it.
+3. Do not assume `ScreencopyView` is solved. It was tested as the cleaner
+   toplevel-preview path and did not behave well enough in this slice.
+4. `grim -g` rectangle screenshots are usable only when overlapping windows do
+   not matter. They are not true window screenshots.
+5. Possible workaround to prototype later: create a temporary special workspace
+   such as `special:qreep-expose-floaters`, move floating current-workspace
+   windows there one by one, capture normal tiled windows without floaters
+   covering them, then capture the floating windows separately, and finally
+   restore every window to its original workspace/floating state. This needs to
+   be treated as a careful transaction: collect original addresses/workspaces,
+   avoid stealing focus more than necessary, handle failure, and always restore.
+6. Store any generated thumbnails under `~/.cache/qreep/expose/`; do not create
+   durable preview storage.
+
+Layout direction:
+
+- avoid making the overview a strict grid unless reality forces it;
+- use a weighted layout where current workspace cards get the dominant area;
+- group other workspaces into compact cards with mini client tiles/icons;
+- keep enough geometry/ordering in the service for spatial navigation.
+
+Keyboard navigation should be spatial, not spreadsheet-shaped:
+
+```text
+selected card center + direction -> nearest selectable card in that direction
+```
+
+Later search:
+
+- printable typing opens/focuses a search field;
+- filter by app label, class, title, and workspace name;
+- keep selected index valid after filtering or fall back to the first result;
+- `Escape` clears search first, then closes if search is already empty.
+
+First useful unit:
+
+```text
+feat(expose): add window overview module
+```
+
+Acceptance criteria:
+
+- `qreep-expose toggle` opens/closes;
+- current workspace windows are big cards;
+- other workspaces are compact clusters;
+- click and `Enter` focus windows;
+- arrow navigation works;
+- `Escape` closes;
+- `qmllint modules/expose/*.qml` passes.
+
 ## Refactor roadmap
 
 Preferred next steps for the architectural split:

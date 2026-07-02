@@ -3,6 +3,7 @@ import QtQuick
 import "bar" as BarModule
 import "clipboard" as ClipboardModule
 import "dashboard" as DashboardModule
+import "expose" as ExposeModule
 import "osd" as OsdModule
 
 QtObject {
@@ -19,6 +20,10 @@ QtObject {
     }
 
     readonly property QtObject dashboard: DashboardModule.DashboardTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject expose: ExposeModule.ExposeTheme {
         qreep: rootModulesTheme.qreep
     }
 
