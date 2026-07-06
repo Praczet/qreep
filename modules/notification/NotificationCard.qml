@@ -20,10 +20,10 @@ Item {
     readonly property string body: service.body(notification)
     readonly property string appName: service.appLabel(notification)
     readonly property bool hasBody: body.length > 0
-    readonly property bool hasImage: String(notification && notification.image || "").length > 0
-    readonly property var visibleActions: notification ? notification.actions.filter(action => String(action && action.text || "").trim().length > 0) : []
+    readonly property bool hasImage: service.imageSource(notification).length > 0
+    readonly property var visibleActions: service.notificationActions(notification)
     readonly property bool hasActions: visibleActions.length > 0
-    readonly property bool critical: notification && String(notification.urgency) === "2"
+    readonly property bool critical: service.urgencyValue(notification) === "2"
     readonly property bool hyprshotCard: appName.toLowerCase().indexOf("hyprshot") !== -1
     readonly property bool showImagePreview: hyprshotCard && hasImage
     readonly property string priorityLabel: critical ? "Critical" : ""
@@ -35,7 +35,7 @@ Item {
     signal closeIdRequested(string id, bool closeAll)
     signal expired(var notification)
     signal expiredId(string id)
-    signal actionInvoked(string id, var action)
+    signal actionInvoked(string id, int actionIndex)
 
     implicitWidth: popupMode ? theme.modules.notification.popupWidth : parent ? parent.width : theme.modules.notification.centerWidth
     implicitHeight: card.implicitHeight
@@ -44,7 +44,7 @@ Item {
     scale: popupMode && !entered ? 0.985 : 1
 
     Component.onCompleted: {
-        stableNotificationId = String(notification && notification.id || "");
+        stableNotificationId = service.notificationId(notification);
         if (popupMode && service.popupFresh(notification)) {
             entered = false;
             enterTimer.restart();
@@ -209,7 +209,7 @@ Item {
 
                     Image {
                         anchors.fill: parent
-                        source: rootNotificationCard.showImagePreview && rootNotificationCard.notification ? rootNotificationCard.notification.image : ""
+                        source: rootNotificationCard.showImagePreview ? rootNotificationCard.service.imageSource(rootNotificationCard.notification) : ""
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: false
@@ -442,13 +442,14 @@ Item {
     }
 
     function requestAction(action) {
+        const actionIndex = Number(action && action.index !== undefined ? action.index : -1);
+
         if (!popupMode) {
-            if (action)
-                action.invoke();
+            service.invokeNotificationActionId(stableNotificationId, actionIndex);
             return;
         }
 
-        actionInvoked(stableNotificationId, action);
+        actionInvoked(stableNotificationId, actionIndex);
     }
 
     function requestExpire() {

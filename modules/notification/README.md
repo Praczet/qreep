@@ -101,9 +101,10 @@ Notification center:
 
 Action notifications are touchy. Invoking an action can close/destroy the
 underlying notification object immediately. Popup action handling therefore
-removes the popup by stable notification id before invoking the action. Do not
-turn that back into a delayed object-based dismiss unless you are collecting
-segfaults as a hobby.
+renders from a plain snapshot and removes the popup by stable notification id
+before invoking the action by index on the live notification. Do not turn that
+back into direct live action objects in the popup model unless you are
+collecting segfaults as a hobby.
 
 ## App-Specific Cards
 

@@ -92,7 +92,7 @@ Scope {
             onCloseAllRequested: notificationService.dismissAll()
             onPopupExpired: notification => notificationService.expirePopup(notification)
             onPopupExpiredId: id => notificationService.expirePopupId(id)
-            onActionInvoked: (id, action) => notificationService.invokePopupAction(id, action)
+            onActionInvoked: (id, actionIndex) => notificationService.invokePopupAction(id, actionIndex)
         }
     }
 

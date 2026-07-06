@@ -39,19 +39,20 @@ Scope {
     }
 
     function showPopupNotification(notification) {
-        const nextNotifications = popupNotifications.filter(item => item && item.id !== notification.id);
+        const id = notificationId(notification);
+        const nextNotifications = popupNotifications.filter(item => item && notificationId(item) !== id);
         const nextFreshPopupIds = Object.assign({}, freshPopupIds);
 
-        nextFreshPopupIds[String(notification.id)] = true;
+        nextFreshPopupIds[id] = true;
         freshPopupIds = nextFreshPopupIds;
 
-        nextNotifications.unshift(notification);
+        nextNotifications.unshift(snapshotNotification(notification));
         popupNotifications = nextNotifications.slice(0, theme.modules.notification.maxPopupItems);
         freshPopupClearTimer.restart();
     }
 
     function popupFresh(notification) {
-        const id = String(notification && notification.id || "");
+        const id = notificationId(notification);
 
         return !!freshPopupIds[id];
     }
@@ -66,7 +67,7 @@ Scope {
         if (!notification)
             return;
 
-        hidePopupNotificationId(String(notification.id));
+        hidePopupNotificationId(notificationId(notification));
     }
 
     function hidePopupNotificationId(id) {
@@ -75,7 +76,7 @@ Scope {
         if (value.length === 0)
             return;
 
-        popupNotifications = popupNotifications.filter(item => item && String(item.id) !== value);
+        popupNotifications = popupNotifications.filter(item => item && notificationId(item) !== value);
     }
 
     function dismissNotification(notification) {
@@ -123,8 +124,20 @@ Scope {
         hidePopupNotificationId(id);
     }
 
-    function invokePopupAction(id, action) {
+    function invokePopupAction(id, actionIndex) {
         hidePopupNotificationId(id);
+        invokeNotificationActionId(id, actionIndex);
+    }
+
+    function invokeNotificationActionId(id, actionIndex) {
+        const notification = findNotification(id);
+        const index = Number(actionIndex);
+
+        if (!notification || index < 0)
+            return;
+
+        const actions = notification.actions || [];
+        const action = actions[index];
 
         if (action)
             action.invoke();
@@ -145,6 +158,28 @@ Scope {
         return null;
     }
 
+    function notificationId(notification) {
+        return String(notification && notification.id || "");
+    }
+
+    function isSnapshot(notification) {
+        return !!(notification && notification.__qreepSnapshot);
+    }
+
+    function snapshotNotification(notification) {
+        return {
+            __qreepSnapshot: true,
+            id: notificationId(notification),
+            appName: appLabel(notification),
+            iconName: iconName(notification),
+            summary: summary(notification),
+            body: body(notification),
+            image: imageSource(notification),
+            urgency: urgencyValue(notification),
+            actions: notificationActions(notification)
+        };
+    }
+
     function closeFromPointer(notification, modifiers) {
         if ((modifiers & Qt.ControlModifier) !== 0) {
             dismissAll();
@@ -155,6 +190,9 @@ Scope {
     }
 
     function appLabel(notification) {
+        if (isSnapshot(notification))
+            return String(notification.appName || "Unknown");
+
         const appName = String(notification && notification.appName || "").trim();
         const desktopEntry = String(notification && notification.desktopEntry || "").trim();
 
@@ -168,6 +206,9 @@ Scope {
     }
 
     function iconName(notification) {
+        if (isSnapshot(notification))
+            return String(notification.iconName || "dialog-information-symbolic");
+
         const appIcon = String(notification && notification.appIcon || "").trim();
         const desktopEntry = String(notification && notification.desktopEntry || "").trim();
 
@@ -181,12 +222,51 @@ Scope {
     }
 
     function summary(notification) {
+        if (isSnapshot(notification))
+            return String(notification.summary || appLabel(notification));
+
         const text = plainText(notification && notification.summary || "").trim();
         return text.length > 0 ? text : appLabel(notification);
     }
 
     function body(notification) {
+        if (isSnapshot(notification))
+            return String(notification.body || "");
+
         return plainText(notification && notification.body || "").trim();
+    }
+
+    function imageSource(notification) {
+        return String(notification && notification.image || "");
+    }
+
+    function urgencyValue(notification) {
+        return String(notification && notification.urgency || "");
+    }
+
+    function notificationActions(notification) {
+        if (!notification)
+            return [];
+
+        if (isSnapshot(notification))
+            return notification.actions || [];
+
+        const actions = notification.actions || [];
+        const visibleActions = [];
+
+        for (let i = 0; i < actions.length; i++) {
+            const action = actions[i];
+            const text = String(action && action.text || "").trim();
+
+            if (text.length > 0) {
+                visibleActions.push({
+                    index: i,
+                    text
+                });
+            }
+        }
+
+        return visibleActions;
     }
 
     function contrastTextColor(hexColor) {

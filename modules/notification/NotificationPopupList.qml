@@ -16,7 +16,7 @@ PanelWindow {
     signal closeAllRequested
     signal popupExpired(var notification)
     signal popupExpiredId(string id)
-    signal actionInvoked(string id, var action)
+    signal actionInvoked(string id, int actionIndex)
 
     implicitWidth: screen.width
     implicitHeight: screen.height
@@ -111,7 +111,7 @@ PanelWindow {
 
                     onExpired: notification => rootNotificationPopupList.popupExpired(notification)
                     onExpiredId: id => rootNotificationPopupList.popupExpiredId(id)
-                    onActionInvoked: (id, action) => rootNotificationPopupList.actionInvoked(id, action)
+                    onActionInvoked: (id, actionIndex) => rootNotificationPopupList.actionInvoked(id, actionIndex)
                 }
             }
         }
