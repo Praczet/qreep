@@ -9,7 +9,7 @@ Rectangle {
 
     signal triggered
 
-    implicitWidth: actionLabel.implicitWidth + theme.modules.bar.network.actionPadding * 2
+    implicitWidth: Math.max(actionLabel.implicitWidth, 80) + theme.modules.bar.network.actionPadding * 2
     implicitHeight: theme.modules.bar.network.actionHeight
     radius: theme.modules.bar.network.actionRadius
     color: actionTapHandler.pressed ? theme.modules.bar.network.rowHoverBackgroundColor : theme.modules.bar.network.actionBackgroundColor
