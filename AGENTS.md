@@ -17,6 +17,8 @@ qreep/
 │   ├── bar/
 │   ├── clipboard/
 │   ├── dashboard/
+│   ├── expose/
+│   ├── notification/
 │   └── osd/
 ├── scripts/
 ├── theme/
@@ -130,6 +132,8 @@ modules/
 ├── bar/
 ├── clipboard/
 ├── dashboard/
+├── expose/
+├── notification/
 └── osd/
 ```
 
@@ -879,6 +883,10 @@ Qreep currently has:
 - a top-level Dashboard module in `modules/dashboard/`, hosted directly by `shell.qml`;
 - a top-level Clipboard module in `modules/clipboard/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-clipboard`, and backed by `clipvault`;
 - the Clipboard panel currently supports a bottom overlay, search/filter, pins filter, keyboard navigation, text/code/color/image cards, runtime image previews, restore notifications, delete, and star/unstar metadata in `~/.local/share/clipvault/pinned.json`;
+- a top-level Expose module in `modules/expose/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-expose`;
+- a top-level Notification module in `modules/notification/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-notification`, and backed by `Quickshell.Services.Notifications.NotificationServer`;
+- notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;
+- notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
@@ -917,9 +925,25 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboa
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard refresh
 ```
 
+Useful notification IPC commands:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-notification toggleCenter
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-notification showCenter
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-notification hideCenter
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-notification dismissAll
+```
+
+Notification testing helper:
+
+```bash
+scripts/qreep-notification-test-batch_v0.0.1 --delay 0.4
+```
+
 Current pickup point:
 
 - The Clipboard v1 shell module is done enough for now: IPC, search/filter, keyboard navigation, restore notifications, delete, pins, and image previews are implemented and documented in `modules/clipboard/README.md`.
+- The Notification v1 shell module is implemented and documented in `modules/notification/README.md`: popups, notification center, grouping, per-group dismissal, app-specific cards for Color Picker and Hyprshot, action buttons, popup animations, and a test batch script.
 - Do not continue expanding Clipboard unless Adam asks. The remaining clipboard items are follow-ups, not the next default project direction.
 - Bar mode/pill-state work remains a separate runtime slice. If the next session returns to bar ownership cleanup, pick up from `BarModeService.qml`, `BarPillStateService.qml`, and the registered pill wiring in `Bar.qml`.
 - Do not rush persistence. Runtime state first, persisted layout second. Past Adam does not need a config file that explains a bug with confidence.

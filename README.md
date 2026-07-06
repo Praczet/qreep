@@ -43,6 +43,8 @@ modules/
 ├── bar/
 ├── clipboard/
 ├── dashboard/
+├── expose/
+├── notification/
 └── osd/
 ```
 
@@ -117,6 +119,20 @@ hl.layer_rule({
     animation = "popin 85%",
     ignore_alpha = 0.5,
 })
+
+hl.layer_rule({
+    name = "qreep-notification",
+    match = { namespace = "qreep-notification" },
+    blur = true,
+    ignore_alpha = 0.1,
+})
+
+hl.layer_rule({
+    name = "qreep-notification-center",
+    match = { namespace = "qreep-notification-center" },
+    blur = true,
+    ignore_alpha = 0.1,
+})
 ```
 
 `ignore_alpha` tells Hyprland not to blur behind pixels at or below that alpha
@@ -140,6 +156,8 @@ Module theme files live with their owning module:
 * `modules/bar/TooltipTheme.qml`
 * `modules/clipboard/ClipboardTheme.qml`
 * `modules/dashboard/DashboardTheme.qml`
+* `modules/expose/ExposeTheme.qml`
+* `modules/notification/NotificationTheme.qml`
 * `modules/osd/OsdTheme.qml`
 
 `QreepTheme.qml` exposes global semantic colors and the aggregated module theme:
@@ -152,8 +170,8 @@ readonly property QtObject modules: Modules.ModulesTheme {
 
 Old paths such as `theme.module`, `theme.tooltip`, and `theme.dashboard` remain
 as compatibility aliases for now. New module-specific code should prefer paths
-like `theme.modules.bar.pill`, `theme.modules.bar.tooltip`, and
-`theme.modules.dashboard`.
+like `theme.modules.bar.pill`, `theme.modules.bar.tooltip`,
+`theme.modules.dashboard`, and `theme.modules.notification`.
 
 If a feature needs sizes, spacing, timing, or command names, put them in that
 feature's theme file. Hardcoding in the button is how the next tweak becomes a
@@ -172,8 +190,31 @@ quickshell ipc call qreep-upchecker refresh
 quickshell ipc call qreep-upchecker toggle
 quickshell ipc call qreep-monitor-profile refresh
 quickshell ipc call qreep-clipboard toggle
+quickshell ipc call qreep-expose toggle
+quickshell ipc call qreep-notification toggleCenter
 quickshell ipc call osd showMessage "Hello from the questionable future" 3000
 ```
+
+Notification center commands:
+
+```bash
+quickshell ipc call qreep-notification toggleCenter
+quickshell ipc call qreep-notification showCenter
+quickshell ipc call qreep-notification hideCenter
+quickshell ipc call qreep-notification dismissAll
+```
+
+The notification test helper sends a mixed batch for popup and center layout
+checks:
+
+```bash
+scripts/qreep-notification-test-batch_v0.0.1
+scripts/qreep-notification-test-batch_v0.0.1 --delay 0.4
+```
+
+Qreep must own `org.freedesktop.Notifications` for that helper to test Qreep.
+If another notification daemon owns it, Qreep logs that it could not register
+and the notifications go somewhere else. Very democratic. Not helpful.
 
 Pill state commands use two separate ideas:
 
@@ -249,6 +290,7 @@ Small useful checks:
 qmllint modules/bar/Bar.qml
 qmllint theme/QreepTheme.qml
 qmllint modules/bar/features/mpris/MprisService.qml
+qmllint modules/notification/*.qml
 ```
 
 For broader changes:
