@@ -294,7 +294,13 @@ modules/dashboard/
 
 modules/aegis/
 ├── Aegis.qml
-├── AegisPanel.qml
+
+modules/dashboard/configs/
+├── main_dashboard.json
+└── aegis_dashboard.json
+
+modules/dashboard/features/aegis/
+├── AegisBlock.qml
 ├── AegisService.qml
 └── AegisTheme.qml
 ```
@@ -882,8 +888,8 @@ Qreep currently has:
 - a Power feature controller in `modules/bar/features/power/Power.qml` that owns `PowerService` and lazy-loads the full-height `qreep-popup-power` panel;
 - confirmed power actions wired through `modules/bar/features/power/PowerService.qml`;
 - an Upchecker feature controller in `modules/bar/features/upchecker/Upchecker.qml` that owns `UpcheckerService` and lazy-loads the standalone `qreep-popup-upchecker` panel;
-- a top-level Aegis module in `modules/aegis/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-aegis`, and shared with Dashboard for AGS-replacement system info widgets;
-- a top-level Dashboard module in `modules/dashboard/`, hosted directly by `shell.qml`;
+- a top-level Aegis module in `modules/aegis/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-aegis`, using the shared dashboard renderer with `modules/dashboard/configs/aegis_dashboard.json` and the Aegis feature/service under `modules/dashboard/features/aegis/`;
+- a top-level Dashboard module in `modules/dashboard/`, hosted directly by `shell.qml`, using `modules/dashboard/configs/main_dashboard.json` and not waking Aegis just because Aegis exists;
 - a top-level Clipboard module in `modules/clipboard/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-clipboard`, and backed by `clipvault`;
 - the Clipboard panel currently supports a bottom overlay, search/filter, pins filter, keyboard navigation, text/code/color/image cards, runtime image previews, restore notifications, delete, and star/unstar metadata in `~/.local/share/clipvault/pinned.json`;
 - a top-level Expose module in `modules/expose/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-expose`;
@@ -957,7 +963,7 @@ Current pickup point:
 
 - The Clipboard v1 shell module is done enough for now: IPC, search/filter, keyboard navigation, restore notifications, delete, pins, and image previews are implemented and documented in `modules/clipboard/README.md`.
 - The Notification v1 shell module is implemented and documented in `modules/notification/README.md`: popups, notification center, grouping, per-group dismissal, app-specific cards for Color Picker and Hyprshot, action buttons, popup animations, and a test batch script.
-- The Aegis v1 shell module replaces the old AGS Aegis package for the common path: standalone overlay, shared sysinfo service, dashboard Aegis blocks, old `widgets` dashboard config compatibility, and dashboard-style enter/leave motion.
+- The Aegis v1 shell module replaces the old AGS Aegis package for the common path: standalone `qreep-aegis` overlay, sysinfo service, dashboard-style enter/leave motion, and independent `modules/dashboard/configs/aegis_dashboard.json` layout. Aegis uses normal dashboard `blocks`, not legacy AGS `widgets`. Keep the main dashboard and Aegis configs separate.
 - Do not continue expanding Clipboard unless Adam asks. The remaining clipboard items are follow-ups, not the next default project direction.
 - Bar mode/pill-state work remains a separate runtime slice. If the next session returns to bar ownership cleanup, pick up from `BarModeService.qml`, `BarPillStateService.qml`, and the registered pill wiring in `Bar.qml`.
 - Do not rush persistence. Runtime state first, persisted layout second. Past Adam does not need a config file that explains a bug with confidence.

@@ -3,7 +3,7 @@ import "./features/weather" as WeatherFeature
 import "./features/clock" as ClockFeature
 import "./features/image" as ImageFeature
 import "./features/wotd" as WotdFeature
-import "../aegis" as AegisFeature
+import "./features/aegis" as AegisFeature
 
 Rectangle {
     id: rootDashboardCard
@@ -196,7 +196,8 @@ Rectangle {
             || value === "aegis-summary"
             || value === "aegis-cpu-graph"
             || value === "aegis-memory-pie"
-            || value === "aegis-disk-pie";
+            || value === "aegis-disk-pie"
+            || value === "aegis-copy-footer";
     }
 
     Behavior on x {

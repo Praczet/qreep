@@ -1,9 +1,9 @@
 import QtQuick
 
-import "aegis" as AegisModule
 import "bar" as BarModule
 import "clipboard" as ClipboardModule
 import "dashboard" as DashboardModule
+import "dashboard/features/aegis" as AegisFeature
 import "expose" as ExposeModule
 import "notification" as NotificationModule
 import "osd" as OsdModule
@@ -13,7 +13,7 @@ QtObject {
 
     required property QtObject qreep
 
-    readonly property QtObject aegis: AegisModule.AegisTheme {
+    readonly property QtObject aegis: AegisFeature.AegisTheme {
         qreep: rootModulesTheme.qreep
     }
 

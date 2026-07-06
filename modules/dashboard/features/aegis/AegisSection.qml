@@ -4,6 +4,7 @@ Item {
     id: rootAegisSection
 
     required property QtObject theme
+    property QtObject service
     required property var section
 
     implicitHeight: layout.implicitHeight
@@ -31,6 +32,7 @@ Item {
 
                 width: layout.width
                 theme: rootAegisSection.theme
+                service: rootAegisSection.service
                 label: String(modelData.label || "")
                 value: String(modelData.value || "")
             }

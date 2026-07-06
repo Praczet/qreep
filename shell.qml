@@ -39,7 +39,6 @@ ShellRoot {
         id: dashboard
 
         theme: qreepTheme
-        aegisService: aegis.service
     }
 
     ClipboardModule.Clipboard {

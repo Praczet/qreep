@@ -6,7 +6,6 @@ Scope {
     id: rootDashboard
 
     required property QtObject theme
-    property QtObject aegisService
     property bool open: false
     readonly property bool panelLoaded: open || closeTimer.running
     readonly property alias service: dashboardService
@@ -45,7 +44,6 @@ Scope {
         DashboardPanel {
             theme: rootDashboard.theme
             service: dashboardService
-            aegisService: rootDashboard.aegisService
             panelOpen: rootDashboard.open
 
             onCloseRequested: rootDashboard.hide()
@@ -62,8 +60,6 @@ Scope {
     function show() {
         closeTimer.stop();
         dashboardService.reload();
-        if (aegisService)
-            aegisService.setActive("dashboard", true);
         open = true;
     }
 
@@ -73,8 +69,6 @@ Scope {
 
         closeTimer.restart();
         open = false;
-        if (aegisService)
-            aegisService.setActive("dashboard", false);
     }
 
     function toggle() {

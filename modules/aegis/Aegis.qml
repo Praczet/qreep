@@ -1,6 +1,8 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../dashboard" as DashboardModule
+import "../dashboard/features/aegis" as AegisFeature
 
 Scope {
     id: rootAegis
@@ -10,10 +12,17 @@ Scope {
     readonly property bool panelLoaded: open || closeTimer.running
     readonly property alias service: aegisService
 
-    AegisService {
+    AegisFeature.AegisService {
         id: aegisService
 
         theme: rootAegis.theme
+    }
+
+    DashboardModule.DashboardService {
+        id: aegisDashboardService
+
+        theme: rootAegis.theme
+        configPath: Quickshell.shellDir + "/modules/dashboard/configs/aegis_dashboard.json"
     }
 
     readonly property IpcHandler ipc: IpcHandler {
@@ -56,10 +65,13 @@ Scope {
 
         active: rootAegis.panelLoaded
 
-        AegisPanel {
+        DashboardModule.DashboardPanel {
             theme: rootAegis.theme
-            service: aegisService
+            service: aegisDashboardService
+            aegisService: rootAegis.service
             panelOpen: rootAegis.open
+            layerNamespace: "qreep-aegis"
+            closeOnBackgroundClick: false
 
             onCloseRequested: rootAegis.hide()
         }
@@ -74,6 +86,7 @@ Scope {
 
     function show() {
         closeTimer.stop();
+        aegisDashboardService.reload();
         aegisService.setActive("aegis-panel", true);
         open = true;
     }
@@ -95,6 +108,7 @@ Scope {
     }
 
     function refresh() {
+        aegisDashboardService.reload();
         aegisService.refresh();
     }
 }

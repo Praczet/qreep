@@ -9,6 +9,8 @@ PanelWindow {
     required property QtObject service
     property QtObject aegisService
     required property bool panelOpen
+    property string layerNamespace: "qreep-dashboard"
+    property bool closeOnBackgroundClick: true
 
     property bool presented: false
 
@@ -21,7 +23,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
 
-    WlrLayershell.namespace: "qreep-dashboard"
+    WlrLayershell.namespace: rootDashboardPanel.layerNamespace
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
@@ -64,7 +66,12 @@ PanelWindow {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: rootDashboardPanel.closeRequested()
+            onClicked: mouse => {
+                if (rootDashboardPanel.closeOnBackgroundClick)
+                    rootDashboardPanel.closeRequested();
+                else
+                    mouse.accepted = true;
+            }
         }
     }
 

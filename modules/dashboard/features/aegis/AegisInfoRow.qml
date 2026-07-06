@@ -5,6 +5,7 @@ Item {
     id: rootAegisInfoRow
 
     required property QtObject theme
+    property QtObject service
     property string label: ""
     property string value: ""
     property string copyValue: value
@@ -16,7 +17,10 @@ Item {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         onClicked: mouse => {
-            Quickshell.clipboardText = rootAegisInfoRow.copyValue;
+            if (rootAegisInfoRow.service)
+                rootAegisInfoRow.service.copyValue(rootAegisInfoRow.copyValue, rootAegisInfoRow.label);
+            else
+                Quickshell.clipboardText = rootAegisInfoRow.copyValue;
             mouse.accepted = true;
         }
     }

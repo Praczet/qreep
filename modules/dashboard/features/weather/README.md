@@ -4,7 +4,7 @@ First dashboard weather block. It uses Open-Meteo through `curl`, because no API
 key is a fine feature when the alternative is inventing account management for a
 weather card.
 
-Use it from `modules/dashboard/dashboard.json`:
+Use it from `modules/dashboard/configs/main_dashboard.json`:
 
 ```json
 {

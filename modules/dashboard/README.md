@@ -2,6 +2,10 @@
 
 Qreep dashboard is a top-level shell surface, not a bar-owned popup.
 
+This is the dashboard engine and the main dashboard instance. Aegis also uses
+this renderer, but it has its own IPC target and config. Do not make the main
+dashboard carry Aegis blocks just because the renderer can.
+
 The first draft is deliberately fake: it loads configured blocks and proves the
 canvas, card sizing, positioning, title/chrome flags, and entry animation. Real
 blocks can arrive after the surface stops doing interpretive dance.
@@ -20,12 +24,18 @@ quickshell ipc call qreep-dashboard refresh
 The draft config lives at:
 
 ```text
-modules/dashboard/dashboard.json
+modules/dashboard/configs/main_dashboard.json
 ```
 
 This is repo-local for now so it can be reviewed with the module. User config can
 move to `~/.config/quickshell/qreep/dashboard.json` once the schema is less
 likely to change every time someone looks at it funny.
+
+Aegis uses the same schema from:
+
+```text
+modules/dashboard/configs/aegis_dashboard.json
+```
 
 Blocks use explicit `width` and `height`. Preferred placement is anchored:
 

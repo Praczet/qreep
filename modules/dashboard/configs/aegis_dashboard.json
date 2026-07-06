@@ -1,0 +1,121 @@
+{
+  "cardStyle": {
+    "color": "{{on_surface}}",
+    "backgroundColor": "{{surface}}",
+    "borderColor": "{{outline}}",
+    "radius": 18,
+    "borderWidth": 1,
+    "padding": 20
+  },
+  "blocks": [
+    {
+      "id": "clock",
+      "type": "clock",
+      "title": "Clock",
+      "preset": "large",
+      "anchorPoint": "top-left",
+      "dx": 72,
+      "dy": 96,
+      "width": 390,
+      "height": 250,
+      "from": "top",
+      "showTitle": false,
+      "showBackground": true,
+      "showBorder": true,
+      "config": {
+        "showTitle": false
+      }
+    },
+    {
+      "id": "aegis-full",
+      "type": "aegis",
+      "title": "Aegis",
+      "preset": "system",
+      "anchorPoint": "top-left",
+      "dx": 484,
+      "dy": 96,
+      "width": 390,
+      "height": 794,
+      "from": "top",
+      "showTitle": true,
+      "showBackground": true,
+      "showBorder": true,
+      "config": {
+        "mode": "full"
+      }
+    },
+    {
+      "id": "cpu-graph",
+      "type": "aegis-cpu-graph",
+      "title": "CPU",
+      "preset": "chart",
+      "anchorPoint": "top-left",
+      "dx": 896,
+      "dy": 96,
+      "width": 390,
+      "height": 250,
+      "from": "top-right",
+      "showTitle": true,
+      "showBackground": true,
+      "showBorder": true,
+      "config": {
+        "size": 240
+      }
+    },
+    {
+      "id": "mem-pie",
+      "type": "aegis-memory-pie",
+      "title": "Memory",
+      "preset": "chart",
+      "anchorPoint": "top-left",
+      "dx": 896,
+      "dy": 368,
+      "width": 390,
+      "height": 250,
+      "from": "right",
+      "showTitle": true,
+      "showBackground": true,
+      "showBorder": true,
+      "config": {
+        "size": 240,
+        "legendPosition": "left"
+      }
+    },
+    {
+      "id": "disk-pie",
+      "type": "aegis-disk-pie",
+      "title": "Disk",
+      "preset": "chart",
+      "anchorPoint": "top-left",
+      "dx": 896,
+      "dy": 640,
+      "width": 390,
+      "height": 250,
+      "from": "right",
+      "showTitle": true,
+      "showBackground": true,
+      "showBorder": true,
+      "config": {
+        "size": 240,
+        "legendPosition": "left"
+      }
+    },
+    {
+      "id": "aegis-copy-footer",
+      "type": "aegis-copy-footer",
+      "title": "Copy",
+      "preset": "footer",
+      "anchorPoint": "bottom-center",
+      "dx": 0,
+      "dy": -18,
+      "width": 280,
+      "height": 24,
+      "from": "bottom",
+      "showTitle": false,
+      "showBackground": false,
+      "showBorder": false,
+      "padding": 0,
+      "config": {}
+    }
+  ]
+}

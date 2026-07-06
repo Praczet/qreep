@@ -6,7 +6,7 @@ digital time overlaid on the face and optional date text below it.
 It is configured from a dashboard block in:
 
 ```text
-modules/dashboard/dashboard.json
+modules/dashboard/configs/main_dashboard.json
 ```
 
 The outer dashboard card and the inner clock widget are separate. This is not

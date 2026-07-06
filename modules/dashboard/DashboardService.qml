@@ -6,11 +6,12 @@ QtObject {
     id: rootDashboardService
 
     required property QtObject theme
+    property string configPath: Quickshell.shellDir + "/modules/dashboard/configs/main_dashboard.json"
     property var blocks: defaultBlocks()
     property string error: ""
 
     readonly property FileView configFile: FileView {
-        path: Quickshell.shellDir + "/modules/dashboard/dashboard.json"
+        path: rootDashboardService.configPath
         preload: true
         watchChanges: true
 
@@ -45,64 +46,16 @@ QtObject {
 
     function applyConfig(document) {
         const rawBlocks = document && Array.isArray(document.blocks) ? document.blocks : [];
-        const rawWidgets = document && Array.isArray(document.widgets) ? document.widgets : [];
         const cardStyle = document && typeof document.cardStyle === "object" ? document.cardStyle : ({});
-        const sourceBlocks = rawBlocks.length > 0 ? rawBlocks : rawWidgets.map((widget, index) => normalizeLegacyWidget(widget, index));
 
-        if (sourceBlocks.length === 0) {
+        if (rawBlocks.length === 0) {
             blocks = defaultBlocks();
             error = "";
             return;
         }
 
-        blocks = sourceBlocks.map((block, index) => normalizeBlock(block, index, cardStyle));
+        blocks = rawBlocks.map((block, index) => normalizeBlock(block, index, cardStyle));
         error = "";
-    }
-
-    function normalizeLegacyWidget(widget, index) {
-        const value = widget || ({});
-        const col = Math.max(1, Math.floor(numberValue(value.col, 1)));
-        const row = Math.max(1, Math.floor(numberValue(value.row, 1)));
-        const colSpan = Math.max(1, Math.floor(numberValue(value.colSpan, 1)));
-        const rowSpan = Math.max(1, Math.floor(numberValue(value.rowSpan, 1)));
-        const cellWidth = 390;
-        const cellHeight = 250;
-        const gap = 22;
-        const left = 72 + (col - 1) * (cellWidth + gap);
-        const top = 96 + (row - 1) * (cellHeight + gap);
-        const type = stringValue(value.type, "fake");
-        const config = value.config || ({});
-
-        return {
-            id: stringValue(value.id, "legacy-widget-" + index),
-            type,
-            title: stringValue(config.title, type),
-            text: "",
-            preset: "legacy",
-            x: left,
-            y: top,
-            width: colSpan * cellWidth + (colSpan - 1) * gap,
-            height: rowSpan * cellHeight + (rowSpan - 1) * gap,
-            from: stringValue(value.from, legacyFrom(col, row)),
-            showTitle: boolValue(config.showTitle, type !== "clock"),
-            showBackground: boolValue(value.showBackground, true),
-            showBorder: boolValue(value.showBorder, true),
-            expandX: boolValue(value.expandX, false),
-            expandY: boolValue(value.expandY, false),
-            config
-        };
-    }
-
-    function legacyFrom(col, row) {
-        if (row <= 1 && col <= 1)
-            return "top-left";
-        if (row <= 1 && col >= 3)
-            return "top-right";
-        if (col <= 1)
-            return "left";
-        if (col >= 3)
-            return "right";
-        return "top";
     }
 
     function normalizeBlock(block, index, cardStyle) {

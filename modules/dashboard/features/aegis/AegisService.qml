@@ -28,6 +28,8 @@ QtObject {
 
     signal refreshed
 
+    readonly property Process notifier: Process {}
+
     readonly property Process systemRunner: Process {
         stdout: StdioCollector {
             id: systemStdout
@@ -870,7 +872,28 @@ QtObject {
     }
 
     function copyInfo(format) {
-        Quickshell.clipboardText = String(format || "text") === "json" ? copyJson() : copyText("full", []);
+        const normalized = String(format || "text") === "json" ? "json" : "text";
+        copyValue(normalized === "json" ? copyJson() : copyText("full", []), "Aegis " + normalized);
+    }
+
+    function copyValue(value, label) {
+        Quickshell.clipboardText = String(value || "");
+        notifyCopied(label);
+    }
+
+    function notifyCopied(label) {
+        const name = String(label || "value").trim();
+
+        notifier.running = false;
+        notifier.command = [
+            "notify-send",
+            "--app-name=Qreep",
+            "--urgency=low",
+            "--expire-time=1800",
+            "Aegis",
+            "Copied " + (name.length > 0 ? name : "value") + " to clipboard"
+        ];
+        notifier.running = true;
     }
 
     function osIconSource() {

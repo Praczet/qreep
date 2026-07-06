@@ -7,13 +7,14 @@ Item {
     property QtObject service
     property string type: "aegis"
     property var config: ({})
+    readonly property bool hasService: rootAegisBlock.service !== null
     readonly property string mode: String(config.mode || (type === "aegis" ? "summary" : "minimal"))
     readonly property var sections: Array.isArray(config.sections) ? config.sections : []
 
     clip: true
 
     Text {
-        visible: !rootAegisBlock.service
+        visible: !rootAegisBlock.hasService
         anchors.centerIn: parent
         text: "Aegis service unavailable"
         color: rootAegisBlock.theme.modules.aegis.secondaryTextColor
@@ -22,7 +23,7 @@ Item {
 
     Loader {
         anchors.fill: parent
-        active: rootAegisBlock.service !== null
+        active: rootAegisBlock.hasService
         sourceComponent: blockComponent()
     }
 
@@ -34,6 +35,8 @@ Item {
             return memoryPieComponent;
         case "aegis-disk-pie":
             return diskPieComponent;
+        case "aegis-copy-footer":
+            return copyFooterComponent;
         case "aegis-summary":
         case "aegis":
         default:
@@ -70,50 +73,54 @@ Item {
 
                         width: sectionLayout.width
                         theme: rootAegisBlock.theme
+                        service: rootAegisBlock.service
                         section: modelData
                     }
                 }
+            }
+        }
+    }
 
-                Row {
-                    visible: rootAegisBlock.type === "aegis"
-                    width: parent.width
-                    spacing: 8
+    Component {
+        id: copyFooterComponent
 
-                    Text {
-                        text: "Copy all info:"
-                        color: rootAegisBlock.theme.modules.aegis.secondaryTextColor
-                        font.pixelSize: rootAegisBlock.theme.modules.aegis.metaPixelSize
-                    }
+        Row {
+            anchors.centerIn: parent
+            spacing: 8
 
-                    Text {
-                        text: "text"
-                        color: rootAegisBlock.theme.modules.aegis.accentColor
-                        font.pixelSize: rootAegisBlock.theme.modules.aegis.metaPixelSize
+            Text {
+                text: "Copy all info:"
+                color: rootAegisBlock.theme.modules.aegis.secondaryTextColor
+                font.pixelSize: rootAegisBlock.theme.modules.aegis.metaPixelSize
+            }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: rootAegisBlock.service.copyInfo("text")
-                        }
-                    }
+            Text {
+                text: "text"
+                color: rootAegisBlock.theme.modules.aegis.accentColor
+                font.pixelSize: rootAegisBlock.theme.modules.aegis.metaPixelSize
 
-                    Text {
-                        text: "|"
-                        color: rootAegisBlock.theme.modules.aegis.secondaryTextColor
-                        font.pixelSize: rootAegisBlock.theme.modules.aegis.metaPixelSize
-                    }
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: rootAegisBlock.service.copyInfo("text")
+                }
+            }
 
-                    Text {
-                        text: "json"
-                        color: rootAegisBlock.theme.modules.aegis.accentColor
-                        font.pixelSize: rootAegisBlock.theme.modules.aegis.metaPixelSize
+            Text {
+                text: "|"
+                color: rootAegisBlock.theme.modules.aegis.secondaryTextColor
+                font.pixelSize: rootAegisBlock.theme.modules.aegis.metaPixelSize
+            }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: rootAegisBlock.service.copyInfo("json")
-                        }
-                    }
+            Text {
+                text: "json"
+                color: rootAegisBlock.theme.modules.aegis.accentColor
+                font.pixelSize: rootAegisBlock.theme.modules.aegis.metaPixelSize
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: rootAegisBlock.service.copyInfo("json")
                 }
             }
         }
