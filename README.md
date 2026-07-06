@@ -40,6 +40,7 @@ Current top-level module folders:
 
 ```text
 modules/
+├── aegis/
 ├── bar/
 ├── clipboard/
 ├── dashboard/
@@ -151,6 +152,7 @@ Root theme files:
 Module theme files live with their owning module:
 
 * `modules/ModulesTheme.qml`
+* `modules/aegis/AegisTheme.qml`
 * `modules/bar/BarTheme.qml`
 * `modules/bar/BarPillTheme.qml`
 * `modules/bar/TooltipTheme.qml`
@@ -170,8 +172,9 @@ readonly property QtObject modules: Modules.ModulesTheme {
 
 Old paths such as `theme.module`, `theme.tooltip`, and `theme.dashboard` remain
 as compatibility aliases for now. New module-specific code should prefer paths
-like `theme.modules.bar.pill`, `theme.modules.bar.tooltip`,
-`theme.modules.dashboard`, and `theme.modules.notification`.
+like `theme.modules.aegis`, `theme.modules.bar.pill`,
+`theme.modules.bar.tooltip`, `theme.modules.dashboard`, and
+`theme.modules.notification`.
 
 If a feature needs sizes, spacing, timing, or command names, put them in that
 feature's theme file. Hardcoding in the button is how the next tweak becomes a
@@ -189,6 +192,7 @@ quickshell ipc call qreep-borg toggleProgress
 quickshell ipc call qreep-upchecker refresh
 quickshell ipc call qreep-upchecker toggle
 quickshell ipc call qreep-monitor-profile refresh
+quickshell ipc call qreep-aegis toggle
 quickshell ipc call qreep-clipboard toggle
 quickshell ipc call qreep-expose toggle
 quickshell ipc call qreep-notification toggleCenter
@@ -202,6 +206,16 @@ quickshell ipc call qreep-notification toggleCenter
 quickshell ipc call qreep-notification showCenter
 quickshell ipc call qreep-notification hideCenter
 quickshell ipc call qreep-notification dismissAll
+```
+
+Aegis commands:
+
+```bash
+quickshell ipc call qreep-aegis toggle
+quickshell ipc call qreep-aegis showMe
+quickshell ipc call qreep-aegis hideMe
+quickshell ipc call qreep-aegis refresh
+quickshell ipc call qreep-aegis setMode full
 ```
 
 The notification test helper sends a mixed batch for popup and center layout
@@ -290,6 +304,8 @@ Small useful checks:
 qmllint modules/bar/Bar.qml
 qmllint theme/QreepTheme.qml
 qmllint modules/bar/features/mpris/MprisService.qml
+qmllint modules/aegis/*.qml
+qmllint modules/dashboard/*.qml
 qmllint modules/notification/*.qml
 ```
 

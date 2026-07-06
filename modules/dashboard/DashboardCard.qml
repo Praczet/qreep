@@ -3,12 +3,14 @@ import "./features/weather" as WeatherFeature
 import "./features/clock" as ClockFeature
 import "./features/image" as ImageFeature
 import "./features/wotd" as WotdFeature
+import "../aegis" as AegisFeature
 
 Rectangle {
     id: rootDashboardCard
 
     required property QtObject theme
     required property var block
+    property QtObject aegisService
 
     property bool entered: false
     readonly property real cardWidth: Number(block.width || theme.modules.dashboard.defaultCardWidth)
@@ -138,7 +140,7 @@ Rectangle {
         }
 
         Text {
-            visible: rootDashboardCard.block.type !== "weather" && rootDashboardCard.block.type !== "clock" && rootDashboardCard.block.type !== "digital-clock" && rootDashboardCard.block.type !== "image" && rootDashboardCard.block.type !== "word-of-the-day"
+            visible: rootDashboardCard.block.type !== "weather" && rootDashboardCard.block.type !== "clock" && rootDashboardCard.block.type !== "digital-clock" && rootDashboardCard.block.type !== "image" && rootDashboardCard.block.type !== "word-of-the-day" && !rootDashboardCard.isAegisBlock()
             width: parent.width
             text: String(rootDashboardCard.block.text || rootDashboardCard.block.type || "fake")
             color: rootDashboardCard.cardTextColor
@@ -176,6 +178,25 @@ Rectangle {
             theme: rootDashboardCard.theme
             config: rootDashboardCard.block.config || ({})
         }
+
+        AegisFeature.AegisBlock {
+            visible: rootDashboardCard.isAegisBlock()
+            width: parent.width
+            height: Math.max(1, parent.height - y)
+            theme: rootDashboardCard.theme
+            service: rootDashboardCard.aegisService
+            type: String(rootDashboardCard.block.type || "aegis")
+            config: rootDashboardCard.block.config || ({})
+        }
+    }
+
+    function isAegisBlock() {
+        const value = String(block.type || "");
+        return value === "aegis"
+            || value === "aegis-summary"
+            || value === "aegis-cpu-graph"
+            || value === "aegis-memory-pie"
+            || value === "aegis-disk-pie";
     }
 
     Behavior on x {

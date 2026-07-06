@@ -7,6 +7,7 @@ PanelWindow {
 
     required property QtObject theme
     required property QtObject service
+    property QtObject aegisService
     required property bool panelOpen
 
     property bool presented: false
@@ -76,6 +77,7 @@ PanelWindow {
             required property var modelData
 
             theme: rootDashboardPanel.theme
+            aegisService: rootDashboardPanel.aegisService
             block: modelData
             entered: rootDashboardPanel.presented
         }

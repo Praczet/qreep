@@ -1,5 +1,6 @@
 import QtQuick
 
+import "aegis" as AegisModule
 import "bar" as BarModule
 import "clipboard" as ClipboardModule
 import "dashboard" as DashboardModule
@@ -11,6 +12,10 @@ QtObject {
     id: rootModulesTheme
 
     required property QtObject qreep
+
+    readonly property QtObject aegis: AegisModule.AegisTheme {
+        qreep: rootModulesTheme.qreep
+    }
 
     readonly property QtObject bar: BarModule.BarTheme {
         qreep: rootModulesTheme.qreep

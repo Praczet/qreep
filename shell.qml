@@ -1,4 +1,5 @@
 import Quickshell
+import "modules/aegis" as AegisModule
 import "modules/notification" as NotificationModule
 import "modules/clipboard" as ClipboardModule
 import "modules/dashboard" as DashboardModule
@@ -28,10 +29,17 @@ ShellRoot {
         }
     }
 
+    AegisModule.Aegis {
+        id: aegis
+
+        theme: qreepTheme
+    }
+
     DashboardModule.Dashboard {
         id: dashboard
 
         theme: qreepTheme
+        aegisService: aegis.service
     }
 
     ClipboardModule.Clipboard {
