@@ -9,9 +9,16 @@ Item {
     property string label: ""
     property string value: ""
     property string copyValue: value
+    property bool hasProgress: false
+    property real progress: 0
+    readonly property real indent: 14
+    readonly property real rightInset: 14
+    readonly property real labelWidth: Math.min(170, Math.max(86, width * 0.34))
+    readonly property real valueWidth: Math.max(1, content.width - labelWidth - row.spacing)
+    readonly property real normalizedProgress: Math.max(0, Math.min(1, progress))
 
-    implicitWidth: row.implicitWidth
-    implicitHeight: Math.max(labelText.implicitHeight, valueText.implicitHeight)
+    implicitWidth: content.implicitWidth
+    implicitHeight: content.implicitHeight
 
     MouseArea {
         anchors.fill: parent
@@ -25,32 +32,69 @@ Item {
         }
     }
 
-    Row {
-        id: row
+    Column {
+        id: content
 
-        anchors.fill: parent
-        spacing: 10
+        anchors {
+            left: parent.left
+            right: parent.right
+            leftMargin: rootAegisInfoRow.indent
+            rightMargin: rootAegisInfoRow.rightInset
+        }
+        spacing: 4
 
-        Text {
-            id: labelText
+        Row {
+            id: row
 
-            width: Math.min(160, Math.max(78, rootAegisInfoRow.width * 0.34))
-            text: rootAegisInfoRow.label
-            color: rootAegisInfoRow.theme.modules.aegis.secondaryTextColor
-            font.pixelSize: rootAegisInfoRow.theme.modules.aegis.bodyPixelSize
-            elide: Text.ElideRight
+            width: parent.width
+            spacing: 10
+
+            Text {
+                id: labelText
+
+                width: rootAegisInfoRow.labelWidth
+                text: rootAegisInfoRow.label
+                color: rootAegisInfoRow.theme.modules.aegis.secondaryTextColor
+                font.pixelSize: rootAegisInfoRow.theme.modules.aegis.bodyPixelSize
+                elide: Text.ElideRight
+            }
+
+            Text {
+                id: valueText
+
+                width: rootAegisInfoRow.valueWidth
+                text: rootAegisInfoRow.value
+                color: rootAegisInfoRow.theme.modules.aegis.primaryTextColor
+                font.pixelSize: rootAegisInfoRow.theme.modules.aegis.bodyPixelSize
+                maximumLineCount: 1
+                elide: Text.ElideRight
+                horizontalAlignment: Text.AlignRight
+            }
         }
 
-        Text {
-            id: valueText
+        Item {
+            visible: rootAegisInfoRow.hasProgress
+            width: parent.width
+            height: 8
 
-            width: Math.max(1, rootAegisInfoRow.width - labelText.width - row.spacing)
-            text: rootAegisInfoRow.value
-            color: rootAegisInfoRow.theme.modules.aegis.primaryTextColor
-            font.pixelSize: rootAegisInfoRow.theme.modules.aegis.bodyPixelSize
-            wrapMode: Text.Wrap
-            maximumLineCount: 2
-            elide: Text.ElideRight
+            Rectangle {
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    leftMargin: rootAegisInfoRow.labelWidth + row.spacing
+                    verticalCenter: parent.verticalCenter
+                }
+                height: Math.max(4, Math.min(6, rootAegisInfoRow.theme.modules.aegis.graphBarHeight))
+                radius: height / 2
+                color: Qt.rgba(rootAegisInfoRow.theme.modules.aegis.secondaryTextColor.r, rootAegisInfoRow.theme.modules.aegis.secondaryTextColor.g, rootAegisInfoRow.theme.modules.aegis.secondaryTextColor.b, 0.16)
+
+                Rectangle {
+                    width: parent.width * rootAegisInfoRow.normalizedProgress
+                    height: parent.height
+                    radius: parent.radius
+                    color: rootAegisInfoRow.theme.modules.aegis.accentColor
+                }
+            }
         }
     }
 }

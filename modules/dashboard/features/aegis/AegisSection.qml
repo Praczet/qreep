@@ -35,6 +35,8 @@ Item {
                 service: rootAegisSection.service
                 label: String(modelData.label || "")
                 value: String(modelData.value || "")
+                progress: Number(modelData.progress)
+                hasProgress: Number.isFinite(Number(modelData.progress))
             }
         }
     }

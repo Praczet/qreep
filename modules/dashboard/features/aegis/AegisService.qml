@@ -740,9 +740,9 @@ QtObject {
                 title: "Memory",
                 from: "right",
                 rows: [
-                    infoRow("Usage", formatBytes(model.memory.usedBytes) + " / " + formatBytes(model.memory.totalBytes) + " (" + formatPercent(model.memory.usedPercent) + ")", "summary"),
+                    infoRow("Usage", formatBytes(model.memory.usedBytes) + " / " + formatBytes(model.memory.totalBytes) + " (" + formatPercent(model.memory.usedPercent) + ")", "summary", progressValue(model.memory.usedPercent)),
                     infoRow("Available", formatBytes(model.memory.availableBytes), "full"),
-                    infoRow("Swap", formatBytes(model.memory.swapUsedBytes) + " / " + formatBytes(model.memory.swapTotalBytes) + " (" + formatPercent(model.memory.swapUsedPercent) + ")", "full")
+                    infoRow("Swap", formatBytes(model.memory.swapUsedBytes) + " / " + formatBytes(model.memory.swapTotalBytes) + " (" + formatPercent(model.memory.swapUsedPercent) + ")", "full", progressValue(model.memory.swapUsedPercent))
                 ]
             },
             {
@@ -790,10 +790,10 @@ QtObject {
 
         const rows = [];
         const root = disks.find(disk => disk.mount === "/") || disks[0];
-        rows.push(infoRow("Root", formatBytes(root.usedBytes) + " / " + formatBytes(root.totalBytes) + " (" + formatPercent(root.usedPercent) + ")", "summary"));
+        rows.push(infoRow("Root", formatBytes(root.usedBytes) + " / " + formatBytes(root.totalBytes) + " (" + formatPercent(root.usedPercent) + ")", "summary", progressValue(root.usedPercent)));
         for (let index = 0; index < disks.length; index++) {
             const disk = disks[index];
-            rows.push(infoRow(disk.mount, formatBytes(disk.usedBytes) + " / " + formatBytes(disk.totalBytes) + " (" + formatPercent(disk.usedPercent) + ")", "full"));
+            rows.push(infoRow(disk.mount, formatBytes(disk.usedBytes) + " / " + formatBytes(disk.totalBytes) + " (" + formatPercent(disk.usedPercent) + ")", "full", progressValue(disk.usedPercent)));
         }
         return rows;
     }
@@ -823,7 +823,7 @@ QtObject {
         const rows = [];
         for (let index = 0; index < batteries.length; index++) {
             const battery = batteries[index];
-            rows.push(infoRow(battery.name, formatPercent(battery.capacityPercent) + " - " + battery.status, "summary"));
+            rows.push(infoRow(battery.name, formatPercent(battery.capacityPercent) + " - " + battery.status, "summary", progressValue(battery.capacityPercent)));
             if (battery.timeRemainingSeconds > 0)
                 rows.push(infoRow("Time", formatDuration(battery.timeRemainingSeconds), "full"));
         }
@@ -846,8 +846,16 @@ QtObject {
         return rows;
     }
 
-    function infoRow(label, value, minMode) {
-        return { label, value, minMode };
+    function infoRow(label, value, minMode, progress) {
+        const row = { label, value, minMode };
+        if (Number.isFinite(Number(progress)))
+            row.progress = Math.max(0, Math.min(1, Number(progress)));
+        return row;
+    }
+
+    function progressValue(percent) {
+        const value = Number(percent);
+        return Number.isFinite(value) ? value / 100 : undefined;
     }
 
     function copyText(modeValue, sectionFilter) {
