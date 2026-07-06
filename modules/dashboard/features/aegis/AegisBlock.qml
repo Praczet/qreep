@@ -10,6 +10,7 @@ Item {
     readonly property bool hasService: rootAegisBlock.service !== null
     readonly property string mode: String(config.mode || (type === "aegis" ? "summary" : "minimal"))
     readonly property var sections: Array.isArray(config.sections) ? config.sections : []
+    readonly property bool wideLayout: type === "aegis" && mode === "full" && String(config.layout || "") === "wide"
 
     clip: true
 
@@ -40,7 +41,7 @@ Item {
         case "aegis-summary":
         case "aegis":
         default:
-            return sectionsComponent;
+            return rootAegisBlock.wideLayout ? wideSectionsComponent : sectionsComponent;
         }
     }
 
@@ -75,6 +76,76 @@ Item {
                         theme: rootAegisBlock.theme
                         service: rootAegisBlock.service
                         section: modelData
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: wideSectionsComponent
+
+        Flickable {
+            contentWidth: width
+            contentHeight: wideLayoutColumn.implicitHeight
+            clip: true
+
+            Column {
+                id: wideLayoutColumn
+
+                width: parent.width
+                spacing: rootAegisBlock.theme.modules.aegis.cardGap
+
+                AegisHero {
+                    width: parent.width
+                    theme: rootAegisBlock.theme
+                    service: rootAegisBlock.service
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: rootAegisBlock.theme.modules.aegis.borderColor
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: rootAegisBlock.theme.modules.aegis.cardGap * 2
+
+                    Column {
+                        width: (parent.width - parent.spacing) / 2
+                        spacing: rootAegisBlock.theme.modules.aegis.cardGap
+
+                        Repeater {
+                            model: rootAegisBlock.sectionList(["system", "hyprland", "status", "network-info"])
+
+                            AegisSection {
+                                required property var modelData
+
+                                width: parent.width
+                                theme: rootAegisBlock.theme
+                                service: rootAegisBlock.service
+                                section: modelData
+                            }
+                        }
+                    }
+
+                    Column {
+                        width: (parent.width - parent.spacing) / 2
+                        spacing: rootAegisBlock.theme.modules.aegis.cardGap
+
+                        Repeater {
+                            model: rootAegisBlock.sectionList(["hardware", "memory", "storage", "power"])
+
+                            AegisSection {
+                                required property var modelData
+
+                                width: parent.width
+                                theme: rootAegisBlock.theme
+                                service: rootAegisBlock.service
+                                section: modelData
+                            }
+                        }
                     }
                 }
             }
@@ -124,6 +195,24 @@ Item {
                 }
             }
         }
+    }
+
+    function sectionList(ids) {
+        const source = rootAegisBlock.service ? rootAegisBlock.service.sections(rootAegisBlock.mode, ids) : [];
+        const result = [];
+
+        for (let idIndex = 0; idIndex < ids.length; idIndex++) {
+            const id = ids[idIndex];
+            for (let sectionIndex = 0; sectionIndex < source.length; sectionIndex++) {
+                const section = source[sectionIndex];
+                if (String(section.id || "") === id) {
+                    result.push(section);
+                    break;
+                }
+            }
+        }
+
+        return result;
     }
 
     Component {

@@ -15,19 +15,25 @@ Item {
     readonly property real requestedSize: Number.isFinite(Number(config.size)) ? Math.max(80, Number(config.size)) : theme.modules.aegis.pieSize
     readonly property string legendPosition: String(config.legendPosition || "left")
     readonly property bool vertical: legendPosition === "top" || legendPosition === "bottom"
+    readonly property real itemSpacing: Number.isFinite(Number(config.spacing)) ? Math.max(4, Number(config.spacing)) : 16
+    readonly property real horizontalLegendTarget: Math.min(170, Math.max(112, width * 0.42))
+    readonly property real horizontalPieSize: Math.max(72, Math.min(requestedSize, Math.max(72, width - horizontalLegendTarget - itemSpacing), height))
+    readonly property real horizontalLegendWidth: Math.max(1, width - horizontalPieSize - itemSpacing)
+    readonly property real verticalPieSize: Math.max(72, Math.min(requestedSize, width, Math.max(72, height - legend.implicitHeight - itemSpacing)))
 
-    implicitWidth: vertical ? Math.max(requestedSize, legend.implicitWidth) : requestedSize + legend.implicitWidth + 16
-    implicitHeight: vertical ? requestedSize + legend.implicitHeight + 16 : Math.max(requestedSize, legend.implicitHeight)
+    implicitWidth: vertical ? Math.max(requestedSize, legend.implicitWidth) : requestedSize + legend.implicitWidth + itemSpacing
+    implicitHeight: vertical ? requestedSize + legend.implicitHeight + itemSpacing : Math.max(requestedSize, legend.implicitHeight)
 
     Row {
         visible: !rootAegisPie.vertical
         anchors.fill: parent
-        spacing: 16
+        spacing: rootAegisPie.itemSpacing
         layoutDirection: rootAegisPie.legendPosition === "right" ? Qt.RightToLeft : Qt.LeftToRight
 
         Legend {
             id: rowLegend
-            width: Math.max(170, parent.width - rootAegisPie.requestedSize - parent.spacing)
+            width: rootAegisPie.horizontalLegendWidth
+            anchors.verticalCenter: parent.verticalCenter
             theme: rootAegisPie.theme
             usedLabel: rootAegisPie.usedLabel
             freeLabel: rootAegisPie.freeLabel
@@ -38,8 +44,9 @@ Item {
         }
 
         PieCanvas {
-            width: rootAegisPie.requestedSize
-            height: rootAegisPie.requestedSize
+            width: rootAegisPie.horizontalPieSize
+            height: rootAegisPie.horizontalPieSize
+            anchors.verticalCenter: parent.verticalCenter
             theme: rootAegisPie.theme
             fraction: usedFraction()
         }
@@ -48,12 +55,12 @@ Item {
     Column {
         visible: rootAegisPie.vertical
         anchors.fill: parent
-        spacing: 16
+        spacing: rootAegisPie.itemSpacing
 
         PieCanvas {
             visible: rootAegisPie.legendPosition === "bottom"
-            width: rootAegisPie.requestedSize
-            height: rootAegisPie.requestedSize
+            width: rootAegisPie.verticalPieSize
+            height: rootAegisPie.verticalPieSize
             anchors.horizontalCenter: parent.horizontalCenter
             theme: rootAegisPie.theme
             fraction: usedFraction()
@@ -73,8 +80,8 @@ Item {
 
         PieCanvas {
             visible: rootAegisPie.legendPosition !== "bottom"
-            width: rootAegisPie.requestedSize
-            height: rootAegisPie.requestedSize
+            width: rootAegisPie.verticalPieSize
+            height: rootAegisPie.verticalPieSize
             anchors.horizontalCenter: parent.horizontalCenter
             theme: rootAegisPie.theme
             fraction: usedFraction()
