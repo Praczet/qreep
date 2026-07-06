@@ -53,8 +53,8 @@ V1 uses:
 ```bash
 hyprctl activeworkspace -j
 hyprctl clients -j
-Hyprland.toplevels -> wayland handle -> ScreencopyView
 grim -g "<x>,<y> <width>x<height>" ~/.cache/qreep/expose/<address>.png
+Hyprland.toplevels -> wayland handle -> ScreencopyView
 hyprctl dispatch focuswindow address:<address>
 ```
 
@@ -74,14 +74,23 @@ field and filter by title, class, app label, and workspace name.
 
 ## Preview Note
 
-Current-workspace cards prefer Quickshell `ScreencopyView` fed by the Wayland
-handle from `Hyprland.toplevels`. This captures the window surface instead of a
-screen rectangle, so floating windows should stop photobombing other previews.
+Current-workspace cards use runtime `grim -g` screenshots by default. It is
+fast and boring, which is more useful than slow and theoretically elegant.
 
-If a client cannot be matched to a Wayland toplevel, Expose falls back to a
-runtime `grim -g` screenshot captured from Hyprland geometry. That fallback is
-still rectangle-based and therefore still a little cursed around overlapping
-windows. Useful, but not innocent.
+`modules/expose/ExposeTheme.qml` exposes:
+
+```qml
+readonly property bool useScreencopy: false
+```
+
+Set that to `true` to prefer Quickshell `ScreencopyView` fed by the Wayland
+handle from `Hyprland.toplevels`. If a client cannot be matched to a Wayland
+toplevel, Expose still falls back to a `grim -g` screenshot captured from
+Hyprland geometry.
+
+The grim path is rectangle-based and therefore still cursed around overlapping
+floating windows. Screencopy should avoid that specific photobomb, but it has
+been slower here and is not innocent either.
 
 Other workspace clusters stay icon based for now.
 

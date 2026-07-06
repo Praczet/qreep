@@ -207,7 +207,7 @@ QtObject {
 
         captureQueue = currentClients.filter(client => {
             const size = client.size || [0, 0];
-            return !client.previewSource && Number(size[0] || 0) > 0 && Number(size[1] || 0) > 0;
+            return (!useScreencopyPreviews() || !client.previewSource) && Number(size[0] || 0) > 0 && Number(size[1] || 0) > 0;
         });
 
         runNextCapture();
@@ -257,6 +257,9 @@ QtObject {
     }
 
     function previewSourceForAddress(address) {
+        if (!useScreencopyPreviews())
+            return null;
+
         const value = String(address || "");
 
         if (value.length === 0)
@@ -272,6 +275,10 @@ QtObject {
         }
 
         return null;
+    }
+
+    function useScreencopyPreviews() {
+        return Boolean(theme && theme.modules && theme.modules.expose && theme.modules.expose.useScreencopy);
     }
 
     function rebuildModel() {

@@ -10,8 +10,9 @@ Rectangle {
     required property var client
     property bool selected: false
     property bool compact: false
+    readonly property bool useScreencopy: Boolean(theme.modules.expose.useScreencopy)
     readonly property var previewSource: client.previewSource || null
-    readonly property bool hasLivePreview: previewSource !== null
+    readonly property bool hasLivePreview: useScreencopy && previewSource !== null
     readonly property string thumbPath: String(client.thumbPath || "")
 
     signal selectedRequested(var card)
