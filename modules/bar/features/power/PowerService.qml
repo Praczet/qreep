@@ -9,11 +9,17 @@ QtObject {
     readonly property Process commandRunner: Process {}
     readonly property Core.Log fallbackLog: Core.Log {}
     signal toggleRequested
+    property bool isFullscreen: false
 
     readonly property IpcHandler ipc: IpcHandler {
         target: "qreep-power"
 
         function toggle() {
+            rootPowerService.isFullscreen = false;
+            rootPowerService.toggleRequested();
+        }
+        function toggleFullscreen() {
+            rootPowerService.isFullscreen = true;
             rootPowerService.toggleRequested();
         }
     }

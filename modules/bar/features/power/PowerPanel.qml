@@ -139,6 +139,7 @@ PanelWindow {
                 rightMargin: rootPowerPanel.theme.modules.bar.power.sidebarMargin
                 bottomMargin: rootPowerPanel.theme.modules.bar.power.sidebarMargin
             }
+            anchors.left: rootPowerPanel.service.isFullscreen === true ? parent.left : undefined
             width: rootPowerPanel.theme.modules.bar.power.sidebarWidth
             radius: rootPowerPanel.theme.modules.bar.power.sidebarRadius
             color: rootPowerPanel.theme.modules.bar.power.backgroundColor

@@ -426,6 +426,7 @@ PanelWindow {
                 service: power.service
 
                 onClicked: {
+                    powerButton.service.isFullscreen = false;
                     power.toggle();
                     sharedTooltip.hideLater();
                 }
