@@ -12,6 +12,7 @@ QtObject {
     property string overallStatus: "idle"
     property string error: ""
     property bool visibleRequested: false
+    property string lastTerminalKey: ""
     property var stages: ({
         sow: emptyStage("sow"),
         grow: emptyStage("grow"),
@@ -102,6 +103,7 @@ QtObject {
             wallpaper = String(wallpaperPath);
 
         visibleRequested = true;
+        lastTerminalKey = "";
         reload();
     }
 
@@ -153,8 +155,9 @@ QtObject {
         if (stage !== "sow" && stage !== "grow" && stage !== "plant")
             return;
 
+        const normalizedStage = normalizeStage(stage, payload);
         const nextStages = Object.assign({}, stages);
-        nextStages[stage] = normalizeStage(stage, payload);
+        nextStages[stage] = normalizedStage;
         stages = nextStages;
 
         if (!isCurrent)
@@ -164,13 +167,19 @@ QtObject {
         const shouldShowTerminal = visibleRequested || recentlyUpdated(payload.updated_at);
 
         profile = stringValue(payload.profile, profile);
-        activeStage = payload.status === "running" ? stage : activeStage;
-        overallStatus = nextStatus === "running" ? "running"
+        activeStage = normalizedStage.status === "running" ? stage : activeStage;
+        overallStatus = nextStatus === "running" || normalizedStage.status === "running" ? "running"
             : (nextStatus === "error" ? "error" : "done");
         visibleRequested = running || (terminal && shouldShowTerminal);
 
-        if (terminal && visibleRequested)
+        if (running)
+            lastTerminalKey = "";
+
+        const terminalKey = String(payload.run_id || "") + ":" + stage + ":" + overallStatus + ":" + stringValue(payload.updated_at, "");
+        if (terminal && visibleRequested && terminalKey !== lastTerminalKey) {
+            lastTerminalKey = terminalKey;
             terminalStateReached();
+        }
     }
 
     function loadWallpaper() {
@@ -192,10 +201,11 @@ QtObject {
 
     function normalizeStage(stage, payload) {
         const targets = payload && payload.targets ? payload.targets : ({});
+        const hasRunningTarget = targetIsRunning(targets);
 
         return {
             name: stage,
-            status: payload.status === "running" ? "running" : (payload.status === "error" ? "error" : "done"),
+            status: payload.status === "running" || hasRunningTarget ? "running" : (payload.status === "error" ? "error" : "done"),
             startedAt: stringValue(payload.started_at, ""),
             updatedAt: stringValue(payload.updated_at, ""),
             targets: targets,
@@ -229,6 +239,22 @@ QtObject {
         }
 
         return count;
+    }
+
+    function targetIsRunning(targets) {
+        for (const target of Object.values(targets)) {
+            if (target.status === "running")
+                return true;
+
+            if (target.worker) {
+                const pct = Number(target.worker.pct);
+
+                if (!Number.isFinite(pct) || pct < 1)
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     function currentTarget(targets) {

@@ -11,14 +11,17 @@ Item {
     property var config: ({})
     property string basePalette: ""
     property string bloomGeneratedAt: ""
+    property string bloomProfile: ""
     property var paletteSwatches: []
     property string error: ""
 
     readonly property string cacheDir: resolvePath(stringValue(config.cacheDir, "~/.cache/unclaimed-bloom"))
     readonly property string dataDir: resolvePath(stringValue(config.dataDir, "~/.config/unclaimed-bloom"))
     readonly property string activeProfile: bloomStatus.profile.length > 0 ? bloomStatus.profile : stringValue(config.profile, "")
-    readonly property string bloomPath: activeProfile.length > 0 ? cacheDir + "/blooms/" + activeProfile + ".json" : ""
+    readonly property string resolvedBloomProfile: bloomProfile.length > 0 ? bloomProfile : activeProfile
+    readonly property string bloomPath: resolvedBloomProfile.length > 0 ? cacheDir + "/blooms/" + resolvedBloomProfile + ".json" : ""
     readonly property string profilePath: activeProfile.length > 0 ? dataDir + "/profiles/" + activeProfile + ".json" : ""
+    readonly property string bloomProfilePath: resolvedBloomProfile.length > 0 && resolvedBloomProfile !== activeProfile ? dataDir + "/profiles/" + resolvedBloomProfile + ".json" : ""
     readonly property string plantedAt: bloomStatus.stages.plant.updatedAt || bloomStatus.updatedAt || bloomGeneratedAt
     readonly property string plantedText: formatDateTime(plantedAt)
     readonly property int swatchCount: numberValue(config.swatchCount, 8)
@@ -57,6 +60,17 @@ Item {
         onTextChanged: rootBloomBlock.loadProfile()
     }
 
+    FileView {
+        id: bloomProfileFile
+
+        path: rootBloomBlock.bloomProfilePath
+        preload: rootBloomBlock.bloomProfilePath.length > 0
+        watchChanges: true
+
+        onLoaded: rootBloomBlock.loadBloomProfile()
+        onTextChanged: rootBloomBlock.loadBloomProfile()
+    }
+
     ColumnLayout {
         id: content
 
@@ -76,7 +90,7 @@ Item {
 
                 Image {
                     anchors.fill: parent
-                    source: bloomStatus.wallpaper.length > 0 ? "file://" + bloomStatus.wallpaper : ""
+                    source: bloomStatus.wallpaper
                     visible: bloomStatus.wallpaper.length > 0
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
@@ -221,10 +235,45 @@ Item {
 
         try {
             const payload = JSON.parse(contents);
+
+            if (payload.type === "composition") {
+                bloomProfile = stringValue(payload.currentProfile, firstCompositionProfile(payload));
+                return;
+            }
+
+            bloomProfile = activeProfile;
             basePalette = stringValue(payload.basePalette, "");
         } catch (loadError) {
             basePalette = "";
         }
+    }
+
+    function loadBloomProfile() {
+        const contents = bloomProfileFile.text().trim();
+
+        if (contents.length === 0)
+            return;
+
+        try {
+            const payload = JSON.parse(contents);
+            basePalette = stringValue(payload.basePalette, "");
+        } catch (loadError) {
+            basePalette = "";
+        }
+    }
+
+    function firstCompositionProfile(payload) {
+        if (!payload || !Array.isArray(payload.runs) || payload.runs.length === 0)
+            return "";
+
+        for (const run of payload.runs) {
+            const profile = stringValue(run && run.profile, "");
+
+            if (profile.length > 0 && profile !== "daily-gtk")
+                return profile;
+        }
+
+        return stringValue(payload.runs[0] && payload.runs[0].profile, "");
     }
 
     function pickSwatches(groups, count) {

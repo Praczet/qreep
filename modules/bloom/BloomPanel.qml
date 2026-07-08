@@ -43,20 +43,57 @@ PanelWindow {
             anchors.fill: parent
             spacing: 0
 
-            Image {
-                visible: rootBloomPanel.service.wallpaper.length > 0
-                Layout.preferredWidth: rootBloomPanel.theme.modules.bloom.wallpaperWidth
+            Item {
+                Layout.preferredWidth: rootBloomPanel.theme.modules.bloom.wallpaperWidth + rootBloomPanel.theme.modules.bloom.wallpaperMargin * 2
                 Layout.fillHeight: true
-                source: rootBloomPanel.service.wallpaper.length > 0 ? "file://" + rootBloomPanel.service.wallpaper : ""
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: false
+                visible: rootBloomPanel.service.wallpaper.length > 0
+
+                Rectangle {
+                    id: wallpaperFrame
+
+                    anchors {
+                        left: parent.left
+                        top: parent.top
+                        leftMargin: rootBloomPanel.theme.modules.bloom.wallpaperMargin
+                        topMargin: rootBloomPanel.theme.modules.bloom.wallpaperMargin
+                    }
+                    width: rootBloomPanel.theme.modules.bloom.wallpaperWidth
+                    height: Math.min(rootBloomPanel.theme.modules.bloom.wallpaperHeight, parent.height - rootBloomPanel.theme.modules.bloom.wallpaperMargin * 2)
+                    radius: rootBloomPanel.theme.modules.bloom.wallpaperRadius
+                    color: Qt.rgba(rootBloomPanel.theme.modules.bloom.borderColor.r, rootBloomPanel.theme.modules.bloom.borderColor.g, rootBloomPanel.theme.modules.bloom.borderColor.b, 0.25)
+                    clip: true
+
+                    Image {
+                        id: wallpaperImage
+
+                        anchors.fill: parent
+                        source: rootBloomPanel.service.wallpaper
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        cache: false
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: wallpaperFrame
+                    visible: wallpaperImage.status === Image.Error
+                    width: wallpaperFrame.width - 16
+                    text: "wallpaper failed"
+                    color: rootBloomPanel.theme.modules.bloom.secondaryTextColor
+                    font.pixelSize: rootBloomPanel.theme.modules.bloom.metaPixelSize
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.Wrap
+                }
+
             }
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.margins: rootBloomPanel.theme.modules.bloom.contentPadding
+                Layout.alignment: Qt.AlignTop
+                Layout.topMargin: rootBloomPanel.theme.modules.bloom.wallpaperMargin
+                Layout.rightMargin: rootBloomPanel.theme.modules.bloom.contentPadding
+                Layout.bottomMargin: rootBloomPanel.theme.modules.bloom.contentPadding
+                Layout.leftMargin: 0
                 spacing: rootBloomPanel.theme.modules.bloom.contentSpacing
 
                 RowLayout {
@@ -160,7 +197,7 @@ PanelWindow {
                                 color: Qt.rgba(rootBloomPanel.theme.modules.bloom.accentColor.r, rootBloomPanel.theme.modules.bloom.accentColor.g, rootBloomPanel.theme.modules.bloom.accentColor.b, 0.18)
 
                                 Rectangle {
-                                    width: parent.width * Math.max(0, Math.min(1, stageRecord().worker ? Number(stageRecord().worker.pct || 0) : 0))
+                                    width: parent.width * stageProgress(stageRecord())
                                     height: parent.height
                                     radius: parent.radius
                                     color: rootBloomPanel.theme.modules.bloom.accentColor
@@ -239,5 +276,24 @@ PanelWindow {
             return "(" + stage.targetCount + " targets)";
 
         return stage.doneCount + "/" + stage.targetCount;
+    }
+
+    function stageProgress(stage) {
+        if (!stage || !stage.worker)
+            return 0;
+
+        const worker = stage.worker;
+        const pct = Number(worker.pct);
+
+        if (Number.isFinite(pct) && pct > 0)
+            return Math.max(0, Math.min(1, pct));
+
+        const current = Number(worker.current);
+        const total = Number(worker.total);
+
+        if (Number.isFinite(current) && Number.isFinite(total) && total > 0)
+            return Math.max(0, Math.min(1, current / total));
+
+        return stage.status === "running" ? 0.08 : 0;
     }
 }

@@ -78,6 +78,27 @@ Scope {
         }
     }
 
+    Timer {
+        id: refreshTimer
+
+        interval: rootBloom.theme.modules.bloom.refreshInterval
+        repeat: true
+        running: rootBloom.open
+        onTriggered: {
+            bloomService.reload();
+        }
+    }
+
+    Timer {
+        id: doneReloadTimer
+
+        interval: 250
+        repeat: false
+        onTriggered: {
+            bloomService.reload();
+        }
+    }
+
     function showBloom(profile, wallpaper) {
         hideTimer.stop();
         bloomService.show(profile, wallpaper);
@@ -85,7 +106,9 @@ Scope {
     }
 
     function doneBloom() {
-        bloomService.done();
+        bloomService.visibleRequested = true;
+        bloomService.reload();
+        doneReloadTimer.restart();
     }
 
     function recover() {
@@ -97,8 +120,12 @@ Scope {
 
     function show() {
         hideTimer.stop();
+        bloomService.reload();
         bloomService.visibleRequested = true;
         open = true;
+
+        if (bloomService.terminal)
+            hideTimer.restart();
     }
 
     function hide() {
