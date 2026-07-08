@@ -106,17 +106,21 @@ When Adam asks to refresh or synchronize `README.md` files and `AGENTS.md`:
 
 1. Read `AGENTS.md` first, because apparently this file is load-bearing now.
 2. Inspect the current source tree and the module entry points before editing docs.
-3. Update every stale README that exists for the touched/current modules.
-4. Add missing module READMEs when the code has grown a real feature surface and the absence of docs is now just laziness wearing a hat.
-5. Update this synchronization ledger in the same change.
-6. If Adam explicitly asks for memory too, add a small ad-hoc memory note under `/home/adam/.codex/memories/extensions/ad_hoc/notes/`; do not edit generated memory registry files directly.
+3. Keep root `README.md` short. It is for people who want "what is this, how do I start, where do I look next" and then would like to leave.
+4. Keep the longer root project map in `README_when_bored.md`. Put inventories, detailed IPC lists, layer-rule notes, theme maps, and other "future Adam has time today" material there.
+5. Do not merge the short README and the bored README back into one hydra-shaped document during a routine docs refresh. If both need updates, update both for their different jobs.
+6. Update every stale module README that exists for the touched/current modules.
+7. Add missing module READMEs when the code has grown a real feature surface and the absence of docs is now just laziness wearing a hat.
+8. Update this synchronization ledger in the same change.
+9. If Adam explicitly asks for memory too, add a small ad-hoc memory note under `/home/adam/.codex/memories/extensions/ad_hoc/notes/`; do not edit generated memory registry files directly.
 
 The hash below is the repo commit the docs were synchronized against. If docs are edited before a commit exists for the docs themselves, use current `HEAD` and the refresh date. Future Adam can survive this.
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `1a769ca` | `2026-07-08` |
-| `README.md` | `1a769ca` | `2026-07-08` |
+| `AGENTS.md` | `b2503c1` | `2026-07-08` |
+| `README.md` | `b2503c1` | `2026-07-08` |
+| `README_when_bored.md` | `b2503c1` | `2026-07-08` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/borg/README.md` | `1a769ca` | `2026-07-08` |
