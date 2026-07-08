@@ -15,6 +15,7 @@ QtObject {
     readonly property color borderColor: qreep.outline
     readonly property color actionBackgroundColor: qreep.primary
     readonly property color actionHoverBackgroundColor: qreep.primaryFixedDim
+    readonly property color actionSelectedBorderColor: qreep.on_primary
     readonly property color actionTextColor: qreep.on_primary
     readonly property color actionIconColor: qreep.on_primary
     readonly property color confirmTextColor: qreep.on_surface
@@ -23,6 +24,7 @@ QtObject {
     readonly property int cardRadius: 18
     readonly property int actionHeight: 54
     readonly property int actionRadius: 10
+    readonly property int actionSelectedBorderWidth: 2
     readonly property int actionSpacing: 8
     readonly property int actionContentSpacing: 14
     readonly property int actionIconSize: 30

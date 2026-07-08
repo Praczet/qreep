@@ -14,6 +14,9 @@ PanelWindow {
     signal actionRequested(string action)
     signal closeRequested
     property var pendingAction: null
+    property int selectedActionIndex: 0
+    property int selectedConfirmIndex: 0
+    readonly property bool fullscreen: service.isFullscreen === true
 
     readonly property var actions: [
         {
@@ -65,6 +68,7 @@ PanelWindow {
             return;
         }
         pendingAction = action;
+        selectedConfirmIndex = 0;
     }
 
     function confirmPendingAction() {
@@ -77,28 +81,103 @@ PanelWindow {
 
     function cancelPendingAction() {
         pendingAction = null;
+        selectedConfirmIndex = 0;
     }
 
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
+    function clampSelection() {
+        if (selectedActionIndex < 0)
+            selectedActionIndex = 0;
+        if (selectedActionIndex >= actions.length)
+            selectedActionIndex = actions.length - 1;
+        if (selectedConfirmIndex < 0)
+            selectedConfirmIndex = 0;
+        if (selectedConfirmIndex > 1)
+            selectedConfirmIndex = 1;
     }
+
+    function moveActionSelection(step) {
+        if (actions.length === 0)
+            return;
+        selectedActionIndex = (selectedActionIndex + step + actions.length) % actions.length;
+    }
+
+    function moveConfirmSelection(step) {
+        selectedConfirmIndex = (selectedConfirmIndex + step + 2) % 2;
+    }
+
+    function activateSelection() {
+        clampSelection();
+
+        if (pendingAction !== null) {
+            if (selectedConfirmIndex === 0)
+                cancelPendingAction();
+            else
+                confirmPendingAction();
+            return;
+        }
+
+        requestAction(actions[selectedActionIndex]);
+    }
+
+    function handlePanelKey(event) {
+        switch (event.key) {
+        case Qt.Key_Up:
+            if (pendingAction === null)
+                moveActionSelection(-1);
+            else
+                moveConfirmSelection(-1);
+            event.accepted = true;
+            break;
+        case Qt.Key_Down:
+            if (pendingAction === null)
+                moveActionSelection(1);
+            else
+                moveConfirmSelection(1);
+            event.accepted = true;
+            break;
+        case Qt.Key_Left:
+            if (pendingAction !== null) {
+                moveConfirmSelection(-1);
+                event.accepted = true;
+            }
+            break;
+        case Qt.Key_Right:
+        case Qt.Key_Tab:
+            if (pendingAction !== null) {
+                moveConfirmSelection(1);
+                event.accepted = true;
+            }
+            break;
+        case Qt.Key_Return:
+        case Qt.Key_Enter:
+        case Qt.Key_Space:
+            activateSelection();
+            event.accepted = true;
+            break;
+        }
+    }
+
+    implicitWidth: screen.width
+    implicitHeight: screen.height
 
     visible: rootPowerPanel.panelOpen
-    color: "transparent"
+    color: rootPowerPanel.fullscreen ? rootPowerPanel.theme.modules.bar.power.backgroundColor : "transparent"
+    exclusionMode: ExclusionMode.Ignore
+    exclusiveZone: 0
 
     WlrLayershell.namespace: "qreep-popup-power"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-    WlrLayershell.exclusiveZone: 0
 
     onVisibleChanged: {
         if (visible) {
+            selectedActionIndex = 0;
+            selectedConfirmIndex = 0;
             background.forceActiveFocus();
         } else {
             pendingAction = null;
+            selectedActionIndex = 0;
+            selectedConfirmIndex = 0;
         }
     }
 
@@ -123,6 +202,8 @@ PanelWindow {
         color: "transparent"
         focus: true
 
+        Keys.onPressed: event => rootPowerPanel.handlePanelKey(event)
+
         MouseArea {
             anchors.fill: parent
             onClicked: rootPowerPanel.closeRequested()
@@ -135,15 +216,15 @@ PanelWindow {
                 top: parent.top
                 right: parent.right
                 bottom: parent.bottom
-                topMargin: rootPowerPanel.theme.modules.bar.power.sidebarMargin
-                rightMargin: rootPowerPanel.theme.modules.bar.power.sidebarMargin
-                bottomMargin: rootPowerPanel.theme.modules.bar.power.sidebarMargin
+                topMargin: rootPowerPanel.fullscreen ? 0 : rootPowerPanel.theme.modules.bar.power.sidebarMargin
+                rightMargin: rootPowerPanel.fullscreen ? 0 : rootPowerPanel.theme.modules.bar.power.sidebarMargin
+                bottomMargin: rootPowerPanel.fullscreen ? 0 : rootPowerPanel.theme.modules.bar.power.sidebarMargin
             }
-            anchors.left: rootPowerPanel.service.isFullscreen === true ? parent.left : undefined
-            width: rootPowerPanel.theme.modules.bar.power.sidebarWidth
-            radius: rootPowerPanel.theme.modules.bar.power.sidebarRadius
+            anchors.left: rootPowerPanel.fullscreen ? parent.left : undefined
+            width: rootPowerPanel.fullscreen ? parent.width : rootPowerPanel.theme.modules.bar.power.sidebarWidth
+            radius: rootPowerPanel.fullscreen ? 0 : rootPowerPanel.theme.modules.bar.power.sidebarRadius
             color: rootPowerPanel.theme.modules.bar.power.backgroundColor
-            border.width: rootPowerPanel.theme.modules.bar.power.sidebarBorderWidth
+            border.width: rootPowerPanel.fullscreen ? 0 : rootPowerPanel.theme.modules.bar.power.sidebarBorderWidth
             border.color: rootPowerPanel.theme.modules.bar.power.borderColor
 
             MouseArea {
@@ -179,11 +260,14 @@ PanelWindow {
                             id: actionButton
 
                             required property var modelData
+                            required property int index
 
                             width: parent.width
                             height: rootPowerPanel.theme.modules.bar.power.actionHeight
                             radius: rootPowerPanel.theme.modules.bar.power.actionRadius
-                            color: actionHover.hovered ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
+                            color: actionHover.hovered || rootPowerPanel.selectedActionIndex === actionButton.index ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
+                            border.width: rootPowerPanel.selectedActionIndex === actionButton.index ? rootPowerPanel.theme.modules.bar.power.actionSelectedBorderWidth : 0
+                            border.color: rootPowerPanel.theme.modules.bar.power.actionSelectedBorderColor
 
                             Row {
                                 anchors.centerIn: parent
@@ -224,6 +308,10 @@ PanelWindow {
                                 id: actionHover
 
                                 cursorShape: Qt.PointingHandCursor
+                                onHoveredChanged: {
+                                    if (hovered)
+                                        rootPowerPanel.selectedActionIndex = actionButton.index;
+                                }
                             }
 
                             MouseArea {
@@ -276,10 +364,14 @@ PanelWindow {
                         spacing: rootPowerPanel.theme.modules.bar.power.confirmButtonSpacing
 
                         Rectangle {
+                            id: cancelButton
+
                             width: (parent.width - parent.spacing) / 2
                             height: rootPowerPanel.theme.modules.bar.power.actionHeight
                             radius: rootPowerPanel.theme.modules.bar.power.actionRadius
-                            color: cancelHover.hovered ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
+                            color: cancelHover.hovered || rootPowerPanel.selectedConfirmIndex === 0 ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
+                            border.width: rootPowerPanel.selectedConfirmIndex === 0 ? rootPowerPanel.theme.modules.bar.power.actionSelectedBorderWidth : 0
+                            border.color: rootPowerPanel.theme.modules.bar.power.actionSelectedBorderColor
 
                             Text {
                                 anchors.centerIn: parent
@@ -292,6 +384,10 @@ PanelWindow {
                                 id: cancelHover
 
                                 cursorShape: Qt.PointingHandCursor
+                                onHoveredChanged: {
+                                    if (hovered)
+                                        rootPowerPanel.selectedConfirmIndex = 0;
+                                }
                             }
 
                             MouseArea {
@@ -307,10 +403,14 @@ PanelWindow {
                         }
 
                         Rectangle {
+                            id: confirmButton
+
                             width: (parent.width - parent.spacing) / 2
                             height: rootPowerPanel.theme.modules.bar.power.actionHeight
                             radius: rootPowerPanel.theme.modules.bar.power.actionRadius
-                            color: confirmHover.hovered ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
+                            color: confirmHover.hovered || rootPowerPanel.selectedConfirmIndex === 1 ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
+                            border.width: rootPowerPanel.selectedConfirmIndex === 1 ? rootPowerPanel.theme.modules.bar.power.actionSelectedBorderWidth : 0
+                            border.color: rootPowerPanel.theme.modules.bar.power.actionSelectedBorderColor
 
                             Text {
                                 anchors.centerIn: parent
@@ -323,6 +423,10 @@ PanelWindow {
                                 id: confirmHover
 
                                 cursorShape: Qt.PointingHandCursor
+                                onHoveredChanged: {
+                                    if (hovered)
+                                        rootPowerPanel.selectedConfirmIndex = 1;
+                                }
                             }
 
                             MouseArea {
