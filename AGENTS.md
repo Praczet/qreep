@@ -1042,15 +1042,61 @@ Current pickup point:
 - The Notification v1 shell module is implemented and documented in `modules/notification/README.md`: popups, notification center, grouping, per-group dismissal, app-specific cards for Color Picker and Hyprshot, action buttons, popup animations, and a test batch script.
 - The Aegis v1 shell module replaces the old AGS Aegis package for the common path: standalone `qreep-aegis` overlay, sysinfo service, dashboard-style enter/leave motion, and independent `modules/dashboard/configs/aegis_dashboard.json` layout. Aegis uses normal dashboard `blocks`, not legacy AGS `widgets`. Keep the main dashboard and Aegis configs separate.
 - Do not continue expanding Clipboard unless Adam asks. The remaining clipboard items are follow-ups, not the next default project direction.
-- Bar mode/pill-state work remains a separate runtime slice. If the next session returns to bar ownership cleanup, pick up from `BarModeService.qml`, `BarPillStateService.qml`, and the registered pill wiring in `Bar.qml`.
+- The next default project direction is the bar/runtime stabilization pass described below. This supersedes the older MPRIS-first suggestion unless Adam explicitly asks for MPRIS.
 - Do not rush persistence. Runtime state first, persisted layout second. Past Adam does not need a config file that explains a bug with confidence.
+
+## Next-session priority
+
+If a new session starts and Adam asks “what’s next?”, answer with this:
+
+```text
+The next best step is a small stabilization pass on the bar/runtime surface.
+```
+
+Do **not** default to splitting MPRIS or building another module. The repo now has enough shell-level surfaces that the daily visible bar deserves a sanity pass before more furniture arrives.
+
+Recommended unit:
+
+```text
+fix(bar): clean up current bar wiring
+```
+
+Scope:
+
+1. Inspect `modules/bar/Bar.qml` for duplicated bindings, stale `Connections`, and feature wiring drift. Known example from the 2026-07-08 source pass: `LauncherButton` had duplicate `visible: !rootBar.collapsed` bindings.
+2. Verify every runtime pill ID matches `BarPillStateService.knownPills` and the registered pill wiring in `Bar.qml`.
+3. Check that hiding runtime pills consistently closes related popups, panels, and tooltips.
+4. Keep behavior unchanged unless a bug is found. This is stabilization, not a costume change.
+5. Run focused validation:
+
+```bash
+qmllint modules/bar/Bar.qml
+qmllint modules/bar/features/*/*.qml
+git diff --check
+```
+
+If the live session allows it, also run:
+
+```bash
+quickshell -c qreep --no-duplicate
+```
+
+Avoid during this pass:
+
+- splitting MPRIS;
+- adding new modules;
+- adding persistence/config machinery;
+- visual restyling;
+- “while here” cleanup outside bar runtime wiring.
+
+After this pass, the next larger improvement can be making Power fullscreen feel like a deliberate full-screen layout instead of the same small card on a full-screen layer.
 
 ## Suggested next five steps
 
-1. **Split MPRIS behind a feature controller if the next session wants bar ownership cleanup.** It already has `MprisService`, `MprisButton`, `MprisTooltip`, `MprisPanel`, control buttons, and custom animation.
-2. **Preserve current MPRIS behavior during any split.** Left-click toggles playback, right-click toggles the panel, hover shows the MPRIS tooltip, and disabling the `mpris` runtime pill closes the panel/tooltip.
-3. **Decide whether `launcher` and `power` should join runtime pill state.** Both are technically easy. Launcher and Power are also useful escape hatches, so hiding them should be a deliberate choice, not a side effect with icons.
-4. **Keep the ownership map current.** The map is only useful if it tells the truth, which is apparently a demanding requirement.
+1. **Run the bar/runtime stabilization pass first.** This is the default answer to “what’s next?” in the next session.
+2. **Preserve current visible behavior during that pass.** The expected output is boring wiring cleanup, not a redesigned bar.
+3. **Decide whether `launcher` and `power` should join runtime pill state only after the sanity pass.** Both are technically easy. Launcher and Power are also useful escape hatches, so hiding them should be a deliberate choice, not a side effect with icons.
+4. **Keep the ownership map current if the stabilization pass changes ownership boundaries.** The map is only useful if it tells the truth, which is apparently a demanding requirement.
 5. **Leave Clipboard alone unless a real issue appears.** The follow-ups live in `modules/clipboard/README.md`; they are not an invitation to build a tiny paste empire today.
 
 Keep these steps independent and reviewable. Qreep has enough moving pieces now that “one tiny cleanup while here” can reproduce when left unattended.
