@@ -4,6 +4,7 @@ import "./features/clock" as ClockFeature
 import "./features/image" as ImageFeature
 import "./features/wotd" as WotdFeature
 import "./features/aegis" as AegisFeature
+import "./features/borg" as BorgFeature
 
 Rectangle {
     id: rootDashboardCard
@@ -140,7 +141,7 @@ Rectangle {
         }
 
         Text {
-            visible: rootDashboardCard.block.type !== "weather" && rootDashboardCard.block.type !== "clock" && rootDashboardCard.block.type !== "digital-clock" && rootDashboardCard.block.type !== "image" && rootDashboardCard.block.type !== "word-of-the-day" && !rootDashboardCard.isAegisBlock()
+            visible: rootDashboardCard.block.type !== "weather" && rootDashboardCard.block.type !== "clock" && rootDashboardCard.block.type !== "digital-clock" && rootDashboardCard.block.type !== "image" && rootDashboardCard.block.type !== "word-of-the-day" && rootDashboardCard.block.type !== "borg" && !rootDashboardCard.isAegisBlock()
             width: parent.width
             text: String(rootDashboardCard.block.text || rootDashboardCard.block.type || "fake")
             color: rootDashboardCard.cardTextColor
@@ -173,6 +174,14 @@ Rectangle {
 
         WotdFeature.WordOfTheDayBlock {
             visible: rootDashboardCard.block.type === "word-of-the-day"
+            width: parent.width
+            height: Math.max(1, parent.height - y)
+            theme: rootDashboardCard.theme
+            config: rootDashboardCard.block.config || ({})
+        }
+
+        BorgFeature.BorgBlock {
+            visible: rootDashboardCard.block.type === "borg"
             width: parent.width
             height: Math.max(1, parent.height - y)
             theme: rootDashboardCard.theme

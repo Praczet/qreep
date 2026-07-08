@@ -15,7 +15,7 @@
       "text": "",
       "preset": "large",
       "anchorPoint": "top-center",
-      "dx": -810,
+      "dx": -940,
       "dy": 145,
       "width": 280,
       "height": 300,
@@ -37,6 +37,24 @@
         "showDate": true,
         "showDayOfWeek": false,
         "showSeconds": true
+      }
+    },
+    {
+      "id": "borg-backup",
+      "type": "borg",
+      "title": "Borg",
+      "preset": "status",
+      "anchorPoint": "top-center",
+      "dx": -940,
+      "dy": 465,
+      "width": 360,
+      "height": 220,
+      "from": "left",
+      "showTitle": false,
+      "showBackground": true,
+      "showBorder": true,
+      "config": {
+        "cacheDir": "~/.cache/qreep/borg"
       }
     },
     {

@@ -37,6 +37,15 @@ Aegis uses the same schema from:
 modules/dashboard/configs/aegis_dashboard.json
 ```
 
+## Blocks
+
+Current real blocks:
+
+- `clock` / `digital-clock`: local clock displays.
+- `aegis*`: system overview blocks backed by the Aegis service.
+- `borg`: last Borg backup card. It watches `~/.cache/qreep/borg/state.json`
+  and falls back to `~/.cache/qreep/borg/final.json` for archive metadata.
+
 Blocks use explicit `width` and `height`. Preferred placement is anchored:
 
 ```json
