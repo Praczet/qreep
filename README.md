@@ -42,6 +42,7 @@ Current top-level module folders:
 modules/
 ├── aegis/
 ├── bar/
+├── bloom/
 ├── clipboard/
 ├── dashboard/
 ├── expose/
@@ -156,6 +157,7 @@ Module theme files live with their owning module:
 * `modules/bar/BarTheme.qml`
 * `modules/bar/BarPillTheme.qml`
 * `modules/bar/TooltipTheme.qml`
+* `modules/bloom/BloomTheme.qml`
 * `modules/clipboard/ClipboardTheme.qml`
 * `modules/dashboard/DashboardTheme.qml`
 * `modules/expose/ExposeTheme.qml`
@@ -192,7 +194,11 @@ quickshell ipc call qreep-borg toggleProgress
 quickshell ipc call qreep-upchecker refresh
 quickshell ipc call qreep-upchecker toggle
 quickshell ipc call qreep-monitor-profile refresh
+quickshell ipc call qreep-power toggle
+quickshell ipc call qreep-power toggleFullscreen
 quickshell ipc call qreep-aegis toggle
+quickshell ipc call qreep-dashboard toggle
+quickshell ipc call qreep-bloom pickupBloom
 quickshell ipc call qreep-clipboard toggle
 quickshell ipc call qreep-expose toggle
 quickshell ipc call qreep-notification toggleCenter
@@ -216,6 +222,42 @@ quickshell ipc call qreep-aegis showMe
 quickshell ipc call qreep-aegis hideMe
 quickshell ipc call qreep-aegis refresh
 quickshell ipc call qreep-aegis setMode full
+```
+
+Dashboard commands:
+
+```bash
+quickshell ipc call qreep-dashboard toggle
+quickshell ipc call qreep-dashboard showMe
+quickshell ipc call qreep-dashboard hideMe
+quickshell ipc call qreep-dashboard refresh
+```
+
+Clipboard commands:
+
+```bash
+quickshell ipc call qreep-clipboard toggle
+quickshell ipc call qreep-clipboard showMe
+quickshell ipc call qreep-clipboard hideMe
+quickshell ipc call qreep-clipboard refresh
+```
+
+Expose commands:
+
+```bash
+quickshell ipc call qreep-expose toggle
+quickshell ipc call qreep-expose showMe
+quickshell ipc call qreep-expose hideMe
+quickshell ipc call qreep-expose refresh
+```
+
+Bloom commands:
+
+```bash
+quickshell ipc call qreep-bloom showBloom default ""
+quickshell ipc call qreep-bloom doneBloom
+quickshell ipc call qreep-bloom pickupBloom
+quickshell ipc call qreep-bloom hideBloom
 ```
 
 The notification test helper sends a mixed batch for popup and center layout

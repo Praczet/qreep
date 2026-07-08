@@ -14,8 +14,8 @@ blocks can arrive after the surface stops doing interpretive dance.
 
 ```bash
 quickshell ipc call qreep-dashboard toggle
-quickshell ipc call qreep-dashboard show
-quickshell ipc call qreep-dashboard hide
+quickshell ipc call qreep-dashboard showMe
+quickshell ipc call qreep-dashboard hideMe
 quickshell ipc call qreep-dashboard refresh
 ```
 

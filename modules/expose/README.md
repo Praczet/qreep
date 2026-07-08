@@ -23,8 +23,8 @@ tiny furniture already.
 
 ```bash
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose toggle
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose showExpose
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose hideExpose
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose showMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose hideMe
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose refresh
 ```
 

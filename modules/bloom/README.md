@@ -19,10 +19,12 @@ has enough hobbies.
 ## IPC
 
 ```bash
-quickshell ipc --path . call qreep-bloom showBloom <profile> <wallpaper>
-quickshell ipc --path . call qreep-bloom doneBloom
-quickshell ipc --path . call qreep-bloom hideBloom
-quickshell ipc --path . call qreep-bloom pickupBloom
+quickshell --path . ipc call qreep-bloom showBloom <profile> <wallpaper>
+quickshell --path . ipc call qreep-bloom doneBloom
+quickshell --path . ipc call qreep-bloom hideBloom
+quickshell --path . ipc call qreep-bloom pickupBloom
+quickshell --path . ipc call qreep-bloom showMe
+quickshell --path . ipc call qreep-bloom hideMe
 ```
 
 The file watcher is the important path. IPC is mainly for manual nudges or a

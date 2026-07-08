@@ -16,6 +16,7 @@ qreep/
 ├── modules/
 │   ├── bar/
 │   ├── aegis/
+│   ├── bloom/
 │   ├── clipboard/
 │   ├── dashboard/
 │   ├── expose/
@@ -99,6 +100,46 @@ If Adam asks for a plan, provide a useful plan. If Adam asks for code, provide c
 
 If Adam asks for both, do not spend three pages admiring the plan while the code dies of loneliness.
 
+## Documentation refresh and synchronization ledger
+
+When Adam asks to refresh or synchronize `README.md` files and `AGENTS.md`:
+
+1. Read `AGENTS.md` first, because apparently this file is load-bearing now.
+2. Inspect the current source tree and the module entry points before editing docs.
+3. Update every stale README that exists for the touched/current modules.
+4. Add missing module READMEs when the code has grown a real feature surface and the absence of docs is now just laziness wearing a hat.
+5. Update this synchronization ledger in the same change.
+6. If Adam explicitly asks for memory too, add a small ad-hoc memory note under `/home/adam/.codex/memories/extensions/ad_hoc/notes/`; do not edit generated memory registry files directly.
+
+The hash below is the repo commit the docs were synchronized against. If docs are edited before a commit exists for the docs themselves, use current `HEAD` and the refresh date. Future Adam can survive this.
+
+| File | Synced against | Sync date |
+| --- | --- | --- |
+| `AGENTS.md` | `1a769ca` | `2026-07-08` |
+| `README.md` | `1a769ca` | `2026-07-08` |
+| `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/borg/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/clock/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/launcher/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/monitorprofile/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/mpris/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/network/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/power/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/upchecker/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/volume/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/workspaces/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bloom/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/clipboard/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/dashboard/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/dashboard/features/clock/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/dashboard/features/image/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/dashboard/features/weather/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/dashboard/features/wotd/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/expose/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
+
 ## Quickshell / QML rules
 
 Qreep is a Quickshell project. Prefer QML-first solutions unless there is a good reason not to.
@@ -116,13 +157,16 @@ Current bar feature folders:
 
 ```text
 modules/bar/features/
+├── battery/
 ├── borg/
 ├── clock/
 ├── launcher/
 ├── monitorprofile/
 ├── mpris/
+├── network/
 ├── power/
 ├── upchecker/
+├── volume/
 └── workspaces/
 ```
 
@@ -132,6 +176,7 @@ Current top-level module folders:
 modules/
 ├── aegis/
 ├── bar/
+├── bloom/
 ├── clipboard/
 ├── dashboard/
 ├── expose/
@@ -398,8 +443,8 @@ IPC:
 
 ```bash
 quickshell ipc call qreep-clipboard toggle
-quickshell ipc call qreep-clipboard show
-quickshell ipc call qreep-clipboard hide
+quickshell ipc call qreep-clipboard showMe
+quickshell ipc call qreep-clipboard hideMe
 quickshell ipc call qreep-clipboard refresh
 ```
 
@@ -502,8 +547,8 @@ IPC:
 
 ```bash
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose toggle
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose showExpose
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose hideExpose
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose showMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose hideMe
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose refresh
 ```
 
@@ -885,11 +930,16 @@ Qreep currently has:
 - a MonitorProfile pill that watches runtime JSON, sorts monitors by position, and shows internal/external display icons plus a plain tooltip;
 - an MPRIS pill in the center slot with current playback state, track columns, animated notes, preview tooltip, and right-click player popup;
 - one shared popup tooltip with delayed show/hide and scale animations;
-- a Power feature controller in `modules/bar/features/power/Power.qml` that owns `PowerService` and lazy-loads the full-height `qreep-popup-power` panel;
+- a Battery pill in the right slot backed by `Quickshell.Services.UPower`;
+- a Network pill and anchored panel for wired, Wi-Fi, and Bluetooth state/actions through Quickshell networking services plus a few boring `nmcli` details;
+- a Volume pill backed by shared `core/SoundService.qml`, with click-to-mute, scroll-to-change volume, right-click `pavucontrol`, and OSD feedback through `shell.qml`;
+- a Power feature controller in `modules/bar/features/power/Power.qml` that owns `PowerService` and lazy-loads the `qreep-popup-power` panel;
+- the Power panel supports keyboard selection, confirmation navigation, normal right-side mode, and `qreep-power toggleFullscreen` for a full-screen layer surface;
 - confirmed power actions wired through `modules/bar/features/power/PowerService.qml`;
 - an Upchecker feature controller in `modules/bar/features/upchecker/Upchecker.qml` that owns `UpcheckerService` and lazy-loads the standalone `qreep-popup-upchecker` panel;
 - a top-level Aegis module in `modules/aegis/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-aegis`, using the shared dashboard renderer with `modules/dashboard/configs/aegis_dashboard.json` and the Aegis feature/service under `modules/dashboard/features/aegis/`;
 - a top-level Dashboard module in `modules/dashboard/`, hosted directly by `shell.qml`, using `modules/dashboard/configs/main_dashboard.json` and not waking Aegis just because Aegis exists;
+- a top-level Bloom module in `modules/bloom/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-bloom`, and watching Unclaimed Bloom runtime cache files;
 - a top-level Clipboard module in `modules/clipboard/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-clipboard`, and backed by `clipvault`;
 - the Clipboard panel currently supports a bottom overlay, search/filter, pins filter, keyboard navigation, text/code/color/image cards, runtime image previews, restore notifications, delete, and star/unstar metadata in `~/.local/share/clipvault/pinned.json`;
 - a top-level Expose module in `modules/expose/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-expose`;
@@ -929,9 +979,18 @@ Useful clipboard IPC commands:
 
 ```bash
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard toggle
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard show
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard hide
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard showMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard hideMe
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard refresh
+```
+
+Useful dashboard IPC commands:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-dashboard toggle
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-dashboard showMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-dashboard hideMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-dashboard refresh
 ```
 
 Useful Aegis IPC commands:
@@ -942,6 +1001,24 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-aegis s
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-aegis hideMe
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-aegis refresh
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-aegis setMode full
+```
+
+Useful Bloom IPC commands:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bloom showBloom default ""
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bloom doneBloom
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bloom pickupBloom
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bloom hideBloom
+```
+
+Useful Expose IPC commands:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose toggle
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose showMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose hideMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose refresh
 ```
 
 Useful notification IPC commands:

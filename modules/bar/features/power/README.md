@@ -2,9 +2,10 @@
 
 ## What It Does
 
-Shows the power button in the right bar slot. Clicking opens a full-height
-right-side power panel. Destructive actions require confirmation. Nobody wants
-an accidental reboot because a pointer had opinions.
+Shows the power button in the right bar slot. Clicking opens the normal
+right-side power panel. `qreep-power toggleFullscreen` opens the same action
+card on a full-screen layer surface. Destructive actions require confirmation.
+Nobody wants an accidental reboot because a pointer had opinions.
 
 ## Files
 
@@ -21,6 +22,14 @@ Change panel width, margin, radius, opacity, and action sizing in
 
 Change the action list or confirmation copy in `PowerPanel.qml`. Change the
 commands in `PowerService.qml`.
+
+Keyboard behavior lives in `PowerPanel.qml`:
+
+* `Up` / `Down` moves through actions.
+* `Enter` / `Space` activates the selected action.
+* Destructive actions open confirmation with `Cancel` selected first.
+* `Left` / `Right` / `Tab` switches between `Cancel` and `Confirm`.
+* `Escape` cancels confirmation first, then closes the panel.
 
 ## Wiring
 
@@ -55,3 +64,10 @@ match = { namespace = "qreep-popup-power" }
 ```
 
 Blur this layer if desired. Do not blur the bar just to make this panel pretty.
+
+IPC:
+
+```bash
+quickshell ipc call qreep-power toggle
+quickshell ipc call qreep-power toggleFullscreen
+```

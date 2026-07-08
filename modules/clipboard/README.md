@@ -43,8 +43,8 @@ Do not make clipboard history durable in QML because a thumbnail looked lonely.
 
 ```bash
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard toggle
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard show
-quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard hide
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard showMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard hideMe
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard refresh
 ```
 
