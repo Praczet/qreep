@@ -43,6 +43,7 @@ Current real blocks:
 
 - `clock` / `digital-clock`: local clock displays.
 - `aegis*`: system overview blocks backed by the Aegis service.
+- `bloom`: last Unclaimed Bloom wallpaper/profile/palette card.
 - `borg`: last Borg backup card. It watches `~/.cache/qreep/borg/state.json`
   and falls back to `~/.cache/qreep/borg/final.json` for archive metadata.
 

@@ -5,6 +5,7 @@ import "modules/clipboard" as ClipboardModule
 import "modules/dashboard" as DashboardModule
 import "modules/expose" as ExposeModule
 import "modules/osd" as OsdModule
+import "modules/bloom" as BloomModule
 import "modules/bar" as BarModule
 import "theme" as Theme
 
@@ -49,6 +50,12 @@ ShellRoot {
 
     ExposeModule.Expose {
         id: expose
+
+        theme: qreepTheme
+    }
+
+    BloomModule.Bloom {
+        id: bloom
 
         theme: qreepTheme
     }

@@ -58,6 +58,25 @@
       }
     },
     {
+      "id": "bloom-status",
+      "type": "bloom",
+      "title": "Bloom",
+      "preset": "status",
+      "anchorPoint": "top-center",
+      "dx": -940,
+      "dy": 710,
+      "width": 360,
+      "height": 240,
+      "from": "left",
+      "showTitle": false,
+      "showBackground": true,
+      "showBorder": true,
+      "config": {
+        "cacheDir": "~/.cache/unclaimed-bloom",
+        "dataDir": "~/.config/unclaimed-bloom"
+      }
+    },
+    {
       "id": "aegis-full",
       "type": "aegis",
       "title": "",

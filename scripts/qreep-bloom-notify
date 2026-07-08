@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# %name: qreep-bloom-notify
+# %desc: Translate Unclaimed Bloom notify commands into Qreep Bloom IPC calls.
+# %usage: qreep-bloom-notify bloom-show <profile> [--wallpaper <path>]
+
+set -euo pipefail
+
+QREEP_PATH="${QREEP_PATH:-/home/adam/Development/Hyprland/quickshell/Qreep}"
+
+ipc() {
+    quickshell ipc --path "$QREEP_PATH" --newest --any-display call qreep-bloom "$@"
+}
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+    bloom-show)
+        profile="${1:-}"
+        if [[ -z "$profile" ]]; then
+            printf 'usage: qreep-bloom-notify bloom-show <profile> [--wallpaper <path>]\n' >&2
+            exit 2
+        fi
+
+        wallpaper=""
+        shift || true
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                --wallpaper)
+                    wallpaper="${2:-}"
+                    shift 2 || true
+                    ;;
+                *)
+                    shift
+                    ;;
+            esac
+        done
+
+        ipc showBloom "$profile" "$wallpaper"
+        ;;
+    bloom-done)
+        ipc doneBloom
+        ;;
+    bloom-hide)
+        ipc hideBloom
+        ;;
+    bloom-pickup)
+        ipc pickupBloom
+        ;;
+    *)
+        printf 'qreep-bloom-notify: unknown command: %s\n' "$cmd" >&2
+        exit 2
+        ;;
+esac

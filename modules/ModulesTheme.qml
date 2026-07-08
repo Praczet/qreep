@@ -1,6 +1,7 @@
 import QtQuick
 
 import "bar" as BarModule
+import "bloom" as BloomModule
 import "clipboard" as ClipboardModule
 import "dashboard" as DashboardModule
 import "dashboard/features/aegis" as AegisFeature
@@ -18,6 +19,10 @@ QtObject {
     }
 
     readonly property QtObject bar: BarModule.BarTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject bloom: BloomModule.BloomTheme {
         qreep: rootModulesTheme.qreep
     }
 

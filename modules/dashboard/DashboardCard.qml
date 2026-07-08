@@ -5,6 +5,7 @@ import "./features/image" as ImageFeature
 import "./features/wotd" as WotdFeature
 import "./features/aegis" as AegisFeature
 import "./features/borg" as BorgFeature
+import "./features/bloom" as BloomFeature
 
 Rectangle {
     id: rootDashboardCard
@@ -141,7 +142,7 @@ Rectangle {
         }
 
         Text {
-            visible: rootDashboardCard.block.type !== "weather" && rootDashboardCard.block.type !== "clock" && rootDashboardCard.block.type !== "digital-clock" && rootDashboardCard.block.type !== "image" && rootDashboardCard.block.type !== "word-of-the-day" && rootDashboardCard.block.type !== "borg" && !rootDashboardCard.isAegisBlock()
+            visible: rootDashboardCard.block.type !== "weather" && rootDashboardCard.block.type !== "clock" && rootDashboardCard.block.type !== "digital-clock" && rootDashboardCard.block.type !== "image" && rootDashboardCard.block.type !== "word-of-the-day" && rootDashboardCard.block.type !== "borg" && rootDashboardCard.block.type !== "bloom" && !rootDashboardCard.isAegisBlock()
             width: parent.width
             text: String(rootDashboardCard.block.text || rootDashboardCard.block.type || "fake")
             color: rootDashboardCard.cardTextColor
@@ -182,6 +183,14 @@ Rectangle {
 
         BorgFeature.BorgBlock {
             visible: rootDashboardCard.block.type === "borg"
+            width: parent.width
+            height: Math.max(1, parent.height - y)
+            theme: rootDashboardCard.theme
+            config: rootDashboardCard.block.config || ({})
+        }
+
+        BloomFeature.BloomBlock {
+            visible: rootDashboardCard.block.type === "bloom"
             width: parent.width
             height: Math.max(1, parent.height - y)
             theme: rootDashboardCard.theme
