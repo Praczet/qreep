@@ -1,2 +1,34 @@
 docs/ai-generated/*
 !docs/ai-generated/module-dashboard.md
+
+# Local secrets and OAuth state. Real credentials belong in ~/.config or ~/.local/state.
+.env
+.env.*
+*.token.json
+*-token.json
+google.json
+microsoft.json
+microsoft-ics.json
+client_secret*.json
+credentials*.json
+
+# Generated calendar caches and local event imports.
+.cache/
+.state/
+cache/
+state/
+.config/qreep/
+.local/state/qreep/
+calendar-cache/
+events.generated.json
+microsoft-events.json
+
+# Python validation/runtime leftovers.
+__pycache__/
+*.py[cod]
+
+# Editor and local runtime noise.
+*.swp
+*.swo
+*~
+.DS_Store

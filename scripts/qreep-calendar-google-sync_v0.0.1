@@ -95,6 +95,20 @@ def write_json_atomic(path, document, mode=0o600):
 
 
 def refresh_qreep_calendar():
+    qreep_ipc_call("refresh")
+
+
+def notify_qreep_calendar_changes(changed_event_ids):
+    if not changed_event_ids:
+        return
+
+    if len(changed_event_ids) == 1:
+        qreep_ipc_call("notifyChanged", changed_event_ids[0])
+    else:
+        qreep_ipc_call("notifyChangedAll")
+
+
+def qreep_ipc_call(method, *args):
     quickshell = shutil.which("quickshell")
     if not quickshell:
         return
@@ -107,10 +121,118 @@ def refresh_qreep_calendar():
         "--any-display",
         "call",
         "qreep-calendar",
-        "refresh",
+        method,
+        *args,
     ]
 
     subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+
+def changed_today_event_ids(previous_document, current_document, now=None):
+    now = now or datetime.now().astimezone()
+    previous_events = visible_today_event_map(previous_document, now)
+    current_events = visible_today_event_map(current_document, now)
+    changed_ids = []
+
+    for event_id in sorted(set(previous_events) | set(current_events)):
+        if previous_events.get(event_id) != current_events.get(event_id):
+            changed_ids.append(event_id)
+
+    return changed_ids
+
+
+def visible_today_event_map(document, now):
+    result = {}
+    today = now.strftime("%Y-%m-%d")
+
+    for event in document_events(document):
+        event_id = trimmed_string(event.get("id"))
+
+        if not event_id or event_date(event) != today or not event_is_visible_today(event, now):
+            continue
+
+        result[event_id] = event_signature(event)
+
+    return result
+
+
+def document_events(document):
+    if not isinstance(document, dict):
+        return []
+
+    events = document.get("events", [])
+    return events if isinstance(events, list) else []
+
+
+def event_signature(event):
+    return json.dumps(
+        {
+            "allDay": event_is_all_day(event),
+            "busy": event.get("busy", True),
+            "calendar": trimmed_string(event.get("calendar") or event.get("calendarName") or event.get("calendarId")),
+            "color": trimmed_string(event.get("color") or event.get("colorId") or event.get("calendarColor")),
+            "date": event_date(event),
+            "end": event_time(event.get("end") or event.get("endTime") or event.get("endDateTime")),
+            "location": trimmed_string(event.get("location")),
+            "source": trimmed_string(event.get("source")),
+            "start": event_time(event.get("start") or event.get("startTime") or event.get("startDateTime")),
+            "status": trimmed_string(event.get("status")).lower(),
+            "title": trimmed_string(event.get("title") or event.get("summary") or event.get("subject")),
+        },
+        sort_keys=True,
+    )
+
+
+def event_is_visible_today(event, now):
+    if event_is_all_day(event):
+        return True
+
+    start = event_time(event.get("start") or event.get("startTime") or event.get("startDateTime"))
+    end = event_time(event.get("end") or event.get("endTime") or event.get("endDateTime"))
+    now_time = now.strftime("%H:%M")
+
+    if not start:
+        return True
+
+    if not end:
+        return start >= now_time
+
+    return end >= now_time
+
+
+def event_is_all_day(event):
+    start = event.get("start")
+    return event.get("allDay") is True or event.get("isAllDay") is True or (
+        isinstance(start, dict) and bool(start.get("date")) and not start.get("dateTime")
+    )
+
+
+def event_date(event):
+    return normalized_date(event.get("date") or event.get("startDate") or event.get("day") or event.get("start"))
+
+
+def normalized_date(value):
+    if isinstance(value, dict):
+        return normalized_date(value.get("date") or value.get("dateTime"))
+
+    text = trimmed_string(value)
+    return text[0:10] if len(text) >= 10 and text[4:5] == "-" and text[7:8] == "-" else ""
+
+
+def event_time(value):
+    if isinstance(value, dict):
+        return event_time(value.get("dateTime"))
+
+    text = trimmed_string(value)
+
+    if "T" in text:
+        text = text.split("T", 1)[1]
+
+    return text[0:5] if len(text) >= 5 and text[2:3] == ":" else ""
+
+
+def trimmed_string(value):
+    return str(value or "").strip()
 
 
 def load_config(path):
@@ -351,9 +473,13 @@ def main():
         sys.stdout.write("\n")
         return 0
 
+    previous_document = read_json(Path(args.output).expanduser(), {})
+    changed_event_ids = changed_today_event_ids(previous_document, document)
+
     write_json_atomic(args.output, document, mode=0o600)
     if not args.no_qreep_refresh:
         refresh_qreep_calendar()
+        notify_qreep_calendar_changes(changed_event_ids)
 
     print(f"Wrote {len(document['events'])} Google events to {Path(args.output).expanduser()}")
     return 0

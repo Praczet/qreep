@@ -56,6 +56,12 @@ dots pulse in sequence.
 Pulse size, duration, loop count, and the primary/warning/error/warning color
 sequence live in `ClockTheme.qml`.
 
+Provider sync scripts compare the previous generated cache with the newly
+downloaded one before writing. Future/remaining events for today that are added,
+edited, or removed trigger the dot notification after the script asks Qreep to
+reload the calendar cache. Past events are ignored. Multiple changed events use
+the all-dots sequence because tiny dots are not a changelog.
+
 Note: This is a bar-owned feature. Sources live under `modules/bar/features/clock/`.
 
 Theme is exposed through:
