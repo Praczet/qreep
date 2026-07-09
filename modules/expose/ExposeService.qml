@@ -74,7 +74,7 @@ QtObject {
     }
 
     readonly property Process captureRunner: Process {
-        onExited: (exitCode, exitStatus) => rootExposeService.applyCaptureOutput(exitCode)
+        onExited: (exitCode, exitStatus) => rootExposeService.applyCaptureBatchOutput(exitCode)
     }
 
     function refresh() {
@@ -210,10 +210,10 @@ QtObject {
             return (!useScreencopyPreviews() || !client.previewSource) && Number(size[0] || 0) > 0 && Number(size[1] || 0) > 0;
         });
 
-        runNextCapture();
+        runCaptureBatch();
     }
 
-    function runNextCapture() {
+    function runCaptureBatch() {
         if (captureQueue.length === 0) {
             captureCurrent = null;
             waitingForOpen = false;
@@ -221,31 +221,49 @@ QtObject {
             return;
         }
 
-        const nextQueue = captureQueue.slice();
-        captureCurrent = nextQueue.shift();
-        captureQueue = nextQueue;
+        const commands = [
+            "mkdir -p " + shellQuote(thumbnailDir),
+            "rc=0",
+            "pids=()"
+        ];
 
-        const at = captureCurrent.at || [0, 0];
-        const size = captureCurrent.size || [0, 0];
-        const geometry = Math.round(Number(at[0] || 0)) + "," + Math.round(Number(at[1] || 0)) + " "
-            + Math.round(Number(size[0] || 0)) + "x" + Math.round(Number(size[1] || 0));
-        const path = thumbnailPath(captureCurrent.address);
+        for (let index = 0; index < captureQueue.length; index++) {
+            const client = captureQueue[index];
+            const at = client.at || [0, 0];
+            const size = client.size || [0, 0];
+            const geometry = Math.round(Number(at[0] || 0)) + "," + Math.round(Number(at[1] || 0)) + " "
+                + Math.round(Number(size[0] || 0)) + "x" + Math.round(Number(size[1] || 0));
+            const path = thumbnailPath(client.address);
 
-        captureRunner.command = ["bash", "-lc", "mkdir -p " + shellQuote(thumbnailDir) + " && grim -g " + shellQuote(geometry) + " " + shellQuote(path)];
+            commands.push("grim -g " + shellQuote(geometry) + " -t png -l 0 " + shellQuote(path) + " & pids+=(\"$!\")");
+        }
+
+        commands.push("for pid in \"${pids[@]}\"; do wait \"$pid\" || rc=1; done");
+        commands.push("exit \"$rc\"");
+
+        captureRunner.command = ["bash", "-lc", commands.join("\n")];
         captureRunner.running = true;
     }
 
-    function applyCaptureOutput(exitCode) {
-        if (captureCurrent && exitCode === 0) {
+    function applyCaptureBatchOutput(exitCode) {
+        if (exitCode === 0) {
             const nextThumbnails = Object.assign({}, thumbnailByAddress);
-            nextThumbnails[String(captureCurrent.address || "")] = thumbnailPath(captureCurrent.address);
+
+            for (let index = 0; index < captureQueue.length; index++) {
+                const client = captureQueue[index];
+                nextThumbnails[String(client.address || "")] = thumbnailPath(client.address);
+            }
+
             thumbnailByAddress = nextThumbnails;
             rebuildModel();
-        } else if (captureCurrent) {
-            warn("Expose thumbnail capture failed for", captureCurrent.address);
+        } else {
+            warn("Expose thumbnail batch failed");
         }
 
-        runNextCapture();
+        captureQueue = [];
+        captureCurrent = null;
+        waitingForOpen = false;
+        openReady();
     }
 
     function thumbnailPath(address) {
