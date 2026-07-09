@@ -1,18 +1,66 @@
 #!/usr/bin/env bash
-# Description: Select a Wayland region, wait with Qreep OSD countdown, capture it, and copy it to the clipboard.
-# Usage: qreep-region-screenshot-delay_v0.0.1 [delay-seconds]
+# Description: Select a Wayland region, optionally wait with Qreep OSD countdown, capture it, and copy it to the clipboard.
+# Usage: qreep-region-screenshot-delay_v0.0.1 [--osd] [--osd-position POSITION] [delay-seconds]
 # Install: install -Dm755 scripts/qreep-region-screenshot-delay_v0.0.1 "$HOME/.local/bin/qreep-region-screenshot-delay"
 
 set -euo pipefail
 
-delay_seconds="${1:-3}"
+delay_seconds="3"
+delay_set=false
+show_countdown_osd=false
+osd_position=""
 quickshell_target="${QREEP_QUICKSHELL_TARGET:--c qreep}"
 read -r -a quickshell_target_args <<<"$quickshell_target"
 
+usage() {
+  printf 'Usage: %s [--osd] [--osd-position POSITION] [delay-seconds]\n' "${0##*/}"
+  printf 'Positions: top, top-left, top-right, bottom, bottom-left, bottom-right\n'
+}
+
+while (($# > 0)); do
+  case "$1" in
+    --osd)
+      show_countdown_osd=true
+      shift
+      ;;
+    --osd-position | --osd-postion)
+      if (($# < 2)); then
+        usage >&2
+        exit 2
+      fi
+      show_countdown_osd=true
+      osd_position="$2"
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      if [[ "$delay_set" == true ]]; then
+        usage >&2
+        exit 2
+      fi
+      delay_seconds="$1"
+      delay_set=true
+      shift
+      ;;
+  esac
+done
+
 if ! [[ "$delay_seconds" =~ ^[0-9]+$ ]]; then
-  printf 'Usage: %s [delay-seconds]\n' "${0##*/}" >&2
+  usage >&2
   exit 2
 fi
+
+case "$osd_position" in
+  "" | top | top-left | top-right | bottom | bottom-left | bottom-right)
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
 
 for command_name in quickshell slurp grim wl-copy date mkdir; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
@@ -24,12 +72,28 @@ done
 show_osd() {
   local message="$1"
   local duration_ms="${2:-1600}"
+  local payload
 
-  quickshell ipc "${quickshell_target_args[@]}" --any-display call osd showMessage "${message}" "${duration_ms}" >/dev/null 2>&1 || true
+  if [[ "$show_countdown_osd" != true ]]; then
+    return
+  fi
+
+  payload='{"message":"'"$message"'","durationMs":'"$duration_ms"
+
+  if [[ -n "$osd_position" ]]; then
+    payload+=',"position":"'"$osd_position"'"'
+  fi
+
+  payload+='}'
+
+  quickshell ipc "${quickshell_target_args[@]}" --any-display call osd showJSON "${payload}" >/dev/null 2>&1 || true
 }
 
 show_osd "Select region" 900
-sleep 0.9
+
+if [[ "$show_countdown_osd" == true ]]; then
+  sleep 0.9
+fi
 
 if ! geometry="$(slurp)"; then
   show_osd "Screenshot cancelled" 1400
@@ -47,7 +111,10 @@ for ((remaining = delay_seconds; remaining > 0; remaining--)); do
 done
 
 show_osd "Capturing screenshot" 900
-sleep 0.9
+
+if [[ "$show_countdown_osd" == true ]]; then
+  sleep 0.9
+fi
 
 output_dir="$HOME/Pictures/Screenshots"
 timestamp="$(date '+%Y-%m-%d-%H%M%S')"
