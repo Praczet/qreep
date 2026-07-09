@@ -1,0 +1,224 @@
+#!/usr/bin/env python3
+# Description: Normalize calendar event JSON and write Qreep's generated calendar cache.
+# Usage: qreep-calendar-sync_v0.0.1 [--input PATH|-] [--output PATH] [--dry-run]
+# Install: install -Dm755 scripts/qreep-calendar-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-sync"
+
+import argparse
+import json
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+
+DEFAULT_OUTPUT = Path.home() / ".cache" / "qreep" / "calendar" / "events.json"
+DATE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})")
+TIME_RE = re.compile(r"T(\d{2}:\d{2})")
+SHORT_TIME_RE = re.compile(r"^(\d{1,2}):(\d{2})")
+COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Normalize calendar event JSON and write Qreep's generated calendar cache."
+    )
+    parser.add_argument(
+        "--input",
+        "-i",
+        default="-",
+        help="Input JSON file, or '-' for stdin. Accepts either {'events': [...]} or a raw event array.",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        default=str(DEFAULT_OUTPUT),
+        help=f"Output cache path. Default: {DEFAULT_OUTPUT}",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print normalized JSON to stdout instead of writing the cache.",
+    )
+    return parser.parse_args()
+
+
+def read_json(path):
+    if path == "-":
+        return json.load(sys.stdin)
+
+    with open(path, "r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def string_value(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def normalized_date(value):
+    if not value:
+        return ""
+
+    if isinstance(value, dict):
+        return normalized_date(value.get("date") or value.get("dateTime"))
+
+    match = DATE_RE.match(string_value(value))
+    return match.group(1) if match else ""
+
+
+def normalized_time(value):
+    if not value:
+        return ""
+
+    if isinstance(value, dict):
+        return normalized_time(value.get("dateTime"))
+
+    text = string_value(value)
+    match = TIME_RE.search(text)
+    if match:
+        return match.group(1)
+
+    match = SHORT_TIME_RE.match(text)
+    if not match:
+        return ""
+
+    hour = int(match.group(1))
+    if hour < 0 or hour > 23:
+        return ""
+
+    return f"{hour:02d}:{match.group(2)}"
+
+
+def is_all_day_start(value):
+    return isinstance(value, dict) and bool(value.get("date")) and not value.get("dateTime")
+
+
+def normalized_reminders(value):
+    if not value:
+        return []
+
+    if isinstance(value, dict) and isinstance(value.get("overrides"), list):
+        return normalized_reminders(value["overrides"])
+
+    source = value if isinstance(value, list) else [value]
+    reminders = []
+
+    for item in source:
+        minute_value = item.get("minutes") if isinstance(item, dict) else item
+        try:
+            minutes = int(minute_value)
+        except (TypeError, ValueError):
+            continue
+
+        if minutes >= 0:
+            reminders.append(minutes)
+
+    return reminders
+
+
+def normalized_color(value):
+    text = string_value(value)
+    return text if COLOR_RE.match(text) else ""
+
+
+def normalize_event(event, index):
+    if not isinstance(event, dict):
+        return None
+
+    status = string_value(event.get("status")).lower()
+    if status in {"cancelled", "canceled", "deleted"}:
+        return None
+
+    date = normalized_date(
+        event.get("date")
+        or event.get("startDate")
+        or event.get("day")
+        or event.get("start")
+    )
+    if not date:
+        return None
+
+    source = string_value(event.get("source") or "generated")
+    calendar = string_value(
+        event.get("calendar")
+        or event.get("calendarName")
+        or event.get("calendarId")
+        or "Generated"
+    )
+    title = string_value(
+        event.get("title")
+        or event.get("summary")
+        or event.get("subject")
+        or "Untitled event"
+    )
+    event_id = string_value(event.get("id") or event.get("uid") or f"{source}:{calendar}:{date}:{index}")
+    all_day = bool(event.get("allDay") or event.get("isAllDay") or is_all_day_start(event.get("start")))
+
+    return {
+        "id": event_id,
+        "source": source,
+        "calendar": calendar,
+        "title": title or "Untitled event",
+        "date": date,
+        "start": "" if all_day else normalized_time(event.get("start") or event.get("startTime") or event.get("startDateTime")),
+        "end": "" if all_day else normalized_time(event.get("end") or event.get("endTime") or event.get("endDateTime")),
+        "allDay": all_day,
+        "location": string_value(event.get("location")),
+        "url": string_value(event.get("url") or event.get("htmlLink") or event.get("webLink")),
+        "color": normalized_color(event.get("color") or event.get("calendarColor")),
+        "reminderMinutes": normalized_reminders(event.get("reminderMinutes") or event.get("reminders")),
+        "busy": bool(event.get("busy", True)),
+    }
+
+
+def normalize_document(document):
+    source_events = document.get("events", []) if isinstance(document, dict) else document
+    if not isinstance(source_events, list):
+        raise ValueError("input must be a JSON object with an events array, or a raw event array")
+
+    events = []
+    for index, event in enumerate(source_events):
+        normalized = normalize_event(event, index)
+        if normalized is not None:
+            events.append(normalized)
+
+    events.sort(key=lambda event: (event["date"], not event["allDay"], event["start"]))
+    return {"events": events}
+
+
+def write_atomic(path, document):
+    output_path = Path(path).expanduser()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=output_path.parent,
+        prefix=f".{output_path.name}.",
+        delete=False,
+    ) as handle:
+        json.dump(document, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+        temporary_path = handle.name
+
+    os.replace(temporary_path, output_path)
+
+
+def main():
+    args = parse_args()
+    document = normalize_document(read_json(args.input))
+
+    if args.dry_run:
+        json.dump(document, sys.stdout, indent=2, sort_keys=True)
+        sys.stdout.write("\n")
+        return 0
+
+    write_atomic(args.output, document)
+    print(f"Wrote {len(document['events'])} events to {Path(args.output).expanduser()}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -105,3 +105,34 @@ events and events without a start time are skipped. If an event has
 Reminder de-duplication is runtime-only for now. Restarting Qreep inside the
 same reminder window can notify again. Annoying, but less annoying than inventing
 persistence before the provider sync exists.
+
+## Generated Cache Helper
+
+`scripts/qreep-calendar-sync_v0.0.1` normalizes event JSON and writes the
+generated cache:
+
+```bash
+scripts/qreep-calendar-sync_v0.0.1 --input provider-events.json
+```
+
+The default output is:
+
+```text
+~/.cache/qreep/calendar/events.json
+```
+
+For testing without touching the live cache:
+
+```bash
+scripts/qreep-calendar-sync_v0.0.1 --input events.json --output /tmp/qreep-calendar-events.json
+```
+
+Install the stable command name with:
+
+```bash
+install -Dm755 scripts/qreep-calendar-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-sync"
+```
+
+This helper does not authenticate to Google or Microsoft yet. It is the boring
+cache writer that provider-specific sync code can feed. Boring is the point;
+OAuth will bring enough paperwork by itself.
