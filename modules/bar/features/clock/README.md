@@ -46,11 +46,16 @@ readonly property QtObject calendar: ClockFeature.CalendarTheme {}
 
 ## Service Notes
 
-`EventStore.qml` uses `FileView` to watch:
+`EventStore.qml` uses `FileView` to watch two event files:
 
 ```text
 events.json
+~/.cache/qreep/calendar/events.json
 ```
+
+`events.json` is the repo-local/manual source. The cache file is where future
+Google/Microsoft sync helpers should write normalized read-only events. If the
+cache file does not exist, Qreep ignores it. Very mature. Did not even panic.
 
 The old tiny shape still works:
 
@@ -88,6 +93,7 @@ helpers to write:
 `source`, `calendar`, `location`, `url`, `color`, `reminderMinutes`, and
 `busy` are optional for hand-written local events. External sync should prefer
 writing the normalized fields instead of making QML learn provider dialects.
+If a cache event omits `source`, Qreep marks it as `generated`.
 
 ## Reminder Notes
 

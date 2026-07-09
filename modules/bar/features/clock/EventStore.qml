@@ -8,37 +8,72 @@ QtObject {
 
     property QtObject log
     property var events: []
+    readonly property string localEventPath: Quickshell.shellDir + "/events.json"
+    readonly property string generatedEventPath: Quickshell.env("HOME") + "/.cache/qreep/calendar/events.json"
 
     readonly property Core.Log fallbackLog: Core.Log {}
 
-    readonly property FileView eventFile: FileView {
-        path: Quickshell.shellDir + "/events.json"
+    readonly property FileView localEventFile: FileView {
+        path: rootEventStore.localEventPath
         preload: true
         watchChanges: true
 
         onLoaded: rootEventStore.loadEvents()
         onTextChanged: rootEventStore.loadEvents()
         onLoadFailed: error => {
-            rootEventStore.reportError("Qreep event error:", FileViewError.toString(error), path);
-            rootEventStore.events = [];
+            rootEventStore.reportLoadError("Qreep local event error:", error, path);
+            rootEventStore.loadEvents();
+        }
+    }
+
+    readonly property FileView generatedEventFile: FileView {
+        path: rootEventStore.generatedEventPath
+        preload: true
+        watchChanges: true
+
+        onLoaded: rootEventStore.loadEvents()
+        onTextChanged: rootEventStore.loadEvents()
+        onLoadFailed: error => {
+            if (error !== FileViewError.FileNotFound)
+                rootEventStore.reportLoadError("Qreep generated event error:", error, path);
+
+            rootEventStore.loadEvents();
         }
     }
 
     function loadEvents() {
-        const contents = eventFile.text();
+        const sourceEvents = [];
 
-        if (contents.length === 0) {
-            events = [];
+        appendEventsFromFile(localEventFile, "local", sourceEvents);
+        appendEventsFromFile(generatedEventFile, "generated", sourceEvents);
+        events = normalizeEvents(sourceEvents);
+    }
+
+    function appendEventsFromFile(file, sourceName, targetEvents) {
+        const contents = file.text();
+
+        if (contents.length === 0)
             return;
-        }
 
         try {
             const document = JSON.parse(contents);
-            events = Array.isArray(document.events) ? normalizeEvents(document.events) : [];
+            const documentEvents = Array.isArray(document.events) ? document.events : [];
+
+            for (let index = 0; index < documentEvents.length; index++) {
+                const event = Object.assign({}, documentEvents[index]);
+
+                if (!event.source)
+                    event.source = sourceName;
+
+                targetEvents.push(event);
+            }
         } catch (error) {
-            reportError("Qreep event JSON error:", error);
-            events = [];
+            reportError("Qreep " + sourceName + " event JSON error:", error);
         }
+    }
+
+    function reportLoadError(prefix, error, path) {
+        reportError(prefix, FileViewError.toString(error), path);
     }
 
     function reportError() {
