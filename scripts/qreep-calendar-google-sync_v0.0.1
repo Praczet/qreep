@@ -1,0 +1,338 @@
+#!/usr/bin/env python3
+# Description: Fetch Google Calendar events read-only and write Qreep's generated calendar cache.
+# Usage: qreep-calendar-google-sync_v0.0.1 [--config PATH] [--state PATH] [--output PATH]
+# Install: install -Dm755 scripts/qreep-calendar-google-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-google-sync"
+
+import argparse
+import base64
+import hashlib
+import json
+import os
+import secrets
+import sys
+import tempfile
+import time
+import urllib.parse
+import urllib.request
+import webbrowser
+from datetime import datetime, timedelta, timezone
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+
+
+AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+TOKEN_URL = "https://oauth2.googleapis.com/token"
+EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
+SCOPE = "https://www.googleapis.com/auth/calendar.events.readonly"
+
+DEFAULT_CONFIG = Path.home() / ".config" / "qreep" / "calendar" / "google.json"
+DEFAULT_STATE = Path.home() / ".local" / "state" / "qreep" / "calendar" / "google-token.json"
+DEFAULT_OUTPUT = Path.home() / ".cache" / "qreep" / "calendar" / "events.json"
+
+
+class OAuthCallbackHandler(BaseHTTPRequestHandler):
+    server_version = "QreepGoogleOAuth/0.1"
+
+    def do_GET(self):
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        self.server.oauth_code = query.get("code", [""])[0]
+        self.server.oauth_error = query.get("error", [""])[0]
+        self.server.oauth_state = query.get("state", [""])[0]
+        body = b"Qreep Google Calendar auth received. You can close this tab.\n"
+        self.send_response(200 if self.server.oauth_code else 400)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args):
+        return
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Fetch Google Calendar events read-only and write Qreep's generated calendar cache."
+    )
+    parser.add_argument("--config", default=str(DEFAULT_CONFIG), help=f"Config path. Default: {DEFAULT_CONFIG}")
+    parser.add_argument("--state", default=str(DEFAULT_STATE), help=f"OAuth token path. Default: {DEFAULT_STATE}")
+    parser.add_argument("--output", default=str(DEFAULT_OUTPUT), help=f"Output cache path. Default: {DEFAULT_OUTPUT}")
+    parser.add_argument("--days-back", type=int, default=7, help="Days before today to fetch. Default: 7")
+    parser.add_argument("--days-forward", type=int, default=45, help="Days after today to fetch. Default: 45")
+    parser.add_argument("--calendar", action="append", dest="calendars", help="Calendar id to fetch. Can be repeated.")
+    parser.add_argument("--no-browser", action="store_true", help="Print auth URL instead of opening a browser.")
+    parser.add_argument("--dry-run", action="store_true", help="Print generated cache JSON instead of writing it.")
+    return parser.parse_args()
+
+
+def read_json(path, default=None):
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except FileNotFoundError:
+        return default
+
+
+def write_json_atomic(path, document, mode=0o600):
+    output_path = Path(path).expanduser()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=output_path.parent,
+        prefix=f".{output_path.name}.",
+        delete=False,
+    ) as handle:
+        json.dump(document, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+        temporary_path = handle.name
+
+    os.chmod(temporary_path, mode)
+    os.replace(temporary_path, output_path)
+
+
+def load_config(path):
+    config = read_json(Path(path).expanduser(), {})
+    if not isinstance(config, dict):
+        raise SystemExit("Google calendar config must be a JSON object.")
+
+    if not config.get("client_id"):
+        raise SystemExit(f"Missing client_id in {path}")
+
+    return config
+
+
+def token_expired(token):
+    return not token or time.time() >= float(token.get("expires_at", 0)) - 60
+
+
+def request_json(url, data=None, headers=None):
+    encoded_data = None
+    request_headers = headers or {}
+
+    if data is not None:
+        encoded_data = urllib.parse.urlencode(data).encode("utf-8")
+        request_headers = {"Content-Type": "application/x-www-form-urlencoded", **request_headers}
+
+    request = urllib.request.Request(url, data=encoded_data, headers=request_headers)
+
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        body = error.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"HTTP {error.code} from {url}: {body}") from error
+
+
+def code_verifier_pair():
+    verifier = base64.urlsafe_b64encode(secrets.token_bytes(48)).decode("ascii").rstrip("=")
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    challenge = base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
+    return verifier, challenge
+
+
+def authorize(config, state_path, no_browser):
+    verifier, challenge = code_verifier_pair()
+    auth_state = secrets.token_urlsafe(24)
+
+    server = HTTPServer(("127.0.0.1", 0), OAuthCallbackHandler)
+    server.oauth_code = ""
+    server.oauth_error = ""
+    server.oauth_state = ""
+    redirect_uri = f"http://127.0.0.1:{server.server_port}/"
+
+    params = {
+        "client_id": config["client_id"],
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": SCOPE,
+        "access_type": "offline",
+        "prompt": "consent",
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
+        "state": auth_state,
+    }
+    auth_url = AUTH_URL + "?" + urllib.parse.urlencode(params)
+
+    if no_browser:
+        print(auth_url)
+    else:
+        webbrowser.open(auth_url)
+        print("Opened Google auth URL in the default browser.")
+
+    print("Waiting for OAuth callback on", redirect_uri)
+    server.handle_request()
+
+    if server.oauth_error:
+        raise SystemExit(f"Google auth failed: {server.oauth_error}")
+    if server.oauth_state != auth_state:
+        raise SystemExit("Google auth failed: state mismatch.")
+    if not server.oauth_code:
+        raise SystemExit("Google auth failed: no code returned.")
+
+    token = request_json(
+        TOKEN_URL,
+        {
+            "client_id": config["client_id"],
+            "client_secret": config.get("client_secret", ""),
+            "code": server.oauth_code,
+            "code_verifier": verifier,
+            "grant_type": "authorization_code",
+            "redirect_uri": redirect_uri,
+        },
+    )
+    token["expires_at"] = time.time() + float(token.get("expires_in", 3600))
+    write_json_atomic(state_path, token)
+    return token
+
+
+def refresh_token(config, state_path, token):
+    refresh_token_value = token.get("refresh_token")
+    if not refresh_token_value:
+        return None
+
+    refreshed = request_json(
+        TOKEN_URL,
+        {
+            "client_id": config["client_id"],
+            "client_secret": config.get("client_secret", ""),
+            "refresh_token": refresh_token_value,
+            "grant_type": "refresh_token",
+        },
+    )
+    refreshed["refresh_token"] = refresh_token_value
+    refreshed["expires_at"] = time.time() + float(refreshed.get("expires_in", 3600))
+    write_json_atomic(state_path, refreshed)
+    return refreshed
+
+
+def access_token(config, state_path, no_browser):
+    token = read_json(Path(state_path).expanduser(), None)
+
+    if not token_expired(token):
+        return token
+
+    if token:
+        refreshed = refresh_token(config, state_path, token)
+        if refreshed:
+            return refreshed
+
+    return authorize(config, state_path, no_browser)
+
+
+def rfc3339_range(days_back, days_forward):
+    now = datetime.now(timezone.utc)
+    start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc) - timedelta(days=days_back)
+    end = start + timedelta(days=days_back + days_forward + 1)
+    return start.isoformat().replace("+00:00", "Z"), end.isoformat().replace("+00:00", "Z")
+
+
+def fetch_calendar_events(token, calendar_id, calendar_label, days_back, days_forward):
+    time_min, time_max = rfc3339_range(days_back, days_forward)
+    events = []
+    page_token = ""
+
+    while True:
+        params = {
+            "singleEvents": "true",
+            "orderBy": "startTime",
+            "timeMin": time_min,
+            "timeMax": time_max,
+            "maxResults": "2500",
+        }
+        if page_token:
+            params["pageToken"] = page_token
+
+        url = EVENTS_URL.format(calendar_id=urllib.parse.quote(calendar_id, safe="")) + "?" + urllib.parse.urlencode(params)
+        document = request_json(url, headers={"Authorization": "Bearer " + token["access_token"]})
+
+        for item in document.get("items", []):
+            events.append(google_event(calendar_id, calendar_label, item))
+
+        page_token = document.get("nextPageToken", "")
+        if not page_token:
+            break
+
+    return events
+
+
+def google_event(calendar_id, calendar_label, item):
+    start = item.get("start", {})
+    end = item.get("end", {})
+    reminders = item.get("reminders", {})
+    reminder_minutes = []
+
+    if isinstance(reminders, dict) and isinstance(reminders.get("overrides"), list):
+        for override in reminders["overrides"]:
+            if override.get("method") == "popup" and isinstance(override.get("minutes"), int):
+                reminder_minutes.append(override["minutes"])
+
+    return {
+        "id": "google:" + calendar_id + ":" + item.get("id", ""),
+        "source": "google",
+        "calendar": calendar_label,
+        "title": item.get("summary", "Untitled event"),
+        "date": start.get("date") or start.get("dateTime", ""),
+        "start": start,
+        "end": end,
+        "allDay": bool(start.get("date") and not start.get("dateTime")),
+        "location": item.get("location", ""),
+        "url": item.get("htmlLink", ""),
+        "color": "",
+        "reminderMinutes": reminder_minutes,
+        "busy": item.get("transparency") != "transparent",
+        "status": item.get("status", ""),
+    }
+
+
+def normalize_document(events):
+    return {"events": sorted(events, key=lambda event: (str(event.get("date", "")), str(event.get("start", ""))))}
+
+
+def configured_calendars(config, cli_calendars):
+    if cli_calendars:
+        return [{"id": calendar_id, "name": calendar_id} for calendar_id in cli_calendars]
+
+    calendars = config.get("calendars") or [{"id": "primary", "name": "Google"}]
+    result = []
+
+    for calendar in calendars:
+        if isinstance(calendar, str):
+            result.append({"id": calendar, "name": calendar})
+        elif isinstance(calendar, dict) and calendar.get("id"):
+            result.append({"id": calendar["id"], "name": calendar.get("name") or calendar["id"]})
+
+    return result
+
+
+def main():
+    args = parse_args()
+    config = load_config(args.config)
+    token = access_token(config, args.state, args.no_browser)
+    events = []
+
+    for calendar in configured_calendars(config, args.calendars):
+        events.extend(
+            fetch_calendar_events(
+                token,
+                calendar["id"],
+                calendar["name"],
+                args.days_back,
+                args.days_forward,
+            )
+        )
+
+    document = normalize_document(events)
+
+    if args.dry_run:
+        json.dump(document, sys.stdout, indent=2, sort_keys=True)
+        sys.stdout.write("\n")
+        return 0
+
+    write_json_atomic(args.output, document, mode=0o644)
+    print(f"Wrote {len(document['events'])} Google events to {Path(args.output).expanduser()}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

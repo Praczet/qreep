@@ -136,3 +136,60 @@ install -Dm755 scripts/qreep-calendar-sync_v0.0.1 "$HOME/.local/bin/qreep-calend
 This helper does not authenticate to Google or Microsoft yet. It is the boring
 cache writer that provider-specific sync code can feed. Boring is the point;
 OAuth will bring enough paperwork by itself.
+
+## Google Calendar Sync
+
+`scripts/qreep-calendar-google-sync_v0.0.1` fetches Google Calendar events with
+the read-only Calendar Events scope and writes the generated cache.
+
+It expects config outside the repo:
+
+```text
+~/.config/qreep/calendar/google.json
+```
+
+Minimal config:
+
+```json
+{
+  "client_id": "your-google-oauth-client-id",
+  "client_secret": "optional-for-installed-client",
+  "calendars": [
+    { "id": "primary", "name": "Google" }
+  ]
+}
+```
+
+Tokens are stored outside the repo:
+
+```text
+~/.local/state/qreep/calendar/google-token.json
+```
+
+Run:
+
+```bash
+scripts/qreep-calendar-google-sync_v0.0.1
+```
+
+For a terminal-only auth URL:
+
+```bash
+scripts/qreep-calendar-google-sync_v0.0.1 --no-browser
+```
+
+The script uses a local loopback OAuth callback and requests:
+
+```text
+https://www.googleapis.com/auth/calendar.events.readonly
+```
+
+It fetches a bounded window by default: seven days back and forty-five days
+forward. That is enough for the bar without asking Google for your entire
+temporal autobiography.
+
+Install the stable command name with:
+
+```bash
+install -Dm755 scripts/qreep-calendar-google-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-google-sync"
+```
