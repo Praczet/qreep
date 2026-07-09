@@ -6,6 +6,10 @@ QtObject {
     required property QtObject qreep
 
     readonly property int animationDuration: 150
+    readonly property int cardEntranceDuration: 340
+    readonly property int cardEntranceStagger: 22
+    readonly property real cardEntranceOvershoot: 0.08
+    readonly property int gridMaxColumns: 4
     readonly property int panelMargin: 48
     readonly property int panelPadding: 24
     readonly property int sectionGap: 24

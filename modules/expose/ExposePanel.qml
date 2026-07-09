@@ -10,6 +10,11 @@ PanelWindow {
     required property bool panelOpen
 
     property bool presented: false
+    readonly property int overviewItemCount: service.currentClients.length + service.workspaceClusters.length
+    readonly property int maxColumnsByWidth: Math.max(1, Math.floor((width - theme.modules.expose.panelMargin * 2 + theme.modules.expose.cardGap) / (theme.modules.expose.currentCardWidth + theme.modules.expose.cardGap)))
+    readonly property int gridColumns: Math.max(1, Math.min(theme.modules.expose.gridMaxColumns, overviewItemCount, maxColumnsByWidth))
+    readonly property int gridRows: overviewItemCount > 0 ? Math.ceil(overviewItemCount / gridColumns) : 1
+    readonly property point gatherPoint: Qt.point(width / 2, height / 2)
 
     signal closeRequested
 
@@ -126,14 +131,13 @@ PanelWindow {
         }
     }
 
-    Row {
+    Item {
         id: overview
 
         anchors {
             fill: parent
             margins: rootExposePanel.theme.modules.expose.panelMargin
         }
-        spacing: rootExposePanel.theme.modules.expose.sectionGap
         opacity: rootExposePanel.presented ? 1 : 0
         y: rootExposePanel.presented ? 0 : 18
 
@@ -151,11 +155,13 @@ PanelWindow {
             }
         }
 
-        Flow {
-            id: currentFlow
+        Grid {
+            id: overviewGrid
 
-            width: Math.max(1, parent.width - otherScroller.width - parent.spacing)
-            height: parent.height
+            anchors.centerIn: parent
+            width: Math.min(parent.width, rootExposePanel.gridColumns * rootExposePanel.theme.modules.expose.currentCardWidth + Math.max(0, rootExposePanel.gridColumns - 1) * spacing)
+            height: Math.min(parent.height, rootExposePanel.gridRows * rootExposePanel.theme.modules.expose.currentCardHeight + Math.max(0, rootExposePanel.gridRows - 1) * spacing)
+            columns: rootExposePanel.gridColumns
             spacing: rootExposePanel.theme.modules.expose.cardGap
 
             Repeater {
@@ -165,47 +171,39 @@ PanelWindow {
 
                 ExposeClientCard {
                     required property var modelData
+                    required property int index
 
                     theme: rootExposePanel.theme
                     client: modelData
                     selected: modelData.address === rootExposePanel.service.selectedAddress
+                    entrancePresented: rootExposePanel.presented
+                    entranceIndex: index
+                    entranceGatherPoint: rootExposePanel.gatherPoint
 
                     onSelectedRequested: card => rootExposePanel.service.selectAddress(card.client.address)
                     onActivated: client => rootExposePanel.service.focusClient(client)
                 }
             }
-        }
 
-        Flickable {
-            id: otherScroller
+            Repeater {
+                id: clusterRepeater
 
-            width: Math.min(rootExposePanel.theme.modules.expose.clusterWidth, parent.width * 0.34)
-            height: parent.height
-            contentWidth: width
-            contentHeight: clusterColumn.implicitHeight
-            clip: true
+                model: rootExposePanel.service.workspaceClusters
 
-            Column {
-                id: clusterColumn
+                ExposeWorkspaceCluster {
+                    required property var modelData
+                    required property int index
 
-                width: otherScroller.width
-                spacing: rootExposePanel.theme.modules.expose.cardGap
+                    theme: rootExposePanel.theme
+                    cluster: modelData
+                    selectedAddress: rootExposePanel.service.selectedAddress
+                    gridTile: true
+                    entrancePresented: rootExposePanel.presented
+                    entranceIndex: rootExposePanel.service.currentClients.length + index
+                    entranceGatherPoint: rootExposePanel.gatherPoint
 
-                Repeater {
-                    id: clusterRepeater
-
-                    model: rootExposePanel.service.workspaceClusters
-
-                    ExposeWorkspaceCluster {
-                        required property var modelData
-
-                        theme: rootExposePanel.theme
-                        cluster: modelData
-                        selectedAddress: rootExposePanel.service.selectedAddress
-
-                        onSelectedRequested: card => rootExposePanel.service.selectAddress(card.client.address)
-                        onActivated: client => rootExposePanel.service.focusClient(client)
-                    }
+                    onSelectedRequested: card => rootExposePanel.service.selectAddress(card.client.address)
+                    onActivated: client => rootExposePanel.service.focusClient(client)
                 }
             }
         }
@@ -242,94 +240,90 @@ PanelWindow {
     }
 
     function selectSpatial(direction) {
-        const cards = selectableCards();
+        const entries = navigationEntries();
 
-        if (cards.length === 0)
+        if (entries.length === 0)
             return;
 
-        let current = null;
+        let currentIndex = -1;
 
-        for (let index = 0; index < cards.length; index++) {
-            if (cards[index].client.address === service.selectedAddress) {
-                current = cards[index];
+        for (let index = 0; index < entries.length; index++) {
+            if (entryContainsAddress(entries[index], service.selectedAddress)) {
+                currentIndex = index;
                 break;
             }
         }
 
-        if (!current) {
-            service.selectAddress(cards[0].client.address);
+        if (currentIndex < 0) {
+            service.selectAddress(entries[0].address);
             return;
         }
 
-        const currentCenter = cardCenter(current);
-        let best = null;
-        let bestScore = Number.POSITIVE_INFINITY;
+        if (entries[currentIndex].cluster && entries[currentIndex].item) {
+            const innerAddress = entries[currentIndex].item.navigateWithin(direction);
 
-        for (let index = 0; index < cards.length; index++) {
-            const candidate = cards[index];
-
-            if (candidate === current)
-                continue;
-
-            const center = cardCenter(candidate);
-            const dx = center.x - currentCenter.x;
-            const dy = center.y - currentCenter.y;
-
-            if (!isInDirection(direction, dx, dy))
-                continue;
-
-            const primary = direction === "left" || direction === "right" ? Math.abs(dx) : Math.abs(dy);
-            const secondary = direction === "left" || direction === "right" ? Math.abs(dy) : Math.abs(dx);
-            const score = primary * 1000 + secondary;
-
-            if (score < bestScore) {
-                bestScore = score;
-                best = candidate;
+            if (innerAddress.length > 0) {
+                service.selectAddress(innerAddress);
+                return;
             }
         }
 
-        if (best)
-            service.selectAddress(best.client.address);
+        const column = currentIndex % gridColumns;
+        let nextIndex = currentIndex;
+
+        switch (direction) {
+        case "left":
+            if (column > 0)
+                nextIndex = currentIndex - 1;
+            break;
+        case "right":
+            if (column < gridColumns - 1 && currentIndex + 1 < entries.length)
+                nextIndex = currentIndex + 1;
+            break;
+        case "up":
+            if (currentIndex - gridColumns >= 0)
+                nextIndex = currentIndex - gridColumns;
+            break;
+        case "down":
+            if (currentIndex + gridColumns < entries.length)
+                nextIndex = currentIndex + gridColumns;
+            break;
+        }
+
+        if (nextIndex !== currentIndex)
+            service.selectAddress(entries[nextIndex].address);
     }
 
-    function selectableCards() {
-        let cards = [];
+    function navigationEntries() {
+        const entries = [];
 
         for (let index = 0; index < currentRepeater.count; index++) {
             const item = currentRepeater.itemAt(index);
 
             if (item)
-                cards.push(item);
+                entries.push({ item: item, address: String(item.client.address || ""), cluster: false });
         }
 
         for (let index = 0; index < clusterRepeater.count; index++) {
             const cluster = clusterRepeater.itemAt(index);
 
-            if (cluster)
-                cards = cards.concat(cluster.selectableCards());
+            if (cluster) {
+                const address = cluster.primaryAddress();
+
+                if (address.length > 0)
+                    entries.push({ item: cluster, address: address, cluster: true });
+            }
         }
 
-        return cards;
+        return entries;
     }
 
-    function cardCenter(card) {
-        const point = card.mapToGlobal(Qt.point(card.width / 2, card.height / 2));
+    function entryContainsAddress(entry, address) {
+        const value = String(address || "");
 
-        return Qt.point(point.x, point.y);
-    }
+        if (entry.address === value)
+            return true;
 
-    function isInDirection(direction, dx, dy) {
-        switch (direction) {
-        case "left":
-            return dx < -1;
-        case "right":
-            return dx > 1;
-        case "up":
-            return dy < -1;
-        case "down":
-            return dy > 1;
-        default:
-            return false;
-        }
+        return entry.cluster && entry.item && entry.item.containsAddress(value);
     }
 }

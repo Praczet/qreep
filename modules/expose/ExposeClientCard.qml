@@ -10,10 +10,18 @@ Rectangle {
     required property var client
     property bool selected: false
     property bool compact: false
+    property bool entrancePresented: true
+    property int entranceIndex: 0
+    property point entranceGatherPoint: Qt.point(0, 0)
     readonly property bool useScreencopy: Boolean(theme.modules.expose.useScreencopy)
     readonly property var previewSource: client.previewSource || null
     readonly property bool hasLivePreview: useScreencopy && previewSource !== null
     readonly property string thumbPath: String(client.thumbPath || "")
+    readonly property bool useEntranceMotion: !compact
+    property real entranceGatherX: 0
+    property real entranceGatherY: 0
+    property real entranceOvershootX: 0
+    property real entranceOvershootY: 0
 
     signal selectedRequested(var card)
     signal activated(var client)
@@ -28,6 +36,75 @@ Rectangle {
     scale: selected ? theme.modules.expose.selectedScale : 1
     clip: true
 
+    transform: Translate {
+        id: entranceTranslate
+
+        x: 0
+        y: 0
+    }
+
+    SequentialAnimation {
+        id: entranceAnimation
+
+        PauseAnimation {
+            duration: rootExposeClientCard.entranceIndex * rootExposeClientCard.theme.modules.expose.cardEntranceStagger
+        }
+
+        ParallelAnimation {
+            NumberAnimation {
+                target: entranceTranslate
+                property: "x"
+                to: rootExposeClientCard.entranceGatherX
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.32
+                easing.type: Easing.OutCubic
+            }
+
+            NumberAnimation {
+                target: entranceTranslate
+                property: "y"
+                to: rootExposeClientCard.entranceGatherY
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.32
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        ParallelAnimation {
+            NumberAnimation {
+                target: entranceTranslate
+                property: "x"
+                to: rootExposeClientCard.entranceOvershootX
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.72
+                easing.type: Easing.OutCubic
+            }
+
+            NumberAnimation {
+                target: entranceTranslate
+                property: "y"
+                to: rootExposeClientCard.entranceOvershootY
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.72
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        ParallelAnimation {
+            NumberAnimation {
+                target: entranceTranslate
+                property: "x"
+                to: 0
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.24
+                easing.type: Easing.OutCubic
+            }
+
+            NumberAnimation {
+                target: entranceTranslate
+                property: "y"
+                to: 0
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.24
+                easing.type: Easing.OutCubic
+            }
+        }
+    }
+
     Behavior on color {
         ColorAnimation {
             duration: rootExposeClientCard.theme.modules.expose.animationDuration
@@ -39,6 +116,15 @@ Rectangle {
             duration: rootExposeClientCard.theme.modules.expose.animationDuration
             easing.type: Easing.OutCubic
         }
+    }
+
+    Component.onCompleted: resetEntrance()
+
+    onEntrancePresentedChanged: {
+        if (entrancePresented)
+            playEntrance();
+        else
+            resetEntrance();
     }
 
     HoverHandler {
@@ -145,5 +231,44 @@ Rectangle {
                 elide: Text.ElideRight
             }
         }
+    }
+
+    function windowOffsetFromCurrentCard() {
+        const at = rootExposeClientCard.client.at || [0, 0];
+        const size = rootExposeClientCard.client.size || [0, 0];
+        const windowCenterX = Number(at[0] || 0) + Number(size[0] || 0) / 2;
+        const windowCenterY = Number(at[1] || 0) + Number(size[1] || 0) / 2;
+        const cardTopLeft = rootExposeClientCard.mapToGlobal(Qt.point(0, 0));
+        const cardCenterX = cardTopLeft.x + rootExposeClientCard.width / 2;
+        const cardCenterY = cardTopLeft.y + rootExposeClientCard.height / 2;
+
+        return Qt.point(windowCenterX - cardCenterX, windowCenterY - cardCenterY);
+    }
+
+    function gatherOffsetFromCurrentCard() {
+        const cardTopLeft = rootExposeClientCard.mapToGlobal(Qt.point(0, 0));
+        const cardCenterX = cardTopLeft.x + rootExposeClientCard.width / 2;
+        const cardCenterY = cardTopLeft.y + rootExposeClientCard.height / 2;
+
+        return Qt.point(rootExposeClientCard.entranceGatherPoint.x - cardCenterX, rootExposeClientCard.entranceGatherPoint.y - cardCenterY);
+    }
+
+    function resetEntrance() {
+        const offset = rootExposeClientCard.useEntranceMotion ? windowOffsetFromCurrentCard() : Qt.point(0, 0);
+
+        entranceAnimation.stop();
+        entranceTranslate.x = offset.x;
+        entranceTranslate.y = offset.y;
+    }
+
+    function playEntrance() {
+        const gatherOffset = rootExposeClientCard.useEntranceMotion ? gatherOffsetFromCurrentCard() : Qt.point(0, 0);
+
+        resetEntrance();
+        entranceGatherX = gatherOffset.x;
+        entranceGatherY = gatherOffset.y;
+        entranceOvershootX = -gatherOffset.x * rootExposeClientCard.theme.modules.expose.cardEntranceOvershoot;
+        entranceOvershootY = -gatherOffset.y * rootExposeClientCard.theme.modules.expose.cardEntranceOvershoot;
+        entranceAnimation.restart();
     }
 }
