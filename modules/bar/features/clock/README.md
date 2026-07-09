@@ -36,6 +36,12 @@ Reminder defaults live in `CalendarTheme.qml`:
 `modules/bar/Bar.qml` creates `EventStore`, passes it to `Clock`, and hosts
 `CalendarPopup`.
 
+`EventStore.qml` exposes IPC for manual cache reloads:
+
+```bash
+quickshell -c qreep ipc call qreep-calendar refresh
+```
+
 Note: This is a bar-owned feature. Sources live under `modules/bar/features/clock/`.
 
 Theme is exposed through:
@@ -47,16 +53,17 @@ readonly property QtObject calendar: ClockFeature.CalendarTheme {}
 
 ## Service Notes
 
-`EventStore.qml` uses `FileView` to watch two event files:
+`EventStore.qml` uses `FileView` to watch three event files:
 
 ```text
 events.json
 ~/.cache/qreep/calendar/events.json
+~/.cache/qreep/calendar/microsoft-events.json
 ```
 
-`events.json` is the repo-local/manual source. The cache file is where future
-Google/Microsoft sync helpers should write normalized read-only events. If the
-cache file does not exist, Qreep ignores it. Very mature. Did not even panic.
+`events.json` is the repo-local/manual source. The generated cache files are
+where provider sync helpers write normalized read-only events. If a cache file
+does not exist, Qreep ignores it. Very mature. Did not even panic.
 
 The old tiny shape still works:
 
@@ -173,6 +180,11 @@ Run:
 scripts/qreep-calendar-google-sync_v0.0.1
 ```
 
+After writing the cache, the script asks a running Qreep instance to reload
+calendar caches through `qreep-calendar refresh`. If Qreep is not running, the
+cache is still written and will be loaded on next start. Use
+`--no-qreep-refresh` to skip the IPC call.
+
 For a terminal-only auth URL:
 
 ```bash
@@ -193,4 +205,126 @@ Install the stable command name with:
 
 ```bash
 install -Dm755 scripts/qreep-calendar-google-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-google-sync"
+```
+
+## Microsoft Calendar Sync
+
+There are two Microsoft paths because Entra permissions are a little kingdom
+with a clipboard.
+
+Use `scripts/qreep-calendar-microsoft-ics-sync_v0.0.1` when the tenant blocks
+app registrations but Outlook lets you share a read-only `.ics` URL. It writes
+the Microsoft cache file:
+
+```text
+~/.cache/qreep/calendar/microsoft-events.json
+```
+
+It expects config outside the repo:
+
+```text
+~/.config/qreep/calendar/microsoft-ics.json
+```
+
+Minimal config:
+
+```json
+{
+  "url": "https://outlook.office365.com/owa/calendar/.../reachcalendar.ics",
+  "calendar": "Outlook"
+}
+```
+
+Treat the `.ics` URL like a password-adjacent object. Anyone with the URL may
+be able to read that shared calendar.
+
+Run:
+
+```bash
+scripts/qreep-calendar-microsoft-ics-sync_v0.0.1
+```
+
+After writing the cache, the script asks a running Qreep instance to reload
+calendar caches through `qreep-calendar refresh`. If Qreep is not running, the
+cache is still written and will be loaded on next start. Use
+`--no-qreep-refresh` to skip the IPC call.
+
+Install the stable command name with:
+
+```bash
+install -Dm755 scripts/qreep-calendar-microsoft-ics-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-microsoft-ics-sync"
+```
+
+`scripts/qreep-calendar-microsoft-sync_v0.0.1` is the Microsoft Graph route. It
+fetches Outlook calendar events with delegated read-only calendar access. Use it
+when you can create an app registration or an admin gives you a client ID.
+
+It expects config outside the repo:
+
+```text
+~/.config/qreep/calendar/microsoft.json
+```
+
+Minimal config:
+
+```json
+{
+  "client_id": "your-microsoft-application-client-id",
+  "tenant": "common",
+  "calendars": [
+    { "id": "default", "name": "Outlook" }
+  ]
+}
+```
+
+Use `tenant: "organizations"` for work/school-only sign-in, or a tenant ID if
+that is what the office paperwork demands today. The app registration needs a
+public/native redirect URI for loopback auth, such as:
+
+```text
+http://localhost
+```
+
+Tokens are stored outside the repo:
+
+```text
+~/.local/state/qreep/calendar/microsoft-token.json
+```
+
+Run:
+
+```bash
+scripts/qreep-calendar-microsoft-sync_v0.0.1
+```
+
+After writing the cache, the script asks a running Qreep instance to reload
+calendar caches through `qreep-calendar refresh`. If Qreep is not running, the
+cache is still written and will be loaded on next start. Use
+`--no-qreep-refresh` to skip the IPC call.
+
+For a terminal-only auth URL:
+
+```bash
+scripts/qreep-calendar-microsoft-sync_v0.0.1 --no-browser
+```
+
+The default output is:
+
+```text
+~/.cache/qreep/calendar/microsoft-events.json
+```
+
+The script requests:
+
+```text
+offline_access https://graph.microsoft.com/Calendars.Read
+```
+
+It fetches a bounded window by default: seven days back and forty-five days
+forward.
+
+Install the stable command name with:
+
+```bash
+install -Dm755 scripts/qreep-calendar-microsoft-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-microsoft-sync"
 ```

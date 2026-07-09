@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# Description: Fetch Google Calendar events read-only and write Qreep's generated calendar cache.
-# Usage: qreep-calendar-google-sync_v0.0.1 [--config PATH] [--state PATH] [--output PATH]
-# Install: install -Dm755 scripts/qreep-calendar-google-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-google-sync"
+# Description: Fetch Microsoft Outlook calendar events read-only and write Qreep's Microsoft calendar cache.
+# Usage: qreep-calendar-microsoft-sync_v0.0.1 [--config PATH] [--state PATH] [--output PATH]
+# Install: install -Dm755 scripts/qreep-calendar-microsoft-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-microsoft-sync"
 
 import argparse
 import base64
@@ -22,25 +22,23 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 
-AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-TOKEN_URL = "https://oauth2.googleapis.com/token"
-EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
-SCOPE = "https://www.googleapis.com/auth/calendar.events.readonly"
-
-DEFAULT_CONFIG = Path.home() / ".config" / "qreep" / "calendar" / "google.json"
-DEFAULT_STATE = Path.home() / ".local" / "state" / "qreep" / "calendar" / "google-token.json"
-DEFAULT_OUTPUT = Path.home() / ".cache" / "qreep" / "calendar" / "events.json"
+GRAPH_ROOT = "https://graph.microsoft.com/v1.0"
+DEFAULT_TENANT = "common"
+DEFAULT_SCOPE = "offline_access https://graph.microsoft.com/Calendars.Read"
+DEFAULT_CONFIG = Path.home() / ".config" / "qreep" / "calendar" / "microsoft.json"
+DEFAULT_STATE = Path.home() / ".local" / "state" / "qreep" / "calendar" / "microsoft-token.json"
+DEFAULT_OUTPUT = Path.home() / ".cache" / "qreep" / "calendar" / "microsoft-events.json"
 
 
 class OAuthCallbackHandler(BaseHTTPRequestHandler):
-    server_version = "QreepGoogleOAuth/0.1"
+    server_version = "QreepMicrosoftOAuth/0.1"
 
     def do_GET(self):
         query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         self.server.oauth_code = query.get("code", [""])[0]
         self.server.oauth_error = query.get("error", [""])[0]
         self.server.oauth_state = query.get("state", [""])[0]
-        body = b"Qreep Google Calendar auth received. You can close this tab.\n"
+        body = b"Qreep Microsoft Calendar auth received. You can close this tab.\n"
         self.send_response(200 if self.server.oauth_code else 400)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -53,7 +51,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Fetch Google Calendar events read-only and write Qreep's generated calendar cache."
+        description="Fetch Microsoft Outlook calendar events read-only and write Qreep's Microsoft calendar cache."
     )
     parser.add_argument("--config", default=str(DEFAULT_CONFIG), help=f"Config path. Default: {DEFAULT_CONFIG}")
     parser.add_argument("--state", default=str(DEFAULT_STATE), help=f"OAuth token path. Default: {DEFAULT_STATE}")
@@ -116,12 +114,24 @@ def refresh_qreep_calendar():
 def load_config(path):
     config = read_json(Path(path).expanduser(), {})
     if not isinstance(config, dict):
-        raise SystemExit("Google calendar config must be a JSON object.")
+        raise SystemExit("Microsoft calendar config must be a JSON object.")
 
     if not config.get("client_id"):
         raise SystemExit(f"Missing client_id in {path}")
 
+    config.setdefault("tenant", DEFAULT_TENANT)
+    config.setdefault("scope", DEFAULT_SCOPE)
     return config
+
+
+def auth_url(config):
+    tenant = urllib.parse.quote(config.get("tenant") or DEFAULT_TENANT, safe="")
+    return f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize"
+
+
+def token_url(config):
+    tenant = urllib.parse.quote(config.get("tenant") or DEFAULT_TENANT, safe="")
+    return f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
 
 
 def token_expired(token):
@@ -161,48 +171,48 @@ def authorize(config, state_path, no_browser):
     server.oauth_code = ""
     server.oauth_error = ""
     server.oauth_state = ""
-    redirect_uri = f"http://127.0.0.1:{server.server_port}/"
+    redirect_uri = f"http://localhost:{server.server_port}/"
 
     params = {
         "client_id": config["client_id"],
         "redirect_uri": redirect_uri,
         "response_type": "code",
-        "scope": SCOPE,
-        "access_type": "offline",
-        "prompt": "consent",
+        "response_mode": "query",
+        "scope": config["scope"],
         "code_challenge": challenge,
         "code_challenge_method": "S256",
         "state": auth_state,
     }
-    auth_url = AUTH_URL + "?" + urllib.parse.urlencode(params)
+    url = auth_url(config) + "?" + urllib.parse.urlencode(params)
 
     if no_browser:
-        print(auth_url)
+        print(url)
     else:
-        webbrowser.open(auth_url)
-        print("Opened Google auth URL in the default browser.")
+        webbrowser.open(url)
+        print("Opened Microsoft auth URL in the default browser.")
 
     print("Waiting for OAuth callback on", redirect_uri)
     server.handle_request()
 
     if server.oauth_error:
-        raise SystemExit(f"Google auth failed: {server.oauth_error}")
+        raise SystemExit(f"Microsoft auth failed: {server.oauth_error}")
     if server.oauth_state != auth_state:
-        raise SystemExit("Google auth failed: state mismatch.")
+        raise SystemExit("Microsoft auth failed: state mismatch.")
     if not server.oauth_code:
-        raise SystemExit("Google auth failed: no code returned.")
+        raise SystemExit("Microsoft auth failed: no code returned.")
 
-    token = request_json(
-        TOKEN_URL,
-        {
-            "client_id": config["client_id"],
-            "client_secret": config.get("client_secret", ""),
-            "code": server.oauth_code,
-            "code_verifier": verifier,
-            "grant_type": "authorization_code",
-            "redirect_uri": redirect_uri,
-        },
-    )
+    token_request = {
+        "client_id": config["client_id"],
+        "scope": config["scope"],
+        "code": server.oauth_code,
+        "code_verifier": verifier,
+        "grant_type": "authorization_code",
+        "redirect_uri": redirect_uri,
+    }
+    if config.get("client_secret"):
+        token_request["client_secret"] = config["client_secret"]
+
+    token = request_json(token_url(config), token_request)
     token["expires_at"] = time.time() + float(token.get("expires_in", 3600))
     write_json_atomic(state_path, token)
     return token
@@ -213,16 +223,17 @@ def refresh_token(config, state_path, token):
     if not refresh_token_value:
         return None
 
-    refreshed = request_json(
-        TOKEN_URL,
-        {
-            "client_id": config["client_id"],
-            "client_secret": config.get("client_secret", ""),
-            "refresh_token": refresh_token_value,
-            "grant_type": "refresh_token",
-        },
-    )
-    refreshed["refresh_token"] = refresh_token_value
+    token_request = {
+        "client_id": config["client_id"],
+        "scope": config["scope"],
+        "refresh_token": refresh_token_value,
+        "grant_type": "refresh_token",
+    }
+    if config.get("client_secret"):
+        token_request["client_secret"] = config["client_secret"]
+
+    refreshed = request_json(token_url(config), token_request)
+    refreshed["refresh_token"] = refreshed.get("refresh_token", refresh_token_value)
     refreshed["expires_at"] = time.time() + float(refreshed.get("expires_in", 3600))
     write_json_atomic(state_path, refreshed)
     return refreshed
@@ -250,61 +261,73 @@ def rfc3339_range(days_back, days_forward):
 
 
 def fetch_calendar_events(token, calendar_id, calendar_label, days_back, days_forward):
-    time_min, time_max = rfc3339_range(days_back, days_forward)
+    start, end = rfc3339_range(days_back, days_forward)
     events = []
-    page_token = ""
+    url = calendar_view_url(calendar_id, start, end)
 
-    while True:
-        params = {
-            "singleEvents": "true",
-            "orderBy": "startTime",
-            "timeMin": time_min,
-            "timeMax": time_max,
-            "maxResults": "2500",
-        }
-        if page_token:
-            params["pageToken"] = page_token
+    while url:
+        document = request_json(
+            url,
+            headers={
+                "Authorization": "Bearer " + token["access_token"],
+                "Prefer": 'outlook.timezone="UTC"',
+            },
+        )
 
-        url = EVENTS_URL.format(calendar_id=urllib.parse.quote(calendar_id, safe="")) + "?" + urllib.parse.urlencode(params)
-        document = request_json(url, headers={"Authorization": "Bearer " + token["access_token"]})
+        for item in document.get("value", []):
+            events.append(microsoft_event(calendar_id, calendar_label, item))
 
-        for item in document.get("items", []):
-            events.append(google_event(calendar_id, calendar_label, item))
-
-        page_token = document.get("nextPageToken", "")
-        if not page_token:
-            break
+        url = document.get("@odata.nextLink", "")
 
     return events
 
 
-def google_event(calendar_id, calendar_label, item):
+def calendar_view_url(calendar_id, start, end):
+    params = {
+        "startDateTime": start,
+        "endDateTime": end,
+        "$top": "1000",
+    }
+
+    if calendar_id == "default":
+        path = "/me/calendar/calendarView"
+    else:
+        path = "/me/calendars/" + urllib.parse.quote(calendar_id, safe="") + "/calendarView"
+
+    return GRAPH_ROOT + path + "?" + urllib.parse.urlencode(params)
+
+
+def microsoft_event(calendar_id, calendar_label, item):
     start = item.get("start", {})
     end = item.get("end", {})
-    reminders = item.get("reminders", {})
     reminder_minutes = []
 
-    if isinstance(reminders, dict) and isinstance(reminders.get("overrides"), list):
-        for override in reminders["overrides"]:
-            if override.get("method") == "popup" and isinstance(override.get("minutes"), int):
-                reminder_minutes.append(override["minutes"])
+    if item.get("isReminderOn") and isinstance(item.get("reminderMinutesBeforeStart"), int):
+        reminder_minutes.append(item["reminderMinutesBeforeStart"])
 
     return {
-        "id": "google:" + calendar_id + ":" + item.get("id", ""),
-        "source": "google",
+        "id": "microsoft:" + calendar_id + ":" + item.get("id", ""),
+        "source": "microsoft",
         "calendar": calendar_label,
-        "title": item.get("summary", "Untitled event"),
-        "date": start.get("date") or start.get("dateTime", ""),
-        "start": start,
-        "end": end,
-        "allDay": bool(start.get("date") and not start.get("dateTime")),
-        "location": item.get("location", ""),
-        "url": item.get("htmlLink", ""),
+        "title": item.get("subject", "Untitled event"),
+        "date": start.get("dateTime", ""),
+        "start": start.get("dateTime", ""),
+        "end": end.get("dateTime", ""),
+        "allDay": bool(item.get("isAllDay")),
+        "location": location_label(item.get("location")),
+        "url": item.get("webLink", ""),
         "color": "",
         "reminderMinutes": reminder_minutes,
-        "busy": item.get("transparency") != "transparent",
-        "status": item.get("status", ""),
+        "busy": item.get("showAs") not in ["free", "unknown"],
+        "status": "cancelled" if item.get("isCancelled") else "",
     }
+
+
+def location_label(location):
+    if not isinstance(location, dict):
+        return ""
+
+    return str(location.get("displayName") or "").strip()
 
 
 def normalize_document(events):
@@ -315,7 +338,7 @@ def configured_calendars(config, cli_calendars):
     if cli_calendars:
         return [{"id": calendar_id, "name": calendar_id} for calendar_id in cli_calendars]
 
-    calendars = config.get("calendars") or [{"id": "primary", "name": "Google"}]
+    calendars = config.get("calendars") or [{"id": "default", "name": "Microsoft"}]
     result = []
 
     for calendar in calendars:
@@ -355,7 +378,7 @@ def main():
     if not args.no_qreep_refresh:
         refresh_qreep_calendar()
 
-    print(f"Wrote {len(document['events'])} Google events to {Path(args.output).expanduser()}")
+    print(f"Wrote {len(document['events'])} Microsoft events to {Path(args.output).expanduser()}")
     return 0
 
 

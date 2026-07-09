@@ -9,10 +9,21 @@ QtObject {
     property QtObject log
     required property QtObject theme
     property var events: []
+    property int revision: 0
     readonly property string localEventPath: Quickshell.shellDir + "/events.json"
     readonly property string generatedEventPath: Quickshell.env("HOME") + "/.cache/qreep/calendar/events.json"
+    readonly property string microsoftGeneratedEventPath: Quickshell.env("HOME") + "/.cache/qreep/calendar/microsoft-events.json"
 
     readonly property Core.Log fallbackLog: Core.Log {}
+
+    readonly property IpcHandler ipc: IpcHandler {
+        target: "qreep-calendar"
+
+        function refresh(): string {
+            rootEventStore.reloadFiles();
+            return "Calendar cache refresh requested";
+        }
+    }
 
     readonly property Timer generatedCacheRefreshTimer: Timer {
         interval: rootEventStore.theme.modules.bar.calendar.eventCacheRefreshInterval
@@ -49,12 +60,36 @@ QtObject {
         }
     }
 
+    readonly property FileView microsoftGeneratedEventFile: FileView {
+        path: rootEventStore.microsoftGeneratedEventPath
+        preload: true
+        watchChanges: true
+
+        onLoaded: rootEventStore.loadEvents()
+        onTextChanged: rootEventStore.loadEvents()
+        onLoadFailed: error => {
+            if (error !== FileViewError.FileNotFound)
+                rootEventStore.reportLoadError("Qreep Microsoft event error:", error, path);
+
+            rootEventStore.loadEvents();
+        }
+    }
+
     function loadEvents() {
         const sourceEvents = [];
 
         appendEventsFromFile(localEventFile, "local", sourceEvents);
         appendEventsFromFile(generatedEventFile, "generated", sourceEvents);
-        events = normalizeEvents(sourceEvents);
+        appendEventsFromFile(microsoftGeneratedEventFile, "microsoft", sourceEvents);
+        events = sortedEvents(normalizeEvents(sourceEvents));
+        revision++;
+    }
+
+    function reloadFiles() {
+        localEventFile.reload();
+        generatedEventFile.reload();
+        microsoftGeneratedEventFile.reload();
+        loadEvents();
     }
 
     function appendEventsFromFile(file, sourceName, targetEvents) {
@@ -277,17 +312,39 @@ QtObject {
     }
 
     function sortedEvents(sourceEvents) {
-        return sourceEvents.slice().sort(compareEvents);
+        const sorted = [];
+
+        for (let index = 0; index < sourceEvents.length; index++) {
+            const event = sourceEvents[index];
+            let insertIndex = 0;
+
+            while (insertIndex < sorted.length && compareEvents(sorted[insertIndex], event) <= 0)
+                insertIndex++;
+
+            sorted.splice(insertIndex, 0, event);
+        }
+
+        return sorted;
     }
 
     function compareEvents(left, right) {
         if (left.date !== right.date)
-            return left.date.localeCompare(right.date);
+            return compareText(left.date, right.date);
 
         if (left.allDay !== right.allDay)
             return left.allDay ? -1 : 1;
 
-        return (left.start || "").localeCompare(right.start || "");
+        return compareText(left.start || "", right.start || "");
+    }
+
+    function compareText(left, right) {
+        if (left < right)
+            return -1;
+
+        if (left > right)
+            return 1;
+
+        return 0;
     }
 
     function eventTimeLabel(event) {
@@ -328,6 +385,13 @@ QtObject {
         return trimmedString(event.title).match(/^AD($|[: +])/i) !== null;
     }
 
+    function isMicrosoftEvent(event) {
+        if (!event)
+            return false;
+
+        return trimmedString(event.source).toLowerCase() === "microsoft";
+    }
+
     function eventStartDate(event) {
         if (!event || event.allDay || !event.start)
             return null;
@@ -350,7 +414,7 @@ QtObject {
     }
 
     function visibleEventsForToday(now) {
-        return eventsForDate(now).filter(event => {
+        return sortedEvents(eventsForDate(now).filter(event => {
             if (event.allDay)
                 return true;
 
@@ -364,6 +428,6 @@ QtObject {
 
             const end = eventEndDate(event);
             return end >= now;
-        });
+        }));
     }
 }

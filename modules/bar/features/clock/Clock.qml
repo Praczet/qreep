@@ -14,7 +14,11 @@ Components.QreepModule {
         repeat: false
         onTriggered: rootClock.refresh()
     }
-    readonly property var visibleTodayEvents: events.visibleEventsForToday(currentDate)
+    readonly property int eventRevision: events.revision
+    readonly property var visibleTodayEvents: {
+        eventRevision;
+        return events.visibleEventsForToday(currentDate);
+    }
     readonly property string eventToolTip: {
         if (visibleTodayEvents.length === 0)
             return "No remaining events today";

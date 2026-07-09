@@ -1,0 +1,299 @@
+#!/usr/bin/env python3
+# Description: Fetch an Outlook shared ICS calendar and write Qreep's Microsoft calendar cache.
+# Usage: qreep-calendar-microsoft-ics-sync_v0.0.1 [--config PATH] [--output PATH] [--url URL]
+# Install: install -Dm755 scripts/qreep-calendar-microsoft-ics-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-microsoft-ics-sync"
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+
+DEFAULT_CONFIG = Path.home() / ".config" / "qreep" / "calendar" / "microsoft-ics.json"
+DEFAULT_OUTPUT = Path.home() / ".cache" / "qreep" / "calendar" / "microsoft-events.json"
+WINDOWS_TZIDS = {
+    "Central European Standard Time": "Europe/Warsaw",
+    "Romance Standard Time": "Europe/Paris",
+    "W. Europe Standard Time": "Europe/Berlin",
+}
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Fetch an Outlook shared ICS calendar and write Qreep's Microsoft calendar cache."
+    )
+    parser.add_argument("--config", default=str(DEFAULT_CONFIG), help=f"Config path. Default: {DEFAULT_CONFIG}")
+    parser.add_argument("--output", default=str(DEFAULT_OUTPUT), help=f"Output cache path. Default: {DEFAULT_OUTPUT}")
+    parser.add_argument("--url", help="ICS URL. Overrides config url.")
+    parser.add_argument("--calendar", help="Calendar label. Overrides config calendar.")
+    parser.add_argument("--no-qreep-refresh", action="store_true", help="Do not ask running Qreep to reload calendar caches after writing.")
+    parser.add_argument("--dry-run", action="store_true", help="Print generated cache JSON instead of writing it.")
+    return parser.parse_args()
+
+
+def read_json(path, default=None):
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except FileNotFoundError:
+        return default
+
+
+def write_json_atomic(path, document, mode=0o600):
+    output_path = Path(path).expanduser()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=output_path.parent,
+        prefix=f".{output_path.name}.",
+        delete=False,
+    ) as handle:
+        json.dump(document, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+        temporary_path = handle.name
+
+    os.chmod(temporary_path, mode)
+    os.replace(temporary_path, output_path)
+
+
+def refresh_qreep_calendar():
+    quickshell = shutil.which("quickshell")
+    if not quickshell:
+        return
+
+    target = os.environ.get("QREEP_QUICKSHELL_TARGET", "-c qreep").split()
+    command = [
+        quickshell,
+        "ipc",
+        *target,
+        "--any-display",
+        "call",
+        "qreep-calendar",
+        "refresh",
+    ]
+
+    subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+
+def load_config(path):
+    config = read_json(Path(path).expanduser(), {})
+    if not isinstance(config, dict):
+        raise SystemExit("Microsoft ICS config must be a JSON object.")
+
+    return config
+
+
+def fetch_ics(url):
+    request = urllib.request.Request(url, headers={"User-Agent": "Qreep Calendar ICS Sync"})
+
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return response.read().decode("utf-8-sig", errors="replace")
+    except urllib.error.HTTPError as error:
+        body = error.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"HTTP {error.code} from ICS URL: {body}") from error
+
+
+def unfolded_lines(text):
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    unfolded = []
+
+    for line in lines:
+        if line.startswith((" ", "\t")) and unfolded:
+            unfolded[-1] += line[1:]
+        else:
+            unfolded.append(line)
+
+    return unfolded
+
+
+def property_parts(line):
+    if ":" not in line:
+        return "", {}, ""
+
+    left, value = line.split(":", 1)
+    tokens = left.split(";")
+    name = tokens[0].upper()
+    params = {}
+
+    for token in tokens[1:]:
+        if "=" not in token:
+            continue
+
+        key, parameter_value = token.split("=", 1)
+        params[key.upper()] = parameter_value.strip('"')
+
+    return name, params, value
+
+
+def parse_ics(text, calendar_label):
+    events = []
+    current = None
+
+    for line in unfolded_lines(text):
+        name, params, value = property_parts(line)
+
+        if name == "BEGIN" and value.upper() == "VEVENT":
+            current = {}
+            continue
+
+        if name == "END" and value.upper() == "VEVENT":
+            if current is not None:
+                event = normalized_event(current, len(events), calendar_label)
+                if event is not None:
+                    events.append(event)
+            current = None
+            continue
+
+        if current is None or not name:
+            continue
+
+        current.setdefault(name, []).append({"params": params, "value": value})
+
+    events.sort(key=lambda event: (event["date"], not event["allDay"], event["start"], event["title"]))
+    return {"events": events}
+
+
+def normalized_event(source, index, calendar_label):
+    start_item = first_property(source, "DTSTART")
+    if not start_item:
+        return None
+
+    start = parse_ics_datetime(start_item)
+    if not start["date"]:
+        return None
+
+    end = parse_ics_datetime(first_property(source, "DTEND") or {"params": {}, "value": ""})
+    status = text_property(source, "STATUS").lower()
+
+    if status in {"cancelled", "canceled", "deleted"}:
+        return None
+
+    return {
+        "id": "microsoft-ics:" + (text_property(source, "UID") or str(index)),
+        "source": "microsoft",
+        "calendar": calendar_label,
+        "title": text_property(source, "SUMMARY") or "Untitled event",
+        "date": start["date"],
+        "start": "" if start["all_day"] else start["time"],
+        "end": "" if start["all_day"] else end["time"],
+        "allDay": start["all_day"],
+        "location": text_property(source, "LOCATION"),
+        "url": text_property(source, "URL"),
+        "color": "",
+        "reminderMinutes": [],
+        "busy": text_property(source, "TRANSP").upper() != "TRANSPARENT",
+        "status": status,
+    }
+
+
+def first_property(source, name):
+    items = source.get(name, [])
+    return items[0] if items else None
+
+
+def text_property(source, name):
+    item = first_property(source, name)
+    return unescape_ics_text(item["value"]).strip() if item else ""
+
+
+def unescape_ics_text(value):
+    return (
+        value.replace("\\n", " ")
+        .replace("\\N", " ")
+        .replace("\\,", ",")
+        .replace("\\;", ";")
+        .replace("\\\\", "\\")
+    )
+
+
+def parse_ics_datetime(item):
+    if not item:
+        return {"date": "", "time": "", "all_day": False}
+
+    params = item.get("params", {})
+    value = item.get("value", "").strip()
+
+    if params.get("VALUE", "").upper() == "DATE" or re.match(r"^\d{8}$", value):
+        return {"date": format_ics_date(value), "time": "", "all_day": True}
+
+    match = re.match(r"^(\d{8})T(\d{2})(\d{2})(\d{2})?(Z?)$", value)
+    if not match:
+        return {"date": "", "time": "", "all_day": False}
+
+    year = int(match.group(1)[0:4])
+    month = int(match.group(1)[4:6])
+    day = int(match.group(1)[6:8])
+    hour = int(match.group(2))
+    minute = int(match.group(3))
+    second = int(match.group(4) or "0")
+
+    if match.group(5) == "Z":
+        event_time = datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc).astimezone()
+        return {"date": event_time.strftime("%Y-%m-%d"), "time": event_time.strftime("%H:%M"), "all_day": False}
+
+    tzid = params.get("TZID", "")
+    tzinfo = tzinfo_for_tzid(tzid)
+    event_time = datetime(year, month, day, hour, minute, second, tzinfo=tzinfo)
+
+    if tzinfo is not None:
+        event_time = event_time.astimezone()
+
+    return {"date": event_time.strftime("%Y-%m-%d"), "time": event_time.strftime("%H:%M"), "all_day": False}
+
+
+def format_ics_date(value):
+    if not re.match(r"^\d{8}$", value):
+        return ""
+
+    return f"{value[0:4]}-{value[4:6]}-{value[6:8]}"
+
+
+def tzinfo_for_tzid(tzid):
+    if not tzid:
+        return None
+
+    zone_name = WINDOWS_TZIDS.get(tzid, tzid)
+
+    try:
+        return ZoneInfo(zone_name)
+    except ZoneInfoNotFoundError:
+        return None
+
+
+def main():
+    args = parse_args()
+    config = load_config(args.config)
+    url = args.url or config.get("url", "")
+    calendar_label = args.calendar or config.get("calendar", "Outlook")
+
+    if not url:
+        raise SystemExit(f"Missing url in {args.config}")
+
+    document = parse_ics(fetch_ics(url), calendar_label)
+
+    if args.dry_run:
+        json.dump(document, sys.stdout, indent=2, sort_keys=True)
+        sys.stdout.write("\n")
+        return 0
+
+    write_json_atomic(args.output, document)
+    if not args.no_qreep_refresh:
+        refresh_qreep_calendar()
+
+    print(f"Wrote {len(document['events'])} Microsoft ICS events to {Path(args.output).expanduser()}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

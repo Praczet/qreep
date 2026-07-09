@@ -14,7 +14,8 @@ PopupWindow {
     property date visibleMonth: new Date(today.getFullYear(), today.getMonth(), 1)
     readonly property string selectedDateKey: events.dateKey(selectedDate)
     readonly property string todayKey: events.dateKey(today)
-    readonly property var agendaEvents: events.visibleEventsForDate(selectedDate, today)
+    readonly property int eventRevision: events.revision
+    readonly property int agendaEventCount: agendaModel.count
 
     anchor {
         item: rootCalendarPopup.anchorItem
@@ -32,6 +33,14 @@ PopupWindow {
             return;
 
         selectToday();
+        refreshAgendaModel();
+    }
+
+    onSelectedDateChanged: refreshAgendaModel()
+    onEventRevisionChanged: refreshAgendaModel()
+
+    ListModel {
+        id: agendaModel
     }
 
     Shortcut {
@@ -52,6 +61,15 @@ PopupWindow {
 
     function selectToday() {
         selectDate(today);
+    }
+
+    function refreshAgendaModel() {
+        const visibleEvents = events.visibleEventsForDate(selectedDate, new Date());
+
+        agendaModel.clear();
+
+        for (let index = 0; index < visibleEvents.length; index++)
+            agendaModel.append({ eventData: visibleEvents[index] });
     }
 
     function daysInMonth(year, month) {
@@ -215,7 +233,10 @@ PopupWindow {
                     delegate: Rectangle {
                         required property var model
 
-                        readonly property int eventCount: rootCalendarPopup.events.eventCountForDate(model.date)
+                        readonly property int eventCount: {
+                            rootCalendarPopup.eventRevision;
+                            return rootCalendarPopup.events.eventCountForDate(model.date);
+                        }
 
                         implicitWidth: monthGrid.width / 7
                         implicitHeight: rootCalendarPopup.theme.modules.bar.calendar.dayCellHeight
@@ -279,7 +300,7 @@ PopupWindow {
                 Text {
                     id: emptyAgendaMessage
 
-                    visible: rootCalendarPopup.agendaEvents.length === 0
+                    visible: rootCalendarPopup.agendaEventCount === 0
                     text: "No events"
                     color: rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
                     font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTitlePixelSize
@@ -297,12 +318,13 @@ PopupWindow {
                         height: Math.max(0, parent.height - rootCalendarPopup.theme.modules.bar.calendar.agendaListTopSpacing)
                         clip: true
                         spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaItemSpacing
-                        model: rootCalendarPopup.agendaEvents
+                        model: agendaModel
 
                         delegate: Rectangle {
-                            required property var modelData
+                            required property var eventData
 
-                            readonly property bool personalEvent: rootCalendarPopup.events.isPersonalEvent(modelData)
+                            readonly property bool personalEvent: rootCalendarPopup.events.isPersonalEvent(eventData)
+                            readonly property bool microsoftEvent: rootCalendarPopup.events.isMicrosoftEvent(eventData)
 
                             width: ListView.view.width
                             height: eventRow.implicitHeight + rootCalendarPopup.theme.modules.bar.calendar.agendaItemVerticalPadding * 2
@@ -333,15 +355,15 @@ PopupWindow {
                                     radius: rootCalendarPopup.theme.modules.bar.calendar.agendaColorRadius
                                     color: personalEvent
                                         ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalAccentColor
-                                        : rootCalendarPopup.events.eventColor(modelData, rootCalendarPopup.theme.modules.bar.accentColor)
+                                        : rootCalendarPopup.events.eventColor(eventData, rootCalendarPopup.theme.modules.bar.accentColor)
                                 }
 
                                 Text {
                                     width: rootCalendarPopup.theme.modules.bar.calendar.agendaDateWidth
-                                    text: rootCalendarPopup.events.eventTimeLabel(modelData)
+                                    text: rootCalendarPopup.events.eventTimeLabel(eventData)
                                     color: personalEvent
                                         ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalAccentColor
-                                        : rootCalendarPopup.events.eventColor(modelData, rootCalendarPopup.theme.modules.bar.accentColor)
+                                        : rootCalendarPopup.events.eventColor(eventData, rootCalendarPopup.theme.modules.bar.accentColor)
                                     font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaDatePixelSize
                                     font.weight: Font.DemiBold
                                 }
@@ -354,7 +376,7 @@ PopupWindow {
 
                                     Text {
                                         width: parent.width
-                                        text: modelData.title
+                                        text: eventData.title
                                         color: personalEvent
                                             ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalTitleColor
                                             : rootCalendarPopup.theme.modules.bar.calendar.dayTextColor
@@ -363,15 +385,40 @@ PopupWindow {
                                         elide: Text.ElideRight
                                     }
 
-                                    Text {
+                                    Row {
                                         width: parent.width
-                                        text: rootCalendarPopup.events.eventMetaLabel(modelData)
-                                        visible: text.length > 0
-                                        color: personalEvent
-                                            ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalMetaColor
-                                            : rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
-                                        font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTimePixelSize
-                                        elide: Text.ElideRight
+                                        spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaDetailsSpacing
+                                        visible: metaText.text.length > 0 || microsoftEvent
+
+                                        Rectangle {
+                                            visible: microsoftEvent
+                                            width: uniBadgeText.implicitWidth + rootCalendarPopup.theme.modules.bar.calendar.agendaBadgeHorizontalPadding * 2
+                                            height: rootCalendarPopup.theme.modules.bar.calendar.agendaBadgeHeight
+                                            radius: rootCalendarPopup.theme.modules.bar.calendar.agendaBadgeRadius
+                                            color: rootCalendarPopup.theme.modules.bar.calendar.agendaSourceBadgeBackgroundColor
+
+                                            Text {
+                                                id: uniBadgeText
+
+                                                anchors.centerIn: parent
+                                                text: "uni"
+                                                color: rootCalendarPopup.theme.modules.bar.calendar.agendaSourceBadgeTextColor
+                                                font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaBadgePixelSize
+                                                font.weight: Font.DemiBold
+                                            }
+                                        }
+
+                                        Text {
+                                            id: metaText
+
+                                            width: parent.width - (microsoftEvent ? uniBadgeText.implicitWidth + rootCalendarPopup.theme.modules.bar.calendar.agendaBadgeHorizontalPadding * 2 + parent.spacing : 0)
+                                            text: rootCalendarPopup.events.eventMetaLabel(eventData)
+                                            color: personalEvent
+                                                ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalMetaColor
+                                                : rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
+                                            font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTimePixelSize
+                                            elide: Text.ElideRight
+                                        }
                                     }
                                 }
                             }
