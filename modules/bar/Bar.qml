@@ -304,13 +304,13 @@ PanelWindow {
                 events: eventStore
 
                 onClicked: {
-                    calendarPullConfirmPopup.visible = !calendarPullConfirmPopup.visible;
-                    calendarPopup.visible = false;
+                    calendarPopup.visible = !calendarPopup.visible;
+                    calendarPullConfirmPopup.visible = false;
                     sharedTooltip.hideLater();
                 }
                 onRightClicked: {
-                    calendarPopup.visible = !calendarPopup.visible;
-                    calendarPullConfirmPopup.visible = false;
+                    calendarPullConfirmPopup.visible = !calendarPullConfirmPopup.visible;
+                    calendarPopup.visible = false;
                     sharedTooltip.hideLater();
                 }
                 onTooltipShowRequested: (anchorItem, title, content, style) => {

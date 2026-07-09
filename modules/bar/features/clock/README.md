@@ -2,8 +2,9 @@
 
 ## What It Does
 
-Shows time/date in the center bar slot. Left click asks whether to pull calendar
-events, right click opens the calendar popup, and middle click toggles seconds.
+Shows time/date in the center bar slot. Left click opens the calendar popup,
+middle click toggles seconds, and right click asks whether to pull calendar
+events.
 Current-day events are shown as small dots on the module edge.
 
 The calendar popup shows the current month, lets you move between months, and
