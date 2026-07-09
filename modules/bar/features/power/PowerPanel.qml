@@ -136,14 +136,20 @@ PanelWindow {
             event.accepted = true;
             break;
         case Qt.Key_Left:
-            if (pendingAction !== null) {
+            if (pendingAction === null && fullscreen) {
+                moveActionSelection(-1);
+                event.accepted = true;
+            } else if (pendingAction !== null) {
                 moveConfirmSelection(-1);
                 event.accepted = true;
             }
             break;
         case Qt.Key_Right:
         case Qt.Key_Tab:
-            if (pendingAction !== null) {
+            if (pendingAction === null && fullscreen) {
+                moveActionSelection(1);
+                event.accepted = true;
+            } else if (pendingAction !== null) {
                 moveConfirmSelection(1);
                 event.accepted = true;
             }
@@ -155,6 +161,38 @@ PanelWindow {
             event.accepted = true;
             break;
         }
+    }
+
+    function cardWidth() {
+        if (fullscreen) {
+            const availableWidth = Math.max(rootPowerPanel.theme.modules.bar.power.cardWidth, rootPowerPanel.width - rootPowerPanel.theme.modules.bar.power.fullscreenCardPadding * 2);
+            return Math.min(rootPowerPanel.theme.modules.bar.power.fullscreenCardWidth, availableWidth);
+        }
+
+        return rootPowerPanel.theme.modules.bar.power.cardWidth;
+    }
+
+    function cardPadding() {
+        return fullscreen ? rootPowerPanel.theme.modules.bar.power.fullscreenCardPadding : rootPowerPanel.theme.modules.bar.power.cardPadding;
+    }
+
+    function actionHeight() {
+        return fullscreen ? rootPowerPanel.theme.modules.bar.power.fullscreenActionHeight : rootPowerPanel.theme.modules.bar.power.actionHeight;
+    }
+
+    function actionIconSize() {
+        return fullscreen ? rootPowerPanel.theme.modules.bar.power.fullscreenActionIconSize : rootPowerPanel.theme.modules.bar.power.actionIconSize;
+    }
+
+    function actionLabelWidth() {
+        return fullscreen ? rootPowerPanel.theme.modules.bar.power.fullscreenActionLabelWidth : rootPowerPanel.theme.modules.bar.power.actionLabelWidth;
+    }
+
+    function activeContentHeight() {
+        if (pendingAction !== null)
+            return confirmActionList.implicitHeight;
+
+        return fullscreen ? fullscreenActionList.implicitHeight : actionList.implicitHeight;
     }
 
     implicitWidth: screen.width
@@ -236,20 +274,20 @@ PanelWindow {
                 id: actionCard
 
                 anchors.centerIn: parent
-                width: rootPowerPanel.theme.modules.bar.power.cardWidth
-                height: (rootPowerPanel.pendingAction === null ? actionList.implicitHeight : confirmActionList.implicitHeight) + rootPowerPanel.theme.modules.bar.power.cardPadding * 2
+                width: rootPowerPanel.cardWidth()
+                height: rootPowerPanel.activeContentHeight() + rootPowerPanel.cardPadding() * 2
                 radius: rootPowerPanel.theme.modules.bar.power.cardRadius
                 color: rootPowerPanel.theme.modules.bar.moduleHoverBackgroundColor
 
                 Column {
                     id: actionList
-                    visible: rootPowerPanel.pendingAction === null
+                    visible: rootPowerPanel.pendingAction === null && !rootPowerPanel.fullscreen
 
                     anchors {
                         left: parent.left
                         right: parent.right
                         top: parent.top
-                        margins: rootPowerPanel.theme.modules.bar.power.cardPadding
+                        margins: rootPowerPanel.cardPadding()
                     }
                     spacing: rootPowerPanel.theme.modules.bar.power.actionSpacing
 
@@ -263,7 +301,7 @@ PanelWindow {
                             required property int index
 
                             width: parent.width
-                            height: rootPowerPanel.theme.modules.bar.power.actionHeight
+                            height: rootPowerPanel.actionHeight()
                             radius: rootPowerPanel.theme.modules.bar.power.actionRadius
                             color: actionHover.hovered || rootPowerPanel.selectedActionIndex === actionButton.index ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
                             border.width: rootPowerPanel.selectedActionIndex === actionButton.index ? rootPowerPanel.theme.modules.bar.power.actionSelectedBorderWidth : 0
@@ -274,8 +312,8 @@ PanelWindow {
                                 spacing: rootPowerPanel.theme.modules.bar.power.actionContentSpacing
 
                                 Item {
-                                    width: rootPowerPanel.theme.modules.bar.power.actionIconSize
-                                    height: rootPowerPanel.theme.modules.bar.power.actionIconSize
+                                    width: rootPowerPanel.actionIconSize()
+                                    height: rootPowerPanel.actionIconSize()
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     IconImage {
@@ -296,7 +334,7 @@ PanelWindow {
                                 }
 
                                 Text {
-                                    width: rootPowerPanel.theme.modules.bar.power.actionLabelWidth
+                                    width: rootPowerPanel.actionLabelWidth()
                                     text: actionButton.modelData.label
                                     color: rootPowerPanel.theme.modules.bar.power.actionTextColor
                                     font.pixelSize: rootPowerPanel.theme.modules.bar.power.actionTextPixelSize
@@ -329,6 +367,95 @@ PanelWindow {
                         }
                     }
                 }
+
+                Row {
+                    id: fullscreenActionList
+                    visible: rootPowerPanel.pendingAction === null && rootPowerPanel.fullscreen
+
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
+                        margins: rootPowerPanel.cardPadding()
+                    }
+                    spacing: rootPowerPanel.theme.modules.bar.power.fullscreenActionSpacing
+
+                    Repeater {
+                        model: rootPowerPanel.actions
+
+                        delegate: Rectangle {
+                            id: fullscreenActionButton
+
+                            required property var modelData
+                            required property int index
+
+                            width: (parent.width - parent.spacing * (rootPowerPanel.actions.length - 1)) / rootPowerPanel.actions.length
+                            height: rootPowerPanel.actionHeight()
+                            radius: rootPowerPanel.theme.modules.bar.power.actionRadius
+                            color: fullscreenActionHover.hovered || rootPowerPanel.selectedActionIndex === fullscreenActionButton.index ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
+                            border.width: rootPowerPanel.selectedActionIndex === fullscreenActionButton.index ? rootPowerPanel.theme.modules.bar.power.actionSelectedBorderWidth : 0
+                            border.color: rootPowerPanel.theme.modules.bar.power.actionSelectedBorderColor
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: rootPowerPanel.theme.modules.bar.power.actionContentSpacing
+
+                                Item {
+                                    width: rootPowerPanel.actionIconSize()
+                                    height: rootPowerPanel.actionIconSize()
+                                    anchors.horizontalCenter: parent.horizontalCenter
+
+                                    IconImage {
+                                        id: fullscreenIcon
+
+                                        anchors.fill: parent
+                                        source: Quickshell.iconPath(fullscreenActionButton.modelData.icon, "application-x-executable-symbolic")
+                                        visible: false
+                                    }
+
+                                    MultiEffect {
+                                        anchors.fill: parent
+                                        source: fullscreenIcon
+                                        colorization: rootPowerPanel.theme.modules.bar.power.actionIconColorization
+                                        brightness: rootPowerPanel.theme.modules.bar.power.actionIconBrightness
+                                        colorizationColor: rootPowerPanel.theme.modules.bar.power.actionIconColor
+                                    }
+                                }
+
+                                Text {
+                                    width: rootPowerPanel.actionLabelWidth()
+                                    text: fullscreenActionButton.modelData.label
+                                    color: rootPowerPanel.theme.modules.bar.power.actionTextColor
+                                    font.pixelSize: rootPowerPanel.theme.modules.bar.power.actionTextPixelSize
+                                    horizontalAlignment: Text.AlignHCenter
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                            }
+
+                            HoverHandler {
+                                id: fullscreenActionHover
+
+                                cursorShape: Qt.PointingHandCursor
+                                onHoveredChanged: {
+                                    if (hovered)
+                                        rootPowerPanel.selectedActionIndex = fullscreenActionButton.index;
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: rootPowerPanel.requestAction(fullscreenActionButton.modelData)
+                            }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: rootPowerPanel.theme.animationFastDuration
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Column {
                     id: confirmActionList
                     visible: rootPowerPanel.pendingAction !== null
@@ -337,7 +464,7 @@ PanelWindow {
                         left: parent.left
                         right: parent.right
                         top: parent.top
-                        margins: rootPowerPanel.theme.modules.bar.power.cardPadding
+                        margins: rootPowerPanel.cardPadding()
                     }
                     spacing: rootPowerPanel.theme.modules.bar.power.actionSpacing
 
@@ -367,7 +494,7 @@ PanelWindow {
                             id: cancelButton
 
                             width: (parent.width - parent.spacing) / 2
-                            height: rootPowerPanel.theme.modules.bar.power.actionHeight
+                            height: rootPowerPanel.actionHeight()
                             radius: rootPowerPanel.theme.modules.bar.power.actionRadius
                             color: cancelHover.hovered || rootPowerPanel.selectedConfirmIndex === 0 ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
                             border.width: rootPowerPanel.selectedConfirmIndex === 0 ? rootPowerPanel.theme.modules.bar.power.actionSelectedBorderWidth : 0
@@ -406,7 +533,7 @@ PanelWindow {
                             id: confirmButton
 
                             width: (parent.width - parent.spacing) / 2
-                            height: rootPowerPanel.theme.modules.bar.power.actionHeight
+                            height: rootPowerPanel.actionHeight()
                             radius: rootPowerPanel.theme.modules.bar.power.actionRadius
                             color: confirmHover.hovered || rootPowerPanel.selectedConfirmIndex === 1 ? rootPowerPanel.theme.modules.bar.power.actionHoverBackgroundColor : rootPowerPanel.theme.modules.bar.power.actionBackgroundColor
                             border.width: rootPowerPanel.selectedConfirmIndex === 1 ? rootPowerPanel.theme.modules.bar.power.actionSelectedBorderWidth : 0

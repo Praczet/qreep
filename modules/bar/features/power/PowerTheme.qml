@@ -22,6 +22,12 @@ QtObject {
     readonly property int cardWidth: 260
     readonly property int cardPadding: 20
     readonly property int cardRadius: 18
+    readonly property int fullscreenCardWidth: 760
+    readonly property int fullscreenCardPadding: 28
+    readonly property int fullscreenActionHeight: 108
+    readonly property int fullscreenActionIconSize: 34
+    readonly property int fullscreenActionLabelWidth: 96
+    readonly property int fullscreenActionSpacing: 12
     readonly property int actionHeight: 54
     readonly property int actionRadius: 10
     readonly property int actionSelectedBorderWidth: 2
