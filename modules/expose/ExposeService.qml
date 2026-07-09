@@ -17,6 +17,7 @@ QtObject {
     property var captureQueue: []
     property var captureCurrent: null
     property string selectedAddress: ""
+    property string searchQuery: ""
     property string error: ""
     property bool waitingForOpen: false
     property bool clientsLoaded: false
@@ -118,6 +119,20 @@ QtObject {
 
     function selectAddress(address) {
         selectedAddress = String(address || "");
+    }
+
+    function setSearchQuery(value) {
+        const nextQuery = String(value || "");
+
+        if (searchQuery === nextQuery)
+            return;
+
+        searchQuery = nextQuery;
+        rebuildModel();
+    }
+
+    function clearSearch() {
+        setSearchQuery("");
     }
 
     function appIconName(client) {
@@ -312,6 +327,9 @@ QtObject {
             const workspaceName = String(workspace.name || workspaceId);
             const item = normalizeClient(client);
 
+            if (!matchesSearch(item))
+                continue;
+
             if (workspaceId === activeId || workspaceName === activeName) {
                 active.push(item);
                 continue;
@@ -351,6 +369,23 @@ QtObject {
 
         if (!selectedAddressValid())
             selectedAddress = firstSelectableAddress();
+    }
+
+    function matchesSearch(client) {
+        const needle = searchQuery.trim().toLowerCase();
+
+        if (needle.length === 0)
+            return true;
+
+        const haystack = [
+            client.title,
+            client.className,
+            client.appLabel,
+            client.workspaceName,
+            workspaceTitle(client.workspaceId, client.workspaceName)
+        ].join(" ").toLowerCase();
+
+        return haystack.indexOf(needle) >= 0;
     }
 
     function normalizeClient(client) {

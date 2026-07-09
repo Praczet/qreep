@@ -10,6 +10,9 @@ top-left lineup pretending to be design.
 Click a card, or select it with the keyboard and press `Enter`, to focus that
 window.
 
+Start typing to reveal search. Expose filters windows by title, class, app
+label, and workspace name while keeping arrow-key navigation active.
+
 This is a top-level shell module. It is not a bar pill. The bar has enough
 tiny furniture already.
 
@@ -86,11 +89,11 @@ cluster cards join from the middle into their own grid slots.
 * When a workspace cluster is selected, arrow keys first navigate the mini cards
   inside that cluster, then fall back to the main grid when there is no inner
   neighbor in that direction.
+* Printable typing opens the search field and filters the overview.
+* `Escape` hides the focused search field first, clears an existing search
+  second, and closes only when there is nothing left to clean up.
 * `Enter` focuses the selected window and closes.
 * Clicking a card focuses that window and closes.
-
-Search is intentionally not in v1. Later, printable typing should open a search
-field and filter by title, class, app label, and workspace name.
 
 ## Preview Note
 

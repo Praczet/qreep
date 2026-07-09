@@ -14,6 +14,8 @@ QtObject {
     readonly property int panelPadding: 24
     readonly property int sectionGap: 24
     readonly property int cardGap: 16
+    readonly property int searchWidth: 520
+    readonly property int searchHeight: 44
     readonly property int currentCardWidth: 380
     readonly property int currentCardHeight: 250
     readonly property int currentCardPreviewHeight: 150
@@ -40,6 +42,7 @@ QtObject {
     readonly property color overlayColor: Qt.rgba(qreep.background.r, qreep.background.g, qreep.background.b, overlayOpacity)
     readonly property color cardColor: Qt.rgba(qreep.surfaceContainer.r, qreep.surfaceContainer.g, qreep.surfaceContainer.b, 0.88)
     readonly property color cardHoverColor: Qt.rgba(qreep.surfaceContainerHigh.r, qreep.surfaceContainerHigh.g, qreep.surfaceContainerHigh.b, 0.94)
+    readonly property color searchColor: Qt.rgba(qreep.surfaceContainerHigh.r, qreep.surfaceContainerHigh.g, qreep.surfaceContainerHigh.b, 0.92)
     readonly property color previewColor: Qt.rgba(qreep.surfaceContainerHighest.r, qreep.surfaceContainerHighest.g, qreep.surfaceContainerHighest.b, 0.72)
     readonly property color borderColor: Qt.rgba(qreep.outline.r, qreep.outline.g, qreep.outline.b, 0.72)
     readonly property color selectedBorderColor: qreep.primary

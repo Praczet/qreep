@@ -10,6 +10,7 @@ PanelWindow {
     required property bool panelOpen
 
     property bool presented: false
+    readonly property bool searchVisible: searchInput.activeFocus || service.searchQuery.length > 0
     readonly property int overviewItemCount: service.currentClients.length + service.workspaceClusters.length
     readonly property int maxColumnsByWidth: Math.max(1, Math.floor((width - theme.modules.expose.panelMargin * 2 + theme.modules.expose.cardGap) / (theme.modules.expose.currentCardWidth + theme.modules.expose.cardGap)))
     readonly property int gridColumns: Math.max(1, Math.min(theme.modules.expose.gridMaxColumns, overviewItemCount, maxColumnsByWidth))
@@ -44,12 +45,13 @@ PanelWindow {
 
         enterTimer.stop();
         presented = false;
+        service.clearSearch();
     }
 
     Shortcut {
         sequence: "Escape"
         context: Qt.WindowShortcut
-        onActivated: rootExposePanel.closeRequested()
+        onActivated: rootExposePanel.handleEscape()
     }
 
     Shortcut {
@@ -96,6 +98,15 @@ PanelWindow {
         onTriggered: rootExposePanel.presented = true
     }
 
+    Connections {
+        target: rootExposePanel.service
+
+        function onSearchQueryChanged() {
+            if (searchInput.text !== rootExposePanel.service.searchQuery)
+                searchInput.text = rootExposePanel.service.searchQuery;
+        }
+    }
+
     Rectangle {
         id: background
 
@@ -104,25 +115,7 @@ PanelWindow {
         focus: true
 
         Keys.onPressed: event => {
-            if (event.key === Qt.Key_Escape) {
-                rootExposePanel.closeRequested();
-                event.accepted = true;
-            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                rootExposePanel.service.focusSelected();
-                event.accepted = true;
-            } else if (event.key === Qt.Key_Left) {
-                rootExposePanel.selectSpatial("left");
-                event.accepted = true;
-            } else if (event.key === Qt.Key_Right) {
-                rootExposePanel.selectSpatial("right");
-                event.accepted = true;
-            } else if (event.key === Qt.Key_Up) {
-                rootExposePanel.selectSpatial("up");
-                event.accepted = true;
-            } else if (event.key === Qt.Key_Down) {
-                rootExposePanel.selectSpatial("down");
-                event.accepted = true;
-            }
+            rootExposePanel.handlePanelKey(event);
         }
 
         MouseArea {
@@ -206,6 +199,84 @@ PanelWindow {
                     onActivated: client => rootExposePanel.service.focusClient(client)
                 }
             }
+        }
+
+        Rectangle {
+            id: searchBox
+
+            anchors {
+                top: parent.top
+                horizontalCenter: parent.horizontalCenter
+            }
+            width: Math.min(parent.width, rootExposePanel.theme.modules.expose.searchWidth)
+            height: rootExposePanel.theme.modules.expose.searchHeight
+            radius: rootExposePanel.theme.modules.expose.cardRadius
+            color: rootExposePanel.theme.modules.expose.searchColor
+            border.width: rootExposePanel.theme.modules.expose.borderWidth
+            border.color: searchInput.activeFocus ? rootExposePanel.theme.modules.expose.selectedBorderColor : rootExposePanel.theme.modules.expose.borderColor
+            opacity: rootExposePanel.searchVisible ? 1 : 0
+            y: rootExposePanel.searchVisible ? 0 : -10
+            visible: rootExposePanel.searchVisible || opacity > 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: rootExposePanel.theme.modules.expose.animationDuration
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on y {
+                NumberAnimation {
+                    duration: rootExposePanel.theme.modules.expose.animationDuration
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Text {
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                    margins: 14
+                }
+                visible: searchInput.text.length === 0
+                text: "Search windows"
+                color: rootExposePanel.theme.modules.expose.secondaryTextColor
+                font.pixelSize: rootExposePanel.theme.modules.expose.subtitlePixelSize
+                elide: Text.ElideRight
+            }
+
+            TextInput {
+                id: searchInput
+
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                    margins: 14
+                }
+                text: rootExposePanel.service.searchQuery
+                color: rootExposePanel.theme.modules.expose.primaryTextColor
+                selectedTextColor: rootExposePanel.theme.modules.expose.badgeTextColor
+                selectionColor: rootExposePanel.theme.modules.expose.accentColor
+                font.pixelSize: rootExposePanel.theme.modules.expose.titlePixelSize
+                clip: true
+
+                onTextChanged: {
+                    if (rootExposePanel.service.searchQuery !== text)
+                        rootExposePanel.service.setSearchQuery(text);
+                }
+
+                Keys.onPressed: event => rootExposePanel.handlePanelKey(event)
+            }
+        }
+
+        Text {
+            visible: rootExposePanel.service.searchQuery.length > 0 && rootExposePanel.overviewItemCount === 0
+            anchors.centerIn: parent
+            text: "No matching windows"
+            color: rootExposePanel.theme.modules.expose.secondaryTextColor
+            font.pixelSize: rootExposePanel.theme.modules.expose.titlePixelSize
         }
     }
 
@@ -325,5 +396,79 @@ PanelWindow {
             return true;
 
         return entry.cluster && entry.item && entry.item.containsAddress(value);
+    }
+
+    function showSearch(initialText) {
+        searchInput.forceActiveFocus();
+
+        if (initialText && initialText.length > 0)
+            searchInput.insert(searchInput.cursorPosition, initialText);
+
+        searchInput.cursorPosition = searchInput.text.length;
+    }
+
+    function hideSearch() {
+        background.forceActiveFocus();
+    }
+
+    function handleEscape() {
+        if (searchInput.activeFocus) {
+            hideSearch();
+            return;
+        }
+
+        if (service.searchQuery.length > 0) {
+            service.clearSearch();
+            background.forceActiveFocus();
+            return;
+        }
+
+        closeRequested();
+    }
+
+    function handlePanelKey(event) {
+        if (event.key === Qt.Key_Escape) {
+            handleEscape();
+            event.accepted = true;
+            return;
+        }
+
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            service.focusSelected();
+            event.accepted = true;
+            return;
+        }
+
+        if (event.key === Qt.Key_Left) {
+            selectSpatial("left");
+            event.accepted = true;
+            return;
+        }
+
+        if (event.key === Qt.Key_Right) {
+            selectSpatial("right");
+            event.accepted = true;
+            return;
+        }
+
+        if (event.key === Qt.Key_Up) {
+            selectSpatial("up");
+            event.accepted = true;
+            return;
+        }
+
+        if (event.key === Qt.Key_Down) {
+            selectSpatial("down");
+            event.accepted = true;
+            return;
+        }
+
+        if ((event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) !== 0)
+            return;
+
+        if (event.text.length === 1 && event.text.charCodeAt(0) >= 32) {
+            showSearch(event.text);
+            event.accepted = true;
+        }
     }
 }
