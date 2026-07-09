@@ -75,7 +75,32 @@ Rectangle {
         }
     }
 
-    Component.onCompleted: resetEntrance()
+    Behavior on x {
+        enabled: rootExposeWorkspaceCluster.entrancePresented
+
+        NumberAnimation {
+            duration: rootExposeWorkspaceCluster.theme.modules.expose.layoutAnimationDuration
+            easing.type: Easing.OutBack
+            easing.overshoot: 1.25
+        }
+    }
+
+    Behavior on y {
+        enabled: rootExposeWorkspaceCluster.entrancePresented
+
+        NumberAnimation {
+            duration: rootExposeWorkspaceCluster.theme.modules.expose.layoutAnimationDuration
+            easing.type: Easing.OutBack
+            easing.overshoot: 1.25
+        }
+    }
+
+    Component.onCompleted: {
+        if (entrancePresented)
+            playEntrance();
+        else
+            resetEntrance();
+    }
 
     onEntrancePresentedChanged: {
         if (entrancePresented)
@@ -125,6 +150,17 @@ Rectangle {
         }
 
         return -1;
+    }
+
+    function selectedClient() {
+        const clients = cluster.clients || [];
+
+        if (clients.length === 0)
+            return null;
+
+        const index = selectedClientIndex();
+
+        return index >= 0 ? clients[index] : clients[0];
     }
 
     function navigateWithin(direction) {

@@ -16,6 +16,7 @@ QtObject {
     property var thumbnailByAddress: ({})
     property var captureQueue: []
     property var captureCurrent: null
+    property var focusDispatchQueue: []
     property string selectedAddress: ""
     property string searchQuery: ""
     property string error: ""
@@ -70,7 +71,7 @@ QtObject {
             if (exitCode !== 0)
                 warn("Expose focus dispatch failed");
 
-            rootExposeService.focusCompleted();
+            rootExposeService.runNextFocusDispatch();
         }
     }
 
@@ -93,6 +94,13 @@ QtObject {
     }
 
     function focusSelected() {
+        const client = selectedClient();
+
+        if (client) {
+            focusClientObject(client);
+            return;
+        }
+
         focusClientByAddress(selectedAddress);
     }
 
@@ -100,7 +108,7 @@ QtObject {
         if (!client)
             return;
 
-        focusClientByAddress(String(client.address || ""));
+        focusClientObject(client);
     }
 
     function focusClientByAddress(address) {
@@ -109,12 +117,94 @@ QtObject {
         if (value.length === 0)
             return;
 
-        if (Hyprland.usingLua)
-            focusRunner.command = ["hyprctl", "dispatch", "hl.dsp.focus({ window = \"" + value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\" })"];
-        else
-            focusRunner.command = ["hyprctl", "dispatch", "focuswindow", "address:" + value];
+        const client = clientByAddress(value);
 
+        if (client) {
+            focusClientObject(client);
+            return;
+        }
+
+        queueFocusDispatches([dispatchRequest("focuswindow", "address:" + value)]);
+    }
+
+    function focusClientObject(client) {
+        const address = String(client.address || "");
+
+        if (address.length === 0)
+            return;
+
+        const requests = [];
+        const workspaceRequest = workspaceDispatchRequest(client);
+
+        if (workspaceRequest.length > 0)
+            requests.push(workspaceRequest);
+
+        requests.push(dispatchRequest("focuswindow", "address:" + address));
+        queueFocusDispatches(requests);
+    }
+
+    function workspaceDispatchRequest(client) {
+        const workspaceName = String(client.workspaceName || "");
+        const workspaceId = Number(client.workspaceId || 0);
+
+        if (workspaceName.indexOf("special:") === 0) {
+            const specialName = workspaceName.slice("special:".length);
+
+            return specialName.length > 0 ? dispatchRequest("togglespecialworkspace", specialName) : [];
+        }
+
+        if (workspaceId > 0)
+            return dispatchRequest("workspace", String(workspaceId));
+
+        if (workspaceName.length > 0)
+            return dispatchRequest("workspace", workspaceName);
+
+        return [];
+    }
+
+    function dispatchRequest(dispatcher, argument) {
+        return Hyprland.usingLua ? ["hyprctl", "dispatch", luaDispatch(dispatcher, argument)] : ["hyprctl", "dispatch", dispatcher, argument];
+    }
+
+    function queueFocusDispatches(requests) {
+        focusDispatchQueue = requests.filter(request => request && request.length > 0);
+        runNextFocusDispatch();
+    }
+
+    function runNextFocusDispatch() {
+        if (focusRunner.running)
+            return;
+
+        if (focusDispatchQueue.length === 0) {
+            focusCompleted();
+            return;
+        }
+
+        const nextQueue = focusDispatchQueue.slice();
+        const command = nextQueue.shift();
+
+        focusDispatchQueue = nextQueue;
+        focusRunner.command = command;
         focusRunner.running = true;
+    }
+
+    function luaDispatch(dispatcher, argument) {
+        const escapedArgument = luaString(argument);
+
+        if (dispatcher === "workspace")
+            return "hl.dsp.focus({ workspace = " + escapedArgument + " })";
+
+        if (dispatcher === "togglespecialworkspace")
+            return argument ? "hl.dsp.workspace.toggle_special(" + escapedArgument + ")" : "hl.dsp.workspace.toggle_special()";
+
+        if (dispatcher === "focuswindow")
+            return "hl.dsp.focus({ window = " + escapedArgument + " })";
+
+        return "hl.dsp." + dispatcher + "(" + escapedArgument + ")";
+    }
+
+    function luaString(value) {
+        return "\"" + String(value || "").replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"";
     }
 
     function selectAddress(address) {
@@ -426,6 +516,26 @@ QtObject {
             result = result.concat(workspaceClusters[index].clients || []);
 
         return result;
+    }
+
+    function selectedClient() {
+        return clientByAddress(selectedAddress);
+    }
+
+    function clientByAddress(address) {
+        const value = String(address || "");
+
+        if (value.length === 0)
+            return null;
+
+        const all = allSelectableClients();
+
+        for (let index = 0; index < all.length; index++) {
+            if (String(all[index].address || "") === value)
+                return all[index];
+        }
+
+        return null;
     }
 
     function compareClients(left, right) {

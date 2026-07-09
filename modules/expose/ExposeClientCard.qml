@@ -118,7 +118,32 @@ Rectangle {
         }
     }
 
-    Component.onCompleted: resetEntrance()
+    Behavior on x {
+        enabled: rootExposeClientCard.entrancePresented
+
+        NumberAnimation {
+            duration: rootExposeClientCard.theme.modules.expose.layoutAnimationDuration
+            easing.type: Easing.OutBack
+            easing.overshoot: 1.25
+        }
+    }
+
+    Behavior on y {
+        enabled: rootExposeClientCard.entrancePresented
+
+        NumberAnimation {
+            duration: rootExposeClientCard.theme.modules.expose.layoutAnimationDuration
+            easing.type: Easing.OutBack
+            easing.overshoot: 1.25
+        }
+    }
+
+    Component.onCompleted: {
+        if (entrancePresented)
+            playEntrance();
+        else
+            resetEntrance();
+    }
 
     onEntrancePresentedChanged: {
         if (entrancePresented)

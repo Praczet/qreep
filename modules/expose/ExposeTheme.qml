@@ -6,6 +6,7 @@ QtObject {
     required property QtObject qreep
 
     readonly property int animationDuration: 150
+    readonly property int layoutAnimationDuration: 260
     readonly property int cardEntranceDuration: 340
     readonly property int cardEntranceStagger: 22
     readonly property real cardEntranceOvershoot: 0.08

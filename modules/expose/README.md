@@ -7,8 +7,8 @@ large cards. Windows from other workspaces are grouped into compact workspace
 cluster cards. Everything lands in one centered overview grid instead of a sad
 top-left lineup pretending to be design.
 
-Click a card, or select it with the keyboard and press `Enter`, to focus that
-window.
+Click a card, or select it with the keyboard and press `Enter`, to switch to
+that window's workspace, focus the window, and close Expose.
 
 Start typing to reveal search. Expose filters windows by title, class, app
 label, and workspace name while keeping arrow-key navigation active.
@@ -74,9 +74,13 @@ window capture at a time.
 
 ## Layout and Motion
 
-Current windows and other-workspace clusters share one centered grid. The grid
-uses up to four columns by default, so eight windows form a 4x2 overview instead
-of a long horizontal shelf.
+Current windows and other-workspace clusters share one centered, grid-shaped
+manual layout. It uses up to four columns by default, so eight windows form a
+4x2 overview instead of a long horizontal shelf.
+
+This is deliberately not a QML `Grid` item anymore. Card positions are computed
+by Expose so filtered results can animate into their new slots instead of being
+teleported by a layout object that thinks it is helping.
 
 Current-window cards animate from their real window position into a middle
 gather point, then settle into their grid slot with a small overshoot. Workspace
@@ -92,8 +96,8 @@ cluster cards join from the middle into their own grid slots.
 * Printable typing opens the search field and filters the overview.
 * `Escape` hides the focused search field first, clears an existing search
   second, and closes only when there is nothing left to clean up.
-* `Enter` focuses the selected window and closes.
-* Clicking a card focuses that window and closes.
+* `Enter` switches to the selected window's workspace, focuses it, and closes.
+* Clicking a card does the same thing.
 
 ## Preview Note
 

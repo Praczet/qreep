@@ -7,6 +7,7 @@ Scope {
 
     required property QtObject theme
     property bool open: false
+    property var pendingActivationClient: null
     readonly property bool panelLoaded: open || closeTimer.running
     readonly property alias service: exposeService
 
@@ -48,6 +49,7 @@ Scope {
             panelOpen: rootExpose.open
 
             onCloseRequested: rootExpose.hide()
+            onActivateRequested: client => rootExpose.activateClient(client)
         }
     }
 
@@ -56,6 +58,19 @@ Scope {
 
         interval: rootExpose.theme.modules.expose.animationDuration + 40
         repeat: false
+    }
+
+    Timer {
+        id: activationTimer
+
+        interval: 40
+        repeat: false
+        onTriggered: {
+            const client = rootExpose.pendingActivationClient;
+
+            rootExpose.pendingActivationClient = null;
+            exposeService.focusClient(client);
+        }
     }
 
     function show() {
@@ -69,6 +84,20 @@ Scope {
 
         closeTimer.restart();
         open = false;
+    }
+
+    function hideImmediate() {
+        closeTimer.stop();
+        open = false;
+    }
+
+    function activateClient(client) {
+        if (!client)
+            return;
+
+        pendingActivationClient = client;
+        hideImmediate();
+        activationTimer.restart();
     }
 
     function toggle() {

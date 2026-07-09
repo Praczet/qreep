@@ -18,6 +18,7 @@ PanelWindow {
     readonly property point gatherPoint: Qt.point(width / 2, height / 2)
 
     signal closeRequested
+    signal activateRequested(var client)
 
     implicitWidth: screen.width
     implicitHeight: screen.height
@@ -57,13 +58,13 @@ PanelWindow {
     Shortcut {
         sequence: "Return"
         context: Qt.WindowShortcut
-        onActivated: rootExposePanel.service.focusSelected()
+        onActivated: rootExposePanel.activateSelected()
     }
 
     Shortcut {
         sequence: "Enter"
         context: Qt.WindowShortcut
-        onActivated: rootExposePanel.service.focusSelected()
+        onActivated: rootExposePanel.activateSelected()
     }
 
     Shortcut {
@@ -113,6 +114,7 @@ PanelWindow {
         anchors.fill: parent
         color: "transparent"
         focus: true
+        Keys.priority: Keys.BeforeItem
 
         Keys.onPressed: event => {
             rootExposePanel.handlePanelKey(event);
@@ -148,14 +150,12 @@ PanelWindow {
             }
         }
 
-        Grid {
-            id: overviewGrid
+        Item {
+            id: overviewLayout
 
             anchors.centerIn: parent
-            width: Math.min(parent.width, rootExposePanel.gridColumns * rootExposePanel.theme.modules.expose.currentCardWidth + Math.max(0, rootExposePanel.gridColumns - 1) * spacing)
-            height: Math.min(parent.height, rootExposePanel.gridRows * rootExposePanel.theme.modules.expose.currentCardHeight + Math.max(0, rootExposePanel.gridRows - 1) * spacing)
-            columns: rootExposePanel.gridColumns
-            spacing: rootExposePanel.theme.modules.expose.cardGap
+            width: rootExposePanel.overviewLayoutWidth()
+            height: rootExposePanel.overviewLayoutHeight()
 
             Repeater {
                 id: currentRepeater
@@ -169,12 +169,14 @@ PanelWindow {
                     theme: rootExposePanel.theme
                     client: modelData
                     selected: modelData.address === rootExposePanel.service.selectedAddress
+                    x: rootExposePanel.tileX(index)
+                    y: rootExposePanel.tileY(index)
                     entrancePresented: rootExposePanel.presented
                     entranceIndex: index
                     entranceGatherPoint: rootExposePanel.gatherPoint
 
                     onSelectedRequested: card => rootExposePanel.service.selectAddress(card.client.address)
-                    onActivated: client => rootExposePanel.service.focusClient(client)
+                    onActivated: client => rootExposePanel.activateRequested(client)
                 }
             }
 
@@ -191,12 +193,14 @@ PanelWindow {
                     cluster: modelData
                     selectedAddress: rootExposePanel.service.selectedAddress
                     gridTile: true
+                    x: rootExposePanel.tileX(rootExposePanel.service.currentClients.length + index)
+                    y: rootExposePanel.tileY(rootExposePanel.service.currentClients.length + index)
                     entrancePresented: rootExposePanel.presented
                     entranceIndex: rootExposePanel.service.currentClients.length + index
                     entranceGatherPoint: rootExposePanel.gatherPoint
 
                     onSelectedRequested: card => rootExposePanel.service.selectAddress(card.client.address)
-                    onActivated: client => rootExposePanel.service.focusClient(client)
+                    onActivated: client => rootExposePanel.activateRequested(client)
                 }
             }
         }
@@ -261,6 +265,7 @@ PanelWindow {
                 selectionColor: rootExposePanel.theme.modules.expose.accentColor
                 font.pixelSize: rootExposePanel.theme.modules.expose.titlePixelSize
                 clip: true
+                Keys.priority: Keys.BeforeItem
 
                 onTextChanged: {
                     if (rootExposePanel.service.searchQuery !== text)
@@ -398,6 +403,67 @@ PanelWindow {
         return entry.cluster && entry.item && entry.item.containsAddress(value);
     }
 
+    function activateSelected() {
+        const entries = navigationEntries();
+
+        if (entries.length === 0)
+            return;
+
+        for (let index = 0; index < entries.length; index++) {
+            const entry = entries[index];
+
+            if (entryContainsAddress(entry, service.selectedAddress)) {
+                activateEntry(entry);
+                return;
+            }
+        }
+
+        activateEntry(entries[0]);
+    }
+
+    function activateEntry(entry) {
+        if (!entry || !entry.item)
+            return;
+
+        if (entry.cluster) {
+            const clusterClient = entry.item.selectedClient();
+
+            if (clusterClient) {
+                activateRequested(clusterClient);
+                return;
+            }
+        }
+
+        if (entry.item.client)
+            activateRequested(entry.item.client);
+    }
+
+    function overviewLayoutWidth() {
+        const gap = theme.modules.expose.cardGap;
+        const cardWidth = theme.modules.expose.currentCardWidth;
+
+        return Math.min(overview.width, gridColumns * cardWidth + Math.max(0, gridColumns - 1) * gap);
+    }
+
+    function overviewLayoutHeight() {
+        const gap = theme.modules.expose.cardGap;
+        const cardHeight = theme.modules.expose.currentCardHeight;
+
+        return Math.min(overview.height, gridRows * cardHeight + Math.max(0, gridRows - 1) * gap);
+    }
+
+    function tileX(index) {
+        const column = index % gridColumns;
+
+        return column * (theme.modules.expose.currentCardWidth + theme.modules.expose.cardGap);
+    }
+
+    function tileY(index) {
+        const row = Math.floor(index / gridColumns);
+
+        return row * (theme.modules.expose.currentCardHeight + theme.modules.expose.cardGap);
+    }
+
     function showSearch(initialText) {
         searchInput.forceActiveFocus();
 
@@ -434,7 +500,7 @@ PanelWindow {
         }
 
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            service.focusSelected();
+            activateSelected();
             event.accepted = true;
             return;
         }
