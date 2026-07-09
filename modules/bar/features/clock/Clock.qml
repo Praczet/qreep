@@ -37,10 +37,12 @@ Components.QreepModule {
         minuteTimer.restart();
     }
 
-    onClicked: {
+    function toggleSeconds() {
         showSeconds = !showSeconds;
         refresh();
     }
+
+    onRightClicked: toggleSeconds()
 
     Row {
         id: clockContent

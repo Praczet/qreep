@@ -295,7 +295,7 @@ PanelWindow {
                 theme: rootBar.theme
                 events: eventStore
 
-                onRightClicked: calendarPopup.visible = !calendarPopup.visible
+                onClicked: calendarPopup.visible = !calendarPopup.visible
                 onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
                 onTooltipHideRequested: sharedTooltip.hideLater()
             }

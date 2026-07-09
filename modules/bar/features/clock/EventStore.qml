@@ -34,7 +34,7 @@ QtObject {
 
         try {
             const document = JSON.parse(contents);
-            events = Array.isArray(document.events) ? document.events : [];
+            events = Array.isArray(document.events) ? normalizeEvents(document.events) : [];
         } catch (error) {
             reportError("Qreep event JSON error:", error);
             events = [];
@@ -58,9 +58,142 @@ QtObject {
         return Qt.formatDate(date, "yyyy-MM-dd");
     }
 
+    function normalizeEvents(sourceEvents) {
+        const normalizedEvents = [];
+
+        for (let index = 0; index < sourceEvents.length; index++) {
+            const event = normalizeEvent(sourceEvents[index], index);
+
+            if (event !== null)
+                normalizedEvents.push(event);
+        }
+
+        return normalizedEvents;
+    }
+
+    function normalizeEvent(event, index) {
+        if (!event)
+            return null;
+
+        const status = trimmedString(event.status).toLowerCase();
+
+        if (status === "cancelled" || status === "canceled" || status === "deleted")
+            return null;
+
+        const date = normalizedDate(event.date || event.startDate || event.day || event.start);
+
+        if (date.length === 0)
+            return null;
+
+        const title = trimmedString(event.title || event.summary || event.subject || "Untitled event");
+        const source = trimmedString(event.source || "local");
+        const calendar = trimmedString(event.calendar || event.calendarName || event.calendarId || "Local");
+        const id = trimmedString(event.id || event.uid || source + ":" + calendar + ":" + date + ":" + index);
+        const allDay = event.allDay === true || event.isAllDay === true || isAllDayStart(event.start);
+
+        return {
+            id: id,
+            source: source,
+            calendar: calendar,
+            title: title.length > 0 ? title : "Untitled event",
+            date: date,
+            start: allDay ? "" : normalizedTime(event.start || event.startTime || event.startDateTime),
+            end: allDay ? "" : normalizedTime(event.end || event.endTime || event.endDateTime),
+            allDay: allDay,
+            location: trimmedString(event.location),
+            url: trimmedString(event.url || event.htmlLink || event.webLink),
+            color: trimmedString(event.color || event.colorId || event.calendarColor),
+            reminderMinutes: normalizedReminderMinutes(event.reminderMinutes || event.reminders),
+            busy: event.busy === undefined ? true : event.busy === true
+        };
+    }
+
+    function trimmedString(value) {
+        return String(value || "").trim();
+    }
+
+    function normalizedDate(value) {
+        if (!value)
+            return "";
+
+        if (value instanceof Date && !isNaN(value.getTime()))
+            return dateKey(value);
+
+        if (typeof value === "object") {
+            if (value.date)
+                return normalizedDate(value.date);
+
+            if (value.dateTime)
+                return normalizedDate(value.dateTime);
+        }
+
+        const text = trimmedString(value);
+        const match = text.match(/^(\d{4}-\d{2}-\d{2})/);
+        return match ? match[1] : "";
+    }
+
+    function isAllDayStart(value) {
+        return value && typeof value === "object" && value.date && !value.dateTime;
+    }
+
+    function normalizedTime(value) {
+        if (!value)
+            return "";
+
+        if (value instanceof Date && !isNaN(value.getTime()))
+            return Qt.formatTime(value, "HH:mm");
+
+        if (typeof value === "object") {
+            if (value.dateTime)
+                return normalizedTime(value.dateTime);
+
+            return "";
+        }
+
+        const text = trimmedString(value);
+        const timeMatch = text.match(/T(\d{2}:\d{2})/);
+
+        if (timeMatch)
+            return timeMatch[1];
+
+        const shortTimeMatch = text.match(/^(\d{1,2}):(\d{2})/);
+
+        if (!shortTimeMatch)
+            return "";
+
+        const hour = Number(shortTimeMatch[1]);
+
+        if (hour < 0 || hour > 23)
+            return "";
+
+        return (hour < 10 ? "0" : "") + hour + ":" + shortTimeMatch[2];
+    }
+
+    function normalizedReminderMinutes(value) {
+        if (!value)
+            return [];
+
+        if (typeof value === "object" && Array.isArray(value.overrides))
+            return normalizedReminderMinutes(value.overrides);
+
+        const source = Array.isArray(value) ? value : [value];
+        const minutes = [];
+
+        for (let index = 0; index < source.length; index++) {
+            const item = source[index];
+            const minuteValue = typeof item === "object" ? item.minutes : item;
+            const number = Number(minuteValue);
+
+            if (!isNaN(number) && number >= 0)
+                minutes.push(Math.floor(number));
+        }
+
+        return minutes;
+    }
+
     function eventsForDate(date) {
         const key = dateKey(date);
-        return events.filter(event => event.date === key);
+        return sortedEvents(events.filter(event => event.date === key));
     }
 
     function eventCountForDate(date) {
@@ -84,15 +217,21 @@ QtObject {
                 event.date >= firstKey && event.date <= lastKey
             )
             .slice()
-            .sort((left, right) => {
-                if (left.date !== right.date)
-                    return left.date.localeCompare(right.date);
+            .sort(compareEvents);
+    }
 
-                if (left.allDay !== right.allDay)
-                    return left.allDay ? -1 : 1;
+    function sortedEvents(sourceEvents) {
+        return sourceEvents.slice().sort(compareEvents);
+    }
 
-                return (left.start || "").localeCompare(right.start || "");
-            });
+    function compareEvents(left, right) {
+        if (left.date !== right.date)
+            return left.date.localeCompare(right.date);
+
+        if (left.allDay !== right.allDay)
+            return left.allDay ? -1 : 1;
+
+        return (left.start || "").localeCompare(right.start || "");
     }
 
     function eventTimeLabel(event) {
@@ -105,6 +244,32 @@ QtObject {
         return event.end
             ? event.start + "–" + event.end
             : event.start;
+    }
+
+    function eventMetaLabel(event) {
+        const parts = [];
+
+        if (event.location)
+            parts.push(event.location);
+
+        if (event.calendar && event.calendar !== "Local")
+            parts.push(event.calendar);
+
+        if (event.source && event.source !== "local")
+            parts.push(event.source);
+
+        return parts.join(" · ");
+    }
+
+    function eventColor(event, fallbackColor) {
+        return validColorValue(event.color) ? event.color : fallbackColor;
+    }
+
+    function validColorValue(value) {
+        const text = trimmedString(value);
+        return text.match(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/) !== null
+            || text.indexOf("rgb(") === 0
+            || text.indexOf("rgba(") === 0;
     }
 
     function visibleEventsForToday(now) {

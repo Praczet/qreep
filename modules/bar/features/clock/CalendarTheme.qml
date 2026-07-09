@@ -12,6 +12,9 @@ QtObject {
     readonly property color mutedTextColor: qreep.on_surface_variant
     readonly property color todayBackgroundColor: qreep.primaryContainer
     readonly property color todayTextColor: qreep.on_primary_container
+    readonly property color selectedDayBackgroundColor: qreep.surfaceContainerHigh
+    readonly property color selectedDayTextColor: qreep.on_surface
+    readonly property color hoveredDayBackgroundColor: qreep.surfaceContainer
     readonly property color eventIndicatorColor: qreep.primary
 
     readonly property int popupWidth: 590
@@ -21,6 +24,8 @@ QtObject {
     readonly property int sectionWidth: 264
     readonly property int sectionSpacing: 16
     readonly property int itemSpacing: 10
+    readonly property int headerButtonSize: 28
+    readonly property int headerButtonRadius: 8
     readonly property int headerPixelSize: 18
     readonly property int weekDayHeight: 24
     readonly property int weekDayPixelSize: 12
@@ -34,8 +39,10 @@ QtObject {
     readonly property int agendaListReservedHeight: 34
     readonly property int agendaItemSpacing: 8
     readonly property int agendaRowSpacing: 10
-    readonly property int agendaDateWidth: 46
-    readonly property int agendaDetailsWidthOffset: 56
+    readonly property int agendaColorWidth: 3
+    readonly property int agendaColorRadius: 2
+    readonly property int agendaDateWidth: 68
+    readonly property int agendaDetailsWidthOffset: agendaDateWidth + agendaColorWidth + agendaRowSpacing * 2
     readonly property int agendaDatePixelSize: 12
     readonly property int agendaTitlePixelSize: 13
     readonly property int agendaTimePixelSize: 11

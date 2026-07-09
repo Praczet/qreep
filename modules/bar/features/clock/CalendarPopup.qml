@@ -10,8 +10,11 @@ PopupWindow {
     required property QtObject events
 
     readonly property date today: new Date()
-    readonly property var agendaEvents:
-        events.eventsForNextDays(today, rootCalendarPopup.theme.modules.bar.calendar.agendaDays)
+    property date selectedDate: new Date()
+    property date visibleMonth: new Date(today.getFullYear(), today.getMonth(), 1)
+    readonly property string selectedDateKey: events.dateKey(selectedDate)
+    readonly property string todayKey: events.dateKey(today)
+    readonly property var agendaEvents: events.eventsForDate(selectedDate)
 
     anchor {
         item: rootCalendarPopup.anchorItem
@@ -23,6 +26,72 @@ PopupWindow {
     implicitHeight: calendarBackground.implicitHeight
     color: "transparent"
     grabFocus: true
+
+    onVisibleChanged: {
+        if (!visible)
+            return;
+
+        selectToday();
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        context: Qt.WindowShortcut
+        enabled: rootCalendarPopup.visible
+        onActivated: rootCalendarPopup.visible = false
+    }
+
+    function monthStart(date) {
+        return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+
+    function selectDate(date) {
+        selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        visibleMonth = monthStart(selectedDate);
+    }
+
+    function selectToday() {
+        selectDate(today);
+    }
+
+    function daysInMonth(year, month) {
+        return new Date(year, month + 1, 0).getDate();
+    }
+
+    function moveVisibleMonth(offset) {
+        const targetMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + offset, 1);
+        const targetDay = Math.min(selectedDate.getDate(), daysInMonth(targetMonth.getFullYear(), targetMonth.getMonth()));
+        selectDate(new Date(targetMonth.getFullYear(), targetMonth.getMonth(), targetDay));
+    }
+
+    function dayBackgroundColor(model, hovered) {
+        const key = events.dateKey(model.date);
+
+        if (key === selectedDateKey)
+            return rootCalendarPopup.theme.modules.bar.calendar.selectedDayBackgroundColor;
+
+        if (model.today)
+            return rootCalendarPopup.theme.modules.bar.calendar.todayBackgroundColor;
+
+        if (hovered)
+            return rootCalendarPopup.theme.modules.bar.calendar.hoveredDayBackgroundColor;
+
+        return "transparent";
+    }
+
+    function dayTextColor(model) {
+        const key = events.dateKey(model.date);
+
+        if (key === selectedDateKey)
+            return rootCalendarPopup.theme.modules.bar.calendar.selectedDayTextColor;
+
+        if (model.today)
+            return rootCalendarPopup.theme.modules.bar.calendar.todayTextColor;
+
+        return model.month === monthGrid.month
+            ? rootCalendarPopup.theme.modules.bar.calendar.dayTextColor
+            : rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor;
+    }
 
     Rectangle {
         id: calendarBackground
@@ -50,12 +119,70 @@ PopupWindow {
                 width: rootCalendarPopup.theme.modules.bar.calendar.sectionWidth
                 spacing: rootCalendarPopup.theme.modules.bar.calendar.itemSpacing
 
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: Qt.formatDate(rootCalendarPopup.today, "dddd, dd MMMM")
-                    color: rootCalendarPopup.theme.modules.bar.calendar.headerTextColor
-                    font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.headerPixelSize
-                    font.weight: Font.DemiBold
+                Row {
+                    width: parent.width
+                    spacing: rootCalendarPopup.theme.modules.bar.calendar.itemSpacing
+
+                    Rectangle {
+                        width: rootCalendarPopup.theme.modules.bar.calendar.headerButtonSize
+                        height: width
+                        radius: rootCalendarPopup.theme.modules.bar.calendar.headerButtonRadius
+                        color: previousMonthHover.hovered ? rootCalendarPopup.theme.modules.bar.calendar.hoveredDayBackgroundColor : "transparent"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "<"
+                            color: rootCalendarPopup.theme.modules.bar.calendar.headerTextColor
+                            font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.headerPixelSize
+                            font.weight: Font.DemiBold
+                        }
+
+                        HoverHandler {
+                            id: previousMonthHover
+                            cursorShape: Qt.PointingHandCursor
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: rootCalendarPopup.moveVisibleMonth(-1)
+                        }
+                    }
+
+                    Text {
+                        width: parent.width - rootCalendarPopup.theme.modules.bar.calendar.headerButtonSize * 2 - parent.spacing * 2
+                        height: rootCalendarPopup.theme.modules.bar.calendar.headerButtonSize
+                        text: Qt.formatDate(rootCalendarPopup.visibleMonth, "MMMM yyyy")
+                        color: rootCalendarPopup.theme.modules.bar.calendar.headerTextColor
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.headerPixelSize
+                        font.weight: Font.DemiBold
+                    }
+
+                    Rectangle {
+                        width: rootCalendarPopup.theme.modules.bar.calendar.headerButtonSize
+                        height: width
+                        radius: rootCalendarPopup.theme.modules.bar.calendar.headerButtonRadius
+                        color: nextMonthHover.hovered ? rootCalendarPopup.theme.modules.bar.calendar.hoveredDayBackgroundColor : "transparent"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: ">"
+                            color: rootCalendarPopup.theme.modules.bar.calendar.headerTextColor
+                            font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.headerPixelSize
+                            font.weight: Font.DemiBold
+                        }
+
+                        HoverHandler {
+                            id: nextMonthHover
+                            cursorShape: Qt.PointingHandCursor
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: rootCalendarPopup.moveVisibleMonth(1)
+                        }
+                    }
                 }
 
                 DayOfWeekRow {
@@ -81,8 +208,8 @@ PopupWindow {
 
                     width: parent.width
                     height: rootCalendarPopup.theme.modules.bar.calendar.monthGridHeight
-                    month: rootCalendarPopup.today.getMonth()
-                    year: rootCalendarPopup.today.getFullYear()
+                    month: rootCalendarPopup.visibleMonth.getMonth()
+                    year: rootCalendarPopup.visibleMonth.getFullYear()
 
                     delegate: Rectangle {
                         required property var model
@@ -92,12 +219,12 @@ PopupWindow {
                         implicitWidth: monthGrid.width / 7
                         implicitHeight: rootCalendarPopup.theme.modules.bar.calendar.dayCellHeight
                         radius: rootCalendarPopup.theme.modules.bar.calendar.dayRadius
-                        color: model.today ? rootCalendarPopup.theme.modules.bar.calendar.todayBackgroundColor : "transparent"
+                        color: rootCalendarPopup.dayBackgroundColor(model, dayHover.hovered)
 
                         Text {
                             anchors.centerIn: parent
                             text: model.day
-                            color: model.today ? rootCalendarPopup.theme.modules.bar.calendar.todayTextColor : model.month === monthGrid.month ? rootCalendarPopup.theme.modules.bar.calendar.dayTextColor : rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
+                            color: rootCalendarPopup.dayTextColor(model)
                             font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.dayPixelSize
                         }
 
@@ -113,6 +240,16 @@ PopupWindow {
                             color: parent.eventCount > 0
                                 ? rootCalendarPopup.theme.modules.bar.accentColor
                                 : "transparent"
+                        }
+
+                        HoverHandler {
+                            id: dayHover
+                            cursorShape: Qt.PointingHandCursor
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: rootCalendarPopup.selectDate(model.date)
                         }
                     }
                 }
@@ -130,7 +267,7 @@ PopupWindow {
                 spacing: rootCalendarPopup.theme.modules.bar.calendar.itemSpacing
 
                 Text {
-                    text: "Today + " + rootCalendarPopup.theme.modules.bar.calendar.agendaDays + " days"
+                    text: Qt.formatDate(rootCalendarPopup.selectedDate, rootCalendarPopup.selectedDateKey === rootCalendarPopup.todayKey ? "'Today,' dddd dd MMMM" : "dddd dd MMMM")
                     color: rootCalendarPopup.theme.modules.bar.calendar.headerTextColor
                     font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.headerPixelSize
                     font.weight: Font.DemiBold
@@ -157,13 +294,17 @@ PopupWindow {
                         height: eventDetails.implicitHeight
                         spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaRowSpacing
 
+                        Rectangle {
+                            width: rootCalendarPopup.theme.modules.bar.calendar.agendaColorWidth
+                            height: eventDetails.implicitHeight
+                            radius: rootCalendarPopup.theme.modules.bar.calendar.agendaColorRadius
+                            color: rootCalendarPopup.events.eventColor(modelData, rootCalendarPopup.theme.modules.bar.accentColor)
+                        }
+
                         Text {
                             width: rootCalendarPopup.theme.modules.bar.calendar.agendaDateWidth
-                            text: Qt.formatDate(
-                                new Date(modelData.date + "T00:00:00"),
-                                "ddd dd"
-                            )
-                            color: rootCalendarPopup.theme.modules.bar.accentColor
+                            text: rootCalendarPopup.events.eventTimeLabel(modelData)
+                            color: rootCalendarPopup.events.eventColor(modelData, rootCalendarPopup.theme.modules.bar.accentColor)
                             font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaDatePixelSize
                             font.weight: Font.DemiBold
                         }
@@ -183,9 +324,8 @@ PopupWindow {
                             }
 
                             Text {
-                                text: rootCalendarPopup.events.eventTimeLabel(
-                                    modelData
-                                )
+                                text: rootCalendarPopup.events.eventMetaLabel(modelData)
+                                visible: text.length > 0
                                 color: rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
                                 font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTimePixelSize
                             }
