@@ -1,0 +1,323 @@
+#!/usr/bin/env python3
+# Description: Run configured Qreep calendar provider syncs and publish one readable pull state.
+# Usage: qreep-calendar-pull_v0.0.1 [--provider google|microsoft-ics|microsoft] [--state PATH] [--final PATH]
+# Install: install -Dm755 scripts/qreep-calendar-pull_v0.0.1 "$HOME/.local/bin/qreep-calendar-pull"
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import tempfile
+from datetime import datetime
+from pathlib import Path
+
+
+DEFAULT_STATE = Path.home() / ".cache" / "qreep" / "calendar" / "state.json"
+DEFAULT_FINAL = Path.home() / ".cache" / "qreep" / "calendar" / "final.json"
+DEFAULT_PROVIDERS = {
+    "google": {
+        "command": "qreep-calendar-google-sync",
+        "config": Path.home() / ".config" / "qreep" / "calendar" / "google.json",
+        "cache": Path.home() / ".cache" / "qreep" / "calendar" / "events.json",
+    },
+    "microsoft-ics": {
+        "command": "qreep-calendar-microsoft-ics-sync",
+        "config": Path.home() / ".config" / "qreep" / "calendar" / "microsoft-ics.json",
+        "cache": Path.home() / ".cache" / "qreep" / "calendar" / "microsoft-events.json",
+    },
+    "microsoft": {
+        "command": "qreep-calendar-microsoft-sync",
+        "config": Path.home() / ".config" / "qreep" / "calendar" / "microsoft.json",
+        "cache": Path.home() / ".cache" / "qreep" / "calendar" / "microsoft-events.json",
+    },
+}
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run configured Qreep calendar provider syncs and publish one readable pull state."
+    )
+    parser.add_argument("--provider", action="append", choices=sorted(DEFAULT_PROVIDERS), help="Provider to run. Can be repeated. Default: providers with config files.")
+    parser.add_argument("--state", default=str(DEFAULT_STATE), help=f"Running/latest state path. Default: {DEFAULT_STATE}")
+    parser.add_argument("--final", default=str(DEFAULT_FINAL), help=f"Final summary path. Default: {DEFAULT_FINAL}")
+    parser.add_argument("--no-qreep-refresh", action="store_true", help="Pass --no-qreep-refresh through to provider sync scripts.")
+    return parser.parse_args()
+
+
+def iso_now():
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def read_json(path, default=None):
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except FileNotFoundError:
+        return default
+    except json.JSONDecodeError:
+        return default
+
+
+def write_json_atomic(path, document, mode=0o600):
+    output_path = Path(path).expanduser()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=output_path.parent,
+        prefix=f".{output_path.name}.",
+        delete=False,
+    ) as handle:
+        json.dump(document, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+        temporary_path = handle.name
+
+    os.chmod(temporary_path, mode)
+    os.replace(temporary_path, output_path)
+
+
+def selected_providers(names):
+    if names:
+        return names
+
+    result = []
+
+    if DEFAULT_PROVIDERS["google"]["config"].exists():
+        result.append("google")
+
+    if DEFAULT_PROVIDERS["microsoft-ics"]["config"].exists():
+        result.append("microsoft-ics")
+    elif DEFAULT_PROVIDERS["microsoft"]["config"].exists():
+        result.append("microsoft")
+
+    return result
+
+
+def provider_event_count(document):
+    if not isinstance(document, dict):
+        return 0
+
+    events = document.get("events", [])
+    return len(events) if isinstance(events, list) else 0
+
+
+def changed_today_event_ids(previous_document, current_document, now=None):
+    now = now or datetime.now().astimezone()
+    previous_events = visible_today_event_map(previous_document, now)
+    current_events = visible_today_event_map(current_document, now)
+    changed_ids = []
+
+    for event_id in sorted(set(previous_events) | set(current_events)):
+        if previous_events.get(event_id) != current_events.get(event_id):
+            changed_ids.append(event_id)
+
+    return changed_ids
+
+
+def visible_today_event_map(document, now):
+    result = {}
+    today = now.strftime("%Y-%m-%d")
+
+    for event in document_events(document):
+        event_id = trimmed_string(event.get("id"))
+
+        if not event_id or event_date(event) != today or not event_is_visible_today(event, now):
+            continue
+
+        result[event_id] = event_signature(event)
+
+    return result
+
+
+def document_events(document):
+    if not isinstance(document, dict):
+        return []
+
+    events = document.get("events", [])
+    return events if isinstance(events, list) else []
+
+
+def event_signature(event):
+    return json.dumps(
+        {
+            "allDay": event_is_all_day(event),
+            "busy": event.get("busy", True),
+            "calendar": trimmed_string(event.get("calendar") or event.get("calendarName") or event.get("calendarId")),
+            "color": trimmed_string(event.get("color") or event.get("colorId") or event.get("calendarColor")),
+            "date": event_date(event),
+            "end": event_time(event.get("end") or event.get("endTime") or event.get("endDateTime")),
+            "location": trimmed_string(event.get("location")),
+            "source": trimmed_string(event.get("source")),
+            "start": event_time(event.get("start") or event.get("startTime") or event.get("startDateTime")),
+            "status": trimmed_string(event.get("status")).lower(),
+            "title": trimmed_string(event.get("title") or event.get("summary") or event.get("subject")),
+        },
+        sort_keys=True,
+    )
+
+
+def event_is_visible_today(event, now):
+    if event_is_all_day(event):
+        return True
+
+    start = event_time(event.get("start") or event.get("startTime") or event.get("startDateTime"))
+    end = event_time(event.get("end") or event.get("endTime") or event.get("endDateTime"))
+    now_time = now.strftime("%H:%M")
+
+    if not start:
+        return True
+
+    if not end:
+        return start >= now_time
+
+    return end >= now_time
+
+
+def event_is_all_day(event):
+    start = event.get("start")
+    return event.get("allDay") is True or event.get("isAllDay") is True or (
+        isinstance(start, dict) and bool(start.get("date")) and not start.get("dateTime")
+    )
+
+
+def event_date(event):
+    return normalized_date(event.get("date") or event.get("startDate") or event.get("day") or event.get("start"))
+
+
+def normalized_date(value):
+    if isinstance(value, dict):
+        return normalized_date(value.get("date") or value.get("dateTime"))
+
+    text = trimmed_string(value)
+    return text[0:10] if len(text) >= 10 and text[4:5] == "-" and text[7:8] == "-" else ""
+
+
+def event_time(value):
+    if isinstance(value, dict):
+        return event_time(value.get("dateTime"))
+
+    text = trimmed_string(value)
+
+    if "T" in text:
+        text = text.split("T", 1)[1]
+
+    return text[0:5] if len(text) >= 5 and text[2:3] == ":" else ""
+
+
+def trimmed_string(value):
+    return str(value or "").strip()
+
+
+def trim_output(text, limit=4000):
+    text = str(text or "").strip()
+    if len(text) <= limit:
+        return text
+
+    return text[-limit:]
+
+
+def run_provider(name, provider, no_qreep_refresh):
+    command_path = shutil.which(provider["command"])
+    before = read_json(provider["cache"], {})
+    started_at = iso_now()
+
+    if not provider["config"].exists():
+        return {
+            "state": "skipped",
+            "reason": "missing config",
+            "config": str(provider["config"]),
+            "cache": str(provider["cache"]),
+            "startedAt": started_at,
+            "finishedAt": iso_now(),
+        }
+
+    if not command_path:
+        return {
+            "state": "error",
+            "message": "command not found",
+            "command": provider["command"],
+            "config": str(provider["config"]),
+            "cache": str(provider["cache"]),
+            "startedAt": started_at,
+            "finishedAt": iso_now(),
+        }
+
+    command = [command_path]
+    if no_qreep_refresh:
+        command.append("--no-qreep-refresh")
+
+    completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False)
+    after = read_json(provider["cache"], {})
+    changed_ids = changed_today_event_ids(before, after)
+    state = "ok" if completed.returncode == 0 else "error"
+
+    result = {
+        "state": state,
+        "command": command_path,
+        "returnCode": completed.returncode,
+        "config": str(provider["config"]),
+        "cache": str(provider["cache"]),
+        "eventCount": provider_event_count(after),
+        "changedToday": len(changed_ids),
+        "changedEventIds": changed_ids,
+        "startedAt": started_at,
+        "finishedAt": iso_now(),
+    }
+
+    if completed.stdout.strip():
+        result["stdout"] = trim_output(completed.stdout)
+    if completed.stderr.strip():
+        result["stderr"] = trim_output(completed.stderr)
+
+    return result
+
+
+def overall_state(provider_results):
+    active_results = [result for result in provider_results.values() if result.get("state") != "skipped"]
+
+    if not active_results:
+        return "skipped"
+
+    if all(result.get("state") == "ok" for result in active_results):
+        return "ok"
+
+    if any(result.get("state") == "ok" for result in active_results):
+        return "partial"
+
+    return "error"
+
+
+def main():
+    args = parse_args()
+    state_path = Path(args.state).expanduser()
+    final_path = Path(args.final).expanduser()
+    provider_names = selected_providers(args.provider)
+    started_at = iso_now()
+    state = {
+        "state": "running",
+        "startedAt": started_at,
+        "finishedAt": "",
+        "providers": {},
+    }
+
+    write_json_atomic(state_path, state)
+
+    for name in provider_names:
+        provider = DEFAULT_PROVIDERS[name]
+        state["providers"][name] = run_provider(name, provider, args.no_qreep_refresh)
+        write_json_atomic(state_path, state)
+
+    state["state"] = overall_state(state["providers"])
+    state["finishedAt"] = iso_now()
+    state["providerCount"] = len(provider_names)
+    write_json_atomic(state_path, state)
+    write_json_atomic(final_path, state)
+
+    print(f"Qreep calendar pull: {state['state']} ({len(provider_names)} providers)")
+    return 0 if state["state"] in {"ok", "skipped"} else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

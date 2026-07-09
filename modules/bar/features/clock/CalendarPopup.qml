@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import Quickshell
+import Quickshell.Io
 
 PopupWindow {
     id: rootCalendarPopup
@@ -16,6 +17,8 @@ PopupWindow {
     readonly property string todayKey: events.dateKey(today)
     readonly property int eventRevision: events.revision
     readonly property int agendaEventCount: agendaModel.count
+    readonly property string syncFinalPath: Quickshell.env("HOME") + "/.cache/qreep/calendar/final.json"
+    property var syncFinalDocument: ({})
 
     anchor {
         item: rootCalendarPopup.anchorItem
@@ -41,6 +44,21 @@ PopupWindow {
 
     ListModel {
         id: agendaModel
+    }
+
+    FileView {
+        id: syncFinalFile
+
+        path: rootCalendarPopup.syncFinalPath
+        preload: true
+        watchChanges: true
+
+        onLoaded: rootCalendarPopup.loadSyncFinal()
+        onTextChanged: rootCalendarPopup.loadSyncFinal()
+        onLoadFailed: error => {
+            if (error === FileViewError.FileNotFound)
+                rootCalendarPopup.syncFinalDocument = {};
+        }
     }
 
     Shortcut {
@@ -70,6 +88,57 @@ PopupWindow {
 
         for (let index = 0; index < visibleEvents.length; index++)
             agendaModel.append({ eventData: visibleEvents[index] });
+    }
+
+    function loadSyncFinal() {
+        const contents = syncFinalFile.text();
+
+        if (contents.length === 0) {
+            syncFinalDocument = {};
+            return;
+        }
+
+        try {
+            syncFinalDocument = JSON.parse(contents);
+        } catch (error) {
+            syncFinalDocument = {};
+        }
+    }
+
+    function syncProvider(name) {
+        const providers = syncFinalDocument && syncFinalDocument.providers ? syncFinalDocument.providers : {};
+
+        if (name === "microsoft")
+            return providers["microsoft-ics"] || providers.microsoft || null;
+
+        return providers[name] || null;
+    }
+
+    function syncFooterText() {
+        return "Google: " + syncProviderText("google") + " | Microsoft: " + syncProviderText("microsoft");
+    }
+
+    function syncProviderText(name) {
+        const provider = syncProvider(name);
+
+        if (!provider)
+            return "-- (--)";
+
+        const timestamp = provider.finishedAt || syncFinalDocument.finishedAt || "";
+        const status = provider.state || "unknown";
+        return syncTimestampText(timestamp) + " (" + status + ")";
+    }
+
+    function syncTimestampText(timestamp) {
+        if (!timestamp)
+            return "--";
+
+        const date = new Date(timestamp);
+
+        if (isNaN(date.getTime()))
+            return "--";
+
+        return Qt.formatDateTime(date, "yyyy-MM-dd HH-mm-ss");
     }
 
     function daysInMonth(year, month) {
@@ -129,6 +198,7 @@ PopupWindow {
                 right: parent.right
                 bottom: parent.bottom
                 margins: rootCalendarPopup.theme.modules.bar.calendar.popupPadding
+                bottomMargin: rootCalendarPopup.theme.modules.bar.calendar.popupPadding + syncFooter.height + rootCalendarPopup.theme.modules.bar.calendar.footerTopSpacing
             }
             spacing: rootCalendarPopup.theme.modules.bar.calendar.sectionSpacing
 
@@ -426,6 +496,25 @@ PopupWindow {
                     }
                 }
             }
+        }
+
+        Text {
+            id: syncFooter
+
+            anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+                leftMargin: rootCalendarPopup.theme.modules.bar.calendar.popupPadding
+                rightMargin: rootCalendarPopup.theme.modules.bar.calendar.popupPadding
+                bottomMargin: rootCalendarPopup.theme.modules.bar.calendar.footerBottomMargin
+            }
+            text: rootCalendarPopup.syncFooterText()
+            color: rootCalendarPopup.theme.modules.bar.calendar.footerTextColor
+            horizontalAlignment: Text.AlignHCenter
+            elide: Text.ElideRight
+            font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.footerPixelSize
+            font.weight: Font.Medium
         }
     }
 }

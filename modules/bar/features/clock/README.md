@@ -348,3 +348,49 @@ Install the stable command name with:
 ```bash
 install -Dm755 scripts/qreep-calendar-microsoft-sync_v0.0.1 "$HOME/.local/bin/qreep-calendar-microsoft-sync"
 ```
+
+## Scheduled Pulls
+
+`scripts/qreep-calendar-pull_v0.0.1` is the boring wrapper for regular pulls.
+It runs configured providers, then writes:
+
+```text
+~/.cache/qreep/calendar/state.json
+~/.cache/qreep/calendar/final.json
+```
+
+`state.json` is updated while the pull is running. `final.json` is the last
+finished pull summary. Provider scripts still own provider-specific fetching
+and Qreep refresh/notification; the wrapper owns the readable "what happened
+last time" report.
+
+By default the wrapper runs providers that have config files. If both Microsoft
+configs exist, it prefers the ICS route because both Microsoft routes write the
+same cache file. Pass `--provider microsoft` explicitly if you want to test the
+Graph route instead.
+
+Install stable helper names and the user systemd unit/timer:
+
+```bash
+scripts/install
+```
+
+Enable the ten-minute calendar timer:
+
+```bash
+systemctl --user enable --now qreep-calendar-sync.timer
+```
+
+Or do install plus timer enable/start in one go:
+
+```bash
+scripts/install --start-calendar-timer
+```
+
+Useful checks:
+
+```bash
+qreep-calendar-pull
+systemctl --user status qreep-calendar-sync.timer
+journalctl --user -u qreep-calendar-sync.service
+```

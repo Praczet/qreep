@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Description: Install Qreep helper scripts and user systemd units.
+# Usage: scripts/install [--enable-calendar-timer] [--start-calendar-timer]
+
+set -euo pipefail
+
+repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+bin_dir="${HOME}/.local/bin"
+systemd_user_dir="${HOME}/.config/systemd/user"
+enable_calendar_timer=false
+start_calendar_timer=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --enable-calendar-timer)
+      enable_calendar_timer=true
+      ;;
+    --start-calendar-timer)
+      enable_calendar_timer=true
+      start_calendar_timer=true
+      ;;
+    -h|--help)
+      sed -n '1,5p' "$0"
+      exit 0
+      ;;
+    *)
+      printf 'Unknown option: %s\n' "$1" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+install_script() {
+  local source_path="$1"
+  local target_name="$2"
+
+  install -Dm755 "${repo_dir}/${source_path}" "${bin_dir}/${target_name}"
+  printf 'installed %s\n' "${bin_dir}/${target_name}"
+}
+
+install_unit() {
+  local source_path="$1"
+  local target_name="$2"
+
+  install -Dm644 "${repo_dir}/${source_path}" "${systemd_user_dir}/${target_name}"
+  printf 'installed %s\n' "${systemd_user_dir}/${target_name}"
+}
+
+install_script "scripts/qreep-bloom-notify" "qreep-bloom-notify"
+install_script "scripts/qreep-calendar-sync_v0.0.1" "qreep-calendar-sync"
+install_script "scripts/qreep-calendar-google-sync_v0.0.1" "qreep-calendar-google-sync"
+install_script "scripts/qreep-calendar-microsoft-ics-sync_v0.0.1" "qreep-calendar-microsoft-ics-sync"
+install_script "scripts/qreep-calendar-microsoft-sync_v0.0.1" "qreep-calendar-microsoft-sync"
+install_script "scripts/qreep-calendar-pull_v0.0.1" "qreep-calendar-pull"
+install_script "scripts/qreep-notification-test-batch_v0.0.1" "qreep-notification-test-batch"
+install_script "scripts/qreep-region-screenshot-delay_v0.0.1" "qreep-region-screenshot-delay"
+
+install_unit "scripts/systemd/qreep-calendar-sync.service" "qreep-calendar-sync.service"
+install_unit "scripts/systemd/qreep-calendar-sync.timer" "qreep-calendar-sync.timer"
+
+systemctl --user daemon-reload
+
+if [[ "${enable_calendar_timer}" == true ]]; then
+  systemctl --user enable qreep-calendar-sync.timer
+fi
+
+if [[ "${start_calendar_timer}" == true ]]; then
+  systemctl --user start qreep-calendar-sync.timer
+fi
+
+cat <<'EOF'
+
+Calendar sync commands:
+  qreep-calendar-pull
+  systemctl --user status qreep-calendar-sync.timer
+  journalctl --user -u qreep-calendar-sync.service
+
+Enable later:
+  systemctl --user enable --now qreep-calendar-sync.timer
+
+State files:
+  ~/.cache/qreep/calendar/state.json
+  ~/.cache/qreep/calendar/final.json
+EOF

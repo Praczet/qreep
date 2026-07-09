@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Qreep calendar sync every 10 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+RandomizedDelaySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

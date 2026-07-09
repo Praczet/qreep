@@ -23,6 +23,7 @@ QtObject {
     readonly property color agendaPersonalMetaColor: qreep.on_surface_variant
     readonly property color agendaSourceBadgeBackgroundColor: qreep.surfaceContainerHigh
     readonly property color agendaSourceBadgeTextColor: qreep.on_surface
+    readonly property color footerTextColor: qreep.on_surface_variant
 
     readonly property int popupWidth: 860
     readonly property int popupHeight: 420
@@ -66,6 +67,9 @@ QtObject {
     readonly property int agendaBadgeHeight: 16
     readonly property int agendaBadgeRadius: 5
     readonly property int agendaDetailsSpacing: 2
+    readonly property int footerPixelSize: 10
+    readonly property int footerTopSpacing: 8
+    readonly property int footerBottomMargin: 8
     readonly property bool useDefaultReminders: true
     readonly property int defaultReminderMinutes: 10
     readonly property int reminderCheckInterval: 60000
