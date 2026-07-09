@@ -37,6 +37,7 @@ PopupWindow {
 
         selectToday();
         refreshAgendaModel();
+        syncFinalFile.reload();
     }
 
     onSelectedDateChanged: refreshAgendaModel()
@@ -59,6 +60,13 @@ PopupWindow {
             if (error === FileViewError.FileNotFound)
                 rootCalendarPopup.syncFinalDocument = {};
         }
+    }
+
+    Timer {
+        interval: rootCalendarPopup.theme.modules.bar.calendar.eventCacheRefreshInterval
+        repeat: true
+        running: true
+        onTriggered: syncFinalFile.reload()
     }
 
     Shortcut {

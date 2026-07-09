@@ -23,7 +23,10 @@ ShellRoot {
     }
 
     BarModule.Bar {
+        id: bar
+
         theme: qreepTheme
+        shellFullscreenSurfaceOpen: dashboard.open || expose.open
 
         onVolumeFeedbackRequested: (percent, muted, icon) => {
             osd.showMessage(percent + "%", qreepTheme.modules.osd.defaultDuration, qreepTheme.modules.osd.defaultPosition, muted ? "Volume (Muted)" : "Volume", icon, qreepTheme.modules.osd.progressIconSize, percent / 100);

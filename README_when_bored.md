@@ -194,6 +194,9 @@ quickshell ipc call qreep-borg toggleProgress
 quickshell ipc call qreep-upchecker refresh
 quickshell ipc call qreep-upchecker toggle
 quickshell ipc call qreep-monitor-profile refresh
+quickshell ipc call qreep-calendar refresh
+quickshell ipc call qreep-calendar notifyChangedAll
+quickshell ipc call qreep-calendar notifyChanged EVENT_ID
 quickshell ipc call qreep-power toggle
 quickshell ipc call qreep-power toggleFullscreen
 quickshell ipc call qreep-aegis toggle
@@ -251,6 +254,26 @@ quickshell ipc call qreep-expose hideMe
 quickshell ipc call qreep-expose refresh
 ```
 
+Expose behavior:
+
+```text
+current workspace windows -> large cards
+other workspaces          -> compact cluster cards
+typing                   -> reveal search and filter clients
+arrow keys               -> spatial selection, including cluster mini-cards
+Enter / click            -> switch workspace if needed, focus client, close
+```
+
+Current-workspace thumbnails are captured in parallel with `grim -g` before
+the overlay opens. The overview layout is manual and grid-shaped, not a QML
+`Grid`, so filtered cards can animate into their new positions instead of
+teleporting because a layout object felt helpful.
+
+Clock event dots are still popup-based so they sit neatly under the pill. The
+bar suppresses them while Dashboard, Expose, or fullscreen Power is open,
+because separate popup windows do not politely hide behind fullscreen shell
+surfaces by themselves.
+
 Bloom commands:
 
 ```bash
@@ -271,6 +294,36 @@ scripts/qreep-notification-test-batch_v0.0.1 --delay 0.4
 Qreep must own `org.freedesktop.Notifications` for that helper to test Qreep.
 If another notification daemon owns it, Qreep logs that it could not register
 and the notifications go somewhere else. Very democratic. Not helpful.
+
+Install stable helper names and the calendar user units:
+
+```bash
+scripts/install
+```
+
+That copies the current versioned helper scripts to `~/.local/bin`, including:
+
+```text
+qreep-calendar-sync
+qreep-calendar-google-sync
+qreep-calendar-microsoft-ics-sync
+qreep-calendar-microsoft-sync
+qreep-calendar-pull
+qreep-region-screenshot-delay
+```
+
+It also installs:
+
+```text
+~/.config/systemd/user/qreep-calendar-sync.service
+~/.config/systemd/user/qreep-calendar-sync.timer
+```
+
+Enable the timer only when wanted:
+
+```bash
+systemctl --user enable --now qreep-calendar-sync.timer
+```
 
 Pill state commands use two separate ideas:
 
@@ -302,6 +355,8 @@ Clock events are loaded from:
 
 ```text
 events.json
+~/.cache/qreep/calendar/events.json
+~/.cache/qreep/calendar/microsoft-events.json
 ```
 
 Expected shape:
@@ -320,8 +375,44 @@ Expected shape:
 }
 ```
 
-The clock shows current-day dots and the calendar shows today plus the next five
-days.
+The clock shows current-day dots. The calendar popup shows a month grid, a
+selected-day agenda, and a footer with last pull status:
+
+```text
+Google: yyyy-MM-dd HH-mm-ss (status) | Microsoft: yyyy-MM-dd HH-mm-ss (status)
+```
+
+Clock click behavior:
+
+```text
+left   -> open calendar
+middle -> toggle seconds
+right  -> confirm a manual calendar pull
+```
+
+Manual pulls run:
+
+```bash
+qreep-calendar-pull --notify
+```
+
+The timer uses the quiet default:
+
+```bash
+qreep-calendar-pull
+```
+
+Pull state is written to:
+
+```text
+~/.cache/qreep/calendar/state.json
+~/.cache/qreep/calendar/final.json
+```
+
+`state.json` is updated while the pull runs. `final.json` is the last finished
+summary. The wrapper runs configured providers, prefers Microsoft ICS over the
+Microsoft Graph route when both configs exist, and leaves the provider scripts
+to do the actual fetch/cache-refresh work. Boring boundaries. Useful boundaries.
 
 ## Monitor Profile JSON
 

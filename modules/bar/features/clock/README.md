@@ -58,6 +58,12 @@ dots pulse in sequence.
 Pulse size, duration, loop count, and the primary/warning/error/warning color
 sequence live in `ClockTheme.qml`.
 
+The event dots stay in `ClockEventIndicators.qml` as a popup so they can sit
+under the clock pill without being clipped by the bar window. `Bar.qml`
+suppresses that popup while Dashboard, Expose, or fullscreen Power is open,
+because separate popup windows otherwise float above fullscreen Qreep surfaces
+like they skipped the part where layering was explained.
+
 Provider sync scripts compare the previous generated cache with the newly
 downloaded one before writing. Future/remaining events for today that are added,
 edited, or removed trigger the dot notification after the script asks Qreep to
@@ -69,8 +75,12 @@ Note: This is a bar-owned feature. Sources live under `modules/bar/features/cloc
 Theme is exposed through:
 
 ```qml
-readonly property QtObject clock: ClockFeature.ClockTheme {}
-readonly property QtObject calendar: ClockFeature.CalendarTheme {}
+readonly property QtObject clock: ClockFeature.ClockTheme {
+    qreep: rootBarTheme.qreep
+}
+readonly property QtObject calendar: ClockFeature.CalendarTheme {
+    qreep: rootBarTheme.qreep
+}
 ```
 
 ## Service Notes
@@ -393,6 +403,11 @@ Useful checks:
 
 ```bash
 qreep-calendar-pull
+qreep-calendar-pull --notify
 systemctl --user status qreep-calendar-sync.timer
 journalctl --user -u qreep-calendar-sync.service
 ```
+
+The timer uses the quiet default. Manual right-click pulls call
+`qreep-calendar-pull --notify`, so they report the finished provider statuses
+with a desktop notification.

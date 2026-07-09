@@ -8,6 +8,7 @@ PopupWindow {
     required property Item anchorItem
     required property QtObject events
     property var eventItems: []
+    property bool suppressed: false
     property int pendingPulseIndex: -1
     property int pendingPulseLoopsRemaining: 0
     property var pulseItems: []
@@ -20,7 +21,7 @@ PopupWindow {
         rect.y: rootClockEventIndicators.anchorItem.height - rootClockEventIndicators.theme.modules.bar.clock.eventIndicatorSize / 2
     }
 
-    visible: rootClockEventIndicators.anchorItem.visible && rootClockEventIndicators.visibleEventItems.length > 0
+    visible: !rootClockEventIndicators.suppressed && rootClockEventIndicators.anchorItem.visible && rootClockEventIndicators.visibleEventItems.length > 0
     implicitWidth: indicatorRow.implicitWidth
     implicitHeight: rootClockEventIndicators.theme.modules.bar.clock.personalEventIndicatorSize
     color: "transparent"

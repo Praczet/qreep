@@ -20,6 +20,12 @@ will want after pretending he remembers everything.
 
 ## Start
 
+Install helper scripts and user units:
+
+```bash
+scripts/install
+```
+
 Run the installed Quickshell config:
 
 ```bash
@@ -69,6 +75,8 @@ quickshell ipc call qreep-notification toggleCenter
 
 quickshell ipc call qreep-borg refresh
 quickshell ipc call qreep-upchecker refresh
+quickshell ipc call qreep-calendar refresh
+quickshell ipc call qreep-expose toggle
 quickshell ipc call osd showMessage "Qreep lives, somehow" 3000
 ```
 
@@ -98,3 +106,33 @@ quickshell -c qreep --no-duplicate
 
 If that says an instance is already running, the command did its job. Rare, but
 we take the wins we can get.
+
+## Calendar Pulls
+
+The clock calendar can read local events, Google Calendar, and Outlook via the
+Microsoft ICS path. Install helpers with `scripts/install`, then run:
+
+```bash
+qreep-calendar-pull
+```
+
+The optional user timer runs quietly every ten minutes:
+
+```bash
+systemctl --user enable --now qreep-calendar-sync.timer
+```
+
+Manual right-click pulls from the clock use desktop notification feedback.
+Status lands in `~/.cache/qreep/calendar/final.json`.
+
+## Expose
+
+Expose is the shell-level window overview:
+
+```bash
+quickshell ipc call qreep-expose toggle
+```
+
+Start typing to filter windows. Arrow keys move selection. `Enter` or click
+switches workspace when needed, focuses the selected client, and closes the
+overview.

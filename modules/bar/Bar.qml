@@ -24,8 +24,10 @@ PanelWindow {
     property alias centerSlotItems: centerSlot.data
     property alias rightSlotItems: rightSlot.data
     property alias overlayItems: overlayLayer.data
+    property bool shellFullscreenSurfaceOpen: false
     readonly property bool collapsed: barModeService.collapsed
     readonly property bool reservedMode: barModeService.reserved
+    readonly property bool clockEventIndicatorsSuppressed: shellFullscreenSurfaceOpen || (power.open && power.service.isFullscreen)
     readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
     readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "upchecker", "monitorprofile", "borg", "battery", "network", "volume"]
@@ -580,7 +582,7 @@ PanelWindow {
             anchorItem: clock
 
             onConfirmed: {
-                calendarPullRunner.command = ["qreep-calendar-pull"];
+                calendarPullRunner.command = ["qreep-calendar-pull", "--notify"];
                 calendarPullRunner.startDetached();
                 qreepLog.info("Calendar pull requested.");
             }
@@ -591,6 +593,7 @@ PanelWindow {
             anchorItem: clock
             events: eventStore
             eventItems: clock.visibleTodayEvents
+            suppressed: rootBar.clockEventIndicatorsSuppressed
         }
 
         MprisFeature.MprisPanel {

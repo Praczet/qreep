@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Description: Run configured Qreep calendar provider syncs and publish one readable pull state.
-# Usage: qreep-calendar-pull_v0.0.1 [--provider google|microsoft-ics|microsoft] [--state PATH] [--final PATH]
+# Usage: qreep-calendar-pull_v0.0.1 [--provider google|microsoft-ics|microsoft] [--state PATH] [--final PATH] [--notify]
 # Install: install -Dm755 scripts/qreep-calendar-pull_v0.0.1 "$HOME/.local/bin/qreep-calendar-pull"
 
 import argparse
@@ -42,6 +42,7 @@ def parse_args():
     parser.add_argument("--state", default=str(DEFAULT_STATE), help=f"Running/latest state path. Default: {DEFAULT_STATE}")
     parser.add_argument("--final", default=str(DEFAULT_FINAL), help=f"Final summary path. Default: {DEFAULT_FINAL}")
     parser.add_argument("--no-qreep-refresh", action="store_true", help="Pass --no-qreep-refresh through to provider sync scripts.")
+    parser.add_argument("--notify", action="store_true", help="Send a desktop notification after the pull finishes.")
     return parser.parse_args()
 
 
@@ -289,6 +290,81 @@ def overall_state(provider_results):
     return "error"
 
 
+def provider_label(name):
+    if name == "google":
+        return "Google"
+    if name in {"microsoft", "microsoft-ics"}:
+        return "Microsoft"
+
+    return name
+
+
+def provider_summary(name, result):
+    state = result.get("state", "unknown")
+
+    if state == "skipped":
+        return provider_label(name) + ": skipped"
+
+    details = []
+
+    if "eventCount" in result:
+        details.append(str(result.get("eventCount", 0)) + " events")
+
+    if "changedToday" in result:
+        details.append(str(result.get("changedToday", 0)) + " changed today")
+
+    if result.get("message"):
+        details.append(str(result.get("message")))
+
+    suffix = ", ".join(details)
+    return provider_label(name) + ": " + state + ((" - " + suffix) if suffix else "")
+
+
+def notification_title(state):
+    if state == "ok":
+        return "Calendar pull finished"
+    if state == "partial":
+        return "Calendar pull partially failed"
+    if state == "skipped":
+        return "Calendar pull skipped"
+
+    return "Calendar pull failed"
+
+
+def notification_urgency(state):
+    if state in {"error", "partial"}:
+        return "critical"
+
+    return "normal"
+
+
+def notify_finished(state):
+    notify_send = shutil.which("notify-send")
+    if not notify_send:
+        return
+
+    providers = state.get("providers", {})
+    lines = []
+
+    for name in sorted(providers):
+        lines.append(provider_summary(name, providers[name]))
+
+    if not lines:
+        lines.append("No configured providers.")
+
+    command = [
+        notify_send,
+        "-a",
+        "Qreep Calendar",
+        "-u",
+        notification_urgency(state.get("state")),
+        notification_title(state.get("state")),
+        "\n".join(lines),
+    ]
+
+    subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+
 def main():
     args = parse_args()
     state_path = Path(args.state).expanduser()
@@ -314,6 +390,9 @@ def main():
     state["providerCount"] = len(provider_names)
     write_json_atomic(state_path, state)
     write_json_atomic(final_path, state)
+
+    if args.notify:
+        notify_finished(state)
 
     print(f"Qreep calendar pull: {state['state']} ({len(provider_names)} providers)")
     return 0 if state["state"] in {"ok", "skipped"} else 1

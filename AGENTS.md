@@ -118,13 +118,13 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `b2503c1` | `2026-07-08` |
-| `README.md` | `b2503c1` | `2026-07-08` |
-| `README_when_bored.md` | `b2503c1` | `2026-07-08` |
+| `AGENTS.md` | `dcf825d` | `2026-07-09` |
+| `README.md` | `dcf825d` | `2026-07-09` |
+| `README_when_bored.md` | `dcf825d` | `2026-07-09` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/borg/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/bar/features/clock/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/clock/README.md` | `dcf825d` | `2026-07-09` |
 | `modules/bar/features/launcher/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/monitorprofile/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/mpris/README.md` | `1a769ca` | `2026-07-08` |
@@ -140,7 +140,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/dashboard/features/image/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/weather/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/wotd/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/expose/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/expose/README.md` | `dcf825d` | `2026-07-09` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 
@@ -925,12 +925,14 @@ Qreep currently has:
 - runtime pill state in `modules/bar/BarPillStateService.qml`, exposed through IPC target `qreep-bar-pill`;
 - current runtime pill IDs: `clock`, `workspaces`, `mpris`, `upchecker`, `monitorprofile`, `borg`, `battery`, `network`, and `volume`;
 - enabled unpinned pills become 15px collapsed strips in collapsed mode; expanded pinned pills stay full-size, overlay content, use no top padding, and do not reserve Hyprland space;
-- a reusable `QreepModule` wrapper with hover, click, right-click, overlay, and shared-tooltip request support;
+- a reusable `QreepModule` wrapper with hover, left/middle/right click, overlay, and shared-tooltip request support;
 - a launcher button in the left slot that delegates to `LauncherService`;
 - a Hyprland workspaces module in the left slot with active/occupied workspace state, click/scroll switching, and a clickable client popup;
 - a Borg status pill in the right bar slot with refresh, backup command, IPC, a structured tooltip, and a watched backup progress popup driven by `~/.cache/qreep/borg/state.json`;
-- a clock with optional seconds, current-day event dots, and JSON-backed event tooltip content;
-- a calendar popup with a month grid, event markers, and a six-day agenda covering today plus the next five days;
+- a clock with optional seconds, current-day event dots, and JSON-backed event tooltip content; event dots stay popup-based for placement and are suppressed while shell fullscreen surfaces are open;
+- a calendar popup with a month grid, event markers, selected-day agenda, sync footer, and click behavior where left opens the calendar, middle toggles seconds, and right confirms a manual pull;
+- calendar sync helpers for local cache JSON, Google OAuth read-only events, Microsoft ICS, and Microsoft Graph; `qreep-calendar-pull` wraps configured providers and writes `~/.cache/qreep/calendar/state.json` plus `~/.cache/qreep/calendar/final.json`;
+- a user systemd calendar timer installed by `scripts/install`, quiet by default, while manual clock pulls call `qreep-calendar-pull --notify`;
 - a MonitorProfile pill that watches runtime JSON, sorts monitors by position, and shows internal/external display icons plus a plain tooltip;
 - an MPRIS pill in the center slot with current playback state, track columns, animated notes, preview tooltip, and right-click player popup;
 - one shared popup tooltip with delayed show/hide and scale animations;
@@ -946,14 +948,14 @@ Qreep currently has:
 - a top-level Bloom module in `modules/bloom/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-bloom`, and watching Unclaimed Bloom runtime cache files;
 - a top-level Clipboard module in `modules/clipboard/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-clipboard`, and backed by `clipvault`;
 - the Clipboard panel currently supports a bottom overlay, search/filter, pins filter, keyboard navigation, text/code/color/image cards, runtime image previews, restore notifications, delete, and star/unstar metadata in `~/.local/share/clipvault/pinned.json`;
-- a top-level Expose module in `modules/expose/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-expose`;
+- a top-level Expose module in `modules/expose/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-expose`, with parallel runtime thumbnails, centered manual layout motion, type-to-search filtering, spatial keyboard navigation, and keyboard/click activation that switches workspace before focusing the selected client;
 - a top-level Notification module in `modules/notification/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-notification`, and backed by `Quickshell.Services.Notifications.NotificationServer`;
 - notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;
 - notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
-- a watched `events.json` source loaded through `modules/bar/features/clock/EventStore.qml`.
+- watched local/generated calendar sources loaded through `modules/bar/features/clock/EventStore.qml`: repo `events.json`, `~/.cache/qreep/calendar/events.json`, and `~/.cache/qreep/calendar/microsoft-events.json`.
 
 Useful bar IPC commands:
 
