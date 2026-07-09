@@ -45,7 +45,9 @@ QtObject {
     readonly property QtObject calendar: ClockFeature.CalendarTheme {
         qreep: rootBarTheme.qreep
     }
-    readonly property QtObject clock: ClockFeature.ClockTheme {}
+    readonly property QtObject clock: ClockFeature.ClockTheme {
+        qreep: rootBarTheme.qreep
+    }
     readonly property QtObject launcher: LauncherFeature.LauncherTheme {}
     readonly property QtObject monitorProfile: MonitorProfileFeature.MonitorProfileTheme {}
     readonly property QtObject mpris: MprisFeature.MprisTheme {}

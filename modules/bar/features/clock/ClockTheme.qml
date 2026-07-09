@@ -3,6 +3,8 @@ import QtQuick
 QtObject {
     id: rootClockTheme
 
+    required property QtObject qreep
+
     readonly property int timePixelSize: 42
     readonly property int datePixelSize: 14
     readonly property int secondRefreshInterval: 1000
@@ -14,4 +16,8 @@ QtObject {
     readonly property int personalEventIndicatorRadius: 5
     readonly property int eventIndicatorSpacing: 4
     readonly property int maxEventIndicators: 5
+    readonly property int changePulseLoops: 3
+    readonly property int changePulseDuration: 140
+    readonly property real changePulseScale: 1.5
+    readonly property var changePulseColors: [qreep.primary, qreep.warningColor, qreep.error, qreep.warningColor]
 }

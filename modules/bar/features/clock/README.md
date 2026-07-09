@@ -42,6 +42,20 @@ Reminder defaults live in `CalendarTheme.qml`:
 quickshell -c qreep ipc call qreep-calendar refresh
 ```
 
+It also exposes a visual change notification for the clock dots:
+
+```bash
+quickshell -c qreep ipc call qreep-calendar notifyChangedAll
+quickshell -c qreep ipc call qreep-calendar notifyChanged EVENT_ID
+```
+
+If `EVENT_ID` matches one of the visible clock dots, that dot pulses. If
+`notifyChangedAll` is called, or the id is not currently visible, the visible
+dots pulse in sequence.
+
+Pulse size, duration, loop count, and the primary/warning/error/warning color
+sequence live in `ClockTheme.qml`.
+
 Note: This is a bar-owned feature. Sources live under `modules/bar/features/clock/`.
 
 Theme is exposed through:

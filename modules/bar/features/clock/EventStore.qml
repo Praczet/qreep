@@ -14,6 +14,8 @@ QtObject {
     readonly property string generatedEventPath: Quickshell.env("HOME") + "/.cache/qreep/calendar/events.json"
     readonly property string microsoftGeneratedEventPath: Quickshell.env("HOME") + "/.cache/qreep/calendar/microsoft-events.json"
 
+    signal eventChangeNotified(string eventId)
+
     readonly property Core.Log fallbackLog: Core.Log {}
 
     readonly property IpcHandler ipc: IpcHandler {
@@ -22,6 +24,20 @@ QtObject {
         function refresh(): string {
             rootEventStore.reloadFiles();
             return "Calendar cache refresh requested";
+        }
+
+        function notifyChangedAll(): string {
+            rootEventStore.eventChangeNotified("");
+            return "Calendar change notification requested";
+        }
+
+        function notifyChanged(eventId: string): string {
+            const normalizedId = rootEventStore.trimmedString(eventId);
+
+            rootEventStore.eventChangeNotified(normalizedId);
+            return normalizedId.length > 0
+                ? "Calendar change notification requested for " + normalizedId
+                : "Calendar change notification requested";
         }
     }
 
