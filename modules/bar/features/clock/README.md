@@ -14,6 +14,7 @@ usually the point of a clock. Rare moment of cooperation from reality.
 
 * `Clock.qml` - bar clock module.
 * `CalendarPopup.qml` - month grid, selected-day agenda, and popup keyboard handling.
+* `CalendarReminder.qml` - runtime reminder notifications for upcoming timed events.
 * `EventStore.qml` - watches and parses `events.json`.
 * `ClockTheme.qml` - clock sizes and event-dot tokens.
 * `CalendarTheme.qml` - calendar layout tokens.
@@ -23,6 +24,11 @@ usually the point of a clock. Rare moment of cooperation from reality.
 Change time/date sizing in `ClockTheme.qml`. Change calendar layout, selected
 day colors, and month navigation sizing in `CalendarTheme.qml`. Change event
 parsing/filtering in `EventStore.qml`.
+
+Reminder defaults live in `CalendarTheme.qml`:
+
+* `defaultReminderMinutes` - used when an event has no `reminderMinutes`.
+* `reminderCheckInterval` - how often Qreep scans upcoming events.
 
 ## Wiring
 
@@ -82,3 +88,14 @@ helpers to write:
 `source`, `calendar`, `location`, `url`, `color`, `reminderMinutes`, and
 `busy` are optional for hand-written local events. External sync should prefer
 writing the normalized fields instead of making QML learn provider dialects.
+
+## Reminder Notes
+
+`CalendarReminder.qml` sends `notify-send` reminders for timed events. All-day
+events and events without a start time are skipped. If an event has
+`reminderMinutes`, those offsets are used. Otherwise Qreep uses
+`defaultReminderMinutes`.
+
+Reminder de-duplication is runtime-only for now. Restarting Qreep inside the
+same reminder window can notify again. Annoying, but less annoying than inventing
+persistence before the provider sync exists.

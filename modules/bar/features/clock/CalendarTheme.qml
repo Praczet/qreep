@@ -47,4 +47,6 @@ QtObject {
     readonly property int agendaTitlePixelSize: 13
     readonly property int agendaTimePixelSize: 11
     readonly property int agendaDetailsSpacing: 2
+    readonly property int defaultReminderMinutes: 10
+    readonly property int reminderCheckInterval: 60000
 }

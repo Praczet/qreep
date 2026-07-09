@@ -265,6 +265,20 @@ QtObject {
         return validColorValue(event.color) ? event.color : fallbackColor;
     }
 
+    function eventStartDate(event) {
+        if (!event || event.allDay || !event.start)
+            return null;
+
+        return new Date(event.date + "T" + event.start + ":00");
+    }
+
+    function eventEndDate(event) {
+        if (!event || event.allDay || !event.end)
+            return null;
+
+        return new Date(event.date + "T" + event.end + ":00");
+    }
+
     function validColorValue(value) {
         const text = trimmedString(value);
         return text.match(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/) !== null
@@ -280,12 +294,12 @@ QtObject {
             if (!event.start)
                 return true;
 
-            const start = new Date(event.date + "T" + event.start + ":00");
+            const start = eventStartDate(event);
 
             if (!event.end)
                 return start >= now;
 
-            const end = new Date(event.date + "T" + event.end + ":00");
+            const end = eventEndDate(event);
             return end >= now;
         });
     }

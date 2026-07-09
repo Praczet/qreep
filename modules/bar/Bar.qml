@@ -41,6 +41,11 @@ PanelWindow {
         log: qreepLog
     }
 
+    ClockFeature.CalendarReminder {
+        events: eventStore
+        theme: rootBar.theme
+    }
+
     Core.Log {
         id: qreepLog
 
