@@ -28,6 +28,7 @@ PanelWindow {
     readonly property bool reservedMode: barModeService.reserved
     readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
+    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "upchecker", "monitorprofile", "borg", "battery", "network", "volume"]
     readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
     readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["clock", "mpris"])
     readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "volume"])
@@ -58,7 +59,7 @@ PanelWindow {
     BarPillStateService {
         id: barPillStateService
 
-        knownPills: ["clock", "workspaces", "mpris", "upchecker", "monitorprofile", "borg", "battery", "network", "volume"]
+        knownPills: rootBar.runtimePillIds
     }
 
     PowerFeature.Power {
@@ -131,6 +132,39 @@ PanelWindow {
 
     function slotY(slot) {
         return rootBar.collapsed ? 0 : Math.max(0, (slot.parent.height - slot.height) / 2);
+    }
+
+    function closeSurfacesForPill(id) {
+        if (id === "clock") {
+            calendarPopup.visible = false;
+            return;
+        }
+
+        if (id === "workspaces") {
+            workspaceClients.visible = false;
+            return;
+        }
+
+        if (id === "mpris") {
+            mprisPanel.visible = false;
+            mprisTooltip.hideLater();
+            return;
+        }
+
+        if (id === "upchecker") {
+            upchecker.hide();
+            return;
+        }
+
+        if (id === "borg") {
+            borgService.hideProgress();
+            borgTooltip.hideLater();
+            return;
+        }
+
+        if (id === "network") {
+            networkPanel.visible = false;
+        }
     }
 
     WorkspacesFeature.WorkspaceService {
@@ -563,25 +597,8 @@ PanelWindow {
             target: barPillStateService
 
             function onPillStateChanged(id) {
-                if (id === "clock" && !barPillStateService.isVisible(id))
-                    calendarPopup.visible = false;
-
-                if (id === "workspaces" && !barPillStateService.isVisible(id))
-                    workspaceClients.visible = false;
-
-                if (id === "mpris" && !barPillStateService.isVisible(id)) {
-                    mprisPanel.visible = false;
-                    mprisTooltip.hideLater();
-                }
-
-                if (id === "upchecker" && !barPillStateService.isVisible(id))
-                    upchecker.hide();
-
-                if (id === "borg" && !barPillStateService.isVisible(id))
-                    borgTooltip.hideLater();
-
-                if (id === "network" && !barPillStateService.isVisible(id))
-                    networkPanel.visible = false;
+                if (!barPillStateService.isVisible(id))
+                    rootBar.closeSurfacesForPill(id);
 
                 sharedTooltip.hideLater();
             }
