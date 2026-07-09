@@ -4,8 +4,11 @@
 
 Shows a full-screen window overview for Hyprland. Current-workspace windows are
 large cards. Windows from other workspaces are grouped into compact workspace
-clusters. Click a card, or select it with the keyboard and press `Enter`, to
-focus that window.
+cluster cards. Everything lands in one centered overview grid instead of a sad
+top-left lineup pretending to be design.
+
+Click a card, or select it with the keyboard and press `Enter`, to focus that
+window.
 
 This is a top-level shell module. It is not a bar pill. The bar has enough
 tiny furniture already.
@@ -53,7 +56,7 @@ V1 uses:
 ```bash
 hyprctl activeworkspace -j
 hyprctl clients -j
-grim -g "<x>,<y> <width>x<height>" ~/.cache/qreep/expose/<address>.png
+grim -g "<x>,<y> <width>x<height>" -t png -l 0 ~/.cache/qreep/expose/<address>.png
 Hyprland.toplevels -> wayland handle -> ScreencopyView
 hyprctl dispatch focuswindow address:<address>
 ```
@@ -62,10 +65,27 @@ This is deliberate. Quickshell has useful Wayland and Hyprland APIs, but
 `hyprctl clients -j` is still the reliable source for geometry, workspace,
 class, title, and address in one boring packet.
 
+Current-workspace `grim` captures run in parallel before the overlay opens.
+That keeps Expose out of its own screenshots and avoids waiting politely for one
+window capture at a time.
+
+## Layout and Motion
+
+Current windows and other-workspace clusters share one centered grid. The grid
+uses up to four columns by default, so eight windows form a 4x2 overview instead
+of a long horizontal shelf.
+
+Current-window cards animate from their real window position into a middle
+gather point, then settle into their grid slot with a small overshoot. Workspace
+cluster cards join from the middle into their own grid slots.
+
 ## Keyboard Model
 
 * `Escape` closes.
-* Arrow keys move the selection spatially.
+* Arrow keys move by grid row and column.
+* When a workspace cluster is selected, arrow keys first navigate the mini cards
+  inside that cluster, then fall back to the main grid when there is no inner
+  neighbor in that direction.
 * `Enter` focuses the selected window and closes.
 * Clicking a card focuses that window and closes.
 
