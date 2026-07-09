@@ -46,7 +46,7 @@ Components.QreepModule {
         refresh();
     }
 
-    onRightClicked: toggleSeconds()
+    onMiddleClicked: toggleSeconds()
 
     Row {
         id: clockContent

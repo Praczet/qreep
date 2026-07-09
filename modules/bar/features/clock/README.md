@@ -2,9 +2,9 @@
 
 ## What It Does
 
-Shows time/date in the center bar slot. Left click opens the calendar popup.
-Right click toggles seconds. Current-day events are shown as small dots on the
-module edge.
+Shows time/date in the center bar slot. Left click asks whether to pull calendar
+events, right click opens the calendar popup, and middle click toggles seconds.
+Current-day events are shown as small dots on the module edge.
 
 The calendar popup shows the current month, lets you move between months, and
 uses the selected day for the agenda column. It opens on today because that is
@@ -13,7 +13,8 @@ usually the point of a clock. Rare moment of cooperation from reality.
 ## Files
 
 * `Clock.qml` - bar clock module.
-* `CalendarPopup.qml` - month grid, selected-day agenda, and popup keyboard handling.
+* `CalendarPopup.qml` - month grid, selected-day agenda, sync footer, and popup keyboard handling.
+* `CalendarPullConfirmPopup.qml` - small pull confirmation before running the sync wrapper.
 * `CalendarReminder.qml` - runtime reminder notifications for upcoming timed events.
 * `EventStore.qml` - watches and parses `events.json`.
 * `ClockTheme.qml` - clock sizes and event-dot tokens.

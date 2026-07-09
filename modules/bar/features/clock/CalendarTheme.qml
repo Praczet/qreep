@@ -70,6 +70,15 @@ QtObject {
     readonly property int footerPixelSize: 10
     readonly property int footerTopSpacing: 8
     readonly property int footerBottomMargin: 8
+    readonly property int pullConfirmWidth: 320
+    readonly property int pullConfirmPadding: 16
+    readonly property int pullConfirmSpacing: 12
+    readonly property int pullConfirmTitlePixelSize: 15
+    readonly property int pullConfirmContentPixelSize: 12
+    readonly property int pullConfirmButtonHeight: 30
+    readonly property int pullConfirmButtonRadius: 8
+    readonly property int pullConfirmButtonSpacing: 10
+    readonly property int pullConfirmButtonPixelSize: 12
     readonly property bool useDefaultReminders: true
     readonly property int defaultReminderMinutes: 10
     readonly property int reminderCheckInterval: 60000

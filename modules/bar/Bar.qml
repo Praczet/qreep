@@ -98,6 +98,7 @@ PanelWindow {
     }
 
     readonly property Process audioMixerRunner: Process {}
+    readonly property Process calendarPullRunner: Process {}
 
     Core.SoundService {
         id: soundService
@@ -143,6 +144,7 @@ PanelWindow {
     function closeSurfacesForPill(id) {
         if (id === "clock") {
             calendarPopup.visible = false;
+            calendarPullConfirmPopup.visible = false;
             return;
         }
 
@@ -302,11 +304,17 @@ PanelWindow {
                 events: eventStore
 
                 onClicked: {
+                    calendarPullConfirmPopup.visible = !calendarPullConfirmPopup.visible;
+                    calendarPopup.visible = false;
+                    sharedTooltip.hideLater();
+                }
+                onRightClicked: {
                     calendarPopup.visible = !calendarPopup.visible;
+                    calendarPullConfirmPopup.visible = false;
                     sharedTooltip.hideLater();
                 }
                 onTooltipShowRequested: (anchorItem, title, content, style) => {
-                    if (!calendarPopup.visible)
+                    if (!calendarPopup.visible && !calendarPullConfirmPopup.visible)
                         sharedTooltip.showFor(anchorItem, title, content, style);
                 }
                 onTooltipHideRequested: sharedTooltip.hideLater()
@@ -563,6 +571,19 @@ PanelWindow {
             theme: rootBar.theme
             anchorItem: clock
             events: eventStore
+        }
+
+        ClockFeature.CalendarPullConfirmPopup {
+            id: calendarPullConfirmPopup
+
+            theme: rootBar.theme
+            anchorItem: clock
+
+            onConfirmed: {
+                calendarPullRunner.command = ["qreep-calendar-pull"];
+                calendarPullRunner.startDetached();
+                qreepLog.info("Calendar pull requested.");
+            }
         }
 
         ClockFeature.ClockEventIndicators {

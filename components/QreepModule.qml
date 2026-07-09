@@ -15,6 +15,7 @@ Rectangle {
 
     signal clicked
     signal rightClicked
+    signal middleClicked
     signal tooltipShowRequested(Item anchorItem, string title, string content, string style)
     signal tooltipHideRequested
 
@@ -79,6 +80,11 @@ Rectangle {
     TapHandler {
         acceptedButtons: Qt.RightButton
         onTapped: rootQreepModule.rightClicked()
+    }
+
+    TapHandler {
+        acceptedButtons: Qt.MiddleButton
+        onTapped: rootQreepModule.middleClicked()
     }
 
     Behavior on color {
