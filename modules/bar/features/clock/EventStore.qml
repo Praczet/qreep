@@ -7,11 +7,19 @@ QtObject {
     id: rootEventStore
 
     property QtObject log
+    required property QtObject theme
     property var events: []
     readonly property string localEventPath: Quickshell.shellDir + "/events.json"
     readonly property string generatedEventPath: Quickshell.env("HOME") + "/.cache/qreep/calendar/events.json"
 
     readonly property Core.Log fallbackLog: Core.Log {}
+
+    readonly property Timer generatedCacheRefreshTimer: Timer {
+        interval: rootEventStore.theme.modules.bar.calendar.eventCacheRefreshInterval
+        repeat: true
+        running: true
+        onTriggered: rootEventStore.loadEvents()
+    }
 
     readonly property FileView localEventFile: FileView {
         path: rootEventStore.localEventPath
@@ -232,7 +240,20 @@ QtObject {
     }
 
     function eventCountForDate(date) {
-        return eventsForDate(date).length;
+        return visibleEventsForDate(date, new Date()).length;
+    }
+
+    function visibleEventsForDate(date, now) {
+        const selectedKey = dateKey(date);
+        const todayKey = dateKey(now);
+
+        if (selectedKey < todayKey)
+            return [];
+
+        if (selectedKey === todayKey)
+            return visibleEventsForToday(now);
+
+        return eventsForDate(date);
     }
 
     function eventsForNextDays(now, daysAhead) {
@@ -298,6 +319,13 @@ QtObject {
 
     function eventColor(event, fallbackColor) {
         return validColorValue(event.color) ? event.color : fallbackColor;
+    }
+
+    function isPersonalEvent(event) {
+        if (!event)
+            return false;
+
+        return trimmedString(event.title).match(/^AD($|[: +])/i) !== null;
     }
 
     function eventStartDate(event) {

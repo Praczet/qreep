@@ -14,7 +14,7 @@ PopupWindow {
     property date visibleMonth: new Date(today.getFullYear(), today.getMonth(), 1)
     readonly property string selectedDateKey: events.dateKey(selectedDate)
     readonly property string todayKey: events.dateKey(today)
-    readonly property var agendaEvents: events.eventsForDate(selectedDate)
+    readonly property var agendaEvents: events.visibleEventsForDate(selectedDate, today)
 
     anchor {
         item: rootCalendarPopup.anchorItem
@@ -23,7 +23,7 @@ PopupWindow {
     }
 
     implicitWidth: rootCalendarPopup.theme.modules.bar.calendar.popupWidth
-    implicitHeight: calendarBackground.implicitHeight
+    implicitHeight: rootCalendarPopup.theme.modules.bar.calendar.popupHeight
     color: "transparent"
     grabFocus: true
 
@@ -97,7 +97,7 @@ PopupWindow {
         id: calendarBackground
 
         anchors.fill: parent
-        implicitHeight: popupLayout.implicitHeight + rootCalendarPopup.theme.modules.bar.calendar.popupPadding * 2
+        implicitHeight: rootCalendarPopup.theme.modules.bar.calendar.popupHeight
         radius: rootCalendarPopup.theme.modules.bar.pill.radius
         color: rootCalendarPopup.theme.modules.bar.calendar.backgroundColor
         border.color: rootCalendarPopup.theme.modules.bar.moduleHoverBackgroundColor
@@ -109,6 +109,7 @@ PopupWindow {
                 top: parent.top
                 left: parent.left
                 right: parent.right
+                bottom: parent.bottom
                 margins: rootCalendarPopup.theme.modules.bar.calendar.popupPadding
             }
             spacing: rootCalendarPopup.theme.modules.bar.calendar.sectionSpacing
@@ -257,16 +258,18 @@ PopupWindow {
 
             Rectangle {
                 width: rootCalendarPopup.theme.modules.bar.calendar.dividerWidth
-                height: calendarLayout.height
+                height: popupLayout.height
                 color: rootCalendarPopup.theme.modules.bar.moduleHoverBackgroundColor
             }
 
             Column {
-                width: rootCalendarPopup.theme.modules.bar.calendar.sectionWidth
-                height: calendarLayout.height
+                width: rootCalendarPopup.theme.modules.bar.calendar.agendaSectionWidth
+                height: popupLayout.height
                 spacing: rootCalendarPopup.theme.modules.bar.calendar.itemSpacing
 
                 Text {
+                    id: agendaHeader
+
                     text: Qt.formatDate(rootCalendarPopup.selectedDate, rootCalendarPopup.selectedDateKey === rootCalendarPopup.todayKey ? "'Today,' dddd dd MMMM" : "dddd dd MMMM")
                     color: rootCalendarPopup.theme.modules.bar.calendar.headerTextColor
                     font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.headerPixelSize
@@ -274,60 +277,103 @@ PopupWindow {
                 }
 
                 Text {
+                    id: emptyAgendaMessage
+
                     visible: rootCalendarPopup.agendaEvents.length === 0
                     text: "No events"
                     color: rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
                     font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTitlePixelSize
                 }
 
-                ListView {
+                Item {
                     width: parent.width
-                    height: parent.height - rootCalendarPopup.theme.modules.bar.calendar.agendaListReservedHeight
-                    clip: true
-                    spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaItemSpacing
-                    model: rootCalendarPopup.agendaEvents
+                    height: Math.max(0, parent.height - agendaHeader.height - (emptyAgendaMessage.visible ? emptyAgendaMessage.height + parent.spacing : 0) - rootCalendarPopup.theme.modules.bar.calendar.agendaListTopSpacing)
 
-                    delegate: Row {
-                        required property var modelData
+                    ListView {
+                        x: rootCalendarPopup.theme.modules.bar.calendar.agendaListIndent
+                        y: rootCalendarPopup.theme.modules.bar.calendar.agendaListTopSpacing
+                        width: parent.width
+                            - rootCalendarPopup.theme.modules.bar.calendar.agendaListIndent
+                        height: Math.max(0, parent.height - rootCalendarPopup.theme.modules.bar.calendar.agendaListTopSpacing)
+                        clip: true
+                        spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaItemSpacing
+                        model: rootCalendarPopup.agendaEvents
 
-                        width: ListView.view.width
-                        height: eventDetails.implicitHeight
-                        spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaRowSpacing
+                        delegate: Rectangle {
+                            required property var modelData
 
-                        Rectangle {
-                            width: rootCalendarPopup.theme.modules.bar.calendar.agendaColorWidth
-                            height: eventDetails.implicitHeight
-                            radius: rootCalendarPopup.theme.modules.bar.calendar.agendaColorRadius
-                            color: rootCalendarPopup.events.eventColor(modelData, rootCalendarPopup.theme.modules.bar.accentColor)
-                        }
+                            readonly property bool personalEvent: rootCalendarPopup.events.isPersonalEvent(modelData)
 
-                        Text {
-                            width: rootCalendarPopup.theme.modules.bar.calendar.agendaDateWidth
-                            text: rootCalendarPopup.events.eventTimeLabel(modelData)
-                            color: rootCalendarPopup.events.eventColor(modelData, rootCalendarPopup.theme.modules.bar.accentColor)
-                            font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaDatePixelSize
-                            font.weight: Font.DemiBold
-                        }
+                            width: ListView.view.width
+                            height: eventRow.implicitHeight + rootCalendarPopup.theme.modules.bar.calendar.agendaItemVerticalPadding * 2
+                            radius: rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalRadius
+                            color: personalEvent
+                                ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalBackgroundColor
+                                : "transparent"
+                            border.width: personalEvent ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalBorderWidth : 0
+                            border.color: rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalBorderColor
 
-                        Column {
-                            id: eventDetails
+                            Row {
+                                id: eventRow
 
-                            width: parent.width - rootCalendarPopup.theme.modules.bar.calendar.agendaDetailsWidthOffset
-                            spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaDetailsSpacing
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    verticalCenter: parent.verticalCenter
+                                    leftMargin: rootCalendarPopup.theme.modules.bar.calendar.agendaItemHorizontalPadding
+                                    rightMargin: rootCalendarPopup.theme.modules.bar.calendar.agendaItemHorizontalPadding
+                                }
+                                spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaRowSpacing
 
-                            Text {
-                                width: parent.width
-                                text: modelData.title
-                                color: rootCalendarPopup.theme.modules.bar.calendar.dayTextColor
-                                font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTitlePixelSize
-                                elide: Text.ElideRight
-                            }
+                                Rectangle {
+                                    width: personalEvent
+                                        ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalColorWidth
+                                        : rootCalendarPopup.theme.modules.bar.calendar.agendaColorWidth
+                                    height: eventDetails.implicitHeight
+                                    radius: rootCalendarPopup.theme.modules.bar.calendar.agendaColorRadius
+                                    color: personalEvent
+                                        ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalAccentColor
+                                        : rootCalendarPopup.events.eventColor(modelData, rootCalendarPopup.theme.modules.bar.accentColor)
+                                }
 
-                            Text {
-                                text: rootCalendarPopup.events.eventMetaLabel(modelData)
-                                visible: text.length > 0
-                                color: rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
-                                font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTimePixelSize
+                                Text {
+                                    width: rootCalendarPopup.theme.modules.bar.calendar.agendaDateWidth
+                                    text: rootCalendarPopup.events.eventTimeLabel(modelData)
+                                    color: personalEvent
+                                        ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalAccentColor
+                                        : rootCalendarPopup.events.eventColor(modelData, rootCalendarPopup.theme.modules.bar.accentColor)
+                                    font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaDatePixelSize
+                                    font.weight: Font.DemiBold
+                                }
+
+                                Column {
+                                    id: eventDetails
+
+                                    width: parent.width - rootCalendarPopup.theme.modules.bar.calendar.agendaDetailsWidthOffset - rootCalendarPopup.theme.modules.bar.calendar.agendaItemHorizontalPadding * 2
+                                    spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaDetailsSpacing
+
+                                    Text {
+                                        width: parent.width
+                                        text: modelData.title
+                                        color: personalEvent
+                                            ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalTitleColor
+                                            : rootCalendarPopup.theme.modules.bar.calendar.dayTextColor
+                                        font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTitlePixelSize
+                                        font.weight: personalEvent ? Font.DemiBold : Font.Normal
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Text {
+                                        width: parent.width
+                                        text: rootCalendarPopup.events.eventMetaLabel(modelData)
+                                        visible: text.length > 0
+                                        color: personalEvent
+                                            ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalMetaColor
+                                            : rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
+                                        font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTimePixelSize
+                                        elide: Text.ElideRight
+                                    }
+                                }
                             }
                         }
                     }

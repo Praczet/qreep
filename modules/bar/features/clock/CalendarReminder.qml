@@ -38,7 +38,9 @@ QtObject {
 
         const reminderMinutes = event.reminderMinutes.length > 0
             ? event.reminderMinutes
-            : [rootCalendarReminder.theme.modules.bar.calendar.defaultReminderMinutes];
+            : rootCalendarReminder.theme.modules.bar.calendar.useDefaultReminders
+                ? [rootCalendarReminder.theme.modules.bar.calendar.defaultReminderMinutes]
+                : [];
 
         for (let index = 0; index < reminderMinutes.length; index++)
             checkReminderMinute(event, start, now, reminderMinutes[index]);

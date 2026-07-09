@@ -10,6 +10,8 @@ QtObject {
     readonly property int minimumRefreshInterval: 50
     readonly property int eventIndicatorSize: 8
     readonly property int eventIndicatorRadius: 4
+    readonly property int personalEventIndicatorSize: 10
+    readonly property int personalEventIndicatorRadius: 5
     readonly property int eventIndicatorSpacing: 4
     readonly property int maxEventIndicators: 5
 }

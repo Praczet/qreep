@@ -27,7 +27,8 @@ parsing/filtering in `EventStore.qml`.
 
 Reminder defaults live in `CalendarTheme.qml`:
 
-* `defaultReminderMinutes` - used when an event has no `reminderMinutes`.
+* `useDefaultReminders` - when true, events without reminder data still notify.
+* `defaultReminderMinutes` - fallback minutes when `useDefaultReminders` is true.
 * `reminderCheckInterval` - how often Qreep scans upcoming events.
 
 ## Wiring
@@ -100,7 +101,7 @@ If a cache event omits `source`, Qreep marks it as `generated`.
 `CalendarReminder.qml` sends `notify-send` reminders for timed events. All-day
 events and events without a start time are skipped. If an event has
 `reminderMinutes`, those offsets are used. Otherwise Qreep uses
-`defaultReminderMinutes`.
+`defaultReminderMinutes` only when `useDefaultReminders` is true.
 
 Reminder de-duplication is runtime-only for now. Restarting Qreep inside the
 same reminder window can notify again. Annoying, but less annoying than inventing

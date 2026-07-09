@@ -65,28 +65,5 @@ Components.QreepModule {
         }
     }
 
-    overlay: Row {
-        anchors {
-            horizontalCenter: parent.horizontalCenter
-            verticalCenter: parent.bottom
-        }
-
-        spacing: rootClock.theme.modules.bar.clock.eventIndicatorSpacing
-        visible: rootClock.visibleTodayEvents.length > 0
-
-        Repeater {
-            model: Math.min(rootClock.visibleTodayEvents.length, rootClock.theme.modules.bar.clock.maxEventIndicators)
-
-            delegate: Rectangle {
-                required property int index
-
-                width: rootClock.theme.modules.bar.clock.eventIndicatorSize
-                height: rootClock.theme.modules.bar.clock.eventIndicatorSize
-                radius: rootClock.theme.modules.bar.clock.eventIndicatorRadius
-                color: rootClock.theme.modules.bar.accentColor
-            }
-        }
-    }
-
     Component.onCompleted: refresh()
 }

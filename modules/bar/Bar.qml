@@ -39,6 +39,7 @@ PanelWindow {
     ClockFeature.EventStore {
         id: eventStore
         log: qreepLog
+        theme: rootBar.theme
     }
 
     ClockFeature.CalendarReminder {
@@ -300,8 +301,14 @@ PanelWindow {
                 theme: rootBar.theme
                 events: eventStore
 
-                onClicked: calendarPopup.visible = !calendarPopup.visible
-                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onClicked: {
+                    calendarPopup.visible = !calendarPopup.visible;
+                    sharedTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => {
+                    if (!calendarPopup.visible)
+                        sharedTooltip.showFor(anchorItem, title, content, style);
+                }
                 onTooltipHideRequested: sharedTooltip.hideLater()
             }
 
@@ -556,6 +563,13 @@ PanelWindow {
             theme: rootBar.theme
             anchorItem: clock
             events: eventStore
+        }
+
+        ClockFeature.ClockEventIndicators {
+            theme: rootBar.theme
+            anchorItem: clock
+            events: eventStore
+            eventItems: clock.visibleTodayEvents
         }
 
         MprisFeature.MprisPanel {
