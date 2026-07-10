@@ -64,7 +64,7 @@ The media pill stays compact until it has something useful to say.
 
 Qreep keeps an eye on Borg backups and can show both the last known state and live progress.
 
-![Qreep Borg backup status](docs/assets/screenshots/qreep-calendar.png)
+![Qreep Borg backup status](docs/assets/screenshots/qreep-borg.png)
 
 <https://github.com/user-attachments/assets/b59055c3-1343-4cb4-a83b-8c5546354b1e>
 
@@ -82,9 +82,9 @@ Wired networking, Wi-Fi, and Bluetooth share one practical surface.
 
 #### Update checker
 
-The bar tooltip gives the quick answer:
+gitThe bar tooltip gives the quick answer:
 
-![Qreep update checker tooltip](docs/assets/screenshots/qreep-notifications.png)
+![Qreep update checker tooltip](docs/assets/screenshots/qreep-upchecker-tt.png)
 
 The larger surface handles the less quick answer:
 
