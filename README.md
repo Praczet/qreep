@@ -1,4 +1,3 @@
-
 # Qreep
 
 > A Quickshell-based desktop creature that is odd, small, memorable, slightly cursed, but friendly enough to become mine.
@@ -7,9 +6,11 @@ Qreep is my personal desktop shell for Hyprland.
 
 It started as a Waybar-shaped learning project: one bar, a few pills, and the innocent belief that it would remain small. It has since grown into the place where I build the desktop surfaces I actually want to use — without trying to become a desktop environment, a universal framework, or a cathedral made entirely of QML.
 
-<!-- SCREENSHOT SLOT: main desktop / hero image
-![Qreep desktop](docs/screenshots/qreep-desktop.png)
--->
+![Qreep desktop](docs/assets/screenshots/qreep-desktop.png)
+
+<https://github.com/user-attachments/assets/REPLACE-WITH-QREEP-BAR-VIDEO-ASSET-ID>
+
+*A quiet desktop until I ask it to do something.*
 
 ## Why this creature exists
 
@@ -35,9 +36,27 @@ The daily visible part of Qreep includes:
 
 The bar can run in `reserved`, `overlay`, or `collapsed` mode. Individual pills may also be enabled or expanded independently, because apparently even a bar can have moods.
 
-<!-- SCREENSHOT SLOT: bar modes
-![Qreep bar modes](docs/screenshots/qreep-bar-modes.png)
--->
+#### Workspaces
+
+![Qreep workspaces](docs/assets/screenshots/qreep-workspaces.png)
+
+<https://github.com/user-attachments/assets/REPLACE-WITH-WORKSPACE-SWITCHING-VIDEO-ASSET-ID>
+
+A second view shows how workspace windows behave:
+
+<https://github.com/user-attachments/assets/REPLACE-WITH-WORKSPACE-WINDOWS-VIDEO-ASSET-ID>
+
+#### MPRIS
+
+<https://github.com/user-attachments/assets/REPLACE-WITH-MPRIS-VIDEO-ASSET-ID>
+
+#### Borg backup status
+
+<https://github.com/user-attachments/assets/REPLACE-WITH-BORG-VIDEO-ASSET-ID>
+
+#### Monitor profiles
+
+<https://github.com/user-attachments/assets/REPLACE-WITH-MONITOR-PROFILES-VIDEO-ASSET-ID>
 
 ### Larger shell surfaces
 
@@ -53,13 +72,21 @@ Some things are too large to pretend they are bar widgets:
 
 They live as their own modules. The bar is allowed to open them, but it is not allowed to adopt all of them.
 
-<!-- SCREENSHOT SLOT: Expose
-![Qreep Expose](docs/screenshots/qreep-expose.png)
--->
+#### Expose
 
-<!-- SCREENSHOT SLOT: Clipboard and notifications
-![Qreep clipboard and notifications](docs/screenshots/qreep-shell-surfaces.png)
--->
+![Qreep Expose](docs/assets/screenshots/qreep-expose.png)
+
+#### Notifications
+
+![Qreep notifications](docs/assets/screenshots/qreep-notifications.png)
+
+#### Dashboard and Aegis
+
+![Qreep dashboard](docs/assets/screenshots/qreep-dashboard.png)
+
+![Qreep Aegis](docs/assets/screenshots/qreep-aegis.png)
+
+<https://github.com/user-attachments/assets/REPLACE-WITH-DASHBOARD-VIDEO-ASSET-ID>
 
 ### A clock that became a calendar
 
@@ -67,9 +94,17 @@ The clock popup grew into a calendar with local events, Google Calendar and Outl
 
 This was not necessarily the plan. It is, however, useful.
 
-<!-- SCREENSHOT SLOT: calendar
-![Qreep calendar](docs/screenshots/qreep-calendar.png)
--->
+![Qreep calendar](docs/assets/screenshots/qreep-calendar.png)
+
+<https://github.com/user-attachments/assets/REPLACE-WITH-CALENDAR-VIDEO-ASSET-ID>
+
+### Unclaimed Bloom
+
+Qreep also listens to my [Unclaimed Bloom](https://github.com/Praczet/unclaimed-bloom) tooling and shows progress while the desktop changes its clothes.
+
+![Qreep with Unclaimed Bloom](docs/assets/screenshots/qreep-bloom.png)
+
+<https://github.com/user-attachments/assets/REPLACE-WITH-UNCLAIMED-BLOOM-VIDEO-ASSET-ID>
 
 ## The rules, approximately
 
