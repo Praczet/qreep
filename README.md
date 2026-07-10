@@ -70,6 +70,8 @@ Qreep keeps an eye on Borg backups and can show both the last known state and li
 
 #### Monitor profiles
 
+The monitor-profile pill shows the active Hyprland monitor profile and keeps the switcher close by.
+
 ![Qreep monitor profile](docs/assets/screenshots/qreep-monitor.png)
 
 <https://github.com/user-attachments/assets/9e4ecac1-b0f4-4320-a177-f031f07f1c14>
@@ -82,7 +84,7 @@ Wired networking, Wi-Fi, and Bluetooth share one practical surface.
 
 #### Update checker
 
-gitThe bar tooltip gives the quick answer:
+The bar tooltip gives the quick answer:
 
 ![Qreep update checker tooltip](docs/assets/screenshots/qreep-upchecker-tt-v2.png)
 
@@ -123,6 +125,8 @@ The notification centre groups notifications by application and keeps actions cl
 ![Qreep notification centre](docs/assets/screenshots/qreep-notification-center.png)
 
 #### Dashboard
+
+The dashboard gives larger blocks room to breathe without pretending they belong in a bar popup.
 
 ![Qreep dashboard](docs/assets/screenshots/qreep-dashboard.png)
 
