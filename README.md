@@ -48,23 +48,23 @@ https://github.com/user-attachments/assets/69f106ff-27a7-43da-b368-63fe93683370
 
 A second view shows how workspace windows behave:
 
-
-
 https://github.com/user-attachments/assets/33156a92-77e8-4b91-993a-25a1dbc9ff07
-
-
 
 #### MPRIS
 
-<https://github.com/user-attachments/assets/REPLACE-WITH-MPRIS-VIDEO-ASSET-ID>
+https://github.com/user-attachments/assets/5ad0ffaf-7cfa-4d5d-90c4-0612791ea183
 
 #### Borg backup status
 
-<https://github.com/user-attachments/assets/REPLACE-WITH-BORG-VIDEO-ASSET-ID>
+
+https://github.com/user-attachments/assets/b59055c3-1343-4cb4-a83b-8c5546354b1e
+
 
 #### Monitor profiles
 
-<https://github.com/user-attachments/assets/REPLACE-WITH-MONITOR-PROFILES-VIDEO-ASSET-ID>
+
+https://github.com/user-attachments/assets/9e4ecac1-b0f4-4320-a177-f031f07f1c14
+
 
 ### Larger shell surfaces
 
@@ -94,7 +94,9 @@ They live as their own modules. The bar is allowed to open them, but it is not a
 
 ![Qreep Aegis](docs/assets/screenshots/qreep-aegis.png)
 
-<https://github.com/user-attachments/assets/REPLACE-WITH-DASHBOARD-VIDEO-ASSET-ID>
+
+https://github.com/user-attachments/assets/c17d8637-8525-4d2f-ade9-21c63748ae00
+
 
 ### A clock that became a calendar
 
@@ -104,7 +106,9 @@ This was not necessarily the plan. It is, however, useful.
 
 ![Qreep calendar](docs/assets/screenshots/qreep-calendar.png)
 
-<https://github.com/user-attachments/assets/REPLACE-WITH-CALENDAR-VIDEO-ASSET-ID>
+
+https://github.com/user-attachments/assets/ad8cf34a-fd57-4501-9b7c-3cd49073d6c7
+
 
 ### Unclaimed Bloom
 
@@ -112,7 +116,11 @@ Qreep also listens to my [Unclaimed Bloom](https://github.com/Praczet/unclaimed-
 
 ![Qreep with Unclaimed Bloom](docs/assets/screenshots/qreep-bloom.png)
 
-<https://github.com/user-attachments/assets/REPLACE-WITH-UNCLAIMED-BLOOM-VIDEO-ASSET-ID>
+
+
+https://github.com/user-attachments/assets/264ad41b-b444-43d1-80a7-9058c3ac9ebe
+
+
 
 ## The rules, approximately
 
