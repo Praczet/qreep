@@ -84,11 +84,11 @@ Wired networking, Wi-Fi, and Bluetooth share one practical surface.
 
 gitThe bar tooltip gives the quick answer:
 
-![Qreep update checker tooltip](docs/assets/screenshots/qreep-upchecker-tt.png)
+![Qreep update checker tooltip](docs/assets/screenshots/qreep-upchecker-tt-v2.png)
 
 The larger surface handles the less quick answer:
 
-![Qreep update checker](docs/assets/screenshots/qreep-upchecker.png)
+![Qreep update checker](docs/assets/screenshots/qreep-upchecker-v2.png)
 
 ### Larger shell surfaces
 
