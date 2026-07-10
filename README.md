@@ -6,13 +6,9 @@ Qreep is my personal desktop shell for Hyprland.
 
 It started as a Waybar-shaped learning project: one bar, a few pills, and the innocent belief that it would remain small. It has since grown into the place where I build the desktop surfaces I actually want to use — without trying to become a desktop environment, a universal framework, or a cathedral made entirely of QML.
 
-![Qreep desktop](docs/assets/screenshots/qreep-desktop.png)
+![Qreep desktop](docs/assets/screenshots/qreep-bloom.png)
 
-
-
-https://github.com/user-attachments/assets/5e9fb318-65b9-4e78-a690-dedf9e144d90
-
-
+<https://github.com/user-attachments/assets/5e9fb318-65b9-4e78-a690-dedf9e144d90>
 
 *A quiet desktop until I ask it to do something.*
 
@@ -20,7 +16,9 @@ https://github.com/user-attachments/assets/5e9fb318-65b9-4e78-a690-dedf9e144d90
 
 I like using things, but I also like understanding how they work.
 
-Qreep is not an argument against Waybar, AGS, or somebody else's idea of a good desktop. Those projects helped me get here. This one exists because learning is fun, experimentation is useful, and sometimes the best way to understand a shell is to build your own slightly questionable version of it.
+Qreep is not an argument against Waybar, AGS, or somebody else's idea of a good desktop. Those projects helped me get here.
+
+This one exists because learning is fun, experimentation is useful, and sometimes the best way to understand a shell is to build your own slightly questionable version of it.
 
 It is the continuation of many ideas from my older AGS setup, now rebuilt around Quickshell and allowed to grow in a direction that feels more mine.
 
@@ -42,29 +40,55 @@ The bar can run in `reserved`, `overlay`, or `collapsed` mode. Individual pills 
 
 #### Workspaces
 
-![Qreep workspaces](docs/assets/screenshots/qreep-workspaces.png)
+The workspace pill shows the active workspace, occupied workspaces, and the windows living inside them.
 
-https://github.com/user-attachments/assets/69f106ff-27a7-43da-b368-63fe93683370
+![Qreep workspace menu](docs/assets/screenshots/qreep-workspace.png)
 
-A second view shows how workspace windows behave:
+Workspace switching:
 
-https://github.com/user-attachments/assets/33156a92-77e8-4b91-993a-25a1dbc9ff07
+<https://github.com/user-attachments/assets/69f106ff-27a7-43da-b368-63fe93683370>
+
+Workspace windows and taskbar behaviour:
+
+<https://github.com/user-attachments/assets/33156a92-77e8-4b91-993a-25a1dbc9ff07>
 
 #### MPRIS
 
-https://github.com/user-attachments/assets/5ad0ffaf-7cfa-4d5d-90c4-0612791ea183
+The media pill stays compact until it has something useful to say.
+
+![Qreep MPRIS tooltip](docs/assets/screenshots/qreep-mpris-tooltip.png)
+
+<https://github.com/user-attachments/assets/5ad0ffaf-7cfa-4d5d-90c4-0612791ea183>
 
 #### Borg backup status
 
+Qreep keeps an eye on Borg backups and can show both the last known state and live progress.
 
-https://github.com/user-attachments/assets/b59055c3-1343-4cb4-a83b-8c5546354b1e
+![Qreep Borg backup status](docs/assets/screenshots/qreep-calendar.png)
 
+<https://github.com/user-attachments/assets/b59055c3-1343-4cb4-a83b-8c5546354b1e>
 
 #### Monitor profiles
 
+![Qreep monitor profile](docs/assets/screenshots/qreep-monitor.png)
 
-https://github.com/user-attachments/assets/9e4ecac1-b0f4-4320-a177-f031f07f1c14
+<https://github.com/user-attachments/assets/9e4ecac1-b0f4-4320-a177-f031f07f1c14>
 
+#### Network
+
+Wired networking, Wi-Fi, and Bluetooth share one practical surface.
+
+![Qreep network controls](docs/assets/screenshots/qreep-network.png)
+
+#### Update checker
+
+The bar tooltip gives the quick answer:
+
+![Qreep update checker tooltip](docs/assets/screenshots/qreep-notifications.png)
+
+The larger surface handles the less quick answer:
+
+![Qreep update checker](docs/assets/screenshots/qreep-upchecker.png)
 
 ### Larger shell surfaces
 
@@ -82,21 +106,35 @@ They live as their own modules. The bar is allowed to open them, but it is not a
 
 #### Expose
 
+Expose groups windows by workspace, supports searching, and keeps keyboard navigation useful rather than ceremonial.
+
 ![Qreep Expose](docs/assets/screenshots/qreep-expose.png)
+
+#### Clipboard
+
+The clipboard picker supports text, images, colour values, searching, and keyboard navigation.
+
+![Qreep clipboard picker](docs/assets/screenshots/qreep-clipboard.png)
 
 #### Notifications
 
-![Qreep notifications](docs/assets/screenshots/qreep-notifications.png)
+The notification centre groups notifications by application and keeps actions close enough to be useful.
 
-#### Dashboard and Aegis
+![Qreep notification centre](docs/assets/screenshots/qreep-notification-center.png)
+
+#### Dashboard
 
 ![Qreep dashboard](docs/assets/screenshots/qreep-dashboard.png)
 
-![Qreep Aegis](docs/assets/screenshots/qreep-aegis.png)
+#### Aegis
 
+Aegis collects system, hardware, storage, memory, network, Borg, and Bloom information into one larger surface.
 
-https://github.com/user-attachments/assets/c17d8637-8525-4d2f-ade9-21c63748ae00
+![Qreep Aegis system surface](docs/assets/screenshots/qreep-aegis.png)
 
+Dashboard and Aegis in motion:
+
+<https://github.com/user-attachments/assets/c17d8637-8525-4d2f-ade9-21c63748ae00>
 
 ### A clock that became a calendar
 
@@ -104,23 +142,15 @@ The clock popup grew into a calendar with local events, Google Calendar and Outl
 
 This was not necessarily the plan. It is, however, useful.
 
-![Qreep calendar](docs/assets/screenshots/qreep-calendar.png)
-
-
-https://github.com/user-attachments/assets/ad8cf34a-fd57-4501-9b7c-3cd49073d6c7
-
+<https://github.com/user-attachments/assets/ad8cf34a-fd57-4501-9b7c-3cd49073d6c7>
 
 ### Unclaimed Bloom
 
 Qreep also listens to my [Unclaimed Bloom](https://github.com/Praczet/unclaimed-bloom) tooling and shows progress while the desktop changes its clothes.
 
-![Qreep with Unclaimed Bloom](docs/assets/screenshots/qreep-bloom.png)
+![Qreep with an Unclaimed Bloom theme](docs/assets/screenshots/qreep-bloom.png)
 
-
-
-https://github.com/user-attachments/assets/264ad41b-b444-43d1-80a7-9058c3ac9ebe
-
-
+<https://github.com/user-attachments/assets/264ad41b-b444-43d1-80a7-9058c3ac9ebe>
 
 ## The rules, approximately
 
@@ -179,7 +209,9 @@ quickshell ipc call qreep-aegis toggle
 quickshell ipc call osd showMessage "Qreep lives, somehow" 3000
 ```
 
-Some Quickshell versions vary slightly in CLI syntax. When IPC becomes philosophical:
+Some Quickshell versions vary slightly in CLI syntax.
+
+When IPC becomes philosophical:
 
 ```bash
 quickshell ipc --help
