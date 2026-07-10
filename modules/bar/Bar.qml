@@ -6,6 +6,8 @@ import "../../core" as Core
 import "./features/borg" as BorgFeature
 import "./features/clock" as ClockFeature
 import "./features/power" as PowerFeature
+import "./features/potatofast" as PotatoFastFeature
+import "./features/timer" as TimerFeature
 import "./features/upchecker" as UpcheckerFeature
 import "./features/monitorprofile" as MonitorProfileFeature
 import "./features/mpris" as MprisFeature
@@ -19,6 +21,8 @@ PanelWindow {
     id: rootBar
 
     required property QtObject theme
+    property var timerController: null
+    property var timerService: null
 
     property alias leftSlotItems: leftSlot.data
     property alias centerSlotItems: centerSlot.data
@@ -30,9 +34,9 @@ PanelWindow {
     readonly property bool clockEventIndicatorsSuppressed: shellFullscreenSurfaceOpen || (power.open && power.service.isFullscreen)
     readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
-    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "upchecker", "monitorprofile", "borg", "battery", "network", "volume"]
+    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "volume"]
     readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
-    readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["clock", "mpris"])
+    readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["potato-fast", "timer", "clock", "mpris"])
     readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "volume"])
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
@@ -161,6 +165,13 @@ PanelWindow {
             return;
         }
 
+        if (id === "timer") {
+            if (rootBar.timerController)
+                rootBar.timerController.hide();
+
+            return;
+        }
+
         if (id === "upchecker") {
             upchecker.hide();
             return;
@@ -201,6 +212,13 @@ PanelWindow {
         backupFinalPath: rootBar.theme.modules.bar.borg.backupFinalPath
         backupPanelHideDelay: rootBar.theme.modules.bar.borg.backupPanelHideDelay
         backupStatePollInterval: rootBar.theme.modules.bar.borg.backupStatePollInterval
+    }
+
+    PotatoFastFeature.PotatoFastService {
+        id: potatoFastService
+        log: qreepLog
+        statusCommand: rootBar.theme.modules.bar.potatoFast.statusCommand
+        refreshInterval: rootBar.theme.modules.bar.potatoFast.refreshInterval
     }
 
     UpcheckerFeature.Upchecker {
@@ -296,6 +314,48 @@ PanelWindow {
             spacing: rootBar.theme.modules.bar.itemSpacing
             scale: rootBar.centerSlotActive ? 1 : 0.01
             opacity: rootBar.centerSlotActive ? 1 : 0
+
+            PotatoFastFeature.PotatoFastButton {
+                id: potatoFast
+
+                visible: rootBar.pillEnabled("potato-fast")
+                collapsedPill: rootBar.pillCollapsed("potato-fast")
+                theme: rootBar.theme
+                service: potatoFastService
+
+                onClicked: {
+                    potatoFastService.refreshWithPulse();
+                    sharedTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+            }
+
+            TimerFeature.TimerButton {
+                id: timerButton
+
+                visible: rootBar.timerService && rootBar.timerService.hasState && rootBar.pillEnabled("timer")
+                collapsedPill: rootBar.pillCollapsed("timer")
+                theme: rootBar.theme
+                service: rootBar.timerService
+
+                onClicked: {
+                    if (rootBar.timerController)
+                        rootBar.timerController.show();
+
+                    sharedTooltip.hideLater();
+                }
+                onMiddleClicked: {
+                    rootBar.timerService.toggleRunning();
+                    sharedTooltip.hideLater();
+                }
+                onRightClicked: {
+                    rootBar.timerService.stop();
+                    sharedTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+            }
 
             ClockFeature.Clock {
                 id: clock

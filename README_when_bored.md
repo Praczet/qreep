@@ -47,7 +47,8 @@ modules/
 ├── dashboard/
 ├── expose/
 ├── notification/
-└── osd/
+├── osd/
+└── timer/
 ```
 
 Current bar-owned feature folders:
@@ -62,6 +63,8 @@ modules/bar/features/
 ├── mpris/
 ├── network/
 ├── power/
+├── potatofast/
+├── timer/
 ├── upchecker/
 ├── volume/
 └── workspaces/
@@ -163,6 +166,7 @@ Module theme files live with their owning module:
 * `modules/expose/ExposeTheme.qml`
 * `modules/notification/NotificationTheme.qml`
 * `modules/osd/OsdTheme.qml`
+* `modules/timer/TimerTheme.qml`
 
 `QreepTheme.qml` exposes global semantic colors and the aggregated module theme:
 
@@ -191,6 +195,7 @@ quickshell ipc call qreep-borg refresh
 quickshell ipc call qreep-borg showProgress
 quickshell ipc call qreep-borg hideProgress
 quickshell ipc call qreep-borg toggleProgress
+quickshell ipc call qreep-potato-fast refresh
 quickshell ipc call qreep-upchecker refresh
 quickshell ipc call qreep-upchecker toggle
 quickshell ipc call qreep-monitor-profile refresh
@@ -205,6 +210,7 @@ quickshell ipc call qreep-bloom pickupBloom
 quickshell ipc call qreep-clipboard toggle
 quickshell ipc call qreep-expose toggle
 quickshell ipc call qreep-notification toggleCenter
+quickshell ipc call qreep-timer toggle
 quickshell ipc call osd showMessage "Hello from the questionable future" 3000
 ```
 
@@ -253,6 +259,42 @@ quickshell ipc call qreep-expose showMe
 quickshell ipc call qreep-expose hideMe
 quickshell ipc call qreep-expose refresh
 ```
+
+Timer commands:
+
+```bash
+quickshell ipc call qreep-timer toggle
+quickshell ipc call qreep-timer showMe
+quickshell ipc call qreep-timer hideMe
+quickshell ipc call qreep-timer startTimer "Focus"
+quickshell ipc call qreep-timer startCountdown 25m "Pomodoro"
+quickshell ipc call qreep-timer startCountdownUntil 15:03 "Tea"
+quickshell ipc call qreep-timer setNotificationMode osd
+quickshell ipc call qreep-timer pause
+quickshell ipc call qreep-timer resume
+quickshell ipc call qreep-timer toggleRunning
+quickshell ipc call qreep-timer stop
+```
+
+The timer panel is a top-level shell surface in `modules/timer/`. It supports a
+count-up timer, countdowns, finish-at times, duration presets, labels,
+pause/resume, stop, and selectable completion feedback through either
+`notify-send` or Qreep OSD. Duration parsing accepts plain minutes (`25`) or
+`h`/`m`/`s` strings such as `1h30m` and `45s`. Finish-at parsing accepts local
+`HH:MM` such as `15:03`.
+
+Timer OSD completion uses bottom-center placement, the `Time's up` title, a
+128px `alarm-symbolic` icon, and a 10 second display duration. Subtle? No.
+Useful from across the room? More likely.
+
+The active timer is shown by `modules/bar/features/timer/TimerButton.qml`.
+Countdowns use a circular pie fill from empty to full. Count-up timers show the
+elapsed time as plain text because sometimes the correct UI is not a tiny
+festival.
+
+Timer state is persisted at `~/.cache/qreep/timer/state.json`, so count-ups,
+countdowns, and the selected completion feedback mode survive Quickshell
+restarts.
 
 Expose behavior:
 
@@ -340,8 +382,22 @@ makes it full-size. Separate switches. Fewer surprise side effects, which is a
 lifestyle choice.
 
 Current known runtime pills are `clock`, `workspaces`, `mpris`, `upchecker`,
-`monitorprofile`, `borg`, `battery`, `network`, and `volume`. Unknown pill IDs
-return an error instead of inventing state for `banana`, which is growth.
+`monitorprofile`, `borg`, `potato-fast`, `battery`, `network`, and `volume`.
+Unknown pill IDs return an error instead of inventing state for `banana`, which
+is growth.
+
+The POTATO fasting pill lives first in the center slot, before the clock and
+MPRIS. It polls `potato-fast --json`, renders `percentage` as an actual bar
+fill, and refreshes through:
+
+```bash
+quickshell ipc call qreep-potato-fast refresh
+```
+
+The `potato-sync` helper also calls that IPC target after writing
+`~/.cache/potato/health.json`, using the `qreep` Quickshell config by default.
+That is the small acknowledgement pulse after the paperwork changes, not a new
+state store. POTATO owns the data; Qreep displays it.
 
 Some Quickshell versions vary slightly in CLI syntax. If this bites, check:
 

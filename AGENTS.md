@@ -21,7 +21,8 @@ qreep/
 │   ├── dashboard/
 │   ├── expose/
 │   ├── notification/
-│   └── osd/
+│   ├── osd/
+│   └── timer/
 ├── scripts/
 ├── theme/
 └── events.json
@@ -120,9 +121,9 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `b3ad30c` | `2026-07-10` |
-| `README.md` | `b3ad30c` | `2026-07-10` |
-| `README_when_bored.md` | `dcf825d` | `2026-07-09` |
+| `AGENTS.md` | `855e376` | `2026-07-10` |
+| `README.md` | `855e376` | `2026-07-10` |
+| `README_when_bored.md` | `855e376` | `2026-07-10` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/borg/README.md` | `1a769ca` | `2026-07-08` |
@@ -132,6 +133,8 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/bar/features/mpris/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/network/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/power/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/potatofast/README.md` | `855e376` | `2026-07-10` |
+| `modules/bar/features/timer/README.md` | `855e376` | `2026-07-10` |
 | `modules/bar/features/upchecker/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/volume/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/workspaces/README.md` | `1a769ca` | `2026-07-08` |
@@ -145,6 +148,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/expose/README.md` | `dcf825d` | `2026-07-09` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/timer/README.md` | `855e376` | `2026-07-10` |
 
 ## Quickshell / QML rules
 
@@ -171,6 +175,8 @@ modules/bar/features/
 ├── mpris/
 ├── network/
 ├── power/
+├── potatofast/
+├── timer/
 ├── upchecker/
 ├── volume/
 └── workspaces/
@@ -187,7 +193,8 @@ modules/
 ├── dashboard/
 ├── expose/
 ├── notification/
-└── osd/
+├── osd/
+└── timer/
 ```
 
 Feature folders may contain their own QML UI, popup/panel pieces, state/service objects, and local theme section files. Keep shared wrappers and shared surfaces out of feature folders unless the ownership is obvious. The goal is fewer scavenger hunts, not a tiny bureaucracy with imports.
@@ -925,12 +932,14 @@ Qreep currently has:
   - `overlay`: normal bar, no exclusive zone;
   - `collapsed`: compact top strip unless a visible pinned pill needs overlay space;
 - runtime pill state in `modules/bar/BarPillStateService.qml`, exposed through IPC target `qreep-bar-pill`;
-- current runtime pill IDs: `clock`, `workspaces`, `mpris`, `upchecker`, `monitorprofile`, `borg`, `battery`, `network`, and `volume`;
+- current runtime pill IDs: `clock`, `workspaces`, `mpris`, `timer`, `upchecker`, `monitorprofile`, `borg`, `potato-fast`, `battery`, `network`, and `volume`;
 - enabled unpinned pills become 15px collapsed strips in collapsed mode; expanded pinned pills stay full-size, overlay content, use no top padding, and do not reserve Hyprland space;
 - a reusable `QreepModule` wrapper with hover, left/middle/right click, overlay, and shared-tooltip request support;
 - a launcher button in the left slot that delegates to `LauncherService`;
 - a Hyprland workspaces module in the left slot with active/occupied workspace state, click/scroll switching, and a clickable client popup;
 - a Borg status pill in the right bar slot with refresh, backup command, IPC, a structured tooltip, and a watched backup progress popup driven by `~/.cache/qreep/borg/state.json`;
+- a Potato Fast pill first in the center slot, backed by `potato-fast --json`, with a real progress fill and IPC refresh/pulse through `qreep-potato-fast`;
+- a Timer pill in the center slot after Potato Fast, shown only while a timer exists, with a countdown pie, plain count-up time, left-click panel open, middle-click pause/resume, and right-click stop;
 - a clock with optional seconds, current-day event dots, and JSON-backed event tooltip content; event dots stay popup-based for placement and are suppressed while shell fullscreen surfaces are open;
 - a calendar popup with a month grid, event markers, selected-day agenda, sync footer, and click behavior where left opens the calendar, middle toggles seconds, and right confirms a manual pull;
 - calendar sync helpers for local cache JSON, Google OAuth read-only events, Microsoft ICS, and Microsoft Graph; `qreep-calendar-pull` wraps configured providers and writes `~/.cache/qreep/calendar/state.json` plus `~/.cache/qreep/calendar/final.json`;
@@ -955,6 +964,7 @@ Qreep currently has:
 - notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;
 - notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
+- a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
 - watched local/generated calendar sources loaded through `modules/bar/features/clock/EventStore.qml`: repo `events.json`, `~/.cache/qreep/calendar/events.json`, and `~/.cache/qreep/calendar/microsoft-events.json`.
@@ -1027,6 +1037,22 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose 
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose showMe
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose hideMe
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-expose refresh
+```
+
+Useful timer IPC commands:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer toggle
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer showMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer hideMe
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer startTimer "Focus"
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer startCountdown 25m "Pomodoro"
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer startCountdownUntil 15:03 "Tea"
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer setNotificationMode osd
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer pause
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer resume
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer toggleRunning
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer stop
 ```
 
 Useful notification IPC commands:

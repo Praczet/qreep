@@ -30,6 +30,8 @@ The daily visible part of Qreep includes:
 
 - Hyprland workspaces;
 - clock and calendar;
+- timer and countdown pill;
+- POTATO fasting progress;
 - MPRIS media controls;
 - network, volume, battery, and power controls;
 - launcher and monitor-profile controls;
@@ -59,6 +61,12 @@ The media pill stays compact until it has something useful to say.
 ![Qreep MPRIS tooltip](docs/assets/screenshots/qreep-mpris-tooltip.png)
 
 <https://github.com/user-attachments/assets/5ad0ffaf-7cfa-4d5d-90c4-0612791ea183>
+
+#### POTATO fasting
+
+The POTATO fasting pill shows the current fast as a real progress bar, not a tiny terminal cosplay.
+
+![Qreep POTATO fasting tooltip](docs/assets/screenshots/qreep-potato-tt.png)
 
 #### Borg backup status
 
@@ -100,6 +108,7 @@ Some things are too large to pretend they are bar widgets:
 - **Clipboard** — clipboard history with search and selection;
 - **Notifications** — transient popups and a grouped notification centre;
 - **OSD** — quiet on-screen feedback for volume and other shell messages;
+- **Timer** — an IPC-opened count-up/countdown panel;
 - **Dashboard** — a larger surface for useful blocks and experiments;
 - **Aegis** — system information and monitoring;
 - **Bloom** — progress feedback for my Unclaimed Bloom tooling.
@@ -207,6 +216,7 @@ quickshell ipc call qreep-bar setMode collapsed
 quickshell ipc call qreep-expose toggle
 quickshell ipc call qreep-clipboard toggle
 quickshell ipc call qreep-notification toggleCenter
+quickshell ipc call qreep-timer toggle
 quickshell ipc call qreep-dashboard toggle
 quickshell ipc call qreep-aegis toggle
 
@@ -236,6 +246,7 @@ modules/dashboard/         dashboard engine and surface
 modules/expose/            window overview
 modules/notification/      notification server, popups, and centre
 modules/osd/               on-screen display
+modules/timer/             timer and countdown panel
 
 components/                shared UI pieces
 core/                      shared shell machinery

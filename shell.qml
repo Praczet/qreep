@@ -5,6 +5,7 @@ import "modules/clipboard" as ClipboardModule
 import "modules/dashboard" as DashboardModule
 import "modules/expose" as ExposeModule
 import "modules/osd" as OsdModule
+import "modules/timer" as TimerModule
 import "modules/bloom" as BloomModule
 import "modules/bar" as BarModule
 import "theme" as Theme
@@ -22,10 +23,19 @@ ShellRoot {
         theme: qreepTheme
     }
 
+    TimerModule.Timer {
+        id: timer
+
+        theme: qreepTheme
+        osd: osd
+    }
+
     BarModule.Bar {
         id: bar
 
         theme: qreepTheme
+        timerController: timer
+        timerService: timer.service
         shellFullscreenSurfaceOpen: dashboard.open || expose.open
 
         onVolumeFeedbackRequested: (percent, muted, icon) => {

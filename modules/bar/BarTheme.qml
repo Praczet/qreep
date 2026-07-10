@@ -7,6 +7,7 @@ import "./features/monitorprofile" as MonitorProfileFeature
 import "./features/mpris" as MprisFeature
 import "./features/network" as NetworkFeature
 import "./features/power" as PowerFeature
+import "./features/potatofast" as PotatoFastFeature
 import "./features/upchecker" as UpcheckerFeature
 import "./features/volume" as VolumeFeature
 import "./features/workspaces" as WorkspacesFeature
@@ -55,6 +56,9 @@ QtObject {
         qreep: rootBarTheme.qreep
     }
     readonly property QtObject power: PowerFeature.PowerTheme {
+        qreep: rootBarTheme.qreep
+    }
+    readonly property QtObject potatoFast: PotatoFastFeature.PotatoFastTheme {
         qreep: rootBarTheme.qreep
     }
     readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {
