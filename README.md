@@ -8,7 +8,11 @@ It started as a Waybar-shaped learning project: one bar, a few pills, and the in
 
 ![Qreep desktop](docs/assets/screenshots/qreep-desktop.png)
 
-<https://github.com/user-attachments/assets/REPLACE-WITH-QREEP-BAR-VIDEO-ASSET-ID>
+
+
+https://github.com/user-attachments/assets/5e9fb318-65b9-4e78-a690-dedf9e144d90
+
+
 
 *A quiet desktop until I ask it to do something.*
 
@@ -40,11 +44,15 @@ The bar can run in `reserved`, `overlay`, or `collapsed` mode. Individual pills 
 
 ![Qreep workspaces](docs/assets/screenshots/qreep-workspaces.png)
 
-<https://github.com/user-attachments/assets/REPLACE-WITH-WORKSPACE-SWITCHING-VIDEO-ASSET-ID>
+https://github.com/user-attachments/assets/69f106ff-27a7-43da-b368-63fe93683370
 
 A second view shows how workspace windows behave:
 
-<https://github.com/user-attachments/assets/REPLACE-WITH-WORKSPACE-WINDOWS-VIDEO-ASSET-ID>
+
+
+https://github.com/user-attachments/assets/33156a92-77e8-4b91-993a-25a1dbc9ff07
+
+
 
 #### MPRIS
 
