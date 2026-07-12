@@ -327,6 +327,56 @@ QtObject {
             .sort(compareEvents);
     }
 
+    function upcomingPersonalEvents(now, limit, excludedEvents) {
+        if (limit <= 0)
+            return [];
+
+        const excludedIds = excludedEventIdMap(excludedEvents);
+        const result = [];
+
+        for (let index = 0; index < events.length; index++) {
+            const event = events[index];
+
+            if (!isPersonalEvent(event) || excludedIds[event.id] || !isUpcomingEvent(event, now))
+                continue;
+
+            result.push(event);
+
+            if (result.length >= limit)
+                break;
+        }
+
+        return result;
+    }
+
+    function excludedEventIdMap(excludedEvents) {
+        const result = {};
+
+        if (!Array.isArray(excludedEvents))
+            return result;
+
+        for (let index = 0; index < excludedEvents.length; index++) {
+            const event = excludedEvents[index];
+
+            if (event && event.id)
+                result[event.id] = true;
+        }
+
+        return result;
+    }
+
+    function isUpcomingEvent(event, now) {
+        const todayKey = dateKey(now);
+
+        if (event.date < todayKey)
+            return false;
+
+        if (event.date > todayKey)
+            return true;
+
+        return isVisibleTodayEvent(event, now);
+    }
+
     function sortedEvents(sourceEvents) {
         const sorted = [];
 
@@ -373,6 +423,20 @@ QtObject {
         return event.end
             ? event.start + "–" + event.end
             : event.start;
+    }
+
+    function eventDateLabel(event, now) {
+        const todayKey = dateKey(now);
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const tomorrowKey = dateKey(tomorrow);
+
+        if (event.date === todayKey)
+            return "Today";
+
+        if (event.date === tomorrowKey)
+            return "Tomorrow";
+
+        return Qt.formatDate(new Date(event.date + "T00:00:00"), "ddd dd MMM");
     }
 
     function eventMetaLabel(event) {
@@ -431,19 +495,23 @@ QtObject {
 
     function visibleEventsForToday(now) {
         return sortedEvents(eventsForDate(now).filter(event => {
-            if (event.allDay)
-                return true;
-
-            if (!event.start)
-                return true;
-
-            const start = eventStartDate(event);
-
-            if (!event.end)
-                return start >= now;
-
-            const end = eventEndDate(event);
-            return end >= now;
+            return isVisibleTodayEvent(event, now);
         }));
+    }
+
+    function isVisibleTodayEvent(event, now) {
+        if (event.allDay)
+            return true;
+
+        if (!event.start)
+            return true;
+
+        const start = eventStartDate(event);
+
+        if (!event.end)
+            return start >= now;
+
+        const end = eventEndDate(event);
+        return end >= now;
     }
 }

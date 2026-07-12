@@ -90,12 +90,52 @@ PopupWindow {
     }
 
     function refreshAgendaModel() {
-        const visibleEvents = events.visibleEventsForDate(selectedDate, new Date());
+        const now = new Date();
+        const visibleEvents = events.visibleEventsForDate(selectedDate, now);
 
         agendaModel.clear();
 
         for (let index = 0; index < visibleEvents.length; index++)
-            agendaModel.append({ eventData: visibleEvents[index] });
+            agendaModel.append({
+                rowType: "event",
+                headerText: "",
+                eventData: visibleEvents[index],
+                auxiliaryText: ""
+            });
+
+        if (
+            selectedDateKey !== todayKey
+            || !theme.modules.bar.calendar.showUpcomingPersonalEvents
+        ) {
+            return;
+        }
+
+        const personalEvents = events.upcomingPersonalEvents(
+            now,
+            theme.modules.bar.calendar.upcomingPersonalEventLimit,
+            visibleEvents
+        );
+
+        if (personalEvents.length === 0)
+            return;
+
+        agendaModel.append({
+            rowType: "header",
+            headerText: "Next AD events",
+            eventData: ({}),
+            auxiliaryText: ""
+        });
+
+        for (let personalIndex = 0; personalIndex < personalEvents.length; personalIndex++) {
+            const event = personalEvents[personalIndex];
+
+            agendaModel.append({
+                rowType: "event",
+                headerText: "",
+                eventData: event,
+                auxiliaryText: events.eventDateLabel(event, now)
+            });
+        }
     }
 
     function loadSyncFinal() {
@@ -399,13 +439,19 @@ PopupWindow {
                         model: agendaModel
 
                         delegate: Rectangle {
+                            required property string rowType
+                            required property string headerText
                             required property var eventData
+                            required property string auxiliaryText
 
-                            readonly property bool personalEvent: rootCalendarPopup.events.isPersonalEvent(eventData)
-                            readonly property bool microsoftEvent: rootCalendarPopup.events.isMicrosoftEvent(eventData)
+                            readonly property bool eventRowItem: rowType === "event"
+                            readonly property bool personalEvent: eventRowItem && rootCalendarPopup.events.isPersonalEvent(eventData)
+                            readonly property bool microsoftEvent: eventRowItem && rootCalendarPopup.events.isMicrosoftEvent(eventData)
 
                             width: ListView.view.width
-                            height: eventRow.implicitHeight + rootCalendarPopup.theme.modules.bar.calendar.agendaItemVerticalPadding * 2
+                            height: rowType === "header"
+                                ? agendaSectionHeader.implicitHeight + rootCalendarPopup.theme.modules.bar.calendar.agendaItemVerticalPadding
+                                : eventRow.implicitHeight + rootCalendarPopup.theme.modules.bar.calendar.agendaItemVerticalPadding * 2
                             radius: rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalRadius
                             color: personalEvent
                                 ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalBackgroundColor
@@ -413,9 +459,27 @@ PopupWindow {
                             border.width: personalEvent ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalBorderWidth : 0
                             border.color: rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalBorderColor
 
+                            Text {
+                                id: agendaSectionHeader
+
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    bottom: parent.bottom
+                                    leftMargin: rootCalendarPopup.theme.modules.bar.calendar.agendaItemHorizontalPadding
+                                    rightMargin: rootCalendarPopup.theme.modules.bar.calendar.agendaItemHorizontalPadding
+                                }
+                                visible: rowType === "header"
+                                text: headerText
+                                color: rootCalendarPopup.theme.modules.bar.calendar.mutedTextColor
+                                font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTimePixelSize
+                                font.weight: Font.DemiBold
+                            }
+
                             Row {
                                 id: eventRow
 
+                                visible: rowType === "event"
                                 anchors {
                                     left: parent.left
                                     right: parent.right
@@ -436,14 +500,29 @@ PopupWindow {
                                         : rootCalendarPopup.events.eventColor(eventData, rootCalendarPopup.theme.modules.bar.accentColor)
                                 }
 
-                                Text {
+                                Column {
                                     width: rootCalendarPopup.theme.modules.bar.calendar.agendaDateWidth
-                                    text: rootCalendarPopup.events.eventTimeLabel(eventData)
-                                    color: personalEvent
-                                        ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalAccentColor
-                                        : rootCalendarPopup.events.eventColor(eventData, rootCalendarPopup.theme.modules.bar.accentColor)
-                                    font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaDatePixelSize
-                                    font.weight: Font.DemiBold
+                                    spacing: rootCalendarPopup.theme.modules.bar.calendar.agendaDetailsSpacing
+
+                                    Text {
+                                        width: parent.width
+                                        text: rootCalendarPopup.events.eventTimeLabel(eventData)
+                                        color: personalEvent
+                                            ? rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalAccentColor
+                                            : rootCalendarPopup.events.eventColor(eventData, rootCalendarPopup.theme.modules.bar.accentColor)
+                                        font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaDatePixelSize
+                                        font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Text {
+                                        width: parent.width
+                                        visible: auxiliaryText.length > 0
+                                        text: auxiliaryText
+                                        color: rootCalendarPopup.theme.modules.bar.calendar.agendaPersonalMetaColor
+                                        font.pixelSize: rootCalendarPopup.theme.modules.bar.calendar.agendaTimePixelSize
+                                        elide: Text.ElideRight
+                                    }
                                 }
 
                                 Column {

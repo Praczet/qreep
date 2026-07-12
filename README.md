@@ -151,7 +151,7 @@ Dashboard and Aegis in motion:
 
 ### A clock that became a calendar
 
-The clock popup grew into a calendar with local events, Google Calendar and Outlook/Microsoft calendar pulls, reminders, event dots, and change feedback.
+The clock popup grew into a calendar with local events, Google Calendar and Outlook/Microsoft calendar pulls, reminders, event dots, next personal-event hints, and change feedback.
 
 This was not necessarily the plan. It is, however, useful.
 

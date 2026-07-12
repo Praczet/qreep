@@ -19,11 +19,35 @@ Components.QreepModule {
         eventRevision;
         return events.visibleEventsForToday(currentDate);
     }
-    readonly property string eventToolTip: {
-        if (visibleTodayEvents.length === 0)
-            return "No remaining events today";
+    readonly property var upcomingPersonalEvents: {
+        eventRevision;
 
-        return visibleTodayEvents.map(event => events.eventTimeLabel(event) + "  " + event.title).join("\n");
+        if (!theme.modules.bar.calendar.showUpcomingPersonalEvents)
+            return [];
+
+        return events.upcomingPersonalEvents(
+            currentDate,
+            theme.modules.bar.calendar.upcomingPersonalEventLimit,
+            visibleTodayEvents
+        );
+    }
+    readonly property string eventToolTip: {
+        const lines = [];
+
+        if (visibleTodayEvents.length === 0)
+            lines.push("No remaining events today");
+        else
+            lines.push(visibleTodayEvents.map(event => events.eventTimeLabel(event) + "  " + event.title).join("\n"));
+
+        if (upcomingPersonalEvents.length > 0) {
+            lines.push("");
+            lines.push("Next AD events:");
+            lines.push(upcomingPersonalEvents.map(event =>
+                events.eventDateLabel(event, currentDate) + "  " + events.eventTimeLabel(event) + "  " + event.title
+            ).join("\n"));
+        }
+
+        return lines.join("\n");
     }
 
     tooltipTitle: "Today's events"

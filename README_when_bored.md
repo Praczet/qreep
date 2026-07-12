@@ -432,11 +432,19 @@ Expected shape:
 ```
 
 The clock shows current-day dots. The calendar popup shows a month grid, a
-selected-day agenda, and a footer with last pull status:
+selected-day agenda, optional next personal-event hints, and a footer with last
+pull status:
 
 ```text
 Google: yyyy-MM-dd HH-mm-ss (status) | Microsoft: yyyy-MM-dd HH-mm-ss (status)
 ```
+
+Personal events are still detected by the deliberately small `AD...` title
+prefix rule. When `CalendarTheme.showUpcomingPersonalEvents` is enabled, the
+clock tooltip and today's agenda append up to
+`CalendarTheme.upcomingPersonalEventLimit` upcoming personal events after the
+normal remaining-today events. Already-listed today events are skipped. Nobody
+needs a duplicate appointment pretending to be insight.
 
 Clock click behavior:
 

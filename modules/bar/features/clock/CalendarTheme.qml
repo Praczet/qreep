@@ -25,6 +25,9 @@ QtObject {
     readonly property color agendaSourceBadgeTextColor: qreep.on_surface
     readonly property color footerTextColor: qreep.on_surface_variant
 
+    readonly property bool showUpcomingPersonalEvents: true
+    readonly property int upcomingPersonalEventLimit: 10
+
     readonly property int popupWidth: 860
     readonly property int popupHeight: 420
     readonly property int popupOffsetY: 6

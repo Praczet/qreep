@@ -121,13 +121,13 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `855e376` | `2026-07-10` |
-| `README.md` | `855e376` | `2026-07-10` |
-| `README_when_bored.md` | `855e376` | `2026-07-10` |
+| `AGENTS.md` | `1098e22` | `2026-07-12` |
+| `README.md` | `1098e22` | `2026-07-12` |
+| `README_when_bored.md` | `1098e22` | `2026-07-12` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/borg/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/bar/features/clock/README.md` | `dcf825d` | `2026-07-09` |
+| `modules/bar/features/clock/README.md` | `1098e22` | `2026-07-12` |
 | `modules/bar/features/launcher/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/monitorprofile/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/mpris/README.md` | `1a769ca` | `2026-07-08` |
@@ -940,8 +940,8 @@ Qreep currently has:
 - a Borg status pill in the right bar slot with refresh, backup command, IPC, a structured tooltip, and a watched backup progress popup driven by `~/.cache/qreep/borg/state.json`;
 - a Potato Fast pill first in the center slot, backed by `potato-fast --json`, with a real progress fill and IPC refresh/pulse through `qreep-potato-fast`;
 - a Timer pill in the center slot after Potato Fast, shown only while a timer exists, with a countdown pie, plain count-up time, left-click panel open, middle-click pause/resume, and right-click stop;
-- a clock with optional seconds, current-day event dots, and JSON-backed event tooltip content; event dots stay popup-based for placement and are suppressed while shell fullscreen surfaces are open;
-- a calendar popup with a month grid, event markers, selected-day agenda, sync footer, and click behavior where left opens the calendar, middle toggles seconds, and right confirms a manual pull;
+- a clock with optional seconds, current-day event dots, JSON-backed event tooltip content, and optional next personal-event hints; event dots stay popup-based for placement and are suppressed while shell fullscreen surfaces are open;
+- a calendar popup with a month grid, event markers, selected-day agenda, optional next personal-event section, sync footer, and click behavior where left opens the calendar, middle toggles seconds, and right confirms a manual pull;
 - calendar sync helpers for local cache JSON, Google OAuth read-only events, Microsoft ICS, and Microsoft Graph; `qreep-calendar-pull` wraps configured providers and writes `~/.cache/qreep/calendar/state.json` plus `~/.cache/qreep/calendar/final.json`;
 - a user systemd calendar timer installed by `scripts/install`, quiet by default, while manual clock pulls call `qreep-calendar-pull --notify`;
 - a MonitorProfile pill that watches runtime JSON, sorts monitors by position, and shows internal/external display icons plus a plain tooltip;
@@ -967,7 +967,8 @@ Qreep currently has:
 - a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
-- watched local/generated calendar sources loaded through `modules/bar/features/clock/EventStore.qml`: repo `events.json`, `~/.cache/qreep/calendar/events.json`, and `~/.cache/qreep/calendar/microsoft-events.json`.
+- watched local/generated calendar sources loaded through `modules/bar/features/clock/EventStore.qml`: repo `events.json`, `~/.cache/qreep/calendar/events.json`, and `~/.cache/qreep/calendar/microsoft-events.json`;
+- personal calendar events are currently title-prefixed with `AD...`; when `CalendarTheme.showUpcomingPersonalEvents` is true, the clock tooltip and today's agenda append up to `CalendarTheme.upcomingPersonalEventLimit` upcoming personal events after the normal remaining-today events.
 
 Useful bar IPC commands:
 

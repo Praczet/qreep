@@ -5,11 +5,15 @@
 Shows time/date in the center bar slot. Left click opens the calendar popup,
 middle click toggles seconds, and right click asks whether to pull calendar
 events.
-Current-day events are shown as small dots on the module edge.
+Current-day events are shown as small dots on the module edge. The tooltip can
+also append the next personal events, because apparently one calendar is not
+enough paperwork.
 
 The calendar popup shows the current month, lets you move between months, and
-uses the selected day for the agenda column. It opens on today because that is
-usually the point of a clock. Rare moment of cooperation from reality.
+uses the selected day for the agenda column. When enabled, today's agenda keeps
+the normal remaining-today events first and then appends the next personal
+events. It opens on today because that is usually the point of a clock. Rare
+moment of cooperation from reality.
 
 ## Files
 
@@ -26,6 +30,15 @@ usually the point of a clock. Rare moment of cooperation from reality.
 Change time/date sizing in `ClockTheme.qml`. Change calendar layout, selected
 day colors, and month navigation sizing in `CalendarTheme.qml`. Change event
 parsing/filtering in `EventStore.qml`.
+
+Personal-event follow-up defaults live in `CalendarTheme.qml`:
+
+* `showUpcomingPersonalEvents` - when true, the tooltip and today's agenda append upcoming personal events.
+* `upcomingPersonalEventLimit` - how many personal events to append. The default is 10.
+
+Personal events are currently recognized by `EventStore.isPersonalEvent()`,
+which matches titles beginning with `AD`, `AD:`, `AD `, or `AD+`. Blunt, but it
+does the job without teaching QML about Adam's entire life.
 
 Reminder defaults live in `CalendarTheme.qml`:
 
