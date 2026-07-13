@@ -263,3 +263,8 @@ For the longer map — module inventory, theme notes, IPC details, layer rules, 
 ## Why “Qreep”?
 
 Because it is odd, small, memorable, slightly cursed, and somehow became mine.
+
+## License
+
+Qreep is free software licensed under the GNU General Public License
+version 3 or later (`GPL-3.0-or-later`). See [LICENSE](LICENSE).
