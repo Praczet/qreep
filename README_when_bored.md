@@ -59,6 +59,7 @@ modules/bar/features/
 ├── borg/
 ├── clock/
 ├── launcher/
+├── language/
 ├── monitorprofile/
 ├── mpris/
 ├── network/
@@ -387,8 +388,8 @@ makes it full-size. Separate switches. Fewer surprise side effects, which is a
 lifestyle choice.
 
 Current known runtime pills are `clock`, `workspaces`, `mpris`, `timer`,
-`upchecker`, `monitorprofile`, `borg`, `potato-fast`, `battery`, `network`, and
-`volume`.
+`upchecker`, `monitorprofile`, `borg`, `potato-fast`, `battery`, `network`,
+`language`, and `volume`.
 Unknown pill IDs return an error instead of inventing state for `banana`, which
 is growth.
 

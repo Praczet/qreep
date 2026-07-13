@@ -14,6 +14,7 @@ import "./features/mpris" as MprisFeature
 import "./features/network" as NetworkFeature
 import "./features/workspaces" as WorkspacesFeature
 import "./features/launcher" as LauncherFeature
+import "./features/language" as LanguageFeature
 import "./features/battery" as BatteryFeature
 import "./features/volume" as VolumeFeature
 
@@ -34,10 +35,10 @@ PanelWindow {
     readonly property bool clockEventIndicatorsSuppressed: shellFullscreenSurfaceOpen || (power.open && power.service.isFullscreen)
     readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
-    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "volume"]
+    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume"]
     readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
     readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["potato-fast", "timer", "clock", "mpris"])
-    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "volume"])
+    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "language", "volume"])
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
     signal audioMixerRequested
@@ -101,6 +102,11 @@ PanelWindow {
 
     NetworkFeature.NetworkService {
         id: networkService
+    }
+
+    LanguageFeature.LanguageService {
+        id: languageService
+        log: qreepLog
     }
 
     readonly property Process audioMixerRunner: Process {}
@@ -514,6 +520,22 @@ PanelWindow {
 
                 onClicked: {
                     networkPanel.visible = !networkPanel.visible;
+                    sharedTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+            }
+
+            LanguageFeature.LanguageButton {
+                id: languageButton
+
+                visible: rootBar.pillEnabled("language")
+                collapsedPill: rootBar.pillCollapsed("language")
+                theme: rootBar.theme
+                service: languageService
+
+                onClicked: {
+                    languageService.switchToNext();
                     sharedTooltip.hideLater();
                 }
                 onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)

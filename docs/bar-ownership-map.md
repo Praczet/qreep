@@ -51,6 +51,7 @@ popups, or panels:
 | `LauncherService` | `LauncherButton` | Small command launcher button. Fine where it is. |
 | `BatteryService` | `BatteryButton` | Small status pill. Fine where it is. |
 | `NetworkService` | `NetworkButton`, `NetworkPanel` | Anchored button plus panel. Not as urgent as the full layer panels. |
+| `LanguageService` | `LanguageButton` | Small Hyprland keyboard-layout pill. Fine where it is. |
 | `Core.SoundService` | `VolumeButton`, OSD signal bridge | Shared audio service plus bar button and OSD signal. Keep the shell bridge explicit. |
 | `WorkspaceService` | `Workspaces`, `WorkspaceClients` | Bar-owned workspace pill plus anchored client popup. |
 | `BorgService` | `Borg`, `BorgTooltip`, `BorgProgressPopup` | Bar-owned status pill plus tooltip, progress popup, and actions. |
@@ -75,6 +76,7 @@ as bar-owned objects:
 | Right | `Borg` | Click refreshes, right-click runs backup. |
 | Right | `BatteryButton` | Shows battery state. |
 | Right | `NetworkButton` | Click toggles network panel. |
+| Right | `LanguageButton` | Shows the active keyboard layout; click switches to the next configured layout. |
 | Right | `VolumeButton` | Click toggles mute, right-click opens `pavucontrol`, scroll adjusts volume. |
 | Right | `PowerButton` | Click toggles power panel. Hidden in collapsed mode. |
 
@@ -108,7 +110,7 @@ then the state model starts wearing a false mustache.
 `BarPillStateService`:
 
 ```qml
-["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "volume"]
+["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume"]
 ```
 
 Unknown pill IDs return an error. `listPills` returns the current state for all

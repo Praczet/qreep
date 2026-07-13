@@ -121,15 +121,16 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `0176cf4` | `2026-07-13` |
-| `README.md` | `1098e22` | `2026-07-12` |
-| `README_when_bored.md` | `0176cf4` | `2026-07-13` |
-| `docs/bar-ownership-map.md` | `0176cf4` | `2026-07-13` |
+| `AGENTS.md` | `ca1ce6e` | `2026-07-13` |
+| `README.md` | `ca1ce6e` | `2026-07-13` |
+| `README_when_bored.md` | `ca1ce6e` | `2026-07-13` |
+| `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/borg/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/clock/README.md` | `1098e22` | `2026-07-12` |
 | `modules/bar/features/launcher/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/language/README.md` | `ca1ce6e` | `2026-07-13` |
 | `modules/bar/features/monitorprofile/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/mpris/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/network/README.md` | `1a769ca` | `2026-07-08` |
@@ -172,6 +173,7 @@ modules/bar/features/
 ├── borg/
 ├── clock/
 ├── launcher/
+├── language/
 ├── monitorprofile/
 ├── mpris/
 ├── network/

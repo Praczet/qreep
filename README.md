@@ -37,7 +37,7 @@ The daily visible part of Qreep includes:
 - timer and countdown pill;
 - POTATO fasting progress;
 - MPRIS media controls;
-- network, volume, battery, and power controls;
+- network, keyboard layout, volume, battery, and power controls;
 - launcher and monitor-profile controls;
 - update checking;
 - Borg backup state and progress.

@@ -3,6 +3,7 @@ import QtQuick
 import "./features/borg" as BorgFeature
 import "./features/clock" as ClockFeature
 import "./features/launcher" as LauncherFeature
+import "./features/language" as LanguageFeature
 import "./features/monitorprofile" as MonitorProfileFeature
 import "./features/mpris" as MprisFeature
 import "./features/network" as NetworkFeature
@@ -50,6 +51,9 @@ QtObject {
         qreep: rootBarTheme.qreep
     }
     readonly property QtObject launcher: LauncherFeature.LauncherTheme {}
+    readonly property QtObject language: LanguageFeature.LanguageTheme {
+        qreep: rootBarTheme.qreep
+    }
     readonly property QtObject monitorProfile: MonitorProfileFeature.MonitorProfileTheme {}
     readonly property QtObject mpris: MprisFeature.MprisTheme {}
     readonly property QtObject network: NetworkFeature.NetworkTheme {
