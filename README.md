@@ -8,7 +8,11 @@ It started as a Waybar-shaped learning project: one bar, a few pills, and the in
 
 ![Qreep desktop](docs/assets/screenshots/qreep-bloom.png)
 
-<https://github.com/user-attachments/assets/5e9fb318-65b9-4e78-a690-dedf9e144d90>
+
+
+https://github.com/user-attachments/assets/639899a5-bea6-46c3-b4e3-f87f33290a33
+
+
 
 *A quiet desktop until I ask it to do something.*
 
