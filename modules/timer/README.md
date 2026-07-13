@@ -46,10 +46,11 @@ Duration parsing follows the old helper's practical shape:
 - Completion feedback can use either `notify-send` or Qreep's OSD.
 - OSD completion uses bottom-center placement for 10 seconds with a 128px alarm icon.
 - `Enter` starts the selected mode from the active input.
+- `Tab` and `Shift+Tab` move through the visible panel controls.
 - Starting a timer closes the panel and shows the center bar pill.
 - `Space` pauses or resumes the current timer.
 - `Escape` closes the panel.
-- Countdown completion sends a `notify-send` notification.
+- Countdown completion sends the selected notification mode and alerts the bar pill.
 - The pill shows countdown progress as a circular pie and count-up timers as plain elapsed time.
 
 The ticking model uses absolute timestamps while Qreep is running. That means

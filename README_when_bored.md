@@ -278,10 +278,10 @@ quickshell ipc call qreep-timer stop
 
 The timer panel is a top-level shell surface in `modules/timer/`. It supports a
 count-up timer, countdowns, finish-at times, duration presets, labels,
-pause/resume, stop, and selectable completion feedback through either
-`notify-send` or Qreep OSD. Duration parsing accepts plain minutes (`25`) or
-`h`/`m`/`s` strings such as `1h30m` and `45s`. Finish-at parsing accepts local
-`HH:MM` such as `15:03`.
+pause/resume, stop, Tab navigation, and selectable completion feedback through
+either `notify-send` or Qreep OSD. Duration parsing accepts plain minutes (`25`)
+or `h`/`m`/`s` strings such as `1h30m` and `45s`. Finish-at parsing accepts
+local `HH:MM` such as `15:03`.
 
 Timer OSD completion uses bottom-center placement, the `Time's up` title, a
 128px `alarm-symbolic` icon, and a 10 second display duration. Subtle? No.
@@ -291,6 +291,11 @@ The active timer is shown by `modules/bar/features/timer/TimerButton.qml`.
 Countdowns use a circular pie fill from empty to full. Count-up timers show the
 elapsed time as plain text because sometimes the correct UI is not a tiny
 festival.
+
+When a countdown completes, the timer pill shakes and pulses three times, then
+stays warning-colored until any pill click acknowledges it. Left, middle, and
+right click still clear that visual warning; middle click restarts a completed
+countdown from empty, otherwise it keeps the usual pause/resume job.
 
 Timer state is persisted at `~/.cache/qreep/timer/state.json`, so count-ups,
 countdowns, and the selected completion feedback mode survive Quickshell

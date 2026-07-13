@@ -121,10 +121,10 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `789ef95` | `2026-07-13` |
+| `AGENTS.md` | `0176cf4` | `2026-07-13` |
 | `README.md` | `1098e22` | `2026-07-12` |
-| `README_when_bored.md` | `789ef95` | `2026-07-13` |
-| `docs/bar-ownership-map.md` | `789ef95` | `2026-07-13` |
+| `README_when_bored.md` | `0176cf4` | `2026-07-13` |
+| `docs/bar-ownership-map.md` | `0176cf4` | `2026-07-13` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/borg/README.md` | `1a769ca` | `2026-07-08` |
@@ -135,7 +135,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/bar/features/network/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/power/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/potatofast/README.md` | `855e376` | `2026-07-10` |
-| `modules/bar/features/timer/README.md` | `855e376` | `2026-07-10` |
+| `modules/bar/features/timer/README.md` | `0176cf4` | `2026-07-13` |
 | `modules/bar/features/upchecker/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/volume/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/workspaces/README.md` | `1a769ca` | `2026-07-08` |
@@ -149,7 +149,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/expose/README.md` | `dcf825d` | `2026-07-09` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/timer/README.md` | `855e376` | `2026-07-10` |
+| `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
 
 ## Quickshell / QML rules
 

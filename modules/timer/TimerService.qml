@@ -21,6 +21,7 @@ QtObject {
     property string lastError: ""
 
     signal started
+    signal completionNotified
 
     readonly property bool hasState: mode === "timer" || mode === "countdown"
     readonly property bool isCountdown: mode === "countdown"
@@ -71,6 +72,7 @@ QtObject {
         currentTime = new Date();
 
         if (isCountdown && remainingSeconds <= 0 && !notified) {
+            elapsedBeforePause = durationSeconds;
             running = false;
             notified = true;
             persistState();
@@ -327,6 +329,7 @@ QtObject {
     function notifyDone() {
         if (notificationMode === "osd" && osd) {
             osd.showMessage(labelText, 10000, "bottom", "Time's up", "alarm-symbolic", 128, -1);
+            completionNotified();
             return;
         }
 
@@ -339,6 +342,7 @@ QtObject {
             labelText
         ];
         notifier.startDetached();
+        completionNotified();
     }
 
     function loadState() {

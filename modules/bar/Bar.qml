@@ -340,16 +340,25 @@ PanelWindow {
                 service: rootBar.timerService
 
                 onClicked: {
+                    timerButton.acknowledgeCompletion();
+
                     if (rootBar.timerController)
                         rootBar.timerController.show();
 
                     sharedTooltip.hideLater();
                 }
                 onMiddleClicked: {
-                    rootBar.timerService.toggleRunning();
+                    timerButton.acknowledgeCompletion();
+
+                    if (rootBar.timerService.done && rootBar.timerService.isCountdown)
+                        rootBar.timerService.startCountdown(rootBar.timerService.durationSeconds + "s", rootBar.timerService.label);
+                    else
+                        rootBar.timerService.toggleRunning();
+
                     sharedTooltip.hideLater();
                 }
                 onRightClicked: {
+                    timerButton.acknowledgeCompletion();
                     rootBar.timerService.stop();
                     sharedTooltip.hideLater();
                 }

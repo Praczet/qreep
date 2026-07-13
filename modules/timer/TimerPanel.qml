@@ -59,6 +59,18 @@ PanelWindow {
         onActivated: rootTimerPanel.service.toggleRunning()
     }
 
+    Shortcut {
+        sequence: "Tab"
+        context: Qt.WindowShortcut
+        onActivated: rootTimerPanel.focusNextControl(1)
+    }
+
+    Shortcut {
+        sequence: "Backtab"
+        context: Qt.WindowShortcut
+        onActivated: rootTimerPanel.focusNextControl(-1)
+    }
+
     Timer {
         id: enterTimer
 
@@ -197,6 +209,8 @@ PanelWindow {
                 spacing: rootTimerPanel.theme.modules.timer.gap
 
                 TimerModeButton {
+                    id: countdownModeButton
+
                     label: "Countdown"
                     active: rootTimerPanel.selectedMode === "countdown"
                     theme: rootTimerPanel.theme
@@ -208,6 +222,8 @@ PanelWindow {
                 }
 
                 TimerModeButton {
+                    id: timerModeButton
+
                     label: "Count up"
                     active: rootTimerPanel.selectedMode === "timer"
                     theme: rootTimerPanel.theme
@@ -226,9 +242,13 @@ PanelWindow {
                 visible: rootTimerPanel.selectedMode === "countdown"
 
                 Repeater {
+                    id: presetRepeater
+
                     model: ["5m", "10m", "25m", "45m"]
 
                     TimerModeButton {
+                        id: presetButton
+
                         required property string modelData
 
                         label: modelData
@@ -288,6 +308,8 @@ PanelWindow {
                 }
 
                 TimerModeButton {
+                    id: notifyModeButton
+
                     label: "Notify"
                     active: rootTimerPanel.service.notificationMode === "notify"
                     theme: rootTimerPanel.theme
@@ -296,6 +318,8 @@ PanelWindow {
                 }
 
                 TimerModeButton {
+                    id: osdModeButton
+
                     label: "OSD"
                     active: rootTimerPanel.service.notificationMode === "osd"
                     theme: rootTimerPanel.theme
@@ -319,6 +343,8 @@ PanelWindow {
                 spacing: rootTimerPanel.theme.modules.timer.gap
 
                 TimerActionButton {
+                    id: startPauseButton
+
                     label: rootTimerPanel.service.running ? "Pause" : (rootTimerPanel.service.hasState ? "Resume" : "Start")
                     theme: rootTimerPanel.theme
                     Layout.fillWidth: true
@@ -331,6 +357,8 @@ PanelWindow {
                 }
 
                 TimerActionButton {
+                    id: stopButton
+
                     label: "Stop"
                     theme: rootTimerPanel.theme
                     danger: true
@@ -352,5 +380,53 @@ PanelWindow {
         } else {
             service.startTimer(labelInput.text);
         }
+    }
+
+    function focusableControls() {
+        const controls = [
+            countdownModeButton,
+            timerModeButton
+        ];
+
+        if (selectedMode === "countdown") {
+            for (let index = 0; index < presetRepeater.count; index++) {
+                const preset = presetRepeater.itemAt(index);
+
+                if (preset)
+                    controls.push(preset);
+            }
+
+            controls.push(durationInput);
+            controls.push(finishAtInput);
+        }
+
+        controls.push(labelInput);
+        controls.push(notifyModeButton);
+        controls.push(osdModeButton);
+        controls.push(startPauseButton);
+
+        if (stopButton.enabled)
+            controls.push(stopButton);
+
+        return controls;
+    }
+
+    function focusNextControl(direction) {
+        const controls = focusableControls();
+
+        if (controls.length === 0)
+            return;
+
+        let activeIndex = -1;
+
+        for (let index = 0; index < controls.length; index++) {
+            if (controls[index].controlActiveFocus) {
+                activeIndex = index;
+                break;
+            }
+        }
+
+        const nextIndex = activeIndex < 0 ? 0 : (activeIndex + direction + controls.length) % controls.length;
+        controls[nextIndex].focusControl();
     }
 }

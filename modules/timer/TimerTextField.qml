@@ -6,6 +6,7 @@ Rectangle {
     required property QtObject theme
     property alias text: input.text
     property string placeholder: ""
+    readonly property bool controlActiveFocus: input.activeFocus
 
     signal accepted
 
@@ -55,5 +56,9 @@ Rectangle {
 
     function focusInput() {
         input.forceActiveFocus();
+    }
+
+    function focusControl() {
+        focusInput();
     }
 }
