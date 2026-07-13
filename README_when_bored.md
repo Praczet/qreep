@@ -381,8 +381,9 @@ So in collapsed mode, `enablePill` makes the pill present, and `expandPill`
 makes it full-size. Separate switches. Fewer surprise side effects, which is a
 lifestyle choice.
 
-Current known runtime pills are `clock`, `workspaces`, `mpris`, `upchecker`,
-`monitorprofile`, `borg`, `potato-fast`, `battery`, `network`, and `volume`.
+Current known runtime pills are `clock`, `workspaces`, `mpris`, `timer`,
+`upchecker`, `monitorprofile`, `borg`, `potato-fast`, `battery`, `network`, and
+`volume`.
 Unknown pill IDs return an error instead of inventing state for `banana`, which
 is growth.
 

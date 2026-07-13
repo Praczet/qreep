@@ -121,9 +121,10 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `1098e22` | `2026-07-12` |
+| `AGENTS.md` | `789ef95` | `2026-07-13` |
 | `README.md` | `1098e22` | `2026-07-12` |
-| `README_when_bored.md` | `1098e22` | `2026-07-12` |
+| `README_when_bored.md` | `789ef95` | `2026-07-13` |
+| `docs/bar-ownership-map.md` | `789ef95` | `2026-07-13` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/borg/README.md` | `1a769ca` | `2026-07-08` |
