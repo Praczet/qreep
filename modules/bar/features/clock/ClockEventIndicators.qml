@@ -9,6 +9,8 @@ PopupWindow {
     required property QtObject events
     property var eventItems: []
     property bool suppressed: false
+    property real anchorRevision: 0
+    property bool repositioning: false
     property int pendingPulseIndex: -1
     property int pendingPulseLoopsRemaining: 0
     property var pulseItems: []
@@ -21,11 +23,29 @@ PopupWindow {
         rect.y: rootClockEventIndicators.anchorItem.height - rootClockEventIndicators.theme.modules.bar.clock.eventIndicatorSize / 2
     }
 
-    visible: !rootClockEventIndicators.suppressed && rootClockEventIndicators.anchorItem.visible && rootClockEventIndicators.visibleEventItems.length > 0
+    visible: !rootClockEventIndicators.repositioning && !rootClockEventIndicators.suppressed && rootClockEventIndicators.anchorItem.visible && rootClockEventIndicators.visibleEventItems.length > 0
     implicitWidth: indicatorRow.implicitWidth
     implicitHeight: rootClockEventIndicators.theme.modules.bar.clock.personalEventIndicatorSize
     color: "transparent"
     grabFocus: false
+
+    onAnchorRevisionChanged: reanchorSoon()
+
+    Timer {
+        id: reanchorTimer
+
+        interval: 32
+        repeat: false
+        onTriggered: rootClockEventIndicators.repositioning = false
+    }
+
+    function reanchorSoon() {
+        if (!visible)
+            return;
+
+        repositioning = true;
+        reanchorTimer.restart();
+    }
 
     function notifyChanged(eventId) {
         const targetId = String(eventId || "").trim();

@@ -685,6 +685,7 @@ PanelWindow {
             events: eventStore
             eventItems: clock.visibleTodayEvents
             suppressed: rootBar.clockEventIndicatorsSuppressed
+            anchorRevision: centerSlot.x + centerSlot.width + clock.x + clock.width + (timerButton.visible ? 1 : 0)
         }
 
         MprisFeature.MprisPanel {
