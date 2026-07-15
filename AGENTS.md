@@ -122,9 +122,9 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `9b9d45a` | `2026-07-15` |
-| `README.md` | `9b9d45a` | `2026-07-15` |
-| `README_when_bored.md` | `9b9d45a` | `2026-07-15` |
+| `AGENTS.md` | `5ba0b70` | `2026-07-15` |
+| `README.md` | `5ba0b70` | `2026-07-15` |
+| `README_when_bored.md` | `5ba0b70` | `2026-07-15` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
@@ -151,7 +151,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/expose/README.md` | `dcf825d` | `2026-07-09` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/polkit/README.md` | `9b9d45a` | `2026-07-15` |
+| `modules/polkit/README.md` | `5ba0b70` | `2026-07-15` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
 
 ## Quickshell / QML rules
@@ -970,7 +970,7 @@ Qreep currently has:
 - notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;
 - notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
-- a top-level Polkit demo module in `modules/polkit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-polkit`, and deliberately not registered as the real Polkit agent while `hyprpolkitagent` still owns authentication;
+- a top-level Polkit module in `modules/polkit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-polkit`, using `Quickshell.Services.Polkit.PolkitAgent` when it can register as the session agent, and keeping demo IPC for visual work while `hyprpolkitagent` still owns authentication;
 - a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;

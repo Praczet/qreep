@@ -283,7 +283,7 @@ PanelWindow {
                                     leftMargin: 10
                                     rightMargin: 10
                                 }
-                                echoMode: TextInput.Password
+                                echoMode: rootPolkitPanel.service.responseVisible ? TextInput.Normal : TextInput.Password
                                 passwordCharacter: "*"
                                 color: rootPolkitPanel.theme.modules.polkit.primaryTextColor
                                 selectionColor: rootPolkitPanel.theme.modules.polkit.accentColor
@@ -294,7 +294,7 @@ PanelWindow {
 
                                 Keys.onPressed: event => {
                                     if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                        if (rootPolkitPanel.service.submitDemo(text))
+                                        if (rootPolkitPanel.service.submitResponse(text))
                                             rootPolkitPanel.authenticated();
                                         event.accepted = true;
                                     }
@@ -313,20 +313,25 @@ PanelWindow {
                     }
 
                     Row {
+                        id: actionRow
+
                         width: parent.width
                         height: rootPolkitPanel.theme.modules.polkit.buttonHeight
                         spacing: 8
                         layoutDirection: Qt.RightToLeft
 
+                        readonly property bool canSubmit: !rootPolkitPanel.service.realRequestActive || rootPolkitPanel.service.responseRequired
+
                         Rectangle {
                             width: rootPolkitPanel.theme.modules.polkit.buttonWidth
                             height: parent.height
                             radius: 7
-                            color: authHover.containsMouse ? rootPolkitPanel.theme.modules.polkit.accentColor : rootPolkitPanel.theme.modules.polkit.actionColor
+                            opacity: parent.canSubmit ? 1 : 0.62
+                            color: authHover.containsMouse && parent.canSubmit ? rootPolkitPanel.theme.modules.polkit.accentColor : rootPolkitPanel.theme.modules.polkit.actionColor
 
                             Text {
                                 anchors.centerIn: parent
-                                text: "Authenticate"
+                                text: actionRow.canSubmit ? "Authenticate" : "Waiting"
                                 color: rootPolkitPanel.theme.modules.polkit.actionTextColor
                                 font.pixelSize: rootPolkitPanel.theme.modules.polkit.bodyPixelSize
                                 font.bold: true
@@ -337,8 +342,9 @@ PanelWindow {
 
                                 anchors.fill: parent
                                 hoverEnabled: true
+                                enabled: actionRow.canSubmit
                                 onClicked: {
-                                    if (rootPolkitPanel.service.submitDemo(passwordInput.text))
+                                    if (rootPolkitPanel.service.submitResponse(passwordInput.text))
                                         rootPolkitPanel.authenticated();
                                 }
                             }

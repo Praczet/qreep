@@ -221,6 +221,7 @@ quickshell ipc call qreep-clipboard toggle
 quickshell ipc call qreep-expose toggle
 quickshell ipc call qreep-notification toggleCenter
 quickshell ipc call qreep-polkit demo
+quickshell ipc call qreep-polkit registrationState
 quickshell ipc call qreep-timer toggle
 quickshell ipc call osd showMessage "Hello from the questionable future" 3000
 ```
@@ -271,19 +272,35 @@ quickshell ipc call qreep-expose hideMe
 quickshell ipc call qreep-expose refresh
 ```
 
-Polkit demo commands:
+Polkit commands:
 
 ```bash
 quickshell ipc call qreep-polkit demo
 quickshell ipc call qreep-polkit showMe
 quickshell ipc call qreep-polkit hideMe
 quickshell ipc call qreep-polkit toggle
+quickshell ipc call qreep-polkit registrationState
+quickshell ipc call qreep-polkit showLog
+quickshell ipc call qreep-polkit logPath
 ```
 
-The Polkit module is currently a demo surface in `modules/polkit/`. It previews
-the authentication prompt shape, logs request lifecycle events, and deliberately
-does not register as the real Polkit agent yet. `hyprpolkitagent` still owns the
-actual password prompts.
+The Polkit module in `modules/polkit/` now creates a real Quickshell
+`PolkitAgent`. It only becomes the actual password prompt when it successfully
+registers for the session. If `hyprpolkitagent` is already running, Qreep loses
+that registration race and the existing agent still owns the real prompts.
+
+For a focused test:
+
+```bash
+systemctl --user stop hyprpolkitagent
+quickshell -c qreep --no-duplicate
+quickshell ipc call qreep-polkit registrationState
+pkexec true
+systemctl --user start hyprpolkitagent
+```
+
+`pkexec true` asks for authentication and then does nothing interesting, which
+is exactly the sort of test command an auth prompt deserves.
 
 Artwork is pulled from repo `assets/icon_*` images and cropped into the left
 side of the dialog. Runtime log lines land in the Quickshell log for the active
