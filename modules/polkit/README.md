@@ -132,6 +132,23 @@ systemctl --user start hyprpolkitagent
 then exits successfully if authentication works. Restart `hyprpolkitagent` after
 testing unless Qreep has become the permanent agent on purpose.
 
+## Module Integration
+
+Other Qreep modules should not import or poke the Polkit panel directly. They
+should run a Polkit-aware command, usually through `pkexec`, and let the session
+agent do its job.
+
+The first real consumer is Upchecker through Adam's local
+`~/.local/bin/update-btw` wrapper:
+
+```bash
+paru --sudo /usr/bin/pkexec -Syu --needed
+```
+
+Upchecker still launches `ghostty -e update-btw`; the only important part is
+that the privileged package-manager step uses `pkexec`. Running the whole AUR
+helper as root would be a bad way to make a pretty password prompt feel useful.
+
 ## Next Real Slice
 
 Before replacing `hyprpolkitagent` in the real session:

@@ -138,7 +138,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/bar/features/power/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/potatofast/README.md` | `855e376` | `2026-07-10` |
 | `modules/bar/features/timer/README.md` | `0176cf4` | `2026-07-13` |
-| `modules/bar/features/upchecker/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/upchecker/README.md` | `63f3bf5` | `2026-07-15` |
 | `modules/bar/features/volume/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/workspaces/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bloom/README.md` | `1a769ca` | `2026-07-08` |
@@ -151,7 +151,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/expose/README.md` | `dcf825d` | `2026-07-09` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/polkit/README.md` | `5ba0b70` | `2026-07-15` |
+| `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
 
 ## Quickshell / QML rules

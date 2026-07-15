@@ -43,6 +43,26 @@ readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {}
 The service uses `Quickshell.Io.Process` to run `checkupdates`, package detail
 commands, restart checks, and the configured update command.
 
+The default update path is:
+
+```text
+Upchecker Update button -> ghostty -e update-btw
+```
+
+`update-btw` is Adam's local helper at `~/.local/bin/update-btw`, not a repo
+script. For Qreep Polkit to handle the password prompt, that helper runs `paru`
+with `pkexec` as its privileged command:
+
+```bash
+paru --sudo /usr/bin/pkexec -Syu --needed
+```
+
+That keeps `paru` running as the user while the root-owned pacman step asks
+Polkit for authentication. Qreep's Polkit module does not grant root access to
+Upchecker directly; it only becomes the graphical agent for commands that
+already use Polkit. If `update-btw` goes back to plain `sudo`, the nice dialog
+will sit there looking unemployed.
+
 IPC target:
 
 ```bash
