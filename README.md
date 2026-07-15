@@ -110,6 +110,7 @@ Some things are too large to pretend they are bar widgets:
 
 - **Expose** — a searchable, keyboard-friendly window overview;
 - **Clipboard** — clipboard history with search and selection;
+- **Fast Password** — a quick password entry picker that authenticates first and only shows allowlisted entries;
 - **Notifications** — transient popups and a grouped notification centre;
 - **OSD** — quiet on-screen feedback for volume and other shell messages;
 - **Polkit** — a Qreep-shaped authentication prompt, real when it owns the session and still demoable when it does not;
@@ -131,6 +132,10 @@ Expose groups windows by workspace, supports searching, and keeps keyboard navig
 The clipboard picker supports text, images, colour values, searching, and keyboard navigation.
 
 ![Qreep clipboard picker](docs/assets/screenshots/qreep-clipboard.png)
+
+#### Fast Password
+
+Fast Password asks through Qreep Polkit before the chooser opens, then shows only entries allowlisted in `~/.config/qreep/fast-password.json`.
 
 #### Notifications
 
@@ -256,6 +261,7 @@ modules/bloom/             Bloom progress surface
 modules/clipboard/         clipboard picker
 modules/dashboard/         dashboard engine and surface
 modules/expose/            window overview
+modules/fastpassword/      Polkit-gated password picker
 modules/notification/      notification server, popups, and centre
 modules/osd/               on-screen display
 modules/polkit/            Polkit auth prompt and demo surface

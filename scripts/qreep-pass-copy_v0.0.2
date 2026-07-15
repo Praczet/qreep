@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# %name: Qreep Password Copy
+# %desc: Copy a selected password after qreep-fast-password has authenticated.
+# %icon: dialog-password-symbolic
+# %terminal: false
+# %categories: Utility;Security;
+# %mode: arg
+# %default_args:
+# %prompt: Password entry/query
+# %prompt_type: text
+# %tags: qreep keepass password clipboard secrets
+set -euo pipefail
+
+AUTH_FILE="${QREEP_PASS_AUTH_FILE:-${XDG_RUNTIME_DIR:-/tmp}/qreep/fast-password.auth}"
+AUTH_TTL_SECONDS="${QREEP_PASS_AUTH_TTL_SECONDS:-120}"
+DB="${QREEP_PASS_DB:-${HOME}/.vaults/praczet.kdbx}"
+QUERY="${1-}"
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "Missing: $1" >&2
+    exit 127
+  }
+}
+
+need date
+need grep
+need keepassxc-cli
+need notify-send
+need qreep-pass-list
+need secret-tool
+need wl-copy
+
+if [[ -z "$QUERY" ]]; then
+  echo "Usage: qreep-pass-copy <query-or-entry>" >&2
+  exit 64
+fi
+
+case "$QUERY" in
+*$'\n'* | *$'\r'*)
+  echo "Invalid entry/query: newlines are not allowed" >&2
+  exit 2
+  ;;
+esac
+
+[[ -f "$DB" ]] || {
+  echo "Database not found: $DB" >&2
+  exit 1
+}
+
+[[ -f "$AUTH_FILE" ]] || {
+  echo "Fast Password is not authenticated" >&2
+  exit 6
+}
+
+AUTH_TIME="$(cat "$AUTH_FILE" 2>/dev/null || printf '0')"
+NOW="$(date +%s)"
+
+case "$AUTH_TIME" in
+'' | *[!0-9]*)
+  echo "Fast Password authentication stamp is invalid" >&2
+  exit 6
+  ;;
+esac
+
+if ((NOW - AUTH_TIME > AUTH_TTL_SECONDS)); then
+  echo "Fast Password authentication expired" >&2
+  exit 6
+fi
+
+PASS="$(secret-tool lookup app keepassxc 2>/dev/null || true)"
+[[ -n "$PASS" ]] || {
+  echo "KeePass master password not found in keyring" >&2
+  exit 2
+}
+
+VISIBLE="$(qreep-pass-list)"
+
+mapfile -t MATCHES < <(printf "%s\n" "$VISIBLE" | grep -iF -- "$QUERY" || true)
+
+case "${#MATCHES[@]}" in
+0)
+  echo "No entry matched: $QUERY" >&2
+  exit 3
+  ;;
+1)
+  ENTRY="${MATCHES[0]}"
+  ;;
+*)
+  echo "Query is ambiguous: $QUERY" >&2
+  printf '%s\n' "${MATCHES[@]}" >&2
+  exit 4
+  ;;
+esac
+
+PASSWORD="$(
+  printf "%s" "$PASS" |
+    keepassxc-cli show -q -a password "$DB" "$ENTRY"
+)"
+
+if [[ -z "${PASSWORD//[[:space:]]/}" ]]; then
+  echo "No password found for $ENTRY" >&2
+  exit 5
+fi
+
+printf "%s" "$PASSWORD" | wl-copy --trim-newline --sensitive
+notify-send -i dialog-password-symbolic "Qreep Fast Password" "Password copied for $ENTRY"

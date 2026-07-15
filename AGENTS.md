@@ -20,6 +20,7 @@ qreep/
 │   ├── clipboard/
 │   ├── dashboard/
 │   ├── expose/
+│   ├── fastpassword/
 │   ├── notification/
 │   ├── osd/
 │   ├── polkit/
@@ -122,9 +123,9 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `5ba0b70` | `2026-07-15` |
-| `README.md` | `5ba0b70` | `2026-07-15` |
-| `README_when_bored.md` | `5ba0b70` | `2026-07-15` |
+| `AGENTS.md` | `7d75293` | `2026-07-15` |
+| `README.md` | `7d75293` | `2026-07-15` |
+| `README_when_bored.md` | `7d75293` | `2026-07-15` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
@@ -149,6 +150,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/dashboard/features/weather/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/wotd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/expose/README.md` | `dcf825d` | `2026-07-09` |
+| `modules/fastpassword/README.md` | `7d75293` | `2026-07-15` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
@@ -197,6 +199,7 @@ modules/
 ├── clipboard/
 ├── dashboard/
 ├── expose/
+├── fastpassword/
 ├── notification/
 ├── osd/
 ├── polkit/
@@ -966,6 +969,7 @@ Qreep currently has:
 - a top-level Clipboard module in `modules/clipboard/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-clipboard`, and backed by `clipvault`;
 - the Clipboard panel currently supports a bottom overlay, search/filter, pins filter, keyboard navigation, text/code/color/image cards, runtime image previews, restore notifications, delete, and star/unstar metadata in `~/.local/share/clipvault/pinned.json`;
 - a top-level Expose module in `modules/expose/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-expose`, with parallel runtime thumbnails, centered manual layout motion, type-to-search filtering, spatial keyboard navigation, and keyboard/click activation that switches workspace before focusing the selected client;
+- a top-level Fast Password module in `modules/fastpassword/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-fast-password`, authenticating before the chooser opens, listing allowlisted KeePass entry names through `qreep-pass-list`, and copying through `qreep-pass-copy` with a short-lived auth stamp;
 - a top-level Notification module in `modules/notification/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-notification`, and backed by `Quickshell.Services.Notifications.NotificationServer`;
 - notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;
 - notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;

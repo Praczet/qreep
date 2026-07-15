@@ -4,6 +4,7 @@ import "modules/notification" as NotificationModule
 import "modules/clipboard" as ClipboardModule
 import "modules/dashboard" as DashboardModule
 import "modules/expose" as ExposeModule
+import "modules/fastpassword" as FastPasswordModule
 import "modules/osd" as OsdModule
 import "modules/polkit" as PolkitModule
 import "modules/timer" as TimerModule
@@ -64,6 +65,12 @@ ShellRoot {
 
     ExposeModule.Expose {
         id: expose
+
+        theme: qreepTheme
+    }
+
+    FastPasswordModule.FastPassword {
+        id: fastPassword
 
         theme: qreepTheme
     }

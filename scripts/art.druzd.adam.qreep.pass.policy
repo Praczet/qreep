@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD polkit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/software/polkit/policyconfig-1.dtd">
+<policyconfig>
+  <vendor>Qreep</vendor>
+  <vendor_url>https://adam.druzd.art/</vendor_url>
+
+  <action id="art.druzd.adam.qreep.pass.copy">
+    <description>Copy a password through Qreep</description>
+    <message>Authentication is required to use Fast Password</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>auth_self_keep</allow_inactive>
+      <allow_active>auth_self_keep</allow_active>
+    </defaults>
+  </action>
+</policyconfig>

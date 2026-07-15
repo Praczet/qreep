@@ -46,6 +46,7 @@ modules/
 ├── clipboard/
 ├── dashboard/
 ├── expose/
+├── fastpassword/
 ├── notification/
 ├── osd/
 ├── polkit/
@@ -173,6 +174,7 @@ Module theme files live with their owning module:
 * `modules/clipboard/ClipboardTheme.qml`
 * `modules/dashboard/DashboardTheme.qml`
 * `modules/expose/ExposeTheme.qml`
+* `modules/fastpassword/FastPasswordTheme.qml`
 * `modules/notification/NotificationTheme.qml`
 * `modules/osd/OsdTheme.qml`
 * `modules/polkit/PolkitTheme.qml`
@@ -271,6 +273,44 @@ quickshell ipc call qreep-expose showMe
 quickshell ipc call qreep-expose hideMe
 quickshell ipc call qreep-expose refresh
 ```
+
+Fast Password commands:
+
+```bash
+quickshell ipc call qreep-fast-password toggle
+quickshell ipc call qreep-fast-password showMe
+quickshell ipc call qreep-fast-password hideMe
+quickshell ipc call qreep-fast-password refresh
+quickshell ipc call qreep-fast-password copy "Work/DB"
+```
+
+The panel first authenticates through `qreep-pass-auth`, then lists allowed
+entry names through `qreep-pass-list`, and copies through `qreep-pass-copy`.
+The copy helper checks for the existing Polkit authorization without opening a
+second prompt, enforces the same allowlist, and copies with
+`wl-copy --sensitive`. All three use or support the same Polkit action:
+`art.druzd.adam.qreep.pass.copy`. The installed policy uses `auth_self_keep` so
+the copy step can reuse the short-lived authorization from opening the chooser.
+
+Visible entries come from:
+
+```text
+~/.config/qreep/fast-password.json
+```
+
+Example:
+
+```json
+{
+  "entries": [
+    "Work/DB"
+  ]
+}
+```
+
+QML does not receive the password value. If direct `passw` is still callable, it
+remains a bypass; this module protects the Qreep path, not the entire user
+session from itself.
 
 Polkit commands:
 

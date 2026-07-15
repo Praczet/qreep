@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# %name: Qreep Password Auth
+# %desc: Require Polkit reauthentication before opening qreep-fast-password.
+# %icon: dialog-password-symbolic
+# %terminal: false
+# %categories: Utility;Security;
+# %mode: script
+# %tags: qreep polkit password auth secrets
+set -euo pipefail
+
+ACTION_ID="${QREEP_PASS_POLKIT_ACTION:-art.druzd.adam.qreep.pass.copy}"
+AUTH_DIR="${QREEP_PASS_AUTH_DIR:-${XDG_RUNTIME_DIR:-/tmp}/qreep}"
+AUTH_FILE="${QREEP_PASS_AUTH_FILE:-${AUTH_DIR}/fast-password.auth}"
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "Missing: $1" >&2
+    exit 127
+  }
+}
+
+need awk
+need id
+need install
+need pkcheck
+
+START_TIME="$(awk '{print $22}' "/proc/$$/stat")"
+CALLER_UID="$(id -u)"
+
+pkcheck \
+  --action-id "$ACTION_ID" \
+  --process "$$,$START_TIME,$CALLER_UID" \
+  --allow-user-interaction
+
+install -d -m 0700 "$AUTH_DIR"
+printf '%s\n' "$(date +%s)" >"$AUTH_FILE"
+chmod 0600 "$AUTH_FILE"

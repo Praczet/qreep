@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# %name: Qreep Password List
+# %desc: List KeePassXC entry names for qreep-fast-password without printing secrets.
+# %icon: dialog-password-symbolic
+# %terminal: false
+# %categories: Utility;Security;
+# %mode: script
+# %tags: qreep keepass password list secrets
+set -euo pipefail
+
+DB="${QREEP_PASS_DB:-${HOME}/.vaults/praczet.kdbx}"
+CONFIG="${QREEP_PASS_CONFIG:-${XDG_CONFIG_HOME:-${HOME}/.config}/qreep/fast-password.json}"
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "Missing: $1" >&2
+    exit 127
+  }
+}
+
+need keepassxc-cli
+need python3
+need secret-tool
+need grep
+
+[[ -f "$DB" ]] || {
+  echo "Database not found: $DB" >&2
+  exit 1
+}
+
+PASS="$(secret-tool lookup app keepassxc 2>/dev/null || true)"
+[[ -n "$PASS" ]] || {
+  echo "KeePass master password not found in keyring" >&2
+  exit 2
+}
+
+printf "%s" "$PASS" |
+  keepassxc-cli ls -R -f "$DB" 2>/dev/null |
+  grep -vE '/$|/\[empty\]$|^\[empty\]$' |
+  python3 -c '
+import json
+import os
+import sys
+
+config_path = sys.argv[1]
+available = [line.rstrip("\n") for line in sys.stdin if line.strip()]
+
+if not os.path.exists(config_path):
+    sys.exit(0)
+
+with open(config_path, "r", encoding="utf-8") as handle:
+    config = json.load(handle)
+
+if config.get("showAll") is True:
+    for name in available:
+        print(name)
+    sys.exit(0)
+
+visible = config.get("entries", [])
+if not isinstance(visible, list):
+    raise SystemExit("Config entries must be an array")
+
+available_set = set(available)
+seen = set()
+for item in visible:
+    if isinstance(item, str):
+        name = item
+    elif isinstance(item, dict):
+        name = str(item.get("name", ""))
+    else:
+        continue
+
+    if name in available_set and name not in seen:
+        print(name)
+        seen.add(name)
+' "$CONFIG"

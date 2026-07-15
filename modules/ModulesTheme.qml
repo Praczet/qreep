@@ -6,6 +6,7 @@ import "clipboard" as ClipboardModule
 import "dashboard" as DashboardModule
 import "dashboard/features/aegis" as AegisFeature
 import "expose" as ExposeModule
+import "fastpassword" as FastPasswordModule
 import "notification" as NotificationModule
 import "osd" as OsdModule
 import "polkit" as PolkitModule
@@ -37,6 +38,10 @@ QtObject {
     }
 
     readonly property QtObject expose: ExposeModule.ExposeTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject fastPassword: FastPasswordModule.FastPasswordTheme {
         qreep: rootModulesTheme.qreep
     }
 
