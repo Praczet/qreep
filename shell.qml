@@ -5,6 +5,7 @@ import "modules/clipboard" as ClipboardModule
 import "modules/dashboard" as DashboardModule
 import "modules/expose" as ExposeModule
 import "modules/osd" as OsdModule
+import "modules/polkit" as PolkitModule
 import "modules/timer" as TimerModule
 import "modules/bloom" as BloomModule
 import "modules/bar" as BarModule
@@ -69,6 +70,12 @@ ShellRoot {
 
     BloomModule.Bloom {
         id: bloom
+
+        theme: qreepTheme
+    }
+
+    PolkitModule.Polkit {
+        id: polkit
 
         theme: qreepTheme
     }

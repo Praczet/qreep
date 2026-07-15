@@ -8,6 +8,7 @@ import "dashboard/features/aegis" as AegisFeature
 import "expose" as ExposeModule
 import "notification" as NotificationModule
 import "osd" as OsdModule
+import "polkit" as PolkitModule
 import "timer" as TimerModule
 
 QtObject {
@@ -44,6 +45,10 @@ QtObject {
     }
 
     readonly property QtObject osd: OsdModule.OsdTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject polkit: PolkitModule.PolkitTheme {
         qreep: rootModulesTheme.qreep
     }
 
