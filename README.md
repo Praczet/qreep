@@ -112,6 +112,7 @@ Some things are too large to pretend they are bar widgets:
 - **Clipboard** — clipboard history with search and selection;
 - **Notifications** — transient popups and a grouped notification centre;
 - **OSD** — quiet on-screen feedback for volume and other shell messages;
+- **Polkit demo** — a Qreep-shaped authentication prompt preview;
 - **Timer** — an IPC-opened count-up/countdown panel;
 - **Dashboard** — a larger surface for useful blocks and experiments;
 - **Aegis** — system information and monitoring;
@@ -136,6 +137,10 @@ The clipboard picker supports text, images, colour values, searching, and keyboa
 The notification centre groups notifications by application and keeps actions close enough to be useful.
 
 ![Qreep notification centre](docs/assets/screenshots/qreep-notification-center.png)
+
+#### Polkit demo
+
+The Polkit surface previews a Qreep-shaped authentication prompt while `hyprpolkitagent` still does the real work. Sensible, tragically.
 
 #### Dashboard
 
@@ -223,6 +228,7 @@ quickshell ipc call qreep-notification toggleCenter
 quickshell ipc call qreep-timer toggle
 quickshell ipc call qreep-dashboard toggle
 quickshell ipc call qreep-aegis toggle
+quickshell ipc call qreep-polkit demo
 
 quickshell ipc call osd showMessage "Qreep lives, somehow" 3000
 ```
@@ -250,6 +256,7 @@ modules/dashboard/         dashboard engine and surface
 modules/expose/            window overview
 modules/notification/      notification server, popups, and centre
 modules/osd/               on-screen display
+modules/polkit/            Polkit auth prompt demo
 modules/timer/             timer and countdown panel
 
 components/                shared UI pieces

@@ -48,6 +48,7 @@ modules/
 ├── expose/
 ├── notification/
 ├── osd/
+├── polkit/
 └── timer/
 ```
 
@@ -139,6 +140,13 @@ hl.layer_rule({
     blur = true,
     ignore_alpha = 0.1,
 })
+
+hl.layer_rule({
+    name = "qreep-polkit",
+    match = { namespace = "qreep-polkit" },
+    blur = true,
+    ignore_alpha = 0.1,
+})
 ```
 
 `ignore_alpha` tells Hyprland not to blur behind pixels at or below that alpha
@@ -167,6 +175,7 @@ Module theme files live with their owning module:
 * `modules/expose/ExposeTheme.qml`
 * `modules/notification/NotificationTheme.qml`
 * `modules/osd/OsdTheme.qml`
+* `modules/polkit/PolkitTheme.qml`
 * `modules/timer/TimerTheme.qml`
 
 `QreepTheme.qml` exposes global semantic colors and the aggregated module theme:
@@ -211,6 +220,7 @@ quickshell ipc call qreep-bloom pickupBloom
 quickshell ipc call qreep-clipboard toggle
 quickshell ipc call qreep-expose toggle
 quickshell ipc call qreep-notification toggleCenter
+quickshell ipc call qreep-polkit demo
 quickshell ipc call qreep-timer toggle
 quickshell ipc call osd showMessage "Hello from the questionable future" 3000
 ```
@@ -260,6 +270,30 @@ quickshell ipc call qreep-expose showMe
 quickshell ipc call qreep-expose hideMe
 quickshell ipc call qreep-expose refresh
 ```
+
+Polkit demo commands:
+
+```bash
+quickshell ipc call qreep-polkit demo
+quickshell ipc call qreep-polkit showMe
+quickshell ipc call qreep-polkit hideMe
+quickshell ipc call qreep-polkit toggle
+```
+
+The Polkit module is currently a demo surface in `modules/polkit/`. It previews
+the authentication prompt shape, logs request lifecycle events, and deliberately
+does not register as the real Polkit agent yet. `hyprpolkitagent` still owns the
+actual password prompts.
+
+Artwork is pulled from repo `assets/icon_*` images and cropped into the left
+side of the dialog. Runtime log lines land in the Quickshell log for the active
+instance:
+
+```bash
+find "/run/user/$UID/quickshell/by-id" -name log.qslog -print
+```
+
+Look for `Qreep info: Polkit ...`. Do not log passwords. This is not a diary.
 
 Timer commands:
 
