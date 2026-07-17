@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+# %name: Qreep Password List
+# %desc: List configured password entries for qreep-fast-password without printing secrets.
+# %icon: dialog-password-symbolic
+# %terminal: false
+# %categories: Utility;Security;
+# %mode: script
+# %tags: qreep keepass proton gnome-keyring password list secrets
+set -euo pipefail
+
+DB="${QREEP_PASS_DB:-${HOME}/.vaults/praczet.kdbx}"
+CONFIG="${QREEP_PASS_CONFIG:-${XDG_CONFIG_HOME:-${HOME}/.config}/qreep/fast-password.json}"
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "Missing: $1" >&2
+    exit 127
+  }
+}
+
+need python3
+
+if [[ ! -f "$CONFIG" ]]; then
+  printf '[]\n'
+  exit 0
+fi
+
+NEEDS_KEEPASS="$(
+  python3 - "$CONFIG" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    config = json.load(handle)
+
+if config.get("showAll") is True:
+    print("yes")
+    raise SystemExit
+
+for item in config.get("entries", []):
+    if isinstance(item, str):
+        print("yes")
+        raise SystemExit
+    if isinstance(item, dict) and str(item.get("source", "keepass")).strip().lower() in ("", "keepass"):
+        print("yes")
+        raise SystemExit
+
+print("no")
+PY
+)"
+
+AVAILABLE_KEEPASS=""
+if [[ "$NEEDS_KEEPASS" == "yes" ]]; then
+  need grep
+  need keepassxc-cli
+  need secret-tool
+
+  [[ -f "$DB" ]] || {
+    echo "Database not found: $DB" >&2
+    exit 1
+  }
+
+  PASS="$(secret-tool lookup app keepassxc 2>/dev/null || true)"
+  [[ -n "$PASS" ]] || {
+    echo "KeePass master password not found in keyring" >&2
+    exit 2
+  }
+
+  AVAILABLE_KEEPASS="$(
+    printf "%s" "$PASS" |
+      keepassxc-cli ls -R -f "$DB" 2>/dev/null |
+      grep -vE '/$|/\[empty\]$|^\[empty\]$' || true
+  )"
+fi
+
+AVAILABLE_KEEPASS="$AVAILABLE_KEEPASS" python3 - "$CONFIG" <<'PY'
+import json
+import os
+import sys
+
+config_path = sys.argv[1]
+available_keepass = [line.rstrip("\n") for line in os.environ.get("AVAILABLE_KEEPASS", "").splitlines() if line.strip()]
+available_set = set(available_keepass)
+
+with open(config_path, "r", encoding="utf-8") as handle:
+    config = json.load(handle)
+
+
+def normalize_source(value):
+    source = str(value or "keepass").strip().lower()
+    aliases = {
+        "gnome": "gnome-keyring",
+        "gnomering": "gnome-keyring",
+        "gnome-ring": "gnome-keyring",
+        "keyring": "gnome-keyring",
+        "protonpass": "proton",
+        "proton-pass": "proton",
+    }
+    return aliases.get(source, source)
+
+
+def display_name_from_key(key):
+    parts = [part for part in str(key).split("/") if part]
+    return parts[-1] if parts else str(key)
+
+
+def normalize_lookup(value, key):
+    if isinstance(value, dict):
+        attributes = value.get("attributes")
+        if isinstance(attributes, dict):
+            return {str(name): str(secret_value) for name, secret_value in attributes.items()}
+
+        attribute = value.get("attribute")
+        secret_value = value.get("value")
+        if attribute is not None and secret_value is not None:
+            return {str(attribute): str(secret_value)}
+
+        return {str(name): str(secret_value) for name, secret_value in value.items()}
+
+    return {"qreep-fast-password": str(key)}
+
+
+def entry_object(item):
+    if isinstance(item, str):
+        key = item
+        return {
+            "name": key,
+            "displayName": display_name_from_key(key),
+            "key": key,
+            "source": "keepass",
+            "icon": "",
+            "desc": "",
+        }
+
+    if not isinstance(item, dict):
+        return None
+
+    source = normalize_source(item.get("source", "keepass"))
+    key = str(item.get("key") or item.get("name") or "").strip()
+    if not key:
+        return None
+
+    entry = {
+        "name": str(item.get("name") or key),
+        "displayName": str(item.get("displayName") or item.get("label") or display_name_from_key(key)),
+        "key": key,
+        "source": source,
+        "icon": str(item.get("icon") or ""),
+        "desc": str(item.get("desc") or ""),
+    }
+
+    if source == "gnome-keyring":
+        entry["lookup"] = normalize_lookup(item.get("lookup"), key)
+
+    return entry
+
+
+entries = []
+seen = set()
+
+if config.get("showAll") is True:
+    for name in available_keepass:
+        entry = entry_object(name)
+        identity = (entry["source"], entry["key"])
+        if identity not in seen:
+            entries.append(entry)
+            seen.add(identity)
+else:
+    visible = config.get("entries", [])
+    if not isinstance(visible, list):
+        raise SystemExit("Config entries must be an array")
+
+    for item in visible:
+        entry = entry_object(item)
+        if not entry:
+            continue
+
+        if entry["source"] == "keepass" and entry["key"] not in available_set:
+            continue
+
+        identity = (entry["source"], entry["key"])
+        if identity in seen:
+            continue
+
+        entries.append(entry)
+        seen.add(identity)
+
+json.dump(entries, sys.stdout, ensure_ascii=False, indent=2)
+print()
+PY

@@ -1,0 +1,302 @@
+#!/usr/bin/env bash
+# %name: Qreep Password Copy
+# %desc: Copy a selected password after qreep-fast-password has authenticated.
+# %icon: dialog-password-symbolic
+# %terminal: false
+# %categories: Utility;Security;
+# %mode: arg
+# %default_args:
+# %prompt: Password entry/query
+# %prompt_type: text
+# %tags: qreep keepass proton gnome-keyring password clipboard secrets
+set -euo pipefail
+
+AUTH_FILE="${QREEP_PASS_AUTH_FILE:-${XDG_RUNTIME_DIR:-/tmp}/qreep/fast-password.auth}"
+AUTH_TTL_SECONDS="${QREEP_PASS_AUTH_TTL_SECONDS:-120}"
+DB="${QREEP_PASS_DB:-${HOME}/.vaults/praczet.kdbx}"
+QUERY=""
+REQUEST_SOURCE=""
+REQUEST_KEY=""
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "Missing: $1" >&2
+    exit 127
+  }
+}
+
+need date
+need notify-send
+need python3
+need qreep-pass-list
+need wl-copy
+
+usage() {
+  echo "Usage: qreep-pass-copy <query-or-entry> | --source <source> --key <key>" >&2
+  exit 64
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --source)
+    [[ $# -ge 2 ]] || usage
+    REQUEST_SOURCE="$2"
+    shift 2
+    ;;
+  --key)
+    [[ $# -ge 2 ]] || usage
+    REQUEST_KEY="$2"
+    shift 2
+    ;;
+  --)
+    shift
+    break
+    ;;
+  -*)
+    usage
+    ;;
+  *)
+    if [[ -n "$QUERY" ]]; then
+      usage
+    fi
+    QUERY="$1"
+    shift
+    ;;
+  esac
+done
+
+if [[ -z "$QUERY" && -z "$REQUEST_SOURCE" && -z "$REQUEST_KEY" ]]; then
+  usage
+fi
+
+case "${QUERY}${REQUEST_SOURCE}${REQUEST_KEY}" in
+*$'\n'* | *$'\r'*)
+  echo "Invalid entry/query: newlines are not allowed" >&2
+  exit 2
+  ;;
+esac
+
+[[ -f "$AUTH_FILE" ]] || {
+  echo "Fast Password is not authenticated" >&2
+  exit 6
+}
+
+AUTH_TIME="$(cat "$AUTH_FILE" 2>/dev/null || printf '0')"
+NOW="$(date +%s)"
+
+case "$AUTH_TIME" in
+'' | *[!0-9]*)
+  echo "Fast Password authentication stamp is invalid" >&2
+  exit 6
+  ;;
+esac
+
+if ((NOW - AUTH_TIME > AUTH_TTL_SECONDS)); then
+  echo "Fast Password authentication expired" >&2
+  exit 6
+fi
+
+VISIBLE="$(qreep-pass-list)"
+
+SELECTED_JSON="$(
+  VISIBLE="$VISIBLE" python3 - "$REQUEST_SOURCE" "$REQUEST_KEY" "$QUERY" <<'PY'
+import json
+import os
+import sys
+
+source_arg, key_arg, query = sys.argv[1:4]
+
+
+def normalize_source(value):
+    source = str(value or "keepass").strip().lower()
+    aliases = {
+        "gnome": "gnome-keyring",
+        "gnomering": "gnome-keyring",
+        "gnome-ring": "gnome-keyring",
+        "keyring": "gnome-keyring",
+        "protonpass": "proton",
+        "proton-pass": "proton",
+    }
+    return aliases.get(source, source)
+
+
+entries = json.loads(os.environ.get("VISIBLE", "[]"))
+if not isinstance(entries, list):
+    raise SystemExit("qreep-pass-list returned invalid JSON")
+
+if source_arg or key_arg:
+    source = normalize_source(source_arg)
+    matches = [
+        entry for entry in entries
+        if normalize_source(entry.get("source", "keepass")) == source
+        and str(entry.get("key", "")) == key_arg
+    ]
+else:
+    needle = query.casefold()
+    matches = []
+    for entry in entries:
+        haystack = " ".join(
+            str(entry.get(field, ""))
+            for field in ("displayName", "name", "key", "source", "desc")
+        ).casefold()
+        if needle in haystack:
+            matches.append(entry)
+
+if not matches:
+    raise SystemExit(f"No entry matched: {query or source_arg + ':' + key_arg}")
+
+if len(matches) > 1:
+    labels = "\n".join(
+        f"{entry.get('source', 'keepass')}:{entry.get('key', '')}"
+        for entry in matches
+    )
+    raise SystemExit(f"Query is ambiguous:\n{labels}")
+
+json.dump(matches[0], sys.stdout)
+PY
+)"
+
+SOURCE="$(
+  printf "%s" "$SELECTED_JSON" |
+    python3 -c 'import json, sys; print(str(json.load(sys.stdin).get("source", "keepass")).strip().lower())'
+)"
+KEY="$(
+  printf "%s" "$SELECTED_JSON" |
+    python3 -c 'import json, sys; print(str(json.load(sys.stdin).get("key", "")).strip())'
+)"
+DISPLAY_NAME="$(
+  printf "%s" "$SELECTED_JSON" |
+    python3 -c 'import json, sys; item=json.load(sys.stdin); print(str(item.get("displayName") or item.get("name") or item.get("key") or "").strip())'
+)"
+
+copy_keepass() {
+  need keepassxc-cli
+  need secret-tool
+
+  [[ -f "$DB" ]] || {
+    echo "Database not found: $DB" >&2
+    exit 1
+  }
+
+  PASS="$(secret-tool lookup app keepassxc 2>/dev/null || true)"
+  [[ -n "$PASS" ]] || {
+    echo "KeePass master password not found in keyring" >&2
+    exit 2
+  }
+
+  printf "%s" "$PASS" |
+    keepassxc-cli show -q -a password "$DB" "$KEY"
+}
+
+copy_proton() {
+  need pass-cli
+
+  local pass_ref="$KEY"
+  local pass_output=""
+  local pass_error=""
+  local pass_status=0
+  local error_text=""
+  local lower_error=""
+
+  if [[ "$pass_ref" != pass:* ]]; then
+    pass_ref="pass:${pass_ref}"
+  fi
+
+  pass_error="$(mktemp "${TMPDIR:-/tmp}/qreep-pass-cli.XXXXXX")"
+  set +e
+  pass_output="$(pass-cli item view "$pass_ref" 2>"$pass_error")"
+  pass_status=$?
+  set -e
+
+  if ((pass_status != 0)); then
+    error_text="$(cat "$pass_error" 2>/dev/null || true)"
+    rm -f "$pass_error"
+    lower_error="${error_text,,}"
+
+    case "$lower_error" in
+    *"no session"* | *"not logged"* | *"not login"* | *"not logout"*)
+      echo "Proton Pass is not logged in. Run: pass-cli login" >&2
+      exit 9
+      ;;
+    esac
+
+    printf "%s\n" "$error_text" >&2
+    exit "$pass_status"
+  fi
+
+  rm -f "$pass_error"
+  printf "%s" "$pass_output"
+}
+
+copy_gnome_keyring() {
+  need secret-tool
+
+  local -a lookup_args=()
+  mapfile -t lookup_args < <(
+    SELECTED_JSON="$SELECTED_JSON" KEY="$KEY" python3 - <<'PY'
+import json
+import os
+import sys
+
+item = json.loads(os.environ.get("SELECTED_JSON", "{}"))
+key = os.environ.get("KEY", "")
+lookup = item.get("lookup")
+pairs = []
+
+if isinstance(lookup, dict):
+    attributes = lookup.get("attributes")
+    if isinstance(attributes, dict):
+        pairs = list(attributes.items())
+    elif "attribute" in lookup and "value" in lookup:
+        pairs = [(lookup.get("attribute"), lookup.get("value"))]
+    else:
+        pairs = list(lookup.items())
+
+if not pairs:
+    pairs = [("qreep-fast-password", key)]
+
+for attribute, value in pairs:
+    attribute = str(attribute).strip()
+    value = str(value).strip()
+
+    if not attribute or not value:
+        raise SystemExit("GNOME Keyring lookup attributes cannot be empty")
+    if "\n" in attribute or "\r" in attribute or "\n" in value or "\r" in value:
+        raise SystemExit("GNOME Keyring lookup attributes cannot contain newlines")
+
+    print(attribute)
+    print(value)
+PY
+  )
+
+  if ((${#lookup_args[@]} == 0 || ${#lookup_args[@]} % 2 != 0)); then
+    echo "Invalid GNOME Keyring lookup for $KEY" >&2
+    exit 8
+  fi
+
+  secret-tool lookup "${lookup_args[@]}"
+}
+
+case "$SOURCE" in
+keepass)
+  PASSWORD="$(copy_keepass)"
+  ;;
+proton)
+  PASSWORD="$(copy_proton)"
+  ;;
+gnome | gnomering | gnome-ring | gnome-keyring | keyring)
+  PASSWORD="$(copy_gnome_keyring)"
+  ;;
+*)
+  echo "Unsupported password source: $SOURCE" >&2
+  exit 7
+  ;;
+esac
+
+if [[ -z "${PASSWORD//[[:space:]]/}" ]]; then
+  echo "No password found for $SOURCE:$KEY" >&2
+  exit 5
+fi
+
+printf "%s" "$PASSWORD" | wl-copy --trim-newline --sensitive
+notify-send -i dialog-password-symbolic "Qreep Fast Password" "Password copied for ${DISPLAY_NAME:-$KEY}"
