@@ -123,7 +123,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `6018c77` | `2026-07-15` |
+| `AGENTS.md` | `1af57ac` | `2026-07-17` |
 | `README.md` | `7d75293` | `2026-07-15` |
 | `README_when_bored.md` | `7d75293` | `2026-07-15` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
@@ -150,7 +150,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/dashboard/features/weather/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/wotd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/expose/README.md` | `dcf825d` | `2026-07-09` |
-| `modules/fastpassword/README.md` | `6018c77` | `2026-07-15` |
+| `modules/fastpassword/README.md` | `1af57ac` | `2026-07-17` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |

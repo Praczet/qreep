@@ -38,7 +38,7 @@ passwords. The source for the current helpers and policy lives at:
 ```text
 scripts/qreep-pass-auth_v0.0.1
 scripts/qreep-pass-copy_v0.0.3
-scripts/qreep-pass-list_v0.0.2
+scripts/qreep-pass-list_v0.0.3
 scripts/art.druzd.adam.qreep.pass.policy
 ```
 
@@ -47,7 +47,7 @@ Install/update the helpers with:
 ```bash
 install -m 0755 scripts/qreep-pass-auth_v0.0.1 ~/.local/bin/qreep-pass-auth
 install -m 0755 scripts/qreep-pass-copy_v0.0.3 ~/.local/bin/qreep-pass-copy
-install -m 0755 scripts/qreep-pass-list_v0.0.2 ~/.local/bin/qreep-pass-list
+install -m 0755 scripts/qreep-pass-list_v0.0.3 ~/.local/bin/qreep-pass-list
 ```
 
 Install/update the policy with:
@@ -55,6 +55,13 @@ Install/update the policy with:
 ```bash
 pkexec install -m 0644 scripts/art.druzd.adam.qreep.pass.policy /usr/share/polkit-1/actions/art.druzd.adam.qreep.pass.policy
 ```
+
+`qreep-pass-list` is deliberately cheap for normal use: it reads
+`fast-password.json`, normalizes metadata, and stops there. It does not open
+KeePass, ask GNOME Keyring, or poke Proton just to paint the picker. Backend
+checks happen when `qreep-pass-copy` tries to copy the selected entry, where
+failure can point at the selected provider instead of making the whole panel
+arrive late.
 
 `qreep-pass-auth` writes a short-lived runtime stamp after Polkit accepts the
 request. `qreep-pass-copy` checks that stamp without opening another prompt,
@@ -152,8 +159,11 @@ secret-tool lookup qreep-fast-password "$key"
 ```
 
 Only entries in that list are printed by `qreep-pass-list` and shown in Qreep.
-There is a `showAll: true` escape hatch for KeePass debugging, but using it as
-a daily setting is just rebuilding the old Rofi situation with nicer clothes.
+Normal listing trusts this config as metadata and validates the backend only
+when copying. There is a `showAll: true` escape hatch for KeePass debugging,
+but that still has to enumerate KeePass and is therefore allowed to be slow.
+Using it as a daily setting is just rebuilding the old Rofi situation with nicer
+clothes.
 
 ## IPC
 
