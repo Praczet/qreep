@@ -104,6 +104,9 @@ The larger surface handles the less quick answer:
 
 ![Qreep update checker](docs/assets/screenshots/qreep-upchecker-v2.png)
 
+It also shows Triage decisions when they exist and can open the package triage
+surface for the selected update.
+
 ### Larger shell surfaces
 
 Some things are too large to pretend they are bar widgets:
@@ -115,6 +118,7 @@ Some things are too large to pretend they are bar widgets:
 - **OSD** — quiet on-screen feedback for volume and other shell messages;
 - **Polkit** — a Qreep-shaped authentication prompt, real when it owns the session and still demoable when it does not;
 - **Timer** — an IPC-opened count-up/countdown panel;
+- **Triage** — package inspection and decision notes for Arch maintenance;
 - **Dashboard** — a larger surface for useful blocks and experiments;
 - **Aegis** — system information and monitoring;
 - **Bloom** — progress feedback for my Unclaimed Bloom tooling.

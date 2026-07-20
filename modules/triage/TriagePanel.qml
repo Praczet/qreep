@@ -8,6 +8,7 @@ PanelWindow {
     required property QtObject theme
     required property QtObject service
     required property bool panelOpen
+    property bool canUpdate: false
     property int topReservedHeight: 0
 
     property bool presented: false
@@ -15,6 +16,7 @@ PanelWindow {
     property bool commandEventsOpen: false
 
     signal closeRequested
+    signal updateRequested
 
     implicitWidth: screen.width
     implicitHeight: screen.height
@@ -98,8 +100,8 @@ PanelWindow {
             horizontalCenter: parent.horizontalCenter
             top: parent.top
             bottom: parent.bottom
-            topMargin: rootTriagePanel.topReservedHeight + rootTriagePanel.theme.modules.triage.screenMargin
-            bottomMargin: rootTriagePanel.theme.modules.triage.screenMargin
+            topMargin: rootTriagePanel.topReservedHeight + rootTriagePanel.theme.modules.triage.topMargin
+            bottomMargin: rootTriagePanel.theme.modules.triage.bottomMargin
         }
         radius: rootTriagePanel.theme.modules.triage.panelRadius
         color: rootTriagePanel.theme.modules.triage.panelColor
@@ -184,6 +186,16 @@ PanelWindow {
                 ActionButton {
                     label: "Refresh"
                     onClicked: rootTriagePanel.service.refresh()
+                }
+
+                ActionButton {
+                    label: "Update"
+                    width: 78
+                    visible: rootTriagePanel.service.activeCategory === "updates"
+                    active: true
+                    enabled: rootTriagePanel.canUpdate
+                    opacity: enabled ? 1 : 0.45
+                    onClicked: rootTriagePanel.updateRequested()
                 }
 
                 ActionButton {

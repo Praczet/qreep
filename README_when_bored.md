@@ -210,6 +210,8 @@ quickshell ipc call qreep-borg toggleProgress
 quickshell ipc call qreep-potato-fast refresh
 quickshell ipc call qreep-upchecker refresh
 quickshell ipc call qreep-upchecker toggle
+quickshell ipc call qreep-triage showUpdates
+quickshell ipc call qreep-triage showPackage luajit
 quickshell ipc call qreep-monitor-profile refresh
 quickshell ipc call qreep-calendar refresh
 quickshell ipc call qreep-calendar notifyChangedAll
@@ -456,6 +458,11 @@ It also builds and installs the Rust package triage helper:
 ```text
 triagectl
 ```
+
+Upchecker and Triage now share the package-maintenance path: Upchecker can show
+latest triage decisions beside updates and jump to the selected package in
+Triage, while Triage reuses the same Upchecker update command instead of
+inventing a second button with a different mood.
 
 It also installs:
 

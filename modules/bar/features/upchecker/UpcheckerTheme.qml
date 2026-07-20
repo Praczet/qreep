@@ -60,6 +60,7 @@ QtObject {
     readonly property int detailSpacing: 18
     readonly property int detailHeaderHeight: 48
     readonly property int detailHeaderPadding: 12
+    readonly property color detailHeaderBackgroundColor: qreep.surfaceContainerHigh
     readonly property int detailTitlePixelSize: 22
     readonly property int detailVersionPixelSize: 20
     readonly property int detailVersionWidth: 150

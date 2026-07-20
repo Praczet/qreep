@@ -8,6 +8,7 @@ PanelWindow {
 
     required property QtObject theme
     required property QtObject service
+    property var triageController: null
     property bool panelOpen: false
     property string filterText: ""
     property bool filterVisible: false
@@ -41,7 +42,8 @@ PanelWindow {
                     sourceIndex: index,
                     name: update.name,
                     oldVer: update.oldVer,
-                    newVer: update.newVer
+                    newVer: update.newVer,
+                    decisionKind: triageDecisionKind(update.name)
                 });
         }
 
@@ -139,6 +141,100 @@ PanelWindow {
             event.accepted = true;
             return;
         }
+    }
+
+    function triageDecisionKind(packageName) {
+        const decision = triageDecision(packageName);
+        return decision ? String(decision.kind || "none") : "none";
+    }
+
+    function triageDecision(packageName) {
+        if (!triageController || !triageController.service || !triageController.service.decisionByPackage)
+            return null;
+
+        const item = triageController.service.decisionByPackage[String(packageName || "")];
+        if (!item || !item.latestDecision)
+            return null;
+
+        return item.latestDecision;
+    }
+
+    function selectedTriageDecision() {
+        const item = service.selectedItem;
+        return item ? triageDecision(item.name) : null;
+    }
+
+    function selectedTriageDecisionKind() {
+        const decision = selectedTriageDecision();
+        return decision ? String(decision.kind || "none") : "none";
+    }
+
+    function selectedTriageDecisionNote() {
+        const decision = selectedTriageDecision();
+        return decision && decision.note ? String(decision.note) : "";
+    }
+
+    function selectedTriageDecisionMeta() {
+        const decision = selectedTriageDecision();
+        if (!decision)
+            return "No triage decision yet.";
+
+        return triageDecisionTime(decision);
+    }
+
+    function selectedTriageDecisionBadgeWidth() {
+        return triageDecisionLabel(selectedTriageDecisionKind()).length > 0 ? 96 : 0;
+    }
+
+    function triageDecisionTime(decision) {
+        if (!decision || !decision.ts)
+            return "";
+
+        return Qt.formatDateTime(new Date(Number(decision.ts) * 1000), "MM-dd HH:mm");
+    }
+
+    function triageDecisionLabel(kind) {
+        switch (kind) {
+        case "keep":
+            return "keep";
+        case "investigate":
+            return "investigate";
+        case "plan-remove":
+            return "plan remove";
+        case "skip":
+            return "skip";
+        default:
+            return "";
+        }
+    }
+
+    function triageDecisionColor(kind) {
+        switch (kind) {
+        case "keep":
+            return theme.modules.triage.successColor;
+        case "investigate":
+            return theme.modules.triage.warningColor;
+        case "plan-remove":
+            return theme.modules.triage.errorColor;
+        default:
+            return theme.modules.bar.secondaryTextColor;
+        }
+    }
+
+    function openTriageUpdates() {
+        if (!triageController || !triageController.showUpdates)
+            return;
+
+        closeRequested();
+        triageController.showUpdates();
+    }
+
+    function openTriagePackage(packageName) {
+        if (!triageController || !triageController.showPackage)
+            return;
+
+        closeRequested();
+        triageController.showPackage(packageName);
     }
 
     anchors {
@@ -343,6 +439,7 @@ PanelWindow {
 
                             Row {
                                 spacing: theme.modules.bar.upchecker.versionSpacing
+                                height: parent.height
 
                                 anchors {
                                     left: parent.left
@@ -353,21 +450,57 @@ PanelWindow {
                                 }
 
                                 Text {
-                                    width: parent.width - oldVersion.width - newVersion.width - parent.spacing * 2
+                                    width: parent.width - decisionBadge.width - oldVersion.width - newVersion.width - parent.spacing * (decisionBadge.width > 0 ? 3 : 2)
+                                    height: parent.height
                                     text: updateRow.modelData.name
                                     color: theme.modules.bar.upchecker.rowTextColor
                                     font.pixelSize: theme.modules.bar.upchecker.rowTextPixelSize
                                     elide: Text.ElideRight
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                Item {
+                                    id: decisionBadge
+
+                                    width: triageDecisionLabel(updateRow.modelData.decisionKind).length > 0 ? 88 : 0
+                                    height: parent.height
+                                    visible: width > 0
+
+                                    Rectangle {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: parent.width
+                                        height: 22
+                                        radius: 5
+                                        color: Qt.rgba(triageDecisionColor(updateRow.modelData.decisionKind).r, triageDecisionColor(updateRow.modelData.decisionKind).g, triageDecisionColor(updateRow.modelData.decisionKind).b, 0.16)
+                                        border.width: 1
+                                        border.color: triageDecisionColor(updateRow.modelData.decisionKind)
+
+                                        Text {
+                                            anchors {
+                                                fill: parent
+                                                leftMargin: 6
+                                                rightMargin: 6
+                                            }
+                                            text: triageDecisionLabel(updateRow.modelData.decisionKind)
+                                            color: triageDecisionColor(updateRow.modelData.decisionKind)
+                                            font.pixelSize: theme.modules.bar.upchecker.metaTextPixelSize
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                            elide: Text.ElideRight
+                                        }
+                                    }
                                 }
 
                                 Text {
                                     id: oldVersion
 
                                     width: theme.modules.bar.upchecker.versionWidth
+                                    height: parent.height
                                     text: updateRow.modelData.oldVer
                                     color: theme.modules.bar.secondaryTextColor
                                     font.pixelSize: theme.modules.bar.upchecker.rowTextPixelSize
                                     horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignVCenter
                                     elide: Text.ElideRight
                                 }
 
@@ -375,10 +508,12 @@ PanelWindow {
                                     id: newVersion
 
                                     width: theme.modules.bar.upchecker.versionWidth
+                                    height: parent.height
                                     text: updateRow.modelData.newVer
                                     color: theme.modules.bar.upchecker.titleTextColor
                                     font.pixelSize: theme.modules.bar.upchecker.rowTextPixelSize
                                     horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignVCenter
                                     elide: Text.ElideRight
                                 }
                             }
@@ -452,36 +587,55 @@ PanelWindow {
                             width: parent.width
                             height: theme.modules.bar.upchecker.detailHeaderHeight
                             radius: theme.modules.bar.upchecker.rowRadius
-                            color: theme.modules.bar.power.actionBackgroundColor
+                            color: theme.modules.bar.upchecker.detailHeaderBackgroundColor
+                            border.width: theme.modules.bar.upchecker.borderWidth
+                            border.color: theme.modules.bar.upchecker.borderColor
+
+                            Rectangle {
+                                anchors {
+                                    left: parent.left
+                                    top: parent.top
+                                    bottom: parent.bottom
+                                }
+                                width: 4
+                                radius: parent.radius
+                                color: theme.modules.bar.accentColor
+                            }
 
                             Row {
                                 spacing: theme.modules.bar.upchecker.versionSpacing
+                                height: parent.height
 
                                 anchors {
                                     left: parent.left
                                     right: parent.right
                                     verticalCenter: parent.verticalCenter
-                                    margins: theme.modules.bar.upchecker.detailHeaderPadding
+                                    leftMargin: theme.modules.bar.upchecker.detailHeaderPadding + 10
+                                    rightMargin: theme.modules.bar.upchecker.detailHeaderPadding
                                 }
 
                                 Text {
                                     width: parent.width - detailOldVersion.width - detailArrow.width - detailNewVersion.width - parent.spacing * 3
+                                    height: parent.height
                                     text: rootUpcheckerPanel.service.details.name || "---"
-                                    color: theme.modules.bar.power.actionTextColor
+                                    color: theme.modules.bar.primaryTextColor
                                     font.pixelSize: theme.modules.bar.upchecker.detailTitlePixelSize
                                     font.weight: Font.DemiBold
                                     elide: Text.ElideRight
+                                    verticalAlignment: Text.AlignVCenter
                                 }
 
                                 Text {
                                     id: detailOldVersion
 
                                     width: theme.modules.bar.upchecker.detailVersionWidth
+                                    height: parent.height
                                     text: rootUpcheckerPanel.service.selectedItem ? rootUpcheckerPanel.service.selectedItem.oldVer : ""
-                                    color: theme.modules.bar.power.actionTextColor
+                                    color: theme.modules.bar.secondaryTextColor
                                     opacity: theme.modules.bar.upchecker.dimOpacity
                                     font.pixelSize: theme.modules.bar.upchecker.detailVersionPixelSize
                                     horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignVCenter
                                     elide: Text.ElideRight
                                 }
 
@@ -489,19 +643,23 @@ PanelWindow {
                                     id: detailArrow
 
                                     text: "->"
-                                    color: theme.modules.bar.power.actionTextColor
+                                    color: theme.modules.bar.secondaryTextColor
                                     opacity: theme.modules.bar.upchecker.dimOpacity
                                     font.pixelSize: theme.modules.bar.upchecker.detailVersionPixelSize
+                                    height: parent.height
+                                    verticalAlignment: Text.AlignVCenter
                                 }
 
                                 Text {
                                     id: detailNewVersion
 
                                     width: theme.modules.bar.upchecker.detailVersionWidth
+                                    height: parent.height
                                     text: rootUpcheckerPanel.service.selectedItem ? rootUpcheckerPanel.service.selectedItem.newVer : ""
-                                    color: theme.modules.bar.power.actionTextColor
+                                    color: theme.modules.bar.primaryTextColor
                                     font.pixelSize: theme.modules.bar.upchecker.detailVersionPixelSize
                                     horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignVCenter
                                     elide: Text.ElideRight
                                 }
                             }
@@ -574,6 +732,102 @@ PanelWindow {
                                 }
                             }
                         }
+
+                        Rectangle {
+                            width: parent.width
+                            height: selectedTriageDecisionNote().length > 0 ? 86 : 58
+                            radius: theme.modules.bar.upchecker.rowRadius
+                            color: theme.modules.bar.moduleBackgroundColor
+                            border.width: theme.modules.bar.upchecker.borderWidth
+                            border.color: theme.modules.bar.upchecker.borderColor
+
+                            Row {
+                                id: triageDecisionRow
+
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    top: parent.top
+                                    leftMargin: theme.modules.bar.upchecker.detailHeaderPadding
+                                    rightMargin: theme.modules.bar.upchecker.detailHeaderPadding
+                                    topMargin: 10
+                                }
+                                height: theme.modules.bar.upchecker.actionButtonHeight
+                                spacing: theme.modules.bar.upchecker.versionSpacing
+
+                                Text {
+                                    width: theme.modules.bar.upchecker.metaLabelWidth
+                                    height: parent.height
+                                    text: "Triage"
+                                    color: theme.modules.bar.secondaryTextColor
+                                    font.pixelSize: theme.modules.bar.upchecker.metaTextPixelSize
+                                    horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                Rectangle {
+                                    width: selectedTriageDecisionBadgeWidth()
+                                    height: 22
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    radius: 5
+                                    color: Qt.rgba(triageDecisionColor(selectedTriageDecisionKind()).r, triageDecisionColor(selectedTriageDecisionKind()).g, triageDecisionColor(selectedTriageDecisionKind()).b, 0.16)
+                                    border.width: width > 0 ? 1 : 0
+                                    border.color: triageDecisionColor(selectedTriageDecisionKind())
+                                    visible: width > 0
+
+                                    Text {
+                                        anchors {
+                                            fill: parent
+                                            leftMargin: 6
+                                            rightMargin: 6
+                                        }
+                                        text: triageDecisionLabel(selectedTriageDecisionKind())
+                                        color: triageDecisionColor(selectedTriageDecisionKind())
+                                        font.pixelSize: theme.modules.bar.upchecker.metaTextPixelSize
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                Text {
+                                    width: Math.max(0, parent.width - theme.modules.bar.upchecker.metaLabelWidth - showInTriageDetailsButton.width - parent.spacing * 3 - selectedTriageDecisionBadgeWidth())
+                                    height: parent.height
+                                    text: selectedTriageDecisionMeta()
+                                    color: theme.modules.bar.upchecker.mutedTextColor
+                                    font.pixelSize: theme.modules.bar.upchecker.metaTextPixelSize
+                                    elide: Text.ElideRight
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                PanelActionButton {
+                                    id: showInTriageDetailsButton
+
+                                    width: 124
+                                    label: "Show in Triage"
+                                    enabled: rootUpcheckerPanel.triageController !== null && rootUpcheckerPanel.service.selectedItem !== null
+                                    onClicked: rootUpcheckerPanel.openTriagePackage(rootUpcheckerPanel.service.selectedItem.name)
+                                }
+                            }
+
+                            Text {
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    top: triageDecisionRow.bottom
+                                    leftMargin: theme.modules.bar.upchecker.detailHeaderPadding + theme.modules.bar.upchecker.metaLabelWidth + theme.modules.bar.upchecker.versionSpacing
+                                    rightMargin: theme.modules.bar.upchecker.detailHeaderPadding
+                                    topMargin: 2
+                                }
+                                height: 18
+                                visible: selectedTriageDecisionNote().length > 0
+                                text: selectedTriageDecisionNote()
+                                color: theme.modules.bar.upchecker.rowTextColor
+                                font.pixelSize: theme.modules.bar.upchecker.metaTextPixelSize
+                                elide: Text.ElideRight
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
                     }
                 }
             }
@@ -589,6 +843,15 @@ PanelWindow {
                     right: parent.right
                     bottom: parent.bottom
                     margins: theme.modules.bar.upchecker.contentPadding
+                }
+                spacing: 8
+
+                PanelActionButton {
+                    id: triageButton
+
+                    label: "Triage"
+                    enabled: rootUpcheckerPanel.triageController !== null
+                    onClicked: rootUpcheckerPanel.openTriageUpdates()
                 }
 
                 Rectangle {
@@ -619,7 +882,7 @@ PanelWindow {
                 }
 
                 Item {
-                    width: parent.width - refreshButton.width - updateButton.width
+                    width: Math.max(0, parent.width - triageButton.width - refreshButton.width - updateButton.width - parent.spacing * 2)
                     height: parent.height
                 }
 
@@ -738,6 +1001,35 @@ PanelWindow {
                     }
                 }
             }
+        }
+    }
+
+    component PanelActionButton: Rectangle {
+        property string label: ""
+        signal clicked
+
+        width: theme.modules.bar.upchecker.actionButtonWidth
+        height: theme.modules.bar.upchecker.actionButtonHeight
+        radius: theme.modules.bar.upchecker.actionButtonRadius
+        color: enabled && actionHover.hovered ? theme.modules.bar.power.actionHoverBackgroundColor : theme.modules.bar.power.actionBackgroundColor
+        opacity: enabled ? 1 : 0.45
+
+        Text {
+            anchors.centerIn: parent
+            text: label
+            color: theme.modules.bar.power.actionTextColor
+            font.pixelSize: theme.modules.bar.upchecker.emptyTextPixelSize
+        }
+
+        HoverHandler {
+            id: actionHover
+
+            cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        }
+
+        TapHandler {
+            enabled: parent.enabled
+            onTapped: parent.clicked()
         }
     }
 }

@@ -6,6 +6,12 @@ Shows update status in the right bar slot and opens a standalone update panel.
 The panel lists packages, shows details, supports filtering, and can launch the
 configured update command.
 
+When Qreep Triage is connected, update rows show the latest triage decision for
+that package. The footer has a `Triage` button that opens Triage on the Updates
+category, and the package detail view has a `Triage` button that opens Triage
+focused to that selected package. The detail view also shows the selected
+package's latest triage decision, timestamp, and note when one exists.
+
 ## Files
 
 * `UpcheckerButton.qml` - bar button.
@@ -62,6 +68,10 @@ Polkit for authentication. Qreep's Polkit module does not grant root access to
 Upchecker directly; it only becomes the graphical agent for commands that
 already use Polkit. If `update-btw` goes back to plain `sudo`, the nice dialog
 will sit there looking unemployed.
+
+Triage reuses the same `UpcheckerService.update()` path for its Updates view
+button. There should be one update command path, because two local update
+buttons disagreeing would be impressively annoying and not useful.
 
 IPC target:
 

@@ -39,6 +39,7 @@ ShellRoot {
         theme: qreepTheme
         timerController: timer
         timerService: timer.service
+        triageController: triage
         shellFullscreenSurfaceOpen: dashboard.open || expose.open || triage.open
 
         onVolumeFeedbackRequested: (percent, muted, icon) => {
@@ -87,6 +88,7 @@ ShellRoot {
 
         theme: qreepTheme
         topReservedHeight: bar.visibleFootprintHeight
+        updaterService: bar.upcheckerService
     }
 
     PolkitModule.Polkit {

@@ -6,6 +6,7 @@ Scope {
 
     required property QtObject theme
     required property QtObject log
+    property var triageController: null
     property bool open: false
     readonly property alias service: upcheckerService
 
@@ -29,6 +30,7 @@ Scope {
         UpcheckerPanel {
             theme: rootUpchecker.theme
             service: upcheckerService
+            triageController: rootUpchecker.triageController
             panelOpen: rootUpchecker.open
 
             onCloseRequested: rootUpchecker.hide()
@@ -52,6 +54,7 @@ Scope {
             return;
 
         upcheckerService.refresh();
+        refreshTriageDecisions();
         open = true;
     }
 
@@ -68,5 +71,11 @@ Scope {
 
     function refresh() {
         upcheckerService.refresh();
+        refreshTriageDecisions();
+    }
+
+    function refreshTriageDecisions() {
+        if (triageController && triageController.service && triageController.service.loadDecisions)
+            triageController.service.loadDecisions();
     }
 }

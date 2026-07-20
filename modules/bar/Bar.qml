@@ -29,6 +29,8 @@ PanelWindow {
     property alias centerSlotItems: centerSlot.data
     property alias rightSlotItems: rightSlot.data
     property alias overlayItems: overlayLayer.data
+    property alias upcheckerService: upchecker.service
+    property var triageController: null
     property bool shellFullscreenSurfaceOpen: false
     readonly property bool collapsed: barModeService.collapsed
     readonly property bool reservedMode: barModeService.reserved
@@ -233,6 +235,7 @@ PanelWindow {
 
         theme: rootBar.theme
         log: qreepLog
+        triageController: rootBar.triageController
     }
 
     anchors {

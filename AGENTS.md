@@ -126,8 +126,8 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | File | Synced against | Sync date |
 | --- | --- | --- |
 | `AGENTS.md` | `1af57ac` | `2026-07-17` |
-| `README.md` | `7d75293` | `2026-07-15` |
-| `README_when_bored.md` | `7d75293` | `2026-07-15` |
+| `README.md` | `9438e75` | `2026-07-20` |
+| `README_when_bored.md` | `9438e75` | `2026-07-20` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
@@ -141,7 +141,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/bar/features/power/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/potatofast/README.md` | `855e376` | `2026-07-10` |
 | `modules/bar/features/timer/README.md` | `0176cf4` | `2026-07-13` |
-| `modules/bar/features/upchecker/README.md` | `63f3bf5` | `2026-07-15` |
+| `modules/bar/features/upchecker/README.md` | `9438e75` | `2026-07-20` |
 | `modules/bar/features/volume/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/workspaces/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bloom/README.md` | `1a769ca` | `2026-07-08` |
@@ -157,7 +157,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
-| `modules/triage/README.md` | `ad4ac24` | `2026-07-20` |
+| `modules/triage/README.md` | `9438e75` | `2026-07-20` |
 
 ## Quickshell / QML rules
 
@@ -548,6 +548,14 @@ This is a top-level shell module, not a bar feature. Upchecker answers "are
 updates available?" from the bar. Triage answers "what should I understand,
 decide, and document about package state?" Do not merge them early just because
 both can say the word package.
+
+Upchecker and Triage are connected at the controller level:
+
+- Upchecker can show triage decision badges, open Triage on Updates, and open
+  Triage focused to a selected package.
+- Triage can reuse `UpcheckerService.update()` from its Updates view.
+- Keep one update command path. Duplicating `ghostty -e update-btw` in Triage is
+  how future Adam gets two buttons with different opinions.
 
 V1 safety rule:
 
@@ -1046,7 +1054,7 @@ Qreep currently has:
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - a top-level Polkit module in `modules/polkit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-polkit`, using `Quickshell.Services.Polkit.PolkitAgent` when it can register as the session agent, and keeping demo IPC for visual work while `hyprpolkitagent` still owns authentication;
 - a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;
-- a planned top-level Triage module in `modules/triage/`; its Rust helper lives in `tools/triagectl/`, installs as `triagectl`, stores local state in SQLite, and is read-only against system package state in v1;
+- a top-level Triage module in `modules/triage/`; its Rust helper lives in `tools/triagectl/`, installs as `triagectl`, stores local state in SQLite, is read-only against system package state in v1, and shares package-update context with Upchecker;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
 - watched local/generated calendar sources loaded through `modules/bar/features/clock/EventStore.qml`: repo `events.json`, `~/.cache/qreep/calendar/events.json`, and `~/.cache/qreep/calendar/microsoft-events.json`;

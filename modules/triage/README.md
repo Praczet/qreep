@@ -1,6 +1,6 @@
 # Triage Module
 
-Qreep Triage is a planned package-maintenance surface for Arch Linux systems.
+Qreep Triage is a package-maintenance surface for Arch Linux systems.
 
 Its job is not to become a package manager. Its job is to make package state
 understandable before anything destructive happens: what is installed, what is
@@ -86,7 +86,7 @@ modules/triage/
 It should not live under `modules/bar/features/`. The bar can expose a small
 entry point later, but triage is a work surface, not a pill.
 
-Current/planned structure:
+Current structure:
 
 ```text
 modules/triage/
@@ -111,6 +111,9 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-triage 
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-triage showMe
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-triage hideMe
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-triage refresh
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-triage showUpdates
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-triage showPackage luajit
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-triage update
 ```
 
 ## Helper Contract
@@ -226,6 +229,7 @@ about failure.
 Useful panel actions:
 
 - refresh summary;
+- start the configured Upchecker update command from the Updates view;
 - queue orphans;
 - inspect selected package;
 - mark keep;
@@ -244,6 +248,8 @@ Current panel behavior:
   Deps, Explicit, Total;
 - Updates rows show installed and available package versions when `checkupdates`
   reports them;
+- the Updates view exposes an Update button wired to the same
+  `UpcheckerService.update()` command path as the Upchecker panel;
 - the decision row filters the active package list by All, None, Keep,
   Investigate, Plan Remove, and Skip;
 - clicking a stats or decision filter clears the package search input, because
@@ -297,9 +303,15 @@ Triage should answer a different question:
 what should I understand, decide, and document about package state?
 ```
 
-Do not merge these too early. Reasonable integration later:
+Do not merge these too early. Current integration:
 
-- `upchecker` can open triage filtered to outdated packages;
+- `upchecker` can open Triage on Updates or focused to the selected package;
+- `upchecker` shows the selected package's latest triage decision, timestamp,
+  and note when one exists;
+- Triage reuses Upchecker's configured update command from its Updates view;
+
+Reasonable integration later:
+
 - triage can reuse helper logic if a shared helper becomes worthwhile;
 - dashboard or Aegis can show a small triage summary once the main panel exists.
 
@@ -343,8 +355,8 @@ Until duplication hurts, keep the boundary simple.
 ### Slice 5: Export and Integration
 
 - Add export actions.
+- Add Upchecker routes into Triage. Done.
 - Add small dashboard/Aegis summary only if useful.
-- Optionally add an `upchecker` route into triage.
 
 ## Definition of Done for V1
 
