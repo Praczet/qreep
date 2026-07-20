@@ -27,6 +27,9 @@ microsoft-events.json
 __pycache__/
 *.py[cod]
 
+# Rust helper build output.
+tools/*/target/
+
 # Editor and local runtime noise.
 *.swp
 *.swo

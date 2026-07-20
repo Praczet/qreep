@@ -11,6 +11,7 @@ import "notification" as NotificationModule
 import "osd" as OsdModule
 import "polkit" as PolkitModule
 import "timer" as TimerModule
+import "triage" as TriageModule
 
 QtObject {
     id: rootModulesTheme
@@ -58,6 +59,10 @@ QtObject {
     }
 
     readonly property QtObject timer: TimerModule.TimerTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject triage: TriageModule.TriageTheme {
         qreep: rootModulesTheme.qreep
     }
 }

@@ -47,6 +47,21 @@ install_unit() {
   printf 'installed %s\n' "${systemd_user_dir}/${target_name}"
 }
 
+install_rust_helper() {
+  local manifest_path="$1"
+  local binary_name="$2"
+  local target_name="$3"
+
+  if ! command -v cargo >/dev/null 2>&1; then
+    printf 'skipped %s: cargo not found\n' "${target_name}" >&2
+    return
+  fi
+
+  cargo build --release --manifest-path "${repo_dir}/${manifest_path}"
+  install -Dm755 "${repo_dir}/$(dirname "${manifest_path}")/target/release/${binary_name}" "${bin_dir}/${target_name}"
+  printf 'installed %s\n' "${bin_dir}/${target_name}"
+}
+
 install_script "scripts/qreep-bloom-notify" "qreep-bloom-notify"
 install_script "scripts/qreep-calendar-sync_v0.0.1" "qreep-calendar-sync"
 install_script "scripts/qreep-calendar-google-sync_v0.0.1" "qreep-calendar-google-sync"
@@ -55,6 +70,7 @@ install_script "scripts/qreep-calendar-microsoft-sync_v0.0.1" "qreep-calendar-mi
 install_script "scripts/qreep-calendar-pull_v0.0.1" "qreep-calendar-pull"
 install_script "scripts/qreep-notification-test-batch_v0.0.1" "qreep-notification-test-batch"
 install_script "scripts/qreep-region-screenshot-delay_v0.0.1" "qreep-region-screenshot-delay"
+install_rust_helper "tools/triagectl/Cargo.toml" "triagectl" "triagectl"
 
 install_unit "scripts/systemd/qreep-calendar-sync.service" "qreep-calendar-sync.service"
 install_unit "scripts/systemd/qreep-calendar-sync.timer" "qreep-calendar-sync.timer"
@@ -76,10 +92,14 @@ Calendar sync commands:
   systemctl --user status qreep-calendar-sync.timer
   journalctl --user -u qreep-calendar-sync.service
 
+Package triage helper:
+  triagectl summary
+
 Enable later:
   systemctl --user enable --now qreep-calendar-sync.timer
 
 State files:
   ~/.cache/qreep/calendar/state.json
   ~/.cache/qreep/calendar/final.json
+  ~/.local/share/qreep/triage/triage.db
 EOF

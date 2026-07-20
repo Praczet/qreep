@@ -451,6 +451,12 @@ qreep-calendar-pull
 qreep-region-screenshot-delay
 ```
 
+It also builds and installs the Rust package triage helper:
+
+```text
+triagectl
+```
+
 It also installs:
 
 ```text

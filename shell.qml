@@ -8,6 +8,7 @@ import "modules/fastpassword" as FastPasswordModule
 import "modules/osd" as OsdModule
 import "modules/polkit" as PolkitModule
 import "modules/timer" as TimerModule
+import "modules/triage" as TriageModule
 import "modules/bloom" as BloomModule
 import "modules/bar" as BarModule
 import "theme" as Theme
@@ -38,7 +39,7 @@ ShellRoot {
         theme: qreepTheme
         timerController: timer
         timerService: timer.service
-        shellFullscreenSurfaceOpen: dashboard.open || expose.open
+        shellFullscreenSurfaceOpen: dashboard.open || expose.open || triage.open
 
         onVolumeFeedbackRequested: (percent, muted, icon) => {
             osd.showMessage(percent + "%", qreepTheme.modules.osd.defaultDuration, qreepTheme.modules.osd.defaultPosition, muted ? "Volume (Muted)" : "Volume", icon, qreepTheme.modules.osd.progressIconSize, percent / 100);
@@ -77,6 +78,12 @@ ShellRoot {
 
     BloomModule.Bloom {
         id: bloom
+
+        theme: qreepTheme
+    }
+
+    TriageModule.Triage {
+        id: triage
 
         theme: qreepTheme
     }

@@ -24,9 +24,11 @@ qreep/
 │   ├── notification/
 │   ├── osd/
 │   ├── polkit/
-│   └── timer/
+│   ├── timer/
+│   └── triage/
 ├── scripts/
 ├── theme/
+├── tools/
 └── events.json
 ```
 
@@ -155,6 +157,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
+| `modules/triage/README.md` | `6b2b052` | `2026-07-20` |
 
 ## Quickshell / QML rules
 
@@ -203,7 +206,8 @@ modules/
 ├── notification/
 ├── osd/
 ├── polkit/
-└── timer/
+├── timer/
+└── triage/
 ```
 
 Feature folders may contain their own QML UI, popup/panel pieces, state/service objects, and local theme section files. Keep shared wrappers and shared surfaces out of feature folders unless the ownership is obvious. The goal is fewer scavenger hunts, not a tiny bureaucracy with imports.
@@ -521,6 +525,70 @@ Minimum useful scope:
 - show image previews from runtime temp files exported out of `clipvault`.
 
 Privacy rule: clipboard history is sensitive. Do not add persistence, indexing, previews, or logging beyond the existing backend behavior unless Adam explicitly asks for it. The clipboard does not need to become a diary with paste support.
+
+### Package triage
+
+Working names:
+
+```text
+qreep-triage
+triagectl
+```
+
+Purpose:
+
+- inspect Arch package state before doing anything destructive;
+- queue orphaned packages for human review;
+- explain why a package exists with package metadata and direct reverse dependencies;
+- record decisions such as `keep`, `investigate`, `plan-remove`, and `skip`;
+- keep command events and decisions queryable/exportable for later evidence.
+
+This is a top-level shell module, not a bar feature. Upchecker answers "are
+updates available?" from the bar. Triage answers "what should I understand,
+decide, and document about package state?" Do not merge them early just because
+both can say the word package.
+
+V1 safety rule:
+
+```text
+read system package state, write only Qreep triage state, remove nothing
+```
+
+The helper command is `triagectl`, not `qreep-triage`. Keep `qreep-triage` for
+the eventual Quickshell IPC target. The helper lives in `tools/triagectl/`, is a
+small Rust CLI, stores state in SQLite at `~/.local/share/qreep/triage/triage.db`,
+and prints JSON for QML-facing commands. QML must not open the SQLite database
+directly.
+
+Initial helper commands:
+
+```bash
+triagectl summary
+triagectl packages updates
+triagectl packages orphans
+triagectl packages dependencies
+triagectl packages explicit
+triagectl packages total
+triagectl orphans
+triagectl queue-orphans
+triagectl why bash
+triagectl decisions
+triagectl decide bash keep --note "Required by my shell setup"
+triagectl export-json
+triagectl export-md
+```
+
+Not allowed in v1:
+
+- `pacman -R`;
+- `paru -R`;
+- `sudo`;
+- `pkexec`;
+- applying `plan-remove` decisions;
+- hiding command failures behind friendly-looking UI text.
+
+If package removal ever lands, it needs a separate design pass with command
+preview, confirmation, logging, and a bright line between planning and doing.
 
 ### Expose / window overview
 
@@ -976,6 +1044,7 @@ Qreep currently has:
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - a top-level Polkit module in `modules/polkit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-polkit`, using `Quickshell.Services.Polkit.PolkitAgent` when it can register as the session agent, and keeping demo IPC for visual work while `hyprpolkitagent` still owns authentication;
 - a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;
+- a planned top-level Triage module in `modules/triage/`; its Rust helper lives in `tools/triagectl/`, installs as `triagectl`, stores local state in SQLite, and is read-only against system package state in v1;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
 - watched local/generated calendar sources loaded through `modules/bar/features/clock/EventStore.qml`: repo `events.json`, `~/.cache/qreep/calendar/events.json`, and `~/.cache/qreep/calendar/microsoft-events.json`;
