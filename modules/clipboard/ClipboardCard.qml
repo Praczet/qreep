@@ -6,6 +6,8 @@ Item {
 
     required property QtObject theme
     required property var entry
+    property string imageSource: entry.imageSource || ""
+    property bool imageReady: entry.imageReady === true || imageSource.length > 0
     property bool selected: false
     property color textColor: rootClipboardCard.selected ? rootClipboardCard.theme.modules.clipboard.headerSelectedTextColor : rootClipboardCard.theme.modules.clipboard.secondaryTextColor
     property bool hovered: hoverHandler.hovered
@@ -302,13 +304,13 @@ Item {
                 id: clipboardImage
 
                 anchors.fill: parent
-                source: rootClipboardCard.entry.imageSource || ""
+                source: rootClipboardCard.imageSource
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
-                cache: false
+                cache: true
                 smooth: true
                 mipmap: true
-                visible: rootClipboardCard.entry.imageReady && status === Image.Ready
+                visible: rootClipboardCard.imageReady && status === Image.Ready
             }
 
             Rectangle {
@@ -339,7 +341,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 width: parent.width - 16
-                text: rootClipboardCard.entry.imageReady ? "image failed" : imageMetaText()
+                text: rootClipboardCard.imageReady ? "image failed" : imageMetaText()
                 color: rootClipboardCard.theme.modules.clipboard.secondaryTextColor
                 font.pixelSize: rootClipboardCard.theme.modules.clipboard.bodyPixelSize
                 horizontalAlignment: Text.AlignHCenter

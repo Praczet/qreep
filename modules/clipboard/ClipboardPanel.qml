@@ -292,6 +292,7 @@ PanelWindow {
             delegate: Item {
                 required property var modelData
                 required property int index
+                readonly property int imagePreviewRevision: rootClipboardPanel.service.imagePreviewRevision
 
                 width: grid.cellWidth
                 height: grid.cellHeight
@@ -304,6 +305,7 @@ PanelWindow {
 
                     theme: rootClipboardPanel.theme
                     entry: modelData
+                    imageSource: rootClipboardPanel.service.imagePreviewSource(modelData.id, imagePreviewRevision)
                     selected: rootClipboardPanel.service.selectedIndex === index
 
                     onClicked: {

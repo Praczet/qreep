@@ -18,6 +18,8 @@ QtObject {
     property bool loading: false
     property string error: ""
     property var imagePreviewQueue: []
+    property var imagePreviewSources: ({})
+    property int imagePreviewRevision: 0
     property string currentImagePreviewId: ""
     property string currentImagePreviewPath: ""
     property var currentRestoreEntry: null
@@ -401,7 +403,7 @@ QtObject {
     }
 
     function startImagePreviewExports(nextEntries) {
-        imagePreviewQueue = nextEntries.filter(entry => entry.type === "image");
+        imagePreviewQueue = nextEntries.filter(entry => entry.type === "image" && !imagePreviewSources[entry.id] && entry.id !== currentImagePreviewId);
 
         if (!imagePreviewRunner.running)
             exportNextImagePreview();
@@ -422,7 +424,7 @@ QtObject {
 
         currentImagePreviewId = entry.id;
         currentImagePreviewPath = entry.imagePath;
-        imagePreviewRunner.command = ["sh", "-c", "mkdir -p " + shellQuote(previewDir) + " && clipvault get " + shellQuote(entry.id) + " > " + shellQuote(entry.imagePath)];
+        imagePreviewRunner.command = ["sh", "-c", "mkdir -p " + shellQuote(previewDir) + " && clipvault get " + shellQuote(entry.id) + " > " + shellQuote(entry.imagePath + ".tmp") + " && mv -f " + shellQuote(entry.imagePath + ".tmp") + " " + shellQuote(entry.imagePath)];
         imagePreviewRunner.running = true;
     }
 
@@ -435,17 +437,14 @@ QtObject {
             return;
         }
 
-        entries = entries.map(entry => {
-            const copy = cloneEntry(entry);
+        const nextSources = Object.assign({}, imagePreviewSources);
+        nextSources[id] = "file://" + path;
+        imagePreviewSources = nextSources;
+        imagePreviewRevision++;
+    }
 
-            if (copy.id === id) {
-                copy.imageSource = "file://" + path;
-                copy.imageReady = true;
-            }
-
-            return copy;
-        });
-        applyFilter();
+    function imagePreviewSource(id, revision) {
+        return imagePreviewSources[id] || "";
     }
 
     function entryAt(index) {
