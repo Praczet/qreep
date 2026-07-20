@@ -8,9 +8,11 @@ PanelWindow {
     required property QtObject theme
     required property QtObject service
     required property bool panelOpen
+    property int topReservedHeight: 0
 
     property bool presented: false
     property bool decisionHistoryOpen: false
+    property bool commandEventsOpen: false
 
     signal closeRequested
 
@@ -40,12 +42,20 @@ PanelWindow {
 
         enterTimer.stop();
         presented = false;
+        commandEventsOpen = false;
     }
 
     Shortcut {
         sequence: "Escape"
         context: Qt.WindowShortcut
-        onActivated: rootTriagePanel.closeRequested()
+        onActivated: {
+            if (rootTriagePanel.commandEventsOpen) {
+                rootTriagePanel.commandEventsOpen = false;
+                return;
+            }
+
+            rootTriagePanel.closeRequested();
+        }
     }
 
     Shortcut {
@@ -84,8 +94,13 @@ PanelWindow {
         id: panel
 
         width: Math.min(rootTriagePanel.theme.modules.triage.panelWidth, rootTriagePanel.width - rootTriagePanel.theme.modules.triage.screenMargin * 2)
-        height: Math.min(rootTriagePanel.theme.modules.triage.panelHeight, rootTriagePanel.height - rootTriagePanel.theme.modules.triage.screenMargin * 2)
-        anchors.centerIn: parent
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            top: parent.top
+            bottom: parent.bottom
+            topMargin: rootTriagePanel.topReservedHeight + rootTriagePanel.theme.modules.triage.screenMargin
+            bottomMargin: rootTriagePanel.theme.modules.triage.screenMargin
+        }
         radius: rootTriagePanel.theme.modules.triage.panelRadius
         color: rootTriagePanel.theme.modules.triage.panelColor
         border.width: 1
@@ -169,6 +184,13 @@ PanelWindow {
                 ActionButton {
                     label: "Refresh"
                     onClicked: rootTriagePanel.service.refresh()
+                }
+
+                ActionButton {
+                    label: "Events"
+                    width: 78
+                    active: rootTriagePanel.commandEventsOpen
+                    onClicked: rootTriagePanel.toggleCommandEvents()
                 }
 
                 ActionButton {
@@ -422,7 +444,7 @@ PanelWindow {
                 bottomMargin: rootTriagePanel.theme.modules.triage.detailGap
             }
             radius: 6
-            color: rootTriagePanel.theme.modules.triage.sectionColor
+            color: rootTriagePanel.theme.modules.triage.eventPanelColor
             border.width: 1
             border.color: rootTriagePanel.theme.modules.triage.borderColor
             clip: true
@@ -464,8 +486,8 @@ PanelWindow {
                 verticalAlignment: Text.AlignVCenter
             }
 
-            Text {
-                id: descriptionText
+            Rectangle {
+                id: descriptionBox
 
                 anchors {
                     left: parent.left
@@ -475,61 +497,282 @@ PanelWindow {
                     rightMargin: 14
                     topMargin: 10
                 }
-                height: 46
-                text: packageDescription()
-                color: rootTriagePanel.theme.modules.triage.primaryTextColor
-                font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize
-                wrapMode: Text.WordWrap
-                elide: Text.ElideRight
-            }
+                height: 54
+                radius: 6
+                color: rootTriagePanel.theme.modules.triage.controlColor
+                border.width: 1
+                border.color: rootTriagePanel.theme.modules.triage.borderColor
+                clip: true
 
-            Text {
-                id: reverseDepsTitle
-
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: descriptionText.bottom
-                    leftMargin: 14
-                    rightMargin: 14
-                    topMargin: 10
+                Text {
+                    anchors {
+                        fill: parent
+                        margins: 10
+                    }
+                    text: packageDescription()
+                    color: rootTriagePanel.theme.modules.triage.primaryTextColor
+                    font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideRight
+                    verticalAlignment: Text.AlignVCenter
                 }
-                height: 18
-                text: "Direct reverse dependencies"
-                color: rootTriagePanel.theme.modules.triage.secondaryTextColor
-                font.pixelSize: rootTriagePanel.theme.modules.triage.metaPixelSize
-                font.bold: true
-                verticalAlignment: Text.AlignVCenter
             }
 
-            ListView {
-                id: reverseDeps
+            Item {
+                id: dependencySections
 
                 anchors {
                     left: parent.left
                     right: parent.right
-                    top: reverseDepsTitle.bottom
+                    top: descriptionBox.bottom
                     bottom: parent.bottom
                     leftMargin: 14
                     rightMargin: 14
-                    topMargin: 6
+                    topMargin: 12
                     bottomMargin: 14
                 }
-                model: selectedReverseDependencies()
-                clip: true
-                boundsBehavior: Flickable.StopAtBounds
-                spacing: 4
 
-                delegate: Text {
-                    required property string modelData
+                Item {
+                    id: requiresSection
 
-                    width: ListView.view.width
-                    height: 18
-                    text: modelData
-                    color: rootTriagePanel.theme.modules.triage.primaryTextColor
-                    font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize
-                    elide: Text.ElideRight
-                    verticalAlignment: Text.AlignVCenter
+                    anchors {
+                        left: parent.left
+                        right: dependencyDivider.left
+                        top: parent.top
+                        bottom: parent.bottom
+                        rightMargin: 10
+                    }
+
+                    Text {
+                        id: requiresTitle
+
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                        }
+                        height: 22
+                        text: "Requires"
+                        color: rootTriagePanel.theme.modules.triage.secondaryTextColor
+                        font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize + 1
+                        font.bold: true
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    Text {
+                        id: requiresSubtitle
+
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: requiresTitle.bottom
+                            topMargin: 1
+                        }
+                        height: 14
+                        text: "Direct dependencies"
+                        color: rootTriagePanel.theme.modules.triage.secondaryTextColor
+                        font.pixelSize: rootTriagePanel.theme.modules.triage.metaPixelSize
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    Text {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: requiresSubtitle.bottom
+                            leftMargin: 12
+                            topMargin: 7
+                        }
+                        height: 18
+                        visible: selectedRequiresDependencies().length === 0
+                        text: "none"
+                        color: rootTriagePanel.theme.modules.triage.secondaryTextColor
+                        font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    ListView {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: requiresSubtitle.bottom
+                            bottom: parent.bottom
+                            leftMargin: 12
+                            topMargin: 5
+                        }
+                        model: selectedRequiresDependencies()
+                        visible: selectedRequiresDependencies().length > 0
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        spacing: 4
+
+                        delegate: Rectangle {
+                            required property string modelData
+
+                            width: ListView.view.width
+                            height: 22
+                            radius: 5
+                            color: requiresDepHover.hovered ? rootTriagePanel.theme.modules.triage.hoveredRowColor : "transparent"
+
+                            HoverHandler {
+                                id: requiresDepHover
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            Text {
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    verticalCenter: parent.verticalCenter
+                                    leftMargin: 8
+                                    rightMargin: 8
+                                }
+                                height: 18
+                                text: modelData
+                                color: requiresDepHover.hovered ? rootTriagePanel.theme.modules.triage.accentColor : rootTriagePanel.theme.modules.triage.primaryTextColor
+                                font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize
+                                elide: Text.ElideRight
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: rootTriagePanel.service.focusPackage(modelData)
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    id: dependencyDivider
+
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        top: parent.top
+                        bottom: parent.bottom
+                    }
+                    width: 1
+                    color: rootTriagePanel.theme.modules.triage.borderColor
+                    opacity: 0.7
+                }
+
+                Item {
+                    id: requiredBySection
+
+                    anchors {
+                        left: dependencyDivider.right
+                        right: parent.right
+                        top: parent.top
+                        bottom: parent.bottom
+                        leftMargin: 10
+                    }
+
+                    Text {
+                        id: requiredByTitle
+
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                        }
+                        height: 22
+                        text: "Required by"
+                        color: rootTriagePanel.theme.modules.triage.secondaryTextColor
+                        font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize + 1
+                        font.bold: true
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    Text {
+                        id: requiredBySubtitle
+
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: requiredByTitle.bottom
+                            topMargin: 1
+                        }
+                        height: 14
+                        text: "Direct reverse dependencies"
+                        color: rootTriagePanel.theme.modules.triage.secondaryTextColor
+                        font.pixelSize: rootTriagePanel.theme.modules.triage.metaPixelSize
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    Text {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: requiredBySubtitle.bottom
+                            leftMargin: 12
+                            topMargin: 7
+                        }
+                        height: 18
+                        visible: selectedRequiredByDependencies().length === 0
+                        text: "none"
+                        color: rootTriagePanel.theme.modules.triage.secondaryTextColor
+                        font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    ListView {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: requiredBySubtitle.bottom
+                            bottom: parent.bottom
+                            leftMargin: 12
+                            topMargin: 5
+                        }
+                        model: selectedRequiredByDependencies()
+                        visible: selectedRequiredByDependencies().length > 0
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        spacing: 4
+
+                        delegate: Rectangle {
+                            required property string modelData
+
+                            width: ListView.view.width
+                            height: 22
+                            radius: 5
+                            color: requiredByDepHover.hovered ? rootTriagePanel.theme.modules.triage.hoveredRowColor : "transparent"
+
+                            HoverHandler {
+                                id: requiredByDepHover
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            Text {
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    verticalCenter: parent.verticalCenter
+                                    leftMargin: 8
+                                    rightMargin: 8
+                                }
+                                height: 18
+                                text: modelData
+                                color: requiredByDepHover.hovered ? rootTriagePanel.theme.modules.triage.accentColor : rootTriagePanel.theme.modules.triage.primaryTextColor
+                                font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize
+                                elide: Text.ElideRight
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: rootTriagePanel.service.focusPackage(modelData)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -821,6 +1064,205 @@ PanelWindow {
         }
 
         Rectangle {
+            id: commandEventsPanel
+
+            anchors {
+                left: packageList.right
+                right: parent.right
+                top: decisionFilterRow.bottom
+                bottom: bottomStrip.top
+                leftMargin: rootTriagePanel.theme.modules.triage.detailGap
+                rightMargin: rootTriagePanel.theme.modules.triage.panelPadding
+                topMargin: 10
+                bottomMargin: 10
+            }
+            visible: rootTriagePanel.commandEventsOpen
+            z: 30
+            radius: 6
+            color: rootTriagePanel.theme.modules.triage.eventPanelColor
+            border.width: 1
+            border.color: rootTriagePanel.theme.modules.triage.focusBorderColor
+            clip: true
+
+            Text {
+                id: commandEventsTitle
+
+                anchors {
+                    left: parent.left
+                    top: parent.top
+                    leftMargin: 14
+                    topMargin: 12
+                }
+                width: 220
+                height: 22
+                text: "Command Events"
+                color: rootTriagePanel.theme.modules.triage.primaryTextColor
+                font.pixelSize: rootTriagePanel.theme.modules.triage.titlePixelSize
+                font.bold: true
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+            }
+
+            Text {
+                anchors {
+                    left: commandEventsTitle.right
+                    right: commandEventsActions.left
+                    verticalCenter: commandEventsTitle.verticalCenter
+                    leftMargin: 8
+                    rightMargin: 8
+                }
+                height: 18
+                text: rootTriagePanel.service.loadingEvents ? "loading" : rootTriagePanel.service.commandEvents.length + " recent"
+                color: rootTriagePanel.theme.modules.triage.secondaryTextColor
+                font.pixelSize: rootTriagePanel.theme.modules.triage.metaPixelSize
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+            }
+
+            Row {
+                id: commandEventsActions
+
+                anchors {
+                    right: parent.right
+                    top: parent.top
+                    rightMargin: 10
+                    topMargin: 10
+                }
+                height: 24
+                spacing: 6
+
+                MiniButton {
+                    label: "Refresh"
+                    onClicked: rootTriagePanel.service.loadEvents()
+                }
+
+                MiniButton {
+                    label: "Close"
+                    width: 58
+                    onClicked: rootTriagePanel.commandEventsOpen = false
+                }
+            }
+
+            Text {
+                id: commandEventsEmpty
+
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: commandEventsTitle.bottom
+                    leftMargin: 14
+                    rightMargin: 14
+                    topMargin: 22
+                }
+                visible: !rootTriagePanel.service.loadingEvents && rootTriagePanel.service.commandEvents.length === 0
+                height: 22
+                text: "No command events recorded yet."
+                color: rootTriagePanel.theme.modules.triage.secondaryTextColor
+                font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+
+            ListView {
+                id: commandEventsList
+
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: commandEventsTitle.bottom
+                    bottom: parent.bottom
+                    leftMargin: 10
+                    rightMargin: 10
+                    topMargin: 14
+                    bottomMargin: 10
+                }
+                model: rootTriagePanel.service.commandEvents
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                spacing: 6
+
+                delegate: Rectangle {
+                    required property var modelData
+
+                    width: ListView.view.width
+                    height: 58
+                    radius: 6
+                    color: eventRowHover.hovered ? rootTriagePanel.theme.modules.triage.eventRowHoverColor : rootTriagePanel.theme.modules.triage.eventRowColor
+                    border.width: 1
+                    border.color: modelData.ok ? rootTriagePanel.theme.modules.triage.borderColor : rootTriagePanel.theme.modules.triage.dangerBorderColor
+
+                    HoverHandler {
+                        id: eventRowHover
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
+                    Text {
+                        id: eventHeader
+
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                            leftMargin: 10
+                            rightMargin: 10
+                            topMargin: 7
+                        }
+                        height: 16
+                        text: eventTimeText(modelData.ts) + " | " + eventResultText(modelData) + " | " + String(modelData.commandId || "")
+                        color: modelData.ok ? rootTriagePanel.theme.modules.triage.secondaryTextColor : rootTriagePanel.theme.modules.triage.errorColor
+                        font.pixelSize: rootTriagePanel.theme.modules.triage.metaPixelSize
+                        font.bold: true
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    Text {
+                        id: eventCommand
+
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: eventHeader.bottom
+                            leftMargin: 10
+                            rightMargin: 10
+                            topMargin: 3
+                        }
+                        height: 16
+                        text: rootTriagePanel.service.eventCommandLine(modelData)
+                        color: rootTriagePanel.theme.modules.triage.primaryTextColor
+                        font.pixelSize: rootTriagePanel.theme.modules.triage.bodyPixelSize
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    Text {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: eventCommand.bottom
+                            leftMargin: 10
+                            rightMargin: 10
+                            topMargin: 2
+                        }
+                        height: 14
+                        text: eventMetaLine(modelData)
+                        color: rootTriagePanel.theme.modules.triage.secondaryTextColor
+                        font.pixelSize: rootTriagePanel.theme.modules.triage.metaPixelSize
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: rootTriagePanel.service.copyEventCommand(modelData)
+                    }
+                }
+            }
+        }
+
+        Rectangle {
             id: bottomStrip
 
             anchors {
@@ -1089,6 +1531,12 @@ PanelWindow {
         return "No package selected";
     }
 
+    function toggleCommandEvents() {
+        rootTriagePanel.commandEventsOpen = !rootTriagePanel.commandEventsOpen;
+        if (rootTriagePanel.commandEventsOpen)
+            rootTriagePanel.service.loadEvents();
+    }
+
     function selectedMeta() {
         const item = rootTriagePanel.service.selectedItem;
         const details = selectedPackageDetails();
@@ -1110,7 +1558,7 @@ PanelWindow {
         if (details)
             return "";
 
-        return "Press Enter or double-click to load package metadata and reverse dependencies.";
+        return "Press Enter or double-click to load package metadata and dependencies.";
     }
 
     function currentDecisionText() {
@@ -1161,6 +1609,32 @@ PanelWindow {
         return Qt.formatDateTime(new Date(Number(ts) * 1000), "MM-dd HH:mm");
     }
 
+    function eventTimeText(ts) {
+        if (!ts)
+            return "unknown";
+
+        return Qt.formatDateTime(new Date(Number(ts) * 1000), "MM-dd HH:mm:ss");
+    }
+
+    function eventResultText(event) {
+        if (!event)
+            return "unknown";
+
+        if (event.ok)
+            return "ok";
+
+        return "failed";
+    }
+
+    function eventMetaLine(event) {
+        if (!event)
+            return "";
+
+        const code = event.exitCode === null || event.exitCode === undefined ? "no exit code" : "exit " + event.exitCode;
+        const stderr = event.stderr ? " | " + String(event.stderr) : "";
+        return String(event.trigger || "manual") + " | " + String(event.risk || "unknown") + " | " + code + stderr;
+    }
+
     function packageDescription() {
         const details = selectedPackageDetails();
         if (rootTriagePanel.service.loadingDetails)
@@ -1181,7 +1655,12 @@ PanelWindow {
         return details;
     }
 
-    function selectedReverseDependencies() {
+    function selectedRequiresDependencies() {
+        const details = selectedPackageDetails();
+        return details && Array.isArray(details.requires) ? details.requires : [];
+    }
+
+    function selectedRequiredByDependencies() {
         const details = selectedPackageDetails();
         return details && Array.isArray(details.requiredBy) ? details.requiredBy : [];
     }

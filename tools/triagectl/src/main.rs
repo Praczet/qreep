@@ -108,6 +108,13 @@ struct DecisionsResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct EventsResponse {
+    schema_version: u8,
+    events: Vec<CommandEvent>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct ReviewItem {
     package: String,
     created_ts: u64,
@@ -134,6 +141,7 @@ struct WhyResponse {
     description: Option<String>,
     install_reason: Option<String>,
     url: Option<String>,
+    requires: Vec<String>,
     required_by: Vec<String>,
     events: Vec<CommandEvent>,
 }
@@ -193,6 +201,7 @@ fn run() -> Result<()> {
             print_json(&why(&conn, package)?)?;
         }
         "decisions" => print_json(&decisions(&conn)?)?,
+        "events" => print_json(&events(&conn, parse_limit(&args.rest, 80)?)?)?,
         "decide" => print_json(&decide(&conn, &args.rest)?)?,
         "export-json" => print_json(&export_json(&conn)?)?,
         "export-md" => print_json(&export_md(&conn)?)?,
@@ -231,6 +240,7 @@ Usage:
   triagectl queue-orphans [--json]
   triagectl why <package> [--json]
   triagectl decisions [--json]
+  triagectl events [--limit N] [--json]
   triagectl decide <package> <keep|investigate|plan-remove|skip> [--note TEXT] [--json]
   triagectl export-json
   triagectl export-md
@@ -244,6 +254,19 @@ fn required_arg<'a>(args: &'a Args, message: &str) -> Result<&'a str> {
         .first()
         .map(|value| value.as_str())
         .ok_or_else(|| message.into())
+}
+
+fn parse_limit(args: &[String], default_limit: usize) -> Result<usize> {
+    let Some(index) = args.iter().position(|arg| arg == "--limit") else {
+        return Ok(default_limit);
+    };
+
+    let Some(value) = args.get(index + 1) else {
+        return Err("--limit requires a number".into());
+    };
+
+    let limit: usize = value.parse()?;
+    Ok(limit.clamp(1, 500))
 }
 
 fn print_json<T: Serialize>(value: &T) -> Result<()> {
@@ -698,12 +721,22 @@ fn why(conn: &Connection, package: &str) -> Result<WhyResponse> {
         "why",
         "read-only",
     )?;
-    let deps_output = run_command(&["pactree", "-r", "-d", "1", package]);
-    let deps_event = record_event(
+    let requires_output = run_command(&["pactree", "-d", "1", package]);
+    let requires_event = record_event(
+        conn,
+        "pactree.deps_direct",
+        "pactree",
+        &requires_output,
+        ts,
+        "why",
+        "read-only",
+    )?;
+    let reverse_deps_output = run_command(&["pactree", "-r", "-d", "1", package]);
+    let reverse_deps_event = record_event(
         conn,
         "pactree.reverse_deps_direct",
         "pactree",
-        &deps_output,
+        &reverse_deps_output,
         ts,
         "why",
         "read-only",
@@ -715,8 +748,14 @@ fn why(conn: &Connection, package: &str) -> Result<WhyResponse> {
         PackageInfo::default()
     };
 
-    let required_by = if deps_output.ok {
-        parse_pactree_reverse_deps(package, &deps_output.stdout)
+    let requires = if requires_output.ok {
+        parse_pactree_direct_children(package, &requires_output.stdout)
+    } else {
+        Vec::new()
+    };
+
+    let required_by = if reverse_deps_output.ok {
+        parse_pactree_direct_children(package, &reverse_deps_output.stdout)
     } else {
         Vec::new()
     };
@@ -730,8 +769,9 @@ fn why(conn: &Connection, package: &str) -> Result<WhyResponse> {
         description: info.description,
         install_reason: info.install_reason,
         url: info.url,
+        requires,
         required_by,
-        events: vec![info_event, deps_event],
+        events: vec![info_event, requires_event, reverse_deps_event],
     })
 }
 
@@ -763,7 +803,7 @@ fn parse_pacman_info(output: &str) -> PackageInfo {
     info
 }
 
-fn parse_pactree_reverse_deps(package: &str, output: &str) -> Vec<String> {
+fn parse_pactree_direct_children(package: &str, output: &str) -> Vec<String> {
     let mut deps = Vec::new();
     for line in output.lines().skip(1) {
         let cleaned = line
@@ -943,6 +983,40 @@ fn export_md(conn: &Connection) -> Result<ExportResponse> {
     Ok(ExportResponse {
         schema_version: 1,
         path: path.display().to_string(),
+    })
+}
+
+fn events(conn: &Connection, limit: usize) -> Result<EventsResponse> {
+    let mut stmt = conn.prepare(
+        "\
+        SELECT id, command_id, provider, argv_json, ts, ok, exit_code, risk, trigger, stderr
+        FROM command_events
+        ORDER BY id DESC
+        LIMIT ?1
+        ",
+    )?;
+    let events = stmt
+        .query_map([limit as i64], |row| {
+            let argv_json: String = row.get(3)?;
+            let argv: Vec<String> = serde_json::from_str(&argv_json).unwrap_or_default();
+            Ok(CommandEvent {
+                id: row.get(0)?,
+                command_id: row.get(1)?,
+                provider: row.get(2)?,
+                argv,
+                ts: row.get::<_, i64>(4)? as u64,
+                ok: row.get::<_, i64>(5)? != 0,
+                exit_code: row.get(6)?,
+                risk: row.get(7)?,
+                trigger: row.get(8)?,
+                stderr: row.get(9)?,
+            })
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+
+    Ok(EventsResponse {
+        schema_version: 1,
+        events,
     })
 }
 

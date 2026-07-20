@@ -35,6 +35,7 @@ PanelWindow {
     readonly property bool clockEventIndicatorsSuppressed: shellFullscreenSurfaceOpen || (power.open && power.service.isFullscreen)
     readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
+    readonly property int visibleFootprintHeight: collapsed ? rootBar.theme.modules.bar.collapsedHeight : rootBar.activeTopPadding + rootBar.activeBarHeight
     readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume"]
     readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
     readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["potato-fast", "timer", "clock", "mpris"])

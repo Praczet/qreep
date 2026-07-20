@@ -22,7 +22,7 @@ This module should support a slower and more useful workflow:
 - find orphaned packages;
 - queue packages for review;
 - explain why a package exists;
-- show direct reverse dependencies;
+- show direct dependencies and direct reverse dependencies;
 - record human decisions;
 - keep an append-only history of package queries and local decisions;
 - export that history when future Adam wants evidence instead of vibes.
@@ -39,7 +39,7 @@ Allowed in v1:
 - read explicit/dependency/orphan counts;
 - check pending updates;
 - inspect package metadata;
-- inspect direct reverse dependencies;
+- inspect direct dependencies and direct reverse dependencies;
 - write Qreep triage state, decisions, and history files;
 - export local triage history.
 
@@ -64,7 +64,8 @@ command preview, confirmation, logging, and a very clear boundary between
 - read-only command providers;
 - command events with `id`, `provider`, `argv`, timestamp, success state, exit
   code, risk, and trigger;
-- package explanations from `pacman -Qi` plus `pactree -r -d 1`;
+- package explanations from `pacman -Qi` plus `pactree -d 1` and
+  `pactree -r -d 1`;
 - orphan queueing from `pacman -Qtdq`;
 - decision kinds: `keep`, `investigate`, `plan-remove`, `skip`;
 - local SQLite state with JSON/Markdown export;
@@ -143,6 +144,7 @@ triagectl orphans
 triagectl queue-orphans
 triagectl why bash
 triagectl decisions
+triagectl events --limit 80
 triagectl decide bash keep --note "Required by my shell setup"
 triagectl export-json
 triagectl export-md
@@ -193,6 +195,7 @@ pacman -Qqe            # explicitly installed packages
 pacman -Qqd            # dependency-installed packages
 pacman -Qtdq           # orphaned packages
 pacman -Qi <package>   # package metadata and install reason
+pactree -d 1 <pkg>     # direct dependencies
 pactree -r -d 1 <pkg>  # direct reverse dependencies
 checkupdates --nocolor # pending updates when available
 pacman -Qu             # fallback pending update check
@@ -210,7 +213,7 @@ Suggested layout:
 - header with package summary: total, explicit, dependencies, orphans, outdated;
 - left review list with package name, source, and latest decision;
 - details pane for selected package metadata;
-- reverse-dependency section;
+- direct dependency and reverse-dependency sections;
 - notes/decision area;
 - filter/search input;
 - bottom action strip;
@@ -243,6 +246,8 @@ Current panel behavior:
   reports them;
 - the decision row filters the active package list by All, None, Keep,
   Investigate, Plan Remove, and Skip;
+- clicking a stats or decision filter clears the package search input, because
+  stale text filters are how panels learn to annoy people;
 - filters the active package list by package, source, and decision;
 - shows the latest decision note in the package row preview and the decision
   panel;
@@ -253,13 +258,18 @@ Current panel behavior:
   and skip model used by decision labels, and highlights the current one;
 - provides a compact History toggle in the decision panel for the selected
   package's append-only decision history;
-- clears package metadata and reverse dependency details when selection moves to
-  another package;
+- clears package metadata and dependency details when selection moves to another
+  package;
 - shows a large clickable inspect hint overlay, inset inside the package detail
   box, that loads metadata through the same path as Enter and double-click;
+- makes direct dependency and direct reverse dependency rows clickable:
+  selecting one switches to Total, All decisions, filters by that package name,
+  selects it, and loads its package details;
 - shows the latest command event in the bottom strip, including the exact argv
   that was executed, and copies that command to the clipboard with a notification
   when clicked;
+- opens a compact Events overlay for recent command events, newest first, with
+  click-to-copy command rows;
 - exports JSON and Markdown history from `triagectl`.
 
 Keyboard behavior:
@@ -342,7 +352,8 @@ Until duplication hurts, keep the boundary simple.
 - `triagectl packages <category>` returns valid JSON package lists.
 - Update package rows include old/new version fields when the backend provides
   them.
-- `triagectl why <pkg>` returns metadata plus direct reverse dependencies.
+- `triagectl why <pkg>` returns metadata plus direct dependencies and direct
+  reverse dependencies.
 - Qreep opens the triage panel through IPC.
 - The panel lists packages for the active stat category.
 - The panel shows details for the selected package.

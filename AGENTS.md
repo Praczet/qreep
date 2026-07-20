@@ -157,7 +157,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
-| `modules/triage/README.md` | `6b2b052` | `2026-07-20` |
+| `modules/triage/README.md` | `ad4ac24` | `2026-07-20` |
 
 ## Quickshell / QML rules
 
@@ -539,7 +539,8 @@ Purpose:
 
 - inspect Arch package state before doing anything destructive;
 - queue orphaned packages for human review;
-- explain why a package exists with package metadata and direct reverse dependencies;
+- explain why a package exists with package metadata, direct dependencies, and
+  direct reverse dependencies;
 - record decisions such as `keep`, `investigate`, `plan-remove`, and `skip`;
 - keep command events and decisions queryable/exportable for later evidence.
 
@@ -573,6 +574,7 @@ triagectl orphans
 triagectl queue-orphans
 triagectl why bash
 triagectl decisions
+triagectl events --limit 80
 triagectl decide bash keep --note "Required by my shell setup"
 triagectl export-json
 triagectl export-md

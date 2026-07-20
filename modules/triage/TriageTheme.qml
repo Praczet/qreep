@@ -6,8 +6,7 @@ QtObject {
     required property QtObject qreep
 
     readonly property int panelWidth: 980
-    readonly property int panelHeight: 700
-    readonly property int screenMargin: 28
+    readonly property int screenMargin: 20
     readonly property int panelPadding: 16
     readonly property int panelRadius: 8
     readonly property int headerHeight: 54
@@ -32,6 +31,9 @@ QtObject {
     readonly property color panelColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, panelOpacity)
     readonly property color controlColor: Qt.rgba(qreep.surfaceContainerHighest.r, qreep.surfaceContainerHighest.g, qreep.surfaceContainerHighest.b, 0.78)
     readonly property color decisionPanelColor: Qt.rgba(qreep.surfaceContainerHighest.r, qreep.surfaceContainerHighest.g, qreep.surfaceContainerHighest.b, 0.58)
+    readonly property color eventPanelColor: Qt.rgba(qreep.surfaceContainer.r, qreep.surfaceContainer.g, qreep.surfaceContainer.b, 0.98)
+    readonly property color eventRowColor: Qt.rgba(qreep.surfaceContainerHighest.r, qreep.surfaceContainerHighest.g, qreep.surfaceContainerHighest.b, 0.96)
+    readonly property color eventRowHoverColor: Qt.rgba(qreep.surfaceContainerHigh.r, qreep.surfaceContainerHigh.g, qreep.surfaceContainerHigh.b, 0.98)
     readonly property color inspectHintColor: Qt.rgba(qreep.surfaceContainerHighest.r, qreep.surfaceContainerHighest.g, qreep.surfaceContainerHighest.b, 0.94)
     readonly property color inspectHintHoverColor: Qt.rgba(qreep.surfaceContainerHigh.r, qreep.surfaceContainerHigh.g, qreep.surfaceContainerHigh.b, 0.96)
     readonly property color sectionColor: Qt.rgba(qreep.surfaceContainer.r, qreep.surfaceContainer.g, qreep.surfaceContainer.b, 0.72)

@@ -14,16 +14,22 @@ QtObject {
     property string activeDecisionFilter: "all"
     property var summary: ({})
     property var reviewItems: []
+    property var commandEvents: []
     property var decisionByPackage: ({})
     property var packageItems: []
     property var filteredItems: []
     property int selectedIndex: filteredItems.length > 0 ? 0 : -1
     property var selectedItem: selectedIndex >= 0 && selectedIndex < filteredItems.length ? filteredItems[selectedIndex] : null
     property var packageDetails: ({})
+    property string pendingFocusPackage: ""
+    property string pendingInspectPackage: ""
+    property string queuedCategory: ""
     property bool loadingSummary: false
     property bool loadingDecisions: false
+    property bool loadingEvents: false
     property bool loadingDetails: false
     property bool writingDecision: false
+    property bool pendingEventsRefresh: false
     property string error: ""
     property string status: "idle"
     property var lastEvent: null
@@ -61,6 +67,20 @@ QtObject {
         }
 
         onExited: (exitCode, exitStatus) => rootTriageService.applyDecisionsOutput(decisionsStdout.text, decisionsStderr.text, exitCode)
+    }
+
+    readonly property Process eventsRunner: Process {
+        stdout: StdioCollector {
+            id: eventsStdout
+            waitForEnd: true
+        }
+
+        stderr: StdioCollector {
+            id: eventsStderr
+            waitForEnd: true
+        }
+
+        onExited: (exitCode, exitStatus) => rootTriageService.applyEventsOutput(eventsStdout.text, eventsStderr.text, exitCode)
     }
 
     readonly property Process packageRunner: Process {
@@ -136,6 +156,7 @@ QtObject {
     function refresh() {
         loadSummary();
         loadDecisions();
+        loadEvents();
         loadCategory(activeCategory);
     }
 
@@ -161,11 +182,29 @@ QtObject {
         decisionsRunner.running = true;
     }
 
-    function loadCategory(category) {
-        if (packageRunner.running)
+    function loadEvents() {
+        if (eventsRunner.running) {
+            pendingEventsRefresh = true;
             return;
+        }
 
-        activeCategory = normalizeCategory(category);
+        loadingEvents = true;
+        pendingEventsRefresh = false;
+        error = "";
+        status = "loading command events";
+        eventsRunner.command = ["triagectl", "events", "--limit", "80", "--json"];
+        eventsRunner.running = true;
+    }
+
+    function loadCategory(category) {
+        const normalized = normalizeCategory(category);
+        if (packageRunner.running) {
+            queuedCategory = normalized;
+            activeCategory = normalized;
+            return;
+        }
+
+        activeCategory = normalized;
         loadingDecisions = true;
         error = "";
         status = "loading " + categoryLabel(activeCategory);
@@ -193,14 +232,33 @@ QtObject {
     }
 
     function inspectPackage(packageName) {
-        if (whyRunner.running || !packageName || packageName.length === 0)
+        if (!packageName || packageName.length === 0)
             return;
 
+        if (whyRunner.running) {
+            pendingInspectPackage = packageName;
+            return;
+        }
+
+        pendingInspectPackage = "";
         loadingDetails = true;
         error = "";
         status = "inspecting " + packageName;
         whyRunner.command = ["triagectl", "why", packageName, "--json"];
         whyRunner.running = true;
+    }
+
+    function focusPackage(packageName) {
+        const target = String(packageName || "").trim();
+        if (target.length === 0)
+            return;
+
+        pendingFocusPackage = target;
+        activeDecisionFilter = "all";
+        searchText = target;
+        packageDetails = {};
+        loadCategory("total");
+        inspectPackage(target);
     }
 
     function decideSelected(kind) {
@@ -232,7 +290,16 @@ QtObject {
     }
 
     function copyLastCommand() {
-        const command = eventCommandLine(lastEvent);
+        copyEventCommand(lastEvent);
+    }
+
+    function copyEventCommand(event) {
+        const command = eventCommandLine(event);
+        copyCommand(command);
+    }
+
+    function copyCommand(commandText) {
+        const command = String(commandText || "");
         if (command.length === 0)
             return;
 
@@ -288,6 +355,7 @@ QtObject {
         summary = parsed;
         lastEvent = parsed.lastEvent || null;
         status = eventStatus(lastEvent, "summary loaded");
+        loadEvents();
     }
 
     function applyDecisionsOutput(stdout, stderr, exitCode) {
@@ -303,6 +371,18 @@ QtObject {
         status = "loaded " + reviewItems.length + " review items";
     }
 
+    function applyEventsOutput(stdout, stderr, exitCode) {
+        loadingEvents = false;
+        const parsed = parseOutput(stdout, stderr, exitCode, "events");
+        if (!parsed)
+            return;
+
+        commandEvents = Array.isArray(parsed.events) ? parsed.events : [];
+        status = "loaded " + commandEvents.length + " command events";
+        if (pendingEventsRefresh)
+            loadEvents();
+    }
+
     function applyPackageOutput(stdout, stderr, exitCode) {
         loadingDecisions = false;
         const parsed = parseOutput(stdout, stderr, exitCode, "packages");
@@ -312,7 +392,15 @@ QtObject {
         lastEvent = parsed.event || null;
         packageItems = mergeDecisions(Array.isArray(parsed.packages) ? parsed.packages.map(packageEntry => normalizePackageEntry(packageEntry, parsed.category || activeCategory)) : [], parsed.category || activeCategory);
         applyFilter();
+        applyPendingFocusPackage();
         status = eventStatus(lastEvent, "loaded " + packageItems.length + " packages");
+        loadEvents();
+        if (queuedCategory.length > 0) {
+            const nextCategory = queuedCategory;
+            queuedCategory = "";
+            if (nextCategory !== parsed.category)
+                loadCategory(nextCategory);
+        }
     }
 
     function applyQueueOutput(stdout, stderr, exitCode) {
@@ -323,6 +411,7 @@ QtObject {
 
         lastEvent = parsed.internalEvent || parsed.sourceEvent || null;
         status = "queued " + parsed.added + " new orphan items";
+        loadEvents();
         loadDecisions();
         loadCategory("orphans");
     }
@@ -337,6 +426,14 @@ QtObject {
         if (Array.isArray(parsed.events) && parsed.events.length > 0)
             lastEvent = parsed.events[parsed.events.length - 1];
         status = eventStatus(lastEvent, "loaded package details");
+        loadEvents();
+        if (pendingInspectPackage.length > 0 && pendingInspectPackage !== parsed.package) {
+            const nextPackage = pendingInspectPackage;
+            pendingInspectPackage = "";
+            inspectPackage(nextPackage);
+        } else {
+            pendingInspectPackage = "";
+        }
     }
 
     function applyDecideOutput(stdout, stderr, exitCode) {
@@ -349,6 +446,7 @@ QtObject {
         status = "recorded " + pendingDecisionKind + " for " + parsed.package;
         pendingDecisionKind = "";
         noteText = "";
+        loadEvents();
         loadDecisions();
         loadCategory(activeCategory);
         inspectPackage(parsed.package);
@@ -360,6 +458,7 @@ QtObject {
             return;
 
         status = "exported " + parsed.path;
+        loadEvents();
     }
 
     function parseOutput(stdout, stderr, exitCode, label) {
@@ -393,6 +492,20 @@ QtObject {
 
         filteredItems = nextItems;
         clampSelection();
+    }
+
+    function applyPendingFocusPackage() {
+        if (pendingFocusPackage.length === 0)
+            return;
+
+        const target = pendingFocusPackage;
+        for (let index = 0; index < filteredItems.length; index++) {
+            if (filteredItems[index] && filteredItems[index].package === target) {
+                selectedIndex = index;
+                pendingFocusPackage = "";
+                return;
+            }
+        }
     }
 
     function clampSelection() {
@@ -489,13 +602,17 @@ QtObject {
 
     function setCategory(category) {
         const normalized = normalizeCategory(category);
-        if (activeCategory === normalized && packageItems.length > 0)
+        searchText = "";
+        if (activeCategory === normalized && packageItems.length > 0) {
+            applyFilter();
             return;
+        }
 
         loadCategory(normalized);
     }
 
     function setDecisionFilter(filter) {
+        searchText = "";
         activeDecisionFilter = normalizeDecisionFilter(filter);
         applyFilter();
     }

@@ -86,6 +86,7 @@ ShellRoot {
         id: triage
 
         theme: qreepTheme
+        topReservedHeight: bar.visibleFootprintHeight
     }
 
     PolkitModule.Polkit {
