@@ -125,9 +125,9 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `1af57ac` | `2026-07-17` |
-| `README.md` | `9438e75` | `2026-07-20` |
-| `README_when_bored.md` | `9438e75` | `2026-07-20` |
+| `AGENTS.md` | `cc7fda3` | `2026-07-21` |
+| `README.md` | `cc7fda3` | `2026-07-21` |
+| `README_when_bored.md` | `cc7fda3` | `2026-07-21` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
@@ -151,7 +151,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/dashboard/features/image/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/weather/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/wotd/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/expose/README.md` | `dcf825d` | `2026-07-09` |
+| `modules/expose/README.md` | `cc7fda3` | `2026-07-21` |
 | `modules/fastpassword/README.md` | `1af57ac` | `2026-07-17` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
@@ -658,37 +658,31 @@ V1 behavior:
 - refresh clients when shown;
 - current workspace windows render as large cards;
 - other workspaces render as smaller clusters;
-- current workspace preview status is unresolved: `grim -g` works as a rectangle
-  capture but lies when floating windows overlap normal windows;
-- attempted live `ScreencopyView` previews from `Hyprland.toplevels` Wayland
-  handles, but they did not work well enough to keep fighting today;
-- current workspace cards may fall back to runtime `grim -g` thumbnails
-  under `~/.cache/qreep/expose/`;
+- current workspace cards prefer live `ScreencopyView` previews sourced from
+  `ToplevelManager.toplevels`;
+- if a Wayland `Toplevel` cannot be matched safely, current workspace cards
+  fall back to runtime `grim -T <stableId>` thumbnails under
+  `~/.cache/qreep/expose/`;
 - click focuses the selected application/window and closes Expose;
 - arrow keys move selection;
 - `Enter` focuses the selected window and closes Expose;
 - `Escape` closes;
-- no search in v1, but keep the model ready for search filtering later.
+- printable typing reveals search and filters by app label, class, title, and
+  workspace name.
 
 Preview strategy:
 
-1. Keep `Quickshell.Hyprland` / `hyprctl clients -j` as the reliable metadata
+1. Keep `hyprctl clients -j` as the reliable metadata
    and focus path because it gives geometry, class, floating state, workspace
-   id/name, and address.
-2. Use `Hyprland.toplevels` only where it helps; do not make selection/focus
-   depend on it.
-3. Do not assume `ScreencopyView` is solved. It was tested as the cleaner
-   toplevel-preview path and did not behave well enough in this slice.
-4. `grim -g` rectangle screenshots are usable only when overlapping windows do
-   not matter. They are not true window screenshots.
-5. Possible workaround to prototype later: create a temporary special workspace
-   such as `special:qreep-expose-floaters`, move floating current-workspace
-   windows there one by one, capture normal tiled windows without floaters
-   covering them, then capture the floating windows separately, and finally
-   restore every window to its original workspace/floating state. This needs to
-   be treated as a careful transaction: collect original addresses/workspaces,
-   avoid stealing focus more than necessary, handle failure, and always restore.
-6. Store any generated thumbnails under `~/.cache/qreep/expose/`; do not create
+   id/name, address, and `stableId`.
+2. Use `ToplevelManager.toplevels` for actual live preview capture, because
+   `ScreencopyView.captureSource` accepts a Wayland `Toplevel` directly.
+3. Match Hyprland clients to Toplevels conservatively by title/app id. If the
+   match is ambiguous, use the fallback instead of showing the wrong window with
+   confidence. That would be worse than an icon, and more smug.
+4. Use `grim -T <stableId>` as the fallback, never `grim -g` rectangle captures
+   and never the Hyprland window address.
+5. Store any generated thumbnails under `~/.cache/qreep/expose/`; do not create
    durable preview storage.
 
 Layout direction:
@@ -1046,7 +1040,7 @@ Qreep currently has:
 - a top-level Bloom module in `modules/bloom/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-bloom`, and watching Unclaimed Bloom runtime cache files;
 - a top-level Clipboard module in `modules/clipboard/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-clipboard`, and backed by `clipvault`;
 - the Clipboard panel currently supports a bottom overlay, search/filter, pins filter, keyboard navigation, text/code/color/image cards, runtime image previews, restore notifications, delete, and star/unstar metadata in `~/.local/share/clipvault/pinned.json`;
-- a top-level Expose module in `modules/expose/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-expose`, with parallel runtime thumbnails, centered manual layout motion, type-to-search filtering, spatial keyboard navigation, and keyboard/click activation that switches workspace before focusing the selected client;
+- a top-level Expose module in `modules/expose/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-expose`, with live `ToplevelManager`/`ScreencopyView` previews, `grim -T <stableId>` fallback thumbnails, centered manual layout motion, type-to-search filtering, spatial keyboard navigation, and keyboard/click activation that switches workspace before focusing the selected client;
 - a top-level Fast Password module in `modules/fastpassword/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-fast-password`, authenticating before the chooser opens, listing allowlisted KeePass entry names through `qreep-pass-list`, and copying through `qreep-pass-copy` with a short-lived auth stamp;
 - a top-level Notification module in `modules/notification/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-notification`, and backed by `Quickshell.Services.Notifications.NotificationServer`;
 - notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;

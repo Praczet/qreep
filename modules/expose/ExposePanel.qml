@@ -172,6 +172,7 @@ PanelWindow {
                     x: rootExposePanel.tileX(index)
                     y: rootExposePanel.tileY(index)
                     entrancePresented: rootExposePanel.presented
+                    exposeVisible: rootExposePanel.panelOpen && rootExposePanel.presented
                     entranceIndex: index
                     entranceGatherPoint: rootExposePanel.gatherPoint
 

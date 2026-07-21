@@ -38,7 +38,7 @@ QtObject {
     readonly property real overlayOpacity: 0.88
     readonly property real inactiveCardOpacity: 0.74
     readonly property real selectedScale: 1.035
-    readonly property bool useScreencopy: false
+    readonly property bool useScreencopy: true
 
     readonly property color overlayColor: Qt.rgba(qreep.background.r, qreep.background.g, qreep.background.b, overlayOpacity)
     readonly property color cardColor: Qt.rgba(qreep.surfaceContainer.r, qreep.surfaceContainer.g, qreep.surfaceContainer.b, 0.88)

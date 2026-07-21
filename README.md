@@ -127,7 +127,7 @@ They live as their own modules. The bar is allowed to open them, but it is not a
 
 #### Expose
 
-Expose groups windows by workspace, supports searching, and keeps keyboard navigation useful rather than ceremonial.
+Expose groups windows by workspace, supports searching, and uses real per-window previews so floating windows stop appearing where they were not invited.
 
 ![Qreep Expose](docs/assets/screenshots/qreep-expose.png)
 

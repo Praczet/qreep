@@ -405,10 +405,12 @@ arrow keys               -> spatial selection, including cluster mini-cards
 Enter / click            -> switch workspace if needed, focus client, close
 ```
 
-Current-workspace thumbnails are captured in parallel with `grim -g` before
-the overlay opens. The overview layout is manual and grid-shaped, not a QML
-`Grid`, so filtered cards can animate into their new positions instead of
-teleporting because a layout object felt helpful.
+Current-workspace previews prefer `ToplevelManager.toplevels` rendered through
+`ScreencopyView`, with `grim -T <stableId>` still-image thumbnails as the
+fallback.
+The overview layout is manual and grid-shaped, not a QML `Grid`, so filtered
+cards can animate into their new positions instead of teleporting because a
+layout object felt helpful.
 
 Clock event dots are still popup-based so they sit neatly under the pill. The
 bar suppresses them while Dashboard, Expose, or fullscreen Power is open,

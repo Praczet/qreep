@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Wayland
 import "../../core" as Core
 
 QtObject {
@@ -13,7 +14,7 @@ QtObject {
     property var activeWorkspace: ({ id: 0, name: "" })
     property var currentClients: []
     property var workspaceClusters: []
-    property var thumbnailByAddress: ({})
+    property var thumbnailByKey: ({})
     property var captureQueue: []
     property var captureCurrent: null
     property var focusDispatchQueue: []
@@ -83,7 +84,6 @@ QtObject {
         error = "";
         clientsLoaded = false;
         activeLoaded = false;
-        Hyprland.refreshToplevels();
         runJsonCommand(activeRunner, ["hyprctl", "activeworkspace", "-j"]);
         runJsonCommand(clientsRunner, ["hyprctl", "clients", "-j"]);
     }
@@ -311,8 +311,7 @@ QtObject {
             captureRunner.running = false;
 
         captureQueue = currentClients.filter(client => {
-            const size = client.size || [0, 0];
-            return (!useScreencopyPreviews() || !client.previewSource) && Number(size[0] || 0) > 0 && Number(size[1] || 0) > 0;
+            return (!useScreencopyPreviews() || !client.previewSource) && String(client.stableId || "").length > 0;
         });
 
         runCaptureBatch();
@@ -334,13 +333,9 @@ QtObject {
 
         for (let index = 0; index < captureQueue.length; index++) {
             const client = captureQueue[index];
-            const at = client.at || [0, 0];
-            const size = client.size || [0, 0];
-            const geometry = Math.round(Number(at[0] || 0)) + "," + Math.round(Number(at[1] || 0)) + " "
-                + Math.round(Number(size[0] || 0)) + "x" + Math.round(Number(size[1] || 0));
-            const path = thumbnailPath(client.address);
+            const path = thumbnailPath(client);
 
-            commands.push("grim -g " + shellQuote(geometry) + " -t png -l 0 " + shellQuote(path) + " & pids+=(\"$!\")");
+            commands.push("grim -T " + shellQuote(client.stableId) + " -t png -l 0 " + shellQuote(path) + " & pids+=(\"$!\")");
         }
 
         commands.push("for pid in \"${pids[@]}\"; do wait \"$pid\" || rc=1; done");
@@ -352,14 +347,14 @@ QtObject {
 
     function applyCaptureBatchOutput(exitCode) {
         if (exitCode === 0) {
-            const nextThumbnails = Object.assign({}, thumbnailByAddress);
+            const nextThumbnails = Object.assign({}, thumbnailByKey);
 
             for (let index = 0; index < captureQueue.length; index++) {
                 const client = captureQueue[index];
-                nextThumbnails[String(client.address || "")] = thumbnailPath(client.address);
+                nextThumbnails[thumbnailKey(client)] = thumbnailPath(client);
             }
 
-            thumbnailByAddress = nextThumbnails;
+            thumbnailByKey = nextThumbnails;
             rebuildModel();
         } else {
             warn("Expose thumbnail batch failed");
@@ -371,33 +366,103 @@ QtObject {
         openReady();
     }
 
-    function thumbnailPath(address) {
-        return thumbnailDir + "/" + String(address || "").replace(/[^A-Za-z0-9_.-]/g, "_") + ".png";
+    function thumbnailKey(client) {
+        const stableId = String(client && client.stableId || "");
+
+        return stableId.length > 0 ? stableId : String(client && client.address || "");
+    }
+
+    function thumbnailPath(client) {
+        return thumbnailDir + "/" + thumbnailKey(client).replace(/[^A-Za-z0-9_.-]/g, "_") + ".png";
     }
 
     function shellQuote(value) {
         return "'" + String(value || "").replace(/'/g, "'\\''") + "'";
     }
 
-    function previewSourceForAddress(address) {
+    function previewSourceForClient(client, usedToplevels) {
         if (!useScreencopyPreviews())
             return null;
 
-        const value = String(address || "");
+        const toplevels = toplevelValues();
 
-        if (value.length === 0)
-            return null;
+        return bestToplevelMatch(client, toplevels, usedToplevels);
+    }
 
-        const toplevels = Hyprland.toplevels && Hyprland.toplevels.values ? Hyprland.toplevels.values : [];
+    function toplevelValues() {
+        if (!ToplevelManager.toplevels)
+            return [];
+
+        if (ToplevelManager.toplevels.values)
+            return ToplevelManager.toplevels.values;
+
+        const result = [];
+        const count = Number(ToplevelManager.toplevels.count || 0);
+
+        for (let index = 0; index < count; index++) {
+            const item = ToplevelManager.toplevels.get(index);
+
+            if (item)
+                result.push(item);
+        }
+
+        return result;
+    }
+
+    function bestToplevelMatch(client, toplevels, usedToplevels) {
+        const title = String(client && client.title || "").trim();
+        const className = String(client && (client.class || client.initialClass) || "").trim();
+        const appLabelText = appLabel(client);
+        const candidates = [];
 
         for (let index = 0; index < toplevels.length; index++) {
             const toplevel = toplevels[index];
 
-            if (toplevel && String(toplevel.address || "") === value)
-                return toplevel.wayland || null;
+            if (!toplevel || usedToplevels.indexOf(toplevel) >= 0)
+                continue;
+
+            candidates.push({
+                toplevel: toplevel,
+                score: toplevelMatchScore(toplevel, title, className, appLabelText)
+            });
         }
 
-        return null;
+        candidates.sort((left, right) => right.score - left.score);
+
+        if (candidates.length === 0 || candidates[0].score <= 0)
+            return null;
+
+        if (candidates.length > 1 && candidates[0].score === candidates[1].score)
+            return null;
+
+        usedToplevels.push(candidates[0].toplevel);
+        return candidates[0].toplevel;
+    }
+
+    function toplevelMatchScore(toplevel, title, className, appLabelText) {
+        const toplevelTitle = String(toplevel.title || "").trim();
+        const appId = String(toplevel.appId || "").trim();
+        const lowerTitle = title.toLowerCase();
+        const lowerClass = className.toLowerCase();
+        const lowerAppLabel = appLabelText.toLowerCase();
+        const lowerToplevelTitle = toplevelTitle.toLowerCase();
+        const lowerAppId = appId.toLowerCase();
+        let score = 0;
+
+        if (title.length > 0 && toplevelTitle === title)
+            score += 100;
+        else if (lowerTitle.length > 0 && lowerToplevelTitle.length > 0 && (lowerTitle.indexOf(lowerToplevelTitle) >= 0 || lowerToplevelTitle.indexOf(lowerTitle) >= 0))
+            score += 55;
+
+        if (className.length > 0 && appId === className)
+            score += 80;
+        else if (lowerClass.length > 0 && lowerAppId.length > 0 && (lowerClass.indexOf(lowerAppId) >= 0 || lowerAppId.indexOf(lowerClass) >= 0))
+            score += 36;
+
+        if (lowerAppLabel.length > 0 && lowerAppId.length > 0 && (lowerAppLabel.indexOf(lowerAppId) >= 0 || lowerAppId.indexOf(lowerAppLabel) >= 0))
+            score += 22;
+
+        return score;
     }
 
     function useScreencopyPreviews() {
@@ -409,13 +474,14 @@ QtObject {
         const activeName = String(activeWorkspace.name || activeId);
         const active = [];
         const grouped = {};
+        const usedToplevels = [];
 
         for (let index = 0; index < clients.length; index++) {
             const client = clients[index];
             const workspace = client.workspace || {};
             const workspaceId = Number(workspace.id || -9999);
             const workspaceName = String(workspace.name || workspaceId);
-            const item = normalizeClient(client);
+            const item = normalizeClient(client, usedToplevels);
 
             if (!matchesSearch(item))
                 continue;
@@ -478,9 +544,10 @@ QtObject {
         return haystack.indexOf(needle) >= 0;
     }
 
-    function normalizeClient(client) {
-        return {
+    function normalizeClient(client, usedToplevels) {
+        const normalized = {
             address: String(client.address || ""),
+            stableId: String(client.stableId || ""),
             title: String(client.title || "").trim(),
             className: String(client.class || client.initialClass || "").trim(),
             appLabel: appLabel(client),
@@ -489,10 +556,26 @@ QtObject {
             workspaceName: String(client.workspace && client.workspace.name || ""),
             at: client.at || [0, 0],
             size: client.size || [0, 0],
-            previewSource: previewSourceForAddress(client.address),
-            thumbPath: thumbnailByAddress[String(client.address || "")] || "",
             floating: Boolean(client.floating),
             urgent: Boolean(client.urgent)
+        };
+        const previewSource = previewSourceForClient(client, usedToplevels || []);
+
+        return {
+            address: normalized.address,
+            stableId: normalized.stableId,
+            title: normalized.title,
+            className: normalized.className,
+            appLabel: normalized.appLabel,
+            iconName: normalized.iconName,
+            workspaceId: normalized.workspaceId,
+            workspaceName: normalized.workspaceName,
+            at: normalized.at,
+            size: normalized.size,
+            previewSource: previewSource,
+            thumbPath: thumbnailByKey[thumbnailKey(normalized)] || "",
+            floating: normalized.floating,
+            urgent: normalized.urgent
         };
     }
 

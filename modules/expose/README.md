@@ -59,8 +59,8 @@ V1 uses:
 ```bash
 hyprctl activeworkspace -j
 hyprctl clients -j
-grim -g "<x>,<y> <width>x<height>" -t png -l 0 ~/.cache/qreep/expose/<address>.png
-Hyprland.toplevels -> wayland handle -> ScreencopyView
+ToplevelManager.toplevels -> ScreencopyView
+grim -T "<stableId>" -t png -l 0 ~/.cache/qreep/expose/<stableId>.png
 hyprctl dispatch focuswindow address:<address>
 ```
 
@@ -68,9 +68,9 @@ This is deliberate. Quickshell has useful Wayland and Hyprland APIs, but
 `hyprctl clients -j` is still the reliable source for geometry, workspace,
 class, title, and address in one boring packet.
 
-Current-workspace `grim` captures run in parallel before the overlay opens.
-That keeps Expose out of its own screenshots and avoids waiting politely for one
-window capture at a time.
+Current-workspace fallback `grim` captures run in parallel before the overlay
+opens. That keeps Expose out of its own screenshots and avoids waiting politely
+for one window capture at a time.
 
 ## Layout and Motion
 
@@ -85,6 +85,18 @@ teleported by a layout object that thinks it is helping.
 Current-window cards animate from their real window position into a middle
 gather point, then settle into their grid slot with a small overshoot. Workspace
 cluster cards join from the middle into their own grid slots.
+
+Motion timing lives in `ExposeTheme.qml`:
+
+```qml
+readonly property int animationDuration: 150
+readonly property int layoutAnimationDuration: 260
+readonly property int cardEntranceDuration: 340
+readonly property int cardEntranceStagger: 22
+```
+
+Lower values make Expose move faster. Higher values make it take its time, which
+is sometimes design and sometimes waiting with nicer shoes.
 
 ## Keyboard Model
 
@@ -101,23 +113,22 @@ cluster cards join from the middle into their own grid slots.
 
 ## Preview Note
 
-Current-workspace cards use runtime `grim -g` screenshots by default. It is
-fast and boring, which is more useful than slow and theoretically elegant.
+Current-workspace cards use Quickshell `ScreencopyView` previews from
+`ToplevelManager.toplevels` by default. That captures the window itself instead
+of a monitor rectangle, so floating windows covering tiled windows should stop
+appearing in previews they have no business photobombing.
 
 `modules/expose/ExposeTheme.qml` exposes:
 
 ```qml
-readonly property bool useScreencopy: false
+readonly property bool useScreencopy: true
 ```
 
-Set that to `true` to prefer Quickshell `ScreencopyView` fed by the Wayland
-handle from `Hyprland.toplevels`. If a client cannot be matched to a Wayland
-toplevel, Expose still falls back to a `grim -g` screenshot captured from
-Hyprland geometry.
+Set that to `false` to force fallback thumbnails. If a Hyprland client cannot
+be matched to a Wayland `Toplevel`, Expose falls back to `grim -T <stableId>`.
 
-The grim path is rectangle-based and therefore still cursed around overlapping
-floating windows. Screencopy should avoid that specific photobomb, but it has
-been slower here and is not innocent either.
+The fallback path uses Hyprland's `stableId`, not the window address. It is a
+real per-window capture too, just not live.
 
 Other workspace clusters stay icon based for now.
 

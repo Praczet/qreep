@@ -11,6 +11,7 @@ Rectangle {
     property bool selected: false
     property bool compact: false
     property bool entrancePresented: true
+    property bool exposeVisible: true
     property int entranceIndex: 0
     property point entranceGatherPoint: Qt.point(0, 0)
     readonly property bool useScreencopy: Boolean(theme.modules.expose.useScreencopy)
@@ -188,7 +189,7 @@ Rectangle {
         ScreencopyView {
             anchors.fill: parent
             captureSource: rootExposeClientCard.previewSource
-            live: rootExposeClientCard.hasLivePreview && rootExposeClientCard.visible
+            live: rootExposeClientCard.hasLivePreview && rootExposeClientCard.exposeVisible
             paintCursor: false
             constraintSize: Qt.size(width, height)
             visible: rootExposeClientCard.hasLivePreview
