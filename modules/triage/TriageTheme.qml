@@ -5,10 +5,8 @@ QtObject {
 
     required property QtObject qreep
 
-    readonly property int panelWidth: 1200
-    readonly property int screenMargin: 48
-    readonly property int topMargin: 20
-    readonly property int bottomMargin: 48
+    readonly property int windowWidth: 1200
+    readonly property int windowHeight: 820
     readonly property int panelPadding: 16
     readonly property int panelRadius: 16
     readonly property int headerHeight: 54

@@ -1,15 +1,13 @@
 import QtQuick
 import Quickshell
-import Quickshell.Wayland
 
-PanelWindow {
+FloatingWindow {
     id: rootTriagePanel
 
     required property QtObject theme
     required property QtObject service
     required property bool panelOpen
     property bool canUpdate: false
-    property int topReservedHeight: 0
 
     property bool presented: false
     property bool decisionHistoryOpen: false
@@ -18,16 +16,12 @@ PanelWindow {
     signal closeRequested
     signal updateRequested
 
-    implicitWidth: screen.width
-    implicitHeight: screen.height
+    title: "Qreep Triage"
+    implicitWidth: rootTriagePanel.theme.modules.triage.windowWidth
+    implicitHeight: rootTriagePanel.theme.modules.triage.windowHeight
 
     color: "transparent"
-    exclusionMode: ExclusionMode.Ignore
-    exclusiveZone: 0
-
-    WlrLayershell.namespace: "qreep-triage"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    surfaceFormat.opaque: false
 
     Component.onCompleted: {
         searchInput.forceActiveFocus();
@@ -46,6 +40,8 @@ PanelWindow {
         presented = false;
         commandEventsOpen = false;
     }
+
+    onClosed: rootTriagePanel.closeRequested()
 
     Shortcut {
         sequence: "Escape"
@@ -87,22 +83,10 @@ PanelWindow {
         }
     }
 
-    MouseArea {
-        anchors.fill: parent
-        onClicked: rootTriagePanel.closeRequested()
-    }
-
     Rectangle {
         id: panel
 
-        width: Math.min(rootTriagePanel.theme.modules.triage.panelWidth, rootTriagePanel.width - rootTriagePanel.theme.modules.triage.screenMargin * 2)
-        anchors {
-            horizontalCenter: parent.horizontalCenter
-            top: parent.top
-            bottom: parent.bottom
-            topMargin: rootTriagePanel.topReservedHeight + rootTriagePanel.theme.modules.triage.topMargin
-            bottomMargin: rootTriagePanel.theme.modules.triage.bottomMargin
-        }
+        anchors.fill: parent
         radius: rootTriagePanel.theme.modules.triage.panelRadius
         color: rootTriagePanel.theme.modules.triage.panelColor
         border.width: 1

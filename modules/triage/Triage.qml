@@ -7,7 +7,6 @@ Scope {
 
     required property QtObject theme
     property bool open: false
-    property int topReservedHeight: 0
     property var updaterService: null
     readonly property bool panelLoaded: open || closeTimer.running
     readonly property alias service: triageService
@@ -57,7 +56,6 @@ Scope {
             theme: rootTriage.theme
             service: triageService
             panelOpen: rootTriage.open
-            topReservedHeight: rootTriage.topReservedHeight
             canUpdate: rootTriage.updaterService !== null
 
             onUpdateRequested: rootTriage.startUpdates()

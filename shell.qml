@@ -40,7 +40,7 @@ ShellRoot {
         timerController: timer
         timerService: timer.service
         triageController: triage
-        shellFullscreenSurfaceOpen: dashboard.open || expose.open || triage.open
+        shellFullscreenSurfaceOpen: dashboard.open || expose.open
 
         onVolumeFeedbackRequested: (percent, muted, icon) => {
             osd.showMessage(percent + "%", qreepTheme.modules.osd.defaultDuration, qreepTheme.modules.osd.defaultPosition, muted ? "Volume (Muted)" : "Volume", icon, qreepTheme.modules.osd.progressIconSize, percent / 100);
@@ -87,7 +87,6 @@ ShellRoot {
         id: triage
 
         theme: qreepTheme
-        topReservedHeight: bar.visibleFootprintHeight
         updaterService: bar.upcheckerService
     }
 

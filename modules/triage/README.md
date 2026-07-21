@@ -90,8 +90,8 @@ Current structure:
 
 ```text
 modules/triage/
-|-- Triage.qml          # Scope/controller: IPC, open state, lazy panel
-|-- TriagePanel.qml     # large package triage surface
+|-- Triage.qml          # Scope/controller: IPC, open state, lazy window
+|-- TriagePanel.qml     # FloatingWindow package triage surface
 |-- TriageService.qml   # helper calls, JSON parsing, filtering, selection
 |-- TriageCard.qml      # one package/review row or card
 |-- TriageTheme.qml     # sizes, spacing, colors, animation timing
@@ -209,7 +209,7 @@ state if they are explicit.
 
 ## UI Direction
 
-This is a large panel, not a tooltip.
+This is a normal Hyprland-managed window, not a tooltip.
 
 Suggested layout:
 
@@ -366,9 +366,9 @@ Until duplication hurts, keep the boundary simple.
   them.
 - `triagectl why <pkg>` returns metadata plus direct dependencies and direct
   reverse dependencies.
-- Qreep opens the triage panel through IPC.
-- The panel lists packages for the active stat category.
-- The panel shows details for the selected package.
+- Qreep opens the triage window through IPC.
+- The window lists packages for the active stat category.
+- The window shows details for the selected package.
 - Decisions persist across Qreep restarts.
 - The module README documents commands, files, IPC, and safety limits.
 - `AGENTS.md` records the module boundary.
