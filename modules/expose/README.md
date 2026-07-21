@@ -82,21 +82,33 @@ This is deliberately not a QML `Grid` item anymore. Card positions are computed
 by Expose so filtered results can animate into their new slots instead of being
 teleported by a layout object that thinks it is helping.
 
-Current-window cards animate from their real window position into a middle
-gather point, then settle into their grid slot with a small overshoot. Workspace
-cluster cards join from the middle into their own grid slots.
+Current-window previews animate from the real window rect into the card's final
+preview area. The animation changes both position and scale: source window size,
+a small destination-side push, a small settle-back, then the final preview.
+Card chrome fades in late. Workspace cluster cards keep the simpler positional
+entrance.
 
 Motion timing lives in `ExposeTheme.qml`:
 
 ```qml
 readonly property int animationDuration: 150
 readonly property int layoutAnimationDuration: 260
-readonly property int cardEntranceDuration: 340
+readonly property int cardEntranceDuration: 1000
 readonly property int cardEntranceStagger: 22
+readonly property real cardEntrancePushOffset: -0.10
+readonly property real cardEntranceSettleOffset: 0.005
+readonly property real cardEntrancePushScale: 1.05
+readonly property real cardEntranceSettleScale: 0.975
+readonly property real cardChromeRevealScale: 5
+readonly property int cardChromeRevealDuration: 180
 ```
 
 Lower values make Expose move faster. Higher values make it take its time, which
-is sometimes design and sometimes waiting with nicer shoes.
+is sometimes design and sometimes waiting with nicer shoes. The offset values
+are fractions of the source-to-destination vector; the scale values are relative
+to the destination preview area. Chrome reveal starts when the preview is close
+to `cardChromeRevealScale`; higher values show the card chrome earlier, lower
+values wait until the preview is closer to its final size.
 
 ## Keyboard Model
 

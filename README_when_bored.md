@@ -410,7 +410,9 @@ Current-workspace previews prefer `ToplevelManager.toplevels` rendered through
 fallback.
 The overview layout is manual and grid-shaped, not a QML `Grid`, so filtered
 cards can animate into their new positions instead of teleporting because a
-layout object felt helpful.
+layout object felt helpful. Current-workspace previews start from the real
+window rect and morph into the destination preview area with theme-owned push
+and settle values.
 
 Clock event dots are still popup-based so they sit neatly under the pill. The
 bar suppresses them while Dashboard, Expose, or fullscreen Power is open,

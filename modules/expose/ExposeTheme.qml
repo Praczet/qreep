@@ -7,9 +7,14 @@ QtObject {
 
     readonly property int animationDuration: 150
     readonly property int layoutAnimationDuration: 260
-    readonly property int cardEntranceDuration: 340
+    readonly property int cardEntranceDuration: 1000
     readonly property int cardEntranceStagger: 22
-    readonly property real cardEntranceOvershoot: 0.08
+    readonly property real cardEntrancePushOffset: -0.10
+    readonly property real cardEntranceSettleOffset: 0.005
+    readonly property real cardEntrancePushScale: 1.05
+    readonly property real cardEntranceSettleScale: 0.975
+    readonly property real cardChromeRevealScale: 5
+    readonly property int cardChromeRevealDuration: 180
     readonly property int gridMaxColumns: 4
     readonly property int panelMargin: 48
     readonly property int panelPadding: 24

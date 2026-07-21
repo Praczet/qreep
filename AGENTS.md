@@ -125,9 +125,9 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `cc7fda3` | `2026-07-21` |
+| `AGENTS.md` | `e976b0d` | `2026-07-21` |
 | `README.md` | `cc7fda3` | `2026-07-21` |
-| `README_when_bored.md` | `cc7fda3` | `2026-07-21` |
+| `README_when_bored.md` | `e976b0d` | `2026-07-21` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
@@ -151,7 +151,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/dashboard/features/image/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/weather/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/wotd/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/expose/README.md` | `cc7fda3` | `2026-07-21` |
+| `modules/expose/README.md` | `e976b0d` | `2026-07-21` |
 | `modules/fastpassword/README.md` | `1af57ac` | `2026-07-17` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
@@ -669,6 +669,9 @@ V1 behavior:
 - `Escape` closes;
 - printable typing reveals search and filters by app label, class, title, and
   workspace name.
+- opening motion morphs current-workspace previews from the real window rect
+  into the final card preview area, with push/settle scale and offset tokens owned by
+  `ExposeTheme.qml`.
 
 Preview strategy:
 

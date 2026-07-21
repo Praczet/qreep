@@ -11,6 +11,7 @@ Rectangle {
     property bool selected: false
     property bool compact: false
     property bool entrancePresented: true
+    property bool entranceMotionActive: false
     property bool exposeVisible: true
     property int entranceIndex: 0
     property point entranceGatherPoint: Qt.point(0, 0)
@@ -19,10 +20,24 @@ Rectangle {
     readonly property bool hasLivePreview: useScreencopy && previewSource !== null
     readonly property string thumbPath: String(client.thumbPath || "")
     readonly property bool useEntranceMotion: !compact
-    property real entranceGatherX: 0
-    property real entranceGatherY: 0
-    property real entranceOvershootX: 0
-    property real entranceOvershootY: 0
+    property real entrancePushX: 0
+    property real entrancePushY: 0
+    property real entranceSettleX: 0
+    property real entranceSettleY: 0
+    property real entrancePushScaleX: 1
+    property real entrancePushScaleY: 1
+    property real entranceSettleScaleX: 1
+    property real entranceSettleScaleY: 1
+    property int chromeRevealDelay: 0
+    property real chromeOpacity: 1
+    readonly property bool chromeVisible: compact || chromeOpacity > 0.02
+    readonly property real previewInset: 10
+    readonly property real finalPreviewHeight: theme.modules.expose.currentCardPreviewHeight
+    readonly property real previewTargetWidth: Math.max(1, width - previewInset * 2)
+    readonly property real previewTargetHeight: Math.max(1, compact ? height - previewInset * 2 : finalPreviewHeight)
+    readonly property point previewTargetCenter: Qt.point(width / 2, previewInset + previewTargetHeight / 2)
+    readonly property color activeCardColor: cardHover.hovered || selected ? theme.modules.expose.cardHoverColor : theme.modules.expose.cardColor
+    readonly property color activeBorderColor: selected ? theme.modules.expose.selectedBorderColor : theme.modules.expose.borderColor
 
     signal selectedRequested(var card)
     signal activated(var client)
@@ -30,19 +45,30 @@ Rectangle {
     width: compact ? theme.modules.expose.miniCardWidth : theme.modules.expose.currentCardWidth
     height: compact ? theme.modules.expose.miniCardHeight : theme.modules.expose.currentCardHeight
     radius: theme.modules.expose.cardRadius
-    color: cardHover.hovered || selected ? theme.modules.expose.cardHoverColor : theme.modules.expose.cardColor
-    border.width: selected ? theme.modules.expose.selectedBorderWidth : theme.modules.expose.borderWidth
-    border.color: selected ? theme.modules.expose.selectedBorderColor : theme.modules.expose.borderColor
+    color: Qt.rgba(activeCardColor.r, activeCardColor.g, activeCardColor.b, activeCardColor.a * chromeOpacity)
+    border.width: chromeVisible ? selected ? theme.modules.expose.selectedBorderWidth : theme.modules.expose.borderWidth : 0
+    border.color: Qt.rgba(activeBorderColor.r, activeBorderColor.g, activeBorderColor.b, activeBorderColor.a * chromeOpacity)
     opacity: selected || !compact ? 1 : theme.modules.expose.inactiveCardOpacity
-    scale: selected ? theme.modules.expose.selectedScale : 1
+    scale: selected && chromeVisible && !entranceMotionActive ? theme.modules.expose.selectedScale : 1
     clip: true
 
-    transform: Translate {
-        id: entranceTranslate
+    transform: [
+        Scale {
+            id: entranceScale
 
-        x: 0
-        y: 0
-    }
+            origin.x: rootExposeClientCard.previewTargetCenter.x
+            origin.y: rootExposeClientCard.previewTargetCenter.y
+            xScale: 1
+            yScale: 1
+        },
+
+        Translate {
+            id: entranceTranslate
+
+            x: 0
+            y: 0
+        }
+    ]
 
     SequentialAnimation {
         id: entranceAnimation
@@ -53,41 +79,89 @@ Rectangle {
 
         ParallelAnimation {
             NumberAnimation {
+                target: entranceScale
+                property: "xScale"
+                to: rootExposeClientCard.entrancePushScaleX
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.42
+                easing.type: Easing.OutCubic
+            }
+
+            NumberAnimation {
+                target: entranceScale
+                property: "yScale"
+                to: rootExposeClientCard.entrancePushScaleY
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.42
+                easing.type: Easing.OutCubic
+            }
+
+            NumberAnimation {
                 target: entranceTranslate
                 property: "x"
-                to: rootExposeClientCard.entranceGatherX
-                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.32
+                to: rootExposeClientCard.entrancePushX
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.42
                 easing.type: Easing.OutCubic
             }
 
             NumberAnimation {
                 target: entranceTranslate
                 property: "y"
-                to: rootExposeClientCard.entranceGatherY
-                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.32
+                to: rootExposeClientCard.entrancePushY
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.42
                 easing.type: Easing.OutCubic
             }
         }
 
         ParallelAnimation {
             NumberAnimation {
+                target: entranceScale
+                property: "xScale"
+                to: rootExposeClientCard.entranceSettleScaleX
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.34
+                easing.type: Easing.OutCubic
+            }
+
+            NumberAnimation {
+                target: entranceScale
+                property: "yScale"
+                to: rootExposeClientCard.entranceSettleScaleY
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.34
+                easing.type: Easing.OutCubic
+            }
+
+            NumberAnimation {
                 target: entranceTranslate
                 property: "x"
-                to: rootExposeClientCard.entranceOvershootX
-                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.72
+                to: rootExposeClientCard.entranceSettleX
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.34
                 easing.type: Easing.OutCubic
             }
 
             NumberAnimation {
                 target: entranceTranslate
                 property: "y"
-                to: rootExposeClientCard.entranceOvershootY
-                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.72
+                to: rootExposeClientCard.entranceSettleY
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.34
                 easing.type: Easing.OutCubic
             }
         }
 
         ParallelAnimation {
+            NumberAnimation {
+                target: entranceScale
+                property: "xScale"
+                to: 1
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.24
+                easing.type: Easing.OutCubic
+            }
+
+            NumberAnimation {
+                target: entranceScale
+                property: "yScale"
+                to: 1
+                duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.24
+                easing.type: Easing.OutCubic
+            }
+
             NumberAnimation {
                 target: entranceTranslate
                 property: "x"
@@ -103,6 +177,27 @@ Rectangle {
                 duration: rootExposeClientCard.theme.modules.expose.cardEntranceDuration * 0.24
                 easing.type: Easing.OutCubic
             }
+        }
+
+        onStopped: {
+            if (!rootExposeClientCard.entranceMotionActive)
+                rootExposeClientCard.resetFinalEntrance();
+        }
+    }
+
+    SequentialAnimation {
+        id: chromeAnimation
+
+        PauseAnimation {
+            duration: rootExposeClientCard.entranceIndex * rootExposeClientCard.theme.modules.expose.cardEntranceStagger + rootExposeClientCard.chromeRevealDelay
+        }
+
+        NumberAnimation {
+            target: rootExposeClientCard
+            property: "chromeOpacity"
+            to: 1
+            duration: rootExposeClientCard.theme.modules.expose.cardChromeRevealDuration
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -120,7 +215,7 @@ Rectangle {
     }
 
     Behavior on x {
-        enabled: rootExposeClientCard.entrancePresented
+        enabled: rootExposeClientCard.entrancePresented && !rootExposeClientCard.entranceMotionActive
 
         NumberAnimation {
             duration: rootExposeClientCard.theme.modules.expose.layoutAnimationDuration
@@ -130,7 +225,7 @@ Rectangle {
     }
 
     Behavior on y {
-        enabled: rootExposeClientCard.entrancePresented
+        enabled: rootExposeClientCard.entrancePresented && !rootExposeClientCard.entranceMotionActive
 
         NumberAnimation {
             duration: rootExposeClientCard.theme.modules.expose.layoutAnimationDuration
@@ -140,17 +235,17 @@ Rectangle {
     }
 
     Component.onCompleted: {
-        if (entrancePresented)
+        if (entranceMotionActive)
             playEntrance();
         else
-            resetEntrance();
+            resetFinalEntrance();
     }
 
-    onEntrancePresentedChanged: {
-        if (entrancePresented)
+    onEntranceMotionActiveChanged: {
+        if (entranceMotionActive)
             playEntrance();
-        else
-            resetEntrance();
+        else if (!entranceAnimation.running)
+            resetFinalEntrance();
     }
 
     HoverHandler {
@@ -177,13 +272,13 @@ Rectangle {
             left: parent.left
             right: parent.right
             top: parent.top
-            margins: 10
+            margins: rootExposeClientCard.previewInset
         }
-        height: rootExposeClientCard.theme.modules.expose.currentCardPreviewHeight
-        radius: rootExposeClientCard.theme.modules.expose.previewRadius
-        color: rootExposeClientCard.theme.modules.expose.previewColor
-        border.width: 1
-        border.color: Qt.rgba(rootExposeClientCard.theme.modules.expose.borderColor.r, rootExposeClientCard.theme.modules.expose.borderColor.g, rootExposeClientCard.theme.modules.expose.borderColor.b, 0.42)
+        height: rootExposeClientCard.previewTargetHeight
+        radius: rootExposeClientCard.theme.modules.expose.previewRadius * rootExposeClientCard.chromeOpacity
+        color: Qt.rgba(rootExposeClientCard.theme.modules.expose.previewColor.r, rootExposeClientCard.theme.modules.expose.previewColor.g, rootExposeClientCard.theme.modules.expose.previewColor.b, rootExposeClientCard.theme.modules.expose.previewColor.a * rootExposeClientCard.chromeOpacity)
+        border.width: rootExposeClientCard.chromeVisible ? 1 : 0
+        border.color: Qt.rgba(rootExposeClientCard.theme.modules.expose.borderColor.r, rootExposeClientCard.theme.modules.expose.borderColor.g, rootExposeClientCard.theme.modules.expose.borderColor.b, 0.42 * rootExposeClientCard.chromeOpacity)
         clip: true
 
         ScreencopyView {
@@ -218,6 +313,8 @@ Rectangle {
     Row {
         id: metaRow
 
+        opacity: rootExposeClientCard.chromeOpacity
+        visible: rootExposeClientCard.compact || rootExposeClientCard.chromeVisible
         anchors {
             left: parent.left
             right: parent.right
@@ -264,37 +361,76 @@ Rectangle {
         const size = rootExposeClientCard.client.size || [0, 0];
         const windowCenterX = Number(at[0] || 0) + Number(size[0] || 0) / 2;
         const windowCenterY = Number(at[1] || 0) + Number(size[1] || 0) / 2;
-        const cardTopLeft = rootExposeClientCard.mapToGlobal(Qt.point(0, 0));
-        const cardCenterX = cardTopLeft.x + rootExposeClientCard.width / 2;
-        const cardCenterY = cardTopLeft.y + rootExposeClientCard.height / 2;
+        const previewCenter = rootExposeClientCard.mapToGlobal(rootExposeClientCard.previewTargetCenter);
 
-        return Qt.point(windowCenterX - cardCenterX, windowCenterY - cardCenterY);
+        return Qt.point(windowCenterX - previewCenter.x, windowCenterY - previewCenter.y);
     }
 
-    function gatherOffsetFromCurrentCard() {
-        const cardTopLeft = rootExposeClientCard.mapToGlobal(Qt.point(0, 0));
-        const cardCenterX = cardTopLeft.x + rootExposeClientCard.width / 2;
-        const cardCenterY = cardTopLeft.y + rootExposeClientCard.height / 2;
-
-        return Qt.point(rootExposeClientCard.entranceGatherPoint.x - cardCenterX, rootExposeClientCard.entranceGatherPoint.y - cardCenterY);
-    }
-
-    function resetEntrance() {
+    function resetInitialEntrance() {
         const offset = rootExposeClientCard.useEntranceMotion ? windowOffsetFromCurrentCard() : Qt.point(0, 0);
+        const sourceScale = rootExposeClientCard.useEntranceMotion ? windowScaleFromCurrentCard() : Qt.point(1, 1);
 
         entranceAnimation.stop();
+        chromeAnimation.stop();
+        chromeOpacity = rootExposeClientCard.useEntranceMotion ? 0 : 1;
+        entranceScale.xScale = sourceScale.x;
+        entranceScale.yScale = sourceScale.y;
         entranceTranslate.x = offset.x;
         entranceTranslate.y = offset.y;
     }
 
-    function playEntrance() {
-        const gatherOffset = rootExposeClientCard.useEntranceMotion ? gatherOffsetFromCurrentCard() : Qt.point(0, 0);
+    function resetFinalEntrance() {
+        entranceAnimation.stop();
+        chromeAnimation.stop();
+        chromeOpacity = 1;
+        entranceScale.xScale = 1;
+        entranceScale.yScale = 1;
+        entranceTranslate.x = 0;
+        entranceTranslate.y = 0;
+    }
 
-        resetEntrance();
-        entranceGatherX = gatherOffset.x;
-        entranceGatherY = gatherOffset.y;
-        entranceOvershootX = -gatherOffset.x * rootExposeClientCard.theme.modules.expose.cardEntranceOvershoot;
-        entranceOvershootY = -gatherOffset.y * rootExposeClientCard.theme.modules.expose.cardEntranceOvershoot;
+    function playEntrance() {
+        const offset = rootExposeClientCard.useEntranceMotion ? windowOffsetFromCurrentCard() : Qt.point(0, 0);
+        const sourceScale = rootExposeClientCard.useEntranceMotion ? windowScaleFromCurrentCard() : Qt.point(1, 1);
+
+        resetInitialEntrance();
+        entrancePushX = offset.x * rootExposeClientCard.theme.modules.expose.cardEntrancePushOffset;
+        entrancePushY = offset.y * rootExposeClientCard.theme.modules.expose.cardEntrancePushOffset;
+        entranceSettleX = offset.x * rootExposeClientCard.theme.modules.expose.cardEntranceSettleOffset;
+        entranceSettleY = offset.y * rootExposeClientCard.theme.modules.expose.cardEntranceSettleOffset;
+        entrancePushScaleX = rootExposeClientCard.theme.modules.expose.cardEntrancePushScale;
+        entrancePushScaleY = rootExposeClientCard.theme.modules.expose.cardEntrancePushScale;
+        entranceSettleScaleX = rootExposeClientCard.theme.modules.expose.cardEntranceSettleScale;
+        entranceSettleScaleY = rootExposeClientCard.theme.modules.expose.cardEntranceSettleScale;
+        chromeRevealDelay = chromeRevealDelayForScale(sourceScale);
         entranceAnimation.restart();
+        chromeAnimation.restart();
+    }
+
+    function windowScaleFromCurrentCard() {
+        const size = rootExposeClientCard.client.size || [0, 0];
+        const sourceWidth = Math.max(1, Number(size[0] || rootExposeClientCard.width));
+        const sourceHeight = Math.max(1, Number(size[1] || rootExposeClientCard.height));
+
+        return Qt.point(sourceWidth / rootExposeClientCard.previewTargetWidth, sourceHeight / rootExposeClientCard.previewTargetHeight);
+    }
+
+    function chromeRevealDelayForScale(sourceScale) {
+        const source = Math.max(Number(sourceScale.x || 1), Number(sourceScale.y || 1));
+        const reveal = Math.max(1, Number(rootExposeClientCard.theme.modules.expose.cardChromeRevealScale || 1.2));
+        const push = Number(rootExposeClientCard.theme.modules.expose.cardEntrancePushScale || 1);
+        const settle = Number(rootExposeClientCard.theme.modules.expose.cardEntranceSettleScale || 1);
+        const duration = Number(rootExposeClientCard.theme.modules.expose.cardEntranceDuration || 0);
+
+        if (source <= reveal)
+            return 0;
+
+        if (source !== push && reveal >= Math.min(source, push) && reveal <= Math.max(source, push))
+            return duration * 0.42 * ((source - reveal) / (source - push));
+
+        if (push !== settle && reveal >= Math.min(push, settle) && reveal <= Math.max(push, settle))
+            return duration * 0.42 + duration * 0.34 * ((push - reveal) / (push - settle));
+
+        return duration * 0.76;
     }
 }

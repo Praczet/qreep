@@ -10,6 +10,7 @@ PanelWindow {
     required property bool panelOpen
 
     property bool presented: false
+    property bool entranceMotionActive: false
     readonly property bool searchVisible: searchInput.activeFocus || service.searchQuery.length > 0
     readonly property int overviewItemCount: service.currentClients.length + service.workspaceClusters.length
     readonly property int maxColumnsByWidth: Math.max(1, Math.floor((width - theme.modules.expose.panelMargin * 2 + theme.modules.expose.cardGap) / (theme.modules.expose.currentCardWidth + theme.modules.expose.cardGap)))
@@ -40,11 +41,14 @@ PanelWindow {
     onPanelOpenChanged: {
         if (panelOpen) {
             background.forceActiveFocus();
+            entranceMotionActive = false;
             enterTimer.restart();
             return;
         }
 
         enterTimer.stop();
+        entranceDoneTimer.stop();
+        entranceMotionActive = false;
         presented = false;
         service.clearSearch();
     }
@@ -96,7 +100,19 @@ PanelWindow {
 
         interval: 16
         repeat: false
-        onTriggered: rootExposePanel.presented = true
+        onTriggered: {
+            rootExposePanel.presented = true;
+            rootExposePanel.entranceMotionActive = true;
+            entranceDoneTimer.restart();
+        }
+    }
+
+    Timer {
+        id: entranceDoneTimer
+
+        interval: rootExposePanel.theme.modules.expose.cardEntranceDuration + Math.max(0, rootExposePanel.service.currentClients.length - 1) * rootExposePanel.theme.modules.expose.cardEntranceStagger + 80
+        repeat: false
+        onTriggered: rootExposePanel.entranceMotionActive = false
     }
 
     Connections {
@@ -134,16 +150,8 @@ PanelWindow {
             margins: rootExposePanel.theme.modules.expose.panelMargin
         }
         opacity: rootExposePanel.presented ? 1 : 0
-        y: rootExposePanel.presented ? 0 : 18
 
         Behavior on opacity {
-            NumberAnimation {
-                duration: rootExposePanel.theme.modules.expose.animationDuration
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        Behavior on y {
             NumberAnimation {
                 duration: rootExposePanel.theme.modules.expose.animationDuration
                 easing.type: Easing.OutCubic
@@ -172,6 +180,7 @@ PanelWindow {
                     x: rootExposePanel.tileX(index)
                     y: rootExposePanel.tileY(index)
                     entrancePresented: rootExposePanel.presented
+                    entranceMotionActive: rootExposePanel.entranceMotionActive
                     exposeVisible: rootExposePanel.panelOpen && rootExposePanel.presented
                     entranceIndex: index
                     entranceGatherPoint: rootExposePanel.gatherPoint
