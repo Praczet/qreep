@@ -92,6 +92,7 @@ PanelWindow {
 
     MprisFeature.MprisService {
         id: mprisService
+        anchorItem: mprisButton
     }
     LauncherFeature.LauncherService {
         id: launcherService

@@ -48,6 +48,19 @@ readonly property QtObject mpris: MprisFeature.MprisTheme {}
 
 ## Service Notes
 
+The service exposes one read-only local IPC snapshot:
+
+```bash
+quickshell ipc call qreep-mpris state
+```
+
+It returns versioned JSON with the active playback state, title, album, artist,
+player, a stable key for the current playback session, and the MPRIS pill's
+current bar-relative geometry. Fovia Awareness uses this as a source boundary;
+Qreep does not decide whether a track is interesting and does not make Mox
+speak or move. When nothing is playing the metadata is empty and the geometry
+may still describe the visible pill.
+
 The service uses:
 
 ```qml

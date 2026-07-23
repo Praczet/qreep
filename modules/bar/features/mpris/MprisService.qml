@@ -1,9 +1,13 @@
 import QtQuick
+import Quickshell.Io
 import Quickshell.Services.Mpris
 
 QtObject {
     id: rootMprisService
 
+    property Item anchorItem: null
+    property string playbackSessionKey
+    property string playbackStartedAt
     readonly property var players: Mpris.players.values
     readonly property var activePlayer: chooseActivePlayer()
     readonly property bool hasPlayer: activePlayer !== null
@@ -32,10 +36,29 @@ QtObject {
     property string cachedArtTrackKey
     property string cachedArtSource
 
-    onCurrentImageSourceChanged: updateCachedArtSource()
-    onCurrentTrackKeyChanged: updateCachedArtSource()
+    readonly property IpcHandler ipc: IpcHandler {
+        target: "qreep-mpris"
 
-    Component.onCompleted: updateCachedArtSource()
+        function state(): string {
+            return rootMprisService.stateText();
+        }
+    }
+
+    onCurrentImageSourceChanged: updateCachedArtSource()
+    onCurrentTrackKeyChanged: {
+        updateCachedArtSource();
+        updatePlaybackSession();
+    }
+    onIsPlayingChanged: updatePlaybackSession()
+
+    Component.onCompleted: {
+        updateCachedArtSource();
+        updatePlaybackSession();
+    }
+
+    function isoNow() {
+        return new Date().toISOString();
+    }
 
     function updateCachedArtSource() {
         if (currentTrackKey.length === 0) {
@@ -49,6 +72,61 @@ QtObject {
 
         cachedArtTrackKey = currentTrackKey;
         cachedArtSource = currentImageSource;
+    }
+
+    function updatePlaybackSession() {
+        const nextKey = isPlaying ? currentTrackKey : "";
+        if (nextKey === playbackSessionKey)
+            return;
+
+        playbackSessionKey = nextKey;
+        playbackStartedAt = nextKey.length > 0 ? isoNow() : "";
+    }
+
+    function geometryDocument() {
+        if (!anchorItem || !anchorItem.visible || anchorItem.width <= 0 || anchorItem.height <= 0) {
+            return {
+                available: false,
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0,
+                right: 0,
+                bottom: 0
+            };
+        }
+
+        const point = anchorItem.mapToItem(null, 0, 0);
+        const x = Math.round(point.x);
+        const y = Math.round(point.y);
+        const width = Math.round(anchorItem.width);
+        const height = Math.round(anchorItem.height);
+        return {
+            available: true,
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+            right: x + width,
+            bottom: y + height
+        };
+    }
+
+    function stateText() {
+        return JSON.stringify({
+            schemaVersion: 1,
+            observedAt: isoNow(),
+            hasPlayer: hasPlayer,
+            isPlaying: isPlaying,
+            playbackStatus: statusText,
+            title: hasPlayer ? title : "",
+            album: hasPlayer ? album : "",
+            artists: hasPlayer ? artists : "",
+            player: hasPlayer ? playerSource : "",
+            trackKey: hasPlayer ? currentTrackKey : "",
+            startedAt: isPlaying ? playbackStartedAt : "",
+            geometry: geometryDocument()
+        });
     }
 
     function chooseActivePlayer() {
