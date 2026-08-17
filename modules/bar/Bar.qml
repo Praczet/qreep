@@ -208,6 +208,7 @@ PanelWindow {
         useHyprlandEvents: rootBar.theme.modules.bar.workspaces.useHyprlandEvents
         refreshInterval: rootBar.theme.modules.bar.workspaces.refreshInterval
         eventRefreshDelay: rootBar.theme.modules.bar.workspaces.eventRefreshDelay
+        titleRefreshDelay: rootBar.theme.modules.bar.workspaces.titleRefreshDelay
         refreshAfterDispatchDelay: rootBar.theme.modules.bar.workspaces.refreshAfterDispatchDelay
         tooltipMaxWindows: rootBar.theme.modules.bar.workspaces.tooltipMaxWindows
     }
@@ -221,7 +222,6 @@ PanelWindow {
         backupStatePath: rootBar.theme.modules.bar.borg.backupStatePath
         backupFinalPath: rootBar.theme.modules.bar.borg.backupFinalPath
         backupPanelHideDelay: rootBar.theme.modules.bar.borg.backupPanelHideDelay
-        backupStatePollInterval: rootBar.theme.modules.bar.borg.backupStatePollInterval
     }
 
     PotatoFastFeature.PotatoFastService {

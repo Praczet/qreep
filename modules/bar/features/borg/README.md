@@ -59,14 +59,15 @@ for people with stronger wrists.
 
 ## Backup Progress State
 
-`BorgService.qml` polls:
+`BorgService.qml` watches:
 
 ```text
 ~/.cache/qreep/borg/state.json
 ```
 
-That file is the bridge between `borg-to-borg-backup` and Qreep. It also means a
-backup started from cron or a systemd service can still update the bar. The Borg
+That file is the bridge between `borg-to-borg-backup` and Qreep. File watching
+means a backup started from cron or a systemd service can still update the bar
+without launching `cat` once per second while nothing is happening. The Borg
 pill is not the center of the universe, despite its ambitions.
 
 If `state.json` says `running` but `final.json` contains a finished archive with

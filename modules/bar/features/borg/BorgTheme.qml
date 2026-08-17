@@ -13,7 +13,6 @@ QtObject {
     readonly property string backupStatePath: Quickshell.env("HOME") + "/.cache/qreep/borg/state.json"
     readonly property string backupFinalPath: Quickshell.env("HOME") + "/.cache/qreep/borg/final.json"
     readonly property int backupPanelHideDelay: 2000
-    readonly property int backupStatePollInterval: 1000
     readonly property real pulseScale: 1.68
     readonly property real pulseSettleScale: 0.94
     readonly property real pulseRotation: 8

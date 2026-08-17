@@ -14,6 +14,7 @@ QtObject {
     property bool useHyprlandEvents: true
     property int refreshInterval: 10000
     property int eventRefreshDelay: 60
+    property int titleRefreshDelay: 500
     property int refreshAfterDispatchDelay: 120
     property int tooltipMaxWindows: 8
     property var rawWorkspaces: []
@@ -126,6 +127,12 @@ QtObject {
         onTriggered: rootWorkspaceService.refresh()
     }
 
+    readonly property Timer titleRefreshTimer: Timer {
+        interval: rootWorkspaceService.titleRefreshDelay
+        repeat: false
+        onTriggered: rootWorkspaceService.refreshClients()
+    }
+
     readonly property Connections hyprlandEvents: Connections {
         target: Hyprland
 
@@ -145,6 +152,10 @@ QtObject {
         runJsonCommand(activeRunner, ["hyprctl", "activeworkspace", "-j"]);
         runJsonCommand(clientsRunner, ["hyprctl", "clients", "-j"]);
         runJsonCommand(monitorsRunner, ["hyprctl", "monitors", "-j"]);
+    }
+
+    function refreshClients() {
+        runJsonCommand(clientsRunner, ["hyprctl", "clients", "-j"]);
     }
 
     function switchToWorkspace(workspace) {
@@ -238,6 +249,11 @@ QtObject {
         if (eventName === "activespecial")
             applyActiveSpecialEvent(event.data);
 
+        if (isWindowTitleEvent(eventName)) {
+            titleRefreshTimer.restart();
+            return;
+        }
+
         if (!shouldRefreshForEvent(eventName))
             return;
 
@@ -269,10 +285,6 @@ QtObject {
         case "closewindow":
         case "movewindow":
         case "movewindowv2":
-        case "windowtitle":
-        case "windowtitlev2":
-        case "activewindow":
-        case "activewindowv2":
         case "urgent":
         case "fullscreen":
         case "changefloatingmode":
@@ -282,6 +294,10 @@ QtObject {
         default:
             return false;
         }
+    }
+
+    function isWindowTitleEvent(eventName) {
+        return eventName === "windowtitle" || eventName === "windowtitlev2";
     }
 
     function runJsonCommand(runner, command) {

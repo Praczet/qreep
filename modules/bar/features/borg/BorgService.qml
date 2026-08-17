@@ -15,7 +15,6 @@ QtObject {
     property string quickshellTarget: "--path " + Quickshell.shellDir
     property int refreshInterval: 3600000
     property int backupPanelHideDelay: 2000
-    property int backupStatePollInterval: 1000
     property string text: " ?"
     property string className: "warning"
     property string status: "Borg status unknown"
@@ -55,29 +54,19 @@ QtObject {
         onTriggered: rootBorgService.backupPanelOpen = false
     }
 
-    readonly property Timer backupStatePollTimer: Timer {
-        interval: rootBorgService.backupStatePollInterval
-        repeat: true
-        running: rootBorgService.backupStatePath.length > 0
-        onTriggered: rootBorgService.requestBackupState()
-    }
+    readonly property FileView backupStateFile: FileView {
+        path: rootBorgService.backupStatePath
+        preload: true
+        watchChanges: true
 
-    readonly property Process backupStateReader: Process {
-        id: backupStateReader
+        onLoaded: rootBorgService.applyBackupStateText(text())
+        onTextChanged: rootBorgService.applyBackupStateText(text())
+        onLoadFailed: error => {
+            if (error !== FileViewError.FileNotFound || rootBorgService.backupStateInitialized)
+                rootBorgService.warn("Borg state load failed:", FileViewError.toString(error));
 
-        stdout: StdioCollector {
-            id: backupStateStdout
-
-            waitForEnd: true
+            rootBorgService.backupStateInitialized = true;
         }
-
-        stderr: StdioCollector {
-            id: backupStateStderr
-
-            waitForEnd: true
-        }
-
-        onExited: (exitCode, exitStatus) => rootBorgService.applyBackupStateOutput(backupStateStdout.text, backupStateStderr.text, exitCode)
     }
 
     readonly property Process backupFinalReader: Process {
@@ -218,23 +207,14 @@ QtObject {
     }
 
     function requestBackupState() {
-        if (backupStatePath.length === 0 || backupStateReader.running)
+        if (backupStatePath.length === 0)
             return;
 
-        backupStateReader.command = ["cat", backupStatePath];
-        backupStateReader.running = true;
+        backupStateFile.reload();
     }
 
-    function applyBackupStateOutput(stdoutText, stderrText, exitCode) {
-        if (exitCode !== 0) {
-            if (backupStateInitialized)
-                warn("Borg state load failed:", String(stderrText || "").trim());
-
-            backupStateInitialized = true;
-            return;
-        }
-
-        const contents = String(stdoutText || "").trim();
+    function applyBackupStateText(text) {
+        const contents = String(text || "").trim();
 
         if (contents.length === 0)
             return;

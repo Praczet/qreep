@@ -70,8 +70,11 @@ Yes, this is a small alias table. It is still less silly than building a
 desktop-file indexer because one Chrome app wanted a fake mustache.
 
 The service listens to Quickshell's Hyprland event stream and refreshes after
-workspace/window events. It still keeps a slow poll as a fallback, because event
-streams are reliable right up to the moment they are not.
+structural workspace/window events. Focus-only events are ignored. Window-title
+changes use a separate trailing client refresh so animated terminal titles do
+not turn four `hyprctl` queries into a 10 Hz hobby. It still keeps a slow poll as
+a fallback, because event streams are reliable right up to the moment they are
+not.
 
 The refresh path uses:
 

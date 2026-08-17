@@ -13,6 +13,7 @@ QtObject {
     readonly property bool useHyprlandEvents: true
     readonly property int refreshInterval: 10000
     readonly property int eventRefreshDelay: 60
+    readonly property int titleRefreshDelay: 500
     readonly property int refreshAfterDispatchDelay: 120
     readonly property color backgroundColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, opacity)
     readonly property color borderColor: qreep.outline
