@@ -10,6 +10,7 @@ import "fastpassword" as FastPasswordModule
 import "notification" as NotificationModule
 import "osd" as OsdModule
 import "polkit" as PolkitModule
+import "screenshot" as ScreenshotModule
 import "timer" as TimerModule
 import "triage" as TriageModule
 
@@ -55,6 +56,10 @@ QtObject {
     }
 
     readonly property QtObject polkit: PolkitModule.PolkitTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject screenshot: ScreenshotModule.ScreenshotTheme {
         qreep: rootModulesTheme.qreep
     }
 

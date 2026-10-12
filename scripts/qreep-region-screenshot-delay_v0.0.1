@@ -1,24 +1,33 @@
 #!/usr/bin/env bash
-# Description: Select a Wayland region, optionally wait with Qreep OSD countdown, capture it, and copy it to the clipboard.
-# Usage: qreep-region-screenshot-delay_v0.0.1 [--osd] [--osd-position POSITION] [delay-seconds]
+# Description: Select a region, wait, then capture it with Grim or reopen it in Flameshot.
+# Usage: qreep-region-screenshot-delay_v0.0.1 [--backend grim|flameshot] [--osd] [--osd-position POSITION] [delay-seconds]
 # Install: install -Dm755 scripts/qreep-region-screenshot-delay_v0.0.1 "$HOME/.local/bin/qreep-region-screenshot-delay"
 
 set -euo pipefail
 
 delay_seconds="3"
 delay_set=false
+backend="grim"
 show_countdown_osd=false
 osd_position=""
 quickshell_target="${QREEP_QUICKSHELL_TARGET:--c qreep}"
 read -r -a quickshell_target_args <<<"$quickshell_target"
 
 usage() {
-  printf 'Usage: %s [--osd] [--osd-position POSITION] [delay-seconds]\n' "${0##*/}"
+  printf 'Usage: %s [--backend grim|flameshot] [--osd] [--osd-position POSITION] [delay-seconds]\n' "${0##*/}"
   printf 'Positions: top, top-left, top-right, bottom, bottom-left, bottom-right\n'
 }
 
 while (($# > 0)); do
   case "$1" in
+    --backend)
+      if (($# < 2)); then
+        usage >&2
+        exit 2
+      fi
+      backend="$2"
+      shift 2
+      ;;
     --osd)
       show_countdown_osd=true
       shift
@@ -53,6 +62,21 @@ if ! [[ "$delay_seconds" =~ ^[0-9]+$ ]]; then
   exit 2
 fi
 
+if ((delay_seconds < 0 || delay_seconds > 30)); then
+  printf 'Delay must be between 0 and 30 seconds.\n' >&2
+  exit 2
+fi
+
+case "$backend" in
+  grim | flameshot)
+    ;;
+  *)
+    printf 'Unknown screenshot backend: %s\n' "$backend" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+
 case "$osd_position" in
   "" | top | top-left | top-right | bottom | bottom-left | bottom-right)
     ;;
@@ -62,10 +86,36 @@ case "$osd_position" in
     ;;
 esac
 
-for command_name in quickshell slurp grim wl-copy date mkdir; do
+notify() {
+  local title="$1"
+  local message="$2"
+  local urgency="${3:-normal}"
+
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send --app-name="Qreep Screenshot" --urgency="$urgency" "$title" "$message" || true
+  fi
+}
+
+fail() {
+  local message="$1"
+  local status="${2:-1}"
+
+  printf 'Screenshot failed: %s\n' "$message" >&2
+  notify "Screenshot failed" "$message" critical
+  exit "$status"
+}
+
+required_commands=(sleep mkdir slurp)
+
+if [[ "$backend" == "flameshot" ]]; then
+  required_commands+=(flameshot)
+else
+  required_commands+=(grim wl-copy date mv rm)
+fi
+
+for command_name in "${required_commands[@]}"; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
-    printf 'Missing required command: %s\n' "$command_name" >&2
-    exit 127
+    fail "$command_name is not installed" 127
   fi
 done
 
@@ -89,26 +139,42 @@ show_osd() {
   quickshell ipc "${quickshell_target_args[@]}" --any-display call osd showJSON "${payload}" >/dev/null 2>&1 || true
 }
 
+output_dir="$HOME/Pictures/Screenshots"
+
+if ! mkdir -p "$output_dir"; then
+  fail "Could not create $output_dir"
+fi
+
 show_osd "Select region" 900
 
 if [[ "$show_countdown_osd" == true ]]; then
   sleep 0.9
 fi
 
-if ! geometry="$(slurp)"; then
+# Quickshell gives child processes a pipe for stdin. Slurp treats piped stdin as
+# a list of predefined rectangles and waits for EOF before showing its layer.
+if ! geometry="$(slurp </dev/null)"; then
   show_osd "Screenshot cancelled" 1400
-  exit 1
+  notify "Screenshot cancelled" "No region was selected" low
+  exit 130
 fi
+
+geometry="${geometry//$'\n'/}"
 
 if [[ -z "$geometry" ]]; then
   show_osd "Screenshot cancelled" 1400
-  exit 1
+  notify "Screenshot cancelled" "No region was selected" low
+  exit 130
 fi
 
-for ((remaining = delay_seconds; remaining > 0; remaining--)); do
-  show_osd "Screenshot in ${remaining}"
-  sleep 1
-done
+if [[ "$show_countdown_osd" == true ]]; then
+  for ((remaining = delay_seconds; remaining > 0; remaining--)); do
+    show_osd "Screenshot in ${remaining}"
+    sleep 1
+  done
+elif ((delay_seconds > 0)); then
+  sleep "$delay_seconds"
+fi
 
 show_osd "Capturing screenshot" 900
 
@@ -116,13 +182,52 @@ if [[ "$show_countdown_osd" == true ]]; then
   sleep 0.9
 fi
 
-output_dir="$HOME/Pictures/Screenshots"
-timestamp="$(date '+%Y-%m-%d-%H%M%S')"
-output_file="${output_dir}/${timestamp}_hyprshot.png"
+if [[ "$backend" == "flameshot" ]]; then
+  if ! [[ "$geometry" =~ ^(-?[0-9]+),(-?[0-9]+)[[:space:]]+([0-9]+)x([0-9]+)$ ]]; then
+    fail "Slurp returned unsupported geometry: $geometry"
+  fi
 
-mkdir -p "$output_dir"
-grim -g "$geometry" "$output_file"
-wl-copy <"$output_file"
+  region_x="${BASH_REMATCH[1]}"
+  region_y="${BASH_REMATCH[2]}"
+  region_width="${BASH_REMATCH[3]}"
+  region_height="${BASH_REMATCH[4]}"
+  region_x_offset="$region_x"
+  region_y_offset="$region_y"
+
+  if ((region_x >= 0)); then
+    region_x_offset="+$region_x"
+  fi
+
+  if ((region_y >= 0)); then
+    region_y_offset="+$region_y"
+  fi
+
+  flameshot_geometry="${region_width}x${region_height}${region_x_offset}${region_y_offset}"
+
+  if ! flameshot gui --region "$flameshot_geometry" --clipboard --path "$output_dir"; then
+    fail "Flameshot could not reopen the selected region"
+  fi
+
+  exit 0
+fi
+
+timestamp="$(date '+%Y-%m-%d_%H-%M-%S')"
+output_file="${output_dir}/Screenshot_${timestamp}.png"
+temporary_file="${output_file}.tmp"
+
+if ! grim -g "$geometry" "$temporary_file"; then
+  rm -f -- "$temporary_file"
+  fail "grim could not capture the selected region"
+fi
+
+if ! mv -f -- "$temporary_file" "$output_file"; then
+  rm -f -- "$temporary_file"
+  fail "Could not save $output_file"
+fi
+
+if ! wl-copy <"$output_file"; then
+  fail "Screenshot saved, but wl-copy could not copy it"
+fi
 
 show_osd "Screenshot copied" 1800
 printf '%s\n' "$output_file"

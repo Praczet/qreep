@@ -43,6 +43,14 @@ QtObject {
     property string wiredDns: "--"
     property string wiredDetailsStatus: "Not loaded"
     property string lastCopiedText: ""
+    property bool wifiManagerActive: false
+    property var pendingWifiNetwork: null
+    property string pendingWifiName: ""
+    property string wifiConnectionStatus: ""
+    property string wifiConnectionError: ""
+    property string failedWifiName: ""
+
+    readonly property bool wifiConnectionBusy: pendingWifiNetwork !== null
 
     readonly property string tooltipTitle: "Network"
     readonly property string tooltipContent: [
@@ -69,8 +77,40 @@ QtObject {
         interval: 10000
         repeat: false
         onTriggered: {
-            if (rootNetworkService.wifiDevice)
+            if (rootNetworkService.wifiDevice && !rootNetworkService.wifiManagerActive)
                 rootNetworkService.wifiDevice.scannerEnabled = false;
+        }
+    }
+
+    readonly property Timer scanRestartTimer: Timer {
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (rootNetworkService.wifiDevice && rootNetworkService.wifiEnabled)
+                rootNetworkService.wifiDevice.scannerEnabled = true;
+        }
+    }
+
+    readonly property Timer connectionTimeout: Timer {
+        interval: 30000
+        repeat: false
+        onTriggered: {
+            if (rootNetworkService.pendingWifiNetwork)
+                rootNetworkService.failWifiConnection("The connection attempt timed out. The access point may have disappeared.");
+        }
+    }
+
+    readonly property Connections pendingWifiConnections: Connections {
+        target: rootNetworkService.pendingWifiNetwork
+        ignoreUnknownSignals: true
+
+        function onConnectionFailed(reason) {
+            rootNetworkService.failWifiConnection(rootNetworkService.connectionFailureText(reason));
+        }
+
+        function onConnectedChanged() {
+            if (rootNetworkService.pendingWifiNetwork && rootNetworkService.pendingWifiNetwork.connected)
+                rootNetworkService.finishWifiConnection();
         }
     }
 
@@ -142,6 +182,43 @@ QtObject {
         }
 
         return result;
+    }
+
+    function wifiManagerNetworks() {
+        const byName = {};
+
+        for (let index = 0; index < wifiNetworks.length; index++) {
+            const network = wifiNetworks[index];
+            const name = String(network.name || "").trim();
+
+            if (name.length === 0)
+                continue;
+
+            const current = byName[name];
+            if (!current || network.connected || normalizedPercent(network.signalStrength) > normalizedPercent(current.signalStrength))
+                byName[name] = network;
+        }
+
+        return Object.keys(byName).map(name => byName[name]).sort((left, right) => {
+            if (left.connected !== right.connected)
+                return left.connected ? -1 : 1;
+            if (left.known !== right.known)
+                return left.known ? -1 : 1;
+
+            return normalizedPercent(right.signalStrength) - normalizedPercent(left.signalStrength);
+        });
+    }
+
+    function findWifiNetwork(name) {
+        const wantedName = String(name || "");
+        const networks = wifiManagerNetworks();
+
+        for (let index = 0; index < networks.length; index++) {
+            if (networks[index].name === wantedName)
+                return networks[index];
+        }
+
+        return null;
     }
 
     function pairedBluetoothDevices() {
@@ -235,21 +312,89 @@ QtObject {
     }
 
     function scanWifi() {
-        if (!wifiDevice)
+        if (!wifiDevice || !wifiEnabled)
             return;
 
         wifiDevice.scannerEnabled = true;
-        scanStopTimer.restart();
+        if (!wifiManagerActive)
+            scanStopTimer.restart();
+    }
+
+    function forceWifiRescan() {
+        if (!wifiDevice || !wifiEnabled)
+            return;
+
+        wifiDevice.scannerEnabled = false;
+        scanRestartTimer.restart();
+    }
+
+    function beginWifiManager() {
+        wifiManagerActive = true;
+        wifiConnectionError = "";
+        scanStopTimer.stop();
+        scanWifi();
+    }
+
+    function endWifiManager() {
+        wifiManagerActive = false;
+        scanRestartTimer.stop();
+
+        if (wifiDevice)
+            wifiDevice.scannerEnabled = false;
     }
 
     function connectWifi(network, password) {
-        if (!network)
+        if (!network || wifiConnectionBusy)
             return;
+
+        pendingWifiNetwork = network;
+        pendingWifiName = String(network.name || "Wi-Fi network");
+        wifiConnectionStatus = "Connecting to " + pendingWifiName + "...";
+        wifiConnectionError = "";
+        connectionTimeout.restart();
 
         if (password && password.length > 0)
             network.connectWithPsk(password);
         else
             network.connect();
+    }
+
+    function finishWifiConnection() {
+        connectionTimeout.stop();
+        wifiConnectionStatus = "Connected to " + pendingWifiName + ".";
+        failedWifiName = "";
+        pendingWifiNetwork = null;
+        pendingWifiName = "";
+    }
+
+    function failWifiConnection(message) {
+        connectionTimeout.stop();
+        failedWifiName = pendingWifiName;
+        wifiConnectionError = String(message || "Could not connect to the Wi-Fi network.");
+        wifiConnectionStatus = "";
+        pendingWifiNetwork = null;
+        pendingWifiName = "";
+    }
+
+    function clearWifiConnectionMessage() {
+        wifiConnectionError = "";
+        wifiConnectionStatus = "";
+    }
+
+    function connectionFailureText(reason) {
+        switch (reason) {
+        case ConnectionFailReason.NoSecrets:
+            return "A password is required, or the saved password is no longer accepted.";
+        case ConnectionFailReason.WifiAuthTimeout:
+        case ConnectionFailReason.WifiClientFailed:
+            return "Authentication failed. Check the password and try again.";
+        case ConnectionFailReason.WifiNetworkLost:
+            return "The Wi-Fi network disappeared during the connection attempt.";
+        case ConnectionFailReason.WifiClientDisconnected:
+            return "NetworkManager disconnected before the connection completed.";
+        default:
+            return "NetworkManager could not complete the connection.";
+        }
     }
 
     function disconnectNetwork(network) {

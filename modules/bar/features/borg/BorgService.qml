@@ -15,6 +15,8 @@ QtObject {
     property string quickshellTarget: "--path " + Quickshell.shellDir
     property int refreshInterval: 3600000
     property int backupPanelHideDelay: 2000
+    property int backupActiveRefreshInterval: 1000
+    property int backupIdleRefreshInterval: 10000
     property string text: " ?"
     property string className: "warning"
     property string status: "Borg status unknown"
@@ -67,6 +69,22 @@ QtObject {
 
             rootBorgService.backupStateInitialized = true;
         }
+    }
+
+    readonly property Timer backupActiveRefreshTimer: Timer {
+        interval: rootBorgService.backupActiveRefreshInterval
+        repeat: true
+        running: rootBorgService.backupStatePath.length > 0 && rootBorgService.backupIsRunning()
+        triggeredOnStart: true
+        onTriggered: rootBorgService.requestBackupState()
+    }
+
+    readonly property Timer backupIdleRefreshTimer: Timer {
+        interval: rootBorgService.backupIdleRefreshInterval
+        repeat: true
+        running: rootBorgService.backupStatePath.length > 0 && !rootBorgService.backupIsRunning()
+        triggeredOnStart: true
+        onTriggered: rootBorgService.requestBackupState()
     }
 
     readonly property Process backupFinalReader: Process {

@@ -137,7 +137,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/bar/features/language/README.md` | `ca1ce6e` | `2026-07-13` |
 | `modules/bar/features/monitorprofile/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/mpris/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/bar/features/network/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/network/README.md` | `3f15272` | `2026-10-08` |
 | `modules/bar/features/power/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/potatofast/README.md` | `855e376` | `2026-07-10` |
 | `modules/bar/features/timer/README.md` | `0176cf4` | `2026-07-13` |

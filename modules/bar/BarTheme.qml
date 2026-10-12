@@ -9,6 +9,7 @@ import "./features/mpris" as MprisFeature
 import "./features/network" as NetworkFeature
 import "./features/power" as PowerFeature
 import "./features/potatofast" as PotatoFastFeature
+import "./features/tray" as TrayFeature
 import "./features/upchecker" as UpcheckerFeature
 import "./features/volume" as VolumeFeature
 import "./features/workspaces" as WorkspacesFeature
@@ -65,6 +66,7 @@ QtObject {
     readonly property QtObject potatoFast: PotatoFastFeature.PotatoFastTheme {
         qreep: rootBarTheme.qreep
     }
+    readonly property QtObject tray: TrayFeature.TrayTheme {}
     readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {
         qreep: rootBarTheme.qreep
     }

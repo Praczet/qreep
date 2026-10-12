@@ -13,6 +13,8 @@ PopupWindow {
     property var passwordTarget: null
     property string passwordText: ""
 
+    signal wifiManagerRequested
+
     readonly property var availableWifi: service.availableWifiNetworks()
     readonly property var knownWifi: service.knownWifiNetworks()
     readonly property var pairedBluetooth: service.pairedBluetoothDevices()
@@ -229,7 +231,7 @@ PopupWindow {
                         }
 
                         Text {
-                            width: parent.width - wifiToggle.width - wifiScan.width - rootNetworkPanel.theme.modules.bar.network.iconPixelSize - parent.spacing * 3
+                            width: parent.width - wifiToggle.width - wifiScan.width - wifiManager.width - rootNetworkPanel.theme.modules.bar.network.iconPixelSize - parent.spacing * 4
                             text: "Wi-Fi - " + rootNetworkPanel.service.wifiInfo
                             color: rootNetworkPanel.theme.modules.bar.network.primaryTextColor
                             font.pixelSize: rootNetworkPanel.theme.modules.bar.network.titlePixelSize
@@ -251,6 +253,14 @@ PopupWindow {
                             label: rootNetworkPanel.service.wifiScanning ? "Scanning" : "Scan"
                             enabled: rootNetworkPanel.service.wifiEnabled && rootNetworkPanel.service.wifiDevice !== null
                             onTriggered: rootNetworkPanel.service.scanWifi()
+                        }
+
+                        NetworkAction {
+                            id: wifiManager
+                            theme: rootNetworkPanel.theme
+                            label: "Add Wi-Fi"
+                            enabled: rootNetworkPanel.service.wifiHardwareEnabled
+                            onTriggered: rootNetworkPanel.wifiManagerRequested()
                         }
                     }
 

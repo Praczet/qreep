@@ -28,6 +28,13 @@ QtObject {
     readonly property int actionPadding: 10
     readonly property int actionRadius: 6
     readonly property int inputHeight: 30
+    readonly property int managerWidth: 620
+    readonly property int managerHeight: 720
+    readonly property int managerPadding: 16
+    readonly property int managerRadius: 12
+    readonly property int managerTitlePixelSize: 20
+    readonly property int networkListHeight: 280
+    readonly property int networkRowHeight: 58
     readonly property color panelBackgroundColor: qreep.surface
     readonly property color sectionBackgroundColor: qreep.surfaceContainer
     readonly property color rowBackgroundColor: qreep.surfaceContainerLow
@@ -37,4 +44,8 @@ QtObject {
     readonly property color secondaryTextColor: qreep.on_surface_variant
     readonly property color actionBackgroundColor: qreep.surfaceContainerHigh
     readonly property color actionTextColor: qreep.primary
+    readonly property color errorBackgroundColor: Qt.alpha(qreep.error, 0.12)
+    readonly property color errorTextColor: qreep.error
+    readonly property color successBackgroundColor: Qt.alpha(qreep.successColor, 0.14)
+    readonly property color successTextColor: qreep.successColor
 }

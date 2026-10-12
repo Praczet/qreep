@@ -7,6 +7,7 @@ import "modules/expose" as ExposeModule
 import "modules/fastpassword" as FastPasswordModule
 import "modules/osd" as OsdModule
 import "modules/polkit" as PolkitModule
+import "modules/screenshot" as ScreenshotModule
 import "modules/timer" as TimerModule
 import "modules/triage" as TriageModule
 import "modules/bloom" as BloomModule
@@ -92,6 +93,12 @@ ShellRoot {
 
     PolkitModule.Polkit {
         id: polkit
+
+        theme: qreepTheme
+    }
+
+    ScreenshotModule.Screenshot {
+        id: screenshot
 
         theme: qreepTheme
     }

@@ -8,6 +8,7 @@ import "./features/clock" as ClockFeature
 import "./features/power" as PowerFeature
 import "./features/potatofast" as PotatoFastFeature
 import "./features/timer" as TimerFeature
+import "./features/tray" as TrayFeature
 import "./features/upchecker" as UpcheckerFeature
 import "./features/monitorprofile" as MonitorProfileFeature
 import "./features/mpris" as MprisFeature
@@ -38,10 +39,10 @@ PanelWindow {
     readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
     readonly property int visibleFootprintHeight: collapsed ? rootBar.theme.modules.bar.collapsedHeight : rootBar.activeTopPadding + rootBar.activeBarHeight
-    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume"]
+    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume", "tray"]
     readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
     readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["potato-fast", "timer", "clock", "mpris"])
-    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "language", "volume"])
+    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "language", "volume", "tray"])
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
     signal audioMixerRequested
@@ -222,6 +223,8 @@ PanelWindow {
         backupStatePath: rootBar.theme.modules.bar.borg.backupStatePath
         backupFinalPath: rootBar.theme.modules.bar.borg.backupFinalPath
         backupPanelHideDelay: rootBar.theme.modules.bar.borg.backupPanelHideDelay
+        backupActiveRefreshInterval: rootBar.theme.modules.bar.borg.backupActiveRefreshInterval
+        backupIdleRefreshInterval: rootBar.theme.modules.bar.borg.backupIdleRefreshInterval
     }
 
     PotatoFastFeature.PotatoFastService {
@@ -569,6 +572,17 @@ PanelWindow {
                 onTooltipHideRequested: sharedTooltip.hideLater()
             }
 
+            TrayFeature.Tray {
+                id: tray
+
+                visible: rootBar.pillEnabled("tray") && itemCount > 0
+                collapsedPill: rootBar.pillCollapsed("tray")
+                theme: rootBar.theme
+
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+            }
+
             PowerFeature.PowerButton {
                 id: powerButton
 
@@ -707,6 +721,18 @@ PanelWindow {
             theme: rootBar.theme
             service: networkService
             anchorItem: networkButton
+
+            onWifiManagerRequested: {
+                visible = false;
+                wifiManagerPanel.visible = true;
+            }
+        }
+
+        NetworkFeature.WifiManagerPanel {
+            id: wifiManagerPanel
+
+            theme: rootBar.theme
+            service: networkService
         }
 
         Connections {
