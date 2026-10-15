@@ -130,10 +130,12 @@ Keys:
 - `Up`/`Down` move through the palette or results.
 - `Enter` on a result opens it at the line: `ghostty -e nvim +<line> <path>`
   (`KipTheme.openCommand`), then closes KIP.
-- `Enter` on a **Logseq markdown** hit asks first. `Up`/`Down` or `1`–`3`,
-  `Enter` confirms, `Esc` cancels. Options live in `KipTheme.logseqOpeners`;
-  the first one is the default:
-  1. **Logseq**: `xdg-open logseq://graph/Logseq?page=<page>`. Page-level only;
+- `Enter` on any **markdown** hit asks first, wherever the file lives.
+  `Up`/`Down` or the number keys, `Enter` confirms, `Esc` cancels. Options live
+  in `KipTheme.markdownOpeners`; the first one shown is the default. Files in
+  the Logseq graph get all three, anything else (`toreview/`, ...) gets
+  Default and Vivify. Non-markdown hits open with Default directly.
+  1. **Logseq** (Logseq graph only): `xdg-open logseq://graph/Logseq?page=<page>`. Page-level only;
      Logseq URLs cannot jump to a line without a block uuid.
      If Logseq is not running, the first link only starts it (a cold Logseq
      drops links while loading the graph). KIP watches for the `Logseq`

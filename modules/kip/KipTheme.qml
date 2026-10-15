@@ -65,7 +65,6 @@ QtObject {
     // substituted per argument.
     readonly property var openCommand: ["ghostty", "-e", "nvim", "+{line}", "{path}"]
 
-    // Logseq markdown hits ask "Open with" first; the first entry is the default.
     // {graph} and {page} are URL-encoded before substitution.
     readonly property string logseqGraph: "Logseq"
     // A cold-started Logseq drops logseq:// links while it loads the graph.
@@ -74,10 +73,13 @@ QtObject {
     readonly property string logseqAppId: "Logseq"
     readonly property var logseqColdStartResendDelays: [2000, 5000]
     readonly property int logseqColdStartTimeout: 30000
-    readonly property var logseqOpeners: [
+    // Any .md hit asks "Open with" first; the first entry that applies is the
+    // default. logseqOnly entries appear only for files in the Logseq graph.
+    readonly property var markdownOpeners: [
         {
             id: "logseq",
             label: "Logseq",
+            logseqOnly: true,
             hint: "the page in the Logseq app",
             icon: "󰠮",
             command: ["xdg-open", "logseq://graph/{graph}?page={page}"]

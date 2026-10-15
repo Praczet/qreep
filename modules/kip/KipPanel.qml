@@ -33,6 +33,8 @@ PanelWindow {
     property bool showSnippet: false
     // Logseq markdown hit waiting for an "Open with" choice; null when closed.
     property var chooserHit: null
+    // Openers that apply to chooserHit: Logseq only for Logseq-graph files.
+    property var chooserOptions: []
     property int chooserIndex: 0
     property string notice: ""
     property string currentMessage: ""
@@ -536,7 +538,7 @@ PanelWindow {
                     }
 
                     Repeater {
-                        model: rootKipPanel.kt.logseqOpeners
+                        model: rootKipPanel.chooserOptions
 
                         Rectangle {
                             id: openerRow
@@ -954,23 +956,20 @@ PanelWindow {
             return;
         }
 
-        if (isLogseqMarkdown(hit)) {
-            chooserHit = hit;
+        if (/\.md$/i.test(hit.file)) {
+            chooserOptions = kt.markdownOpeners.filter(opener => !opener.logseqOnly || hit.origin === "logseq");
             chooserIndex = 0;
+            chooserHit = hit;
             return;
         }
 
         openRequested(hit, "default");
     }
 
-    function isLogseqMarkdown(hit) {
-        return hit.origin === "logseq" && /\.md$/i.test(hit.file);
-    }
-
     // Returns true when the chooser consumed the key. Typing anything else
     // falls through to the input, which closes the chooser via handleTextChanged.
     function handleChooserKey(event) {
-        const count = kt.logseqOpeners.length;
+        const count = chooserOptions.length;
 
         switch (event.key) {
         case Qt.Key_Escape:
@@ -1006,7 +1005,7 @@ PanelWindow {
 
     function confirmChooser() {
         const hit = chooserHit;
-        const opener = kt.logseqOpeners[chooserIndex];
+        const opener = chooserOptions[chooserIndex];
 
         chooserHit = null;
 
@@ -1087,7 +1086,7 @@ PanelWindow {
 
     function keyHints() {
         if (chooserHit !== null)
-            return "↑↓ or 1–" + kt.logseqOpeners.length + " choose · Enter open · Esc cancel";
+            return "↑↓ or 1–" + chooserOptions.length + " choose · Enter open · Esc cancel";
         if (contentState === "service") {
             if (service.status === "error")
                 return "Enter retry · Esc back · keep typing to start over";

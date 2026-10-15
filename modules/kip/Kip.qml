@@ -183,7 +183,7 @@ Scope {
 
     function openSource(hit, openerId) {
         const kipTheme = theme.modules.kip;
-        const opener = kipTheme.logseqOpeners.find(candidate => candidate.id === openerId);
+        const opener = kipTheme.markdownOpeners.find(candidate => candidate.id === openerId);
         const values = {
             path: hit.absolutePath,
             line: String(hit.line)
