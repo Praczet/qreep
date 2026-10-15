@@ -43,6 +43,12 @@ Scope {
         theme: rootKip.theme
     }
 
+    KipFileSearchService {
+        id: fileService
+
+        theme: rootKip.theme
+    }
+
     // Opener and clipboard copy run detached: closing KIP must not kill nvim.
     Process {
         id: openRunner
@@ -102,6 +108,7 @@ Scope {
                 + " kind=" + (rootKip.service.kind || "-")
                 + " results=" + rootKip.service.results.length
                 + " answerChars=" + rootKip.service.answer.length
+                + " files=" + fileService.status + ":" + fileService.results.slice(0, 5).map(hit => hit.file).join(",")
                 + " shots=" + shotService.status + ":" + shotService.shots.map(shot => shot.file).join(",")
                 + " error=" + (rootKip.service.errorKind || "-")
                 + " backend=" + rootKip.backend
@@ -136,6 +143,7 @@ Scope {
             messages: kipMessages
             service: rootKip.service
             shots: shotService
+            files: fileService
             panelOpen: rootKip.open
 
             onCloseRequested: rootKip.hide()
@@ -180,6 +188,7 @@ Scope {
         open = false;
         service.cancel();
         shotService.cancel();
+        fileService.cancel();
         unloadGuard.restart();
     }
 
@@ -197,7 +206,8 @@ Scope {
         const values = {
             path: item.absolutePath,
             line: String(item.line || 1),
-            mime: item.mime || ""
+            mime: item.mime || "",
+            dir: String(item.absolutePath || "").replace(/\/[^\/]*$/, "") || "/"
         };
 
         if (option.id === "logseq") {
@@ -335,6 +345,8 @@ Scope {
             service.search(parsed.argument);
         else if (parsed.mode === "ready" && parsed.command.kind === "ask" && parsed.argument.length > 0)
             service.ask(parsed.argument);
+        else if (parsed.mode === "ready" && parsed.command.kind === "files" && parsed.argument.length > 0)
+            fileService.search(parsed.argument, parsed.flags.from || "", parsed.flags.hidden === true, false);
         else if (parsed.mode === "ready" && parsed.command.kind === "screenshots")
             shotService.load(Math.max(1, Math.min(theme.modules.kip.maxScreenshots, Number(parsed.argument) || 1)));
     }

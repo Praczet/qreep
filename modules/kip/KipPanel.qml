@@ -13,6 +13,7 @@ PanelWindow {
     required property QtObject messages
     required property QtObject service
     required property QtObject shots
+    required property QtObject files
     required property bool panelOpen
 
     signal closeRequested
@@ -33,6 +34,7 @@ PanelWindow {
     property int paletteIndex: 0
     property int resultIndex: 0
     property int shotIndex: 0
+    property int fileIndex: 0
     property bool hasInteracted: false
     // Original retrieved text of the selected hit, toggled with Tab.
     property bool showSnippet: false
@@ -45,12 +47,14 @@ PanelWindow {
     property string notice: ""
     property string currentMessage: ""
 
-    readonly property string messageKey: contentState === "service" ? service.eventKey : contentState === "shots" ? shots.eventKey : (parsed.mode === "idle" && !hasInteracted ? "kip.open" : parsed.eventKey)
+    readonly property string messageKey: contentState === "service" ? service.eventKey : contentState === "shots" ? shots.eventKey : contentState === "files" ? files.eventKey : (parsed.mode === "idle" && !hasInteracted ? "kip.open" : parsed.eventKey)
     readonly property bool paletteVisible: contentState === "compose" && (parsed.mode === "palette" || parsed.mode === "candidate" || parsed.mode === "unknown" || (parsed.mode === "ready" && parsed.command && !parsed.command.takesArgument))
     readonly property var paletteItems: paletteVisible ? parsed.matches : []
     readonly property bool resultsVisible: contentState === "service" && service.results.length > 0
     readonly property bool shotsVisible: contentState === "shots" && shots.shots.length > 0
     readonly property int shotColumns: Math.max(1, Math.min(kt.screenshotColumns, shots.shots.length))
+    readonly property var shownFiles: files.results.slice(0, kt.fdShownResults)
+    readonly property bool filesVisible: contentState === "files" && shownFiles.length > 0
 
     readonly property string phase: {
         if (!panelOpen)
@@ -127,6 +131,18 @@ PanelWindow {
     }
 
     onMessageKeyChanged: refreshMessage()
+
+    // /fd searches after a pause in typing, not per keystroke.
+    Timer {
+        id: fileSearchTimer
+
+        interval: rootKipPanel.kt.fdDebounce
+        repeat: false
+        onTriggered: {
+            if (rootKipPanel.liveFilesWanted())
+                rootKipPanel.runFiles();
+        }
+    }
 
     // Typing "/last 12" refreshes once, not once per digit.
     Timer {
@@ -537,6 +553,31 @@ PanelWindow {
                 elide: Text.ElideMiddle
             }
 
+            // /fd: files and folders, best guesses first.
+            Text {
+                width: parent.width
+                visible: rootKipPanel.contentState === "files"
+                text: rootKipPanel.filesStatus()
+                color: rootKipPanel.files.status === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.tertiaryAccentColor
+                font.pixelSize: rootKipPanel.kt.metaPixelSize
+                elide: Text.ElideMiddle
+            }
+
+            KipResultList {
+                width: parent.width
+                height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.75)
+                visible: rootKipPanel.filesVisible
+                kipTheme: rootKipPanel.kt
+                results: rootKipPanel.shownFiles
+                compact: true
+                currentIndex: rootKipPanel.fileIndex
+
+                onActivated: index => {
+                    rootKipPanel.fileIndex = index;
+                    rootKipPanel.activateFile();
+                }
+            }
+
             KipShotGrid {
                 width: parent.width
                 visible: rootKipPanel.shotsVisible
@@ -696,6 +737,28 @@ PanelWindow {
             font.pixelSize: rootKipPanel.kt.iconPixelSize
         }
 
+        // Flag chips, e.g. "--f=/". Red outline for flags /fd does not know.
+        Repeater {
+            model: rootKipPanel.parsed.flagRanges
+
+            Rectangle {
+                required property var modelData
+
+                readonly property real startX: promptInput.text.length >= 0 ? promptInput.positionToRectangle(modelData.start).x : 0
+                readonly property real endX: promptInput.text.length >= 0 ? promptInput.positionToRectangle(Math.min(promptInput.text.length, modelData.end)).x : 0
+
+                anchors.verticalCenter: parent.verticalCenter
+                x: promptInput.x + startX - 3
+                width: endX - startX + 6
+                height: promptInput.height + 4
+                radius: rootKipPanel.kt.chipRadius
+                color: modelData.known ? rootKipPanel.kt.commandHighlightColor : "transparent"
+                border.width: 1
+                border.color: modelData.known ? rootKipPanel.kt.focusBorderColor : rootKipPanel.kt.errorColor
+                opacity: rootKipPanel.inputContentT
+            }
+        }
+
         // Highlight behind the recognized command token, e.g. "/ask".
         Rectangle {
             readonly property bool active: rootKipPanel.parsed.mode === "ready" || (rootKipPanel.parsed.mode === "candidate" && rootKipPanel.parsed.command !== null)
@@ -805,6 +868,19 @@ PanelWindow {
         if (paletteIndex >= paletteItems.length)
             paletteIndex = 0;
 
+        // "/fd words" searches live after a short pause.
+        if (liveFilesWanted()) {
+            if (contentState === "service")
+                service.reset();
+            if (contentState === "shots")
+                shots.reset();
+            fileSearchTimer.restart();
+            return;
+        }
+
+        if (fileFlagProblem().length > 0)
+            notice = fileFlagProblem();
+
         // "/last " and "/last 2" preview live, no Enter needed.
         if (liveShotsWanted()) {
             if (contentState === "service")
@@ -828,10 +904,78 @@ PanelWindow {
         return parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "screenshots" && promptInput.text.length > parsed.token.length + 1;
     }
 
+    function liveFilesWanted() {
+        return parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "files" && parsed.argument.length > 0 && parsed.unknownFlags.length === 0;
+    }
+
+    // "--f" without a value or an unknown flag: say which, instead of searching.
+    function fileFlagProblem() {
+        if (parsed.mode !== "ready" || !parsed.command || parsed.command.kind !== "files" || parsed.unknownFlags.length === 0)
+            return "";
+
+        const flag = parsed.unknownFlags[0];
+        const key = flag.replace(/^--/, "").replace(/=.*$/, "");
+
+        if (key === "f")
+            return "--f needs a folder: --f=/ or --f=~/Notes.";
+        if (key === "h")
+            return "--h takes no value; it just means hidden files too.";
+        return "I don't know " + flag + ". /fd knows --f=<dir> and --h.";
+    }
+
+    // Keeps the current list up while a new search runs (refresh in place).
+    function runFiles() {
+        const fresh = contentState !== "files";
+
+        if (fresh)
+            fileIndex = 0;
+
+        contentState = "files";
+        chooserHit = null;
+        files.search(parsed.argument, parsed.flags.from || "", parsed.flags.hidden === true, !fresh);
+    }
+
+    function activateFile() {
+        const hit = shownFiles[fileIndex];
+
+        if (!hit)
+            return;
+
+        if (hit.isDir) {
+            openChooser(hit, hit.folder + hit.file, kt.folderActions);
+            return;
+        }
+
+        if (/\.md$/i.test(hit.file)) {
+            openChooser(hit, "Open " + hit.file + " with", kt.markdownOpeners.filter(opener => !opener.logseqOnly || hit.inLogseq));
+            return;
+        }
+
+        openChooser(hit, hit.folder + hit.file, kt.fileActions);
+    }
+
+    function filesStatus() {
+        const where = files.tilde(files.root);
+        const hiddenNote = files.hidden ? " · hidden included" : "";
+
+        switch (files.status) {
+        case "searching":
+            return "searching " + where + hiddenNote;
+        case "done":
+            return Math.min(files.results.length, kt.fdShownResults) + (files.truncated ? " of " + kt.fdMaxResults + "+" : (files.results.length > kt.fdShownResults ? " of " + files.results.length : "")) + " in " + where + hiddenNote;
+        case "empty":
+            return "nothing in " + where + hiddenNote;
+        case "error":
+            return files.errorText;
+        }
+        return "";
+    }
+
     function backToCompose() {
         chooserHit = null;
         service.reset();
         shots.reset();
+        files.reset();
         contentState = "compose";
     }
 
@@ -865,6 +1009,9 @@ PanelWindow {
                 if (shotsVisible) {
                     shotIndex = clampIndex(shotIndex + step * shotColumns, shots.shots.length);
                     event.accepted = true;
+                } else if (filesVisible) {
+                    fileIndex = clampIndex(fileIndex + step, shownFiles.length);
+                    event.accepted = true;
                 } else if (resultsVisible) {
                     resultIndex = clampIndex(resultIndex + step, service.results.length);
                     event.accepted = true;
@@ -896,6 +1043,14 @@ PanelWindow {
     }
 
     function submit() {
+        if (contentState === "files") {
+            if (filesVisible)
+                activateFile();
+            else if (files.status === "error" && liveFilesWanted())
+                runFiles();
+            return;
+        }
+
         if (contentState === "shots") {
             if (shots.status === "error")
                 runShots(String(shots.requested));
@@ -938,6 +1093,12 @@ PanelWindow {
     }
 
     function run(kind, argument) {
+        if (kind === "files") {
+            if (fileFlagProblem().length === 0)
+                runFiles();
+            return;
+        }
+
         if (kind === "screenshots") {
             runShots(argument);
             return;
@@ -1095,7 +1256,7 @@ PanelWindow {
 
     function refreshMessage() {
         currentMessage = messages.pick(messageKey, {
-            count: contentState === "shots" ? shots.shots.length : service.results.length
+            count: contentState === "shots" ? shots.shots.length : contentState === "files" ? files.results.length : service.results.length
         });
     }
 
@@ -1104,6 +1265,8 @@ PanelWindow {
             return "pick";
         if (contentState === "shots")
             return shots.status === "error" ? "retry" : (shotsVisible ? "actions" : "");
+        if (contentState === "files")
+            return filesVisible ? "actions" : (files.status === "error" ? "retry" : "");
         if (contentState === "service") {
             if (service.status === "error")
                 return "retry";
@@ -1162,6 +1325,11 @@ PanelWindow {
     function keyHints() {
         if (chooserHit !== null)
             return "↑↓ or 1–" + chooserOptions.length + " choose · Enter do it · Esc cancel";
+        if (contentState === "files") {
+            if (files.status === "error")
+                return "Enter retry · Esc back · fix --f= to search elsewhere";
+            return filesVisible ? "↑↓ move · Enter actions · Esc back · keep typing to refine" : "Esc back · keep typing to refine";
+        }
         if (contentState === "shots") {
             if (shots.status === "error")
                 return "Enter retry · Esc back";

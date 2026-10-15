@@ -7,6 +7,9 @@ QtObject {
 
     // kind: what Enter does. "ask" and "search" take an argument, "help" does
     // not, "screenshots" takes one optionally (argumentOptional).
+    // flags: --key or --key=value tokens anywhere in the argument, parsed out
+    // before the rest becomes the argument. Only commands with flags get them;
+    // "/ask --foo" stays literal text.
     readonly property var commands: [
         {
             name: "ask",
@@ -47,6 +50,29 @@ QtObject {
             kind: "screenshots",
             takesArgument: true,
             argumentOptional: true
+        },
+        {
+            name: "fd",
+            aliases: ["find"],
+            label: "Find files",
+            description: "Find files and folders by name or path with fd. Every word must match.",
+            helper: "--f=<dir> searches elsewhere (default ~), --h includes hidden files.",
+            eventKey: "fd.ready",
+            placeholder: "words in the name or path",
+            icon: "󰈞",
+            sourceHint: "fd · ~ unless --f=",
+            kind: "files",
+            takesArgument: true,
+            flags: {
+                f: {
+                    name: "from",
+                    takesValue: true
+                },
+                h: {
+                    name: "hidden",
+                    takesValue: false
+                }
+            }
         },
         {
             name: "help",
@@ -121,7 +147,47 @@ QtObject {
         if (!command)
             return result("unknown", "command.unknown", null, token, argument, commands);
 
-        return result("ready", command.eventKey, command, token, argument, command.takesArgument ? [] : commands);
+        const ready = result("ready", command.eventKey, command, token, argument, command.takesArgument ? [] : commands);
+
+        if (command.flags)
+            parseFlags(ready, raw, spaceAt + 1);
+
+        return ready;
+    }
+
+    // Pulls --key / --key=value tokens out of the argument. Records where each
+    // one sits in the raw text so the input can highlight it.
+    function parseFlags(parsed, raw, start) {
+        const pattern = /\S+/g;
+        const words = [];
+        let match;
+
+        pattern.lastIndex = start;
+
+        while ((match = pattern.exec(raw)) !== null) {
+            const flag = /^--([A-Za-z]+)(?:=(.*))?$/.exec(match[0]);
+
+            if (!flag) {
+                words.push(match[0]);
+                continue;
+            }
+
+            const spec = parsed.command.flags[flag[1]];
+            const valid = spec !== undefined && (spec.takesValue ? flag[2] !== undefined && flag[2].length > 0 : flag[2] === undefined);
+
+            parsed.flagRanges.push({
+                start: match.index,
+                end: match.index + match[0].length,
+                known: valid
+            });
+
+            if (valid)
+                parsed.flags[spec.name] = spec.takesValue ? flag[2] : true;
+            else
+                parsed.unknownFlags.push(match[0]);
+        }
+
+        parsed.argument = words.join(" ");
     }
 
     function result(mode, eventKey, command, token, argument, matches) {
@@ -131,7 +197,10 @@ QtObject {
             command: command,
             token: token,
             argument: argument,
-            matches: matches
+            matches: matches,
+            flags: ({}),
+            unknownFlags: [],
+            flagRanges: []
         };
     }
 }

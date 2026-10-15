@@ -98,8 +98,80 @@ QtObject {
         }
     ]
 
+    // /fd
+    readonly property string fdCommand: "fd"
+    readonly property string fdDefaultRoot: "~"
+    // fd stops itself here; KIP ranks what came back and shows fdShownResults.
+    readonly property int fdMaxResults: 200
+    readonly property int fdShownResults: 50
+    readonly property int fdDebounce: 250
+    // Only bite when searching /; harmless elsewhere (anchored to the search root).
+    readonly property var fdExcludes: ["/proc", "/sys", "/dev", "/run"]
+    readonly property var folderActions: [
+        {
+            id: "file-manager",
+            label: "Open",
+            hint: "in the file manager",
+            icon: "󰉋",
+            command: ["xdg-open", "{path}"]
+        },
+        {
+            id: "terminal",
+            label: "Terminal",
+            hint: "ghostty in this folder",
+            icon: "",
+            command: ["ghostty", "--working-directory={path}"]
+        },
+        {
+            id: "broot",
+            label: "Broot",
+            hint: "browse it in broot",
+            icon: "󰙅",
+            command: ["ghostty", "-e", "broot", "{path}"]
+        },
+        {
+            id: "copy-path",
+            label: "Copy path",
+            hint: "the folder path as text",
+            icon: "󰅍",
+            command: ["wl-copy", "{path}"]
+        }
+    ]
+    readonly property var fileActions: [
+        {
+            id: "open",
+            label: "Open",
+            hint: "with the default app",
+            icon: "󰏌",
+            command: ["xdg-open", "{path}"]
+        },
+        {
+            id: "default",
+            label: "nvim",
+            hint: "in a terminal",
+            icon: "",
+            command: openCommand
+        },
+        {
+            id: "folder",
+            label: "Folder",
+            hint: "open the containing folder",
+            icon: "󰉋",
+            command: ["xdg-open", "{dir}"]
+        },
+        {
+            id: "copy-path",
+            label: "Copy path",
+            hint: "the file path as text",
+            icon: "󰅍",
+            command: ["wl-copy", "{path}"]
+        }
+    ]
+
     // {graph} and {page} are URL-encoded before substitution.
     readonly property string logseqGraph: "Logseq"
+    // Where that graph lives, for recognizing /fd hits as Logseq pages.
+    readonly property string logseqGraphDir: Quickshell.env("HOME") + "/Notes/Logseq"
     // A cold-started Logseq drops logseq:// links while it loads the graph.
     // When it was not running, KIP waits for its window, then resends the link
     // after each of these delays (ms). Resending to an open page is harmless.

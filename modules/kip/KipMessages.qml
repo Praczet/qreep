@@ -42,6 +42,30 @@ QtObject {
                 neutral: ["Could not read the screenshot folder."],
                 dry: ["The screenshot folder is not where I was told it would be.", "Can't read the folder. Check screenshotDir in KipTheme.qml."]
             },
+            "fd.ready": {
+                neutral: ["Find files and folders. Every word must appear in the path."],
+                dry: ["Lost something again? How wonderfully predictable.", "Tell me what you've misplaced this time.", "Ah, a treasure hunt. Except the treasure is probably config.", "Describe the missing artifact. Vaguely, as tradition demands.", "Your filesystem is a labyrinth. Fortunately, I am magnificent.", "Somewhere in that chaos lies a file. Allegedly."]
+            },
+            "fd.searching": {
+                neutral: ["Searching."],
+                dry: ["Consulting the labyrinth.", "Hunting through your digital possessions.", "Let us see what you've buried this time.", "Searching. Try not to move the files.", "Following the trail of poor naming decisions.", "The hunt begins. Try to look impressed."]
+            },
+            "fd.root": {
+                neutral: ["Searching all of /. This takes a moment."],
+                dry: ["The entire filesystem? Ambitious. Reckless. I approve.", "Every directory. Every corner. What could go wrong?", "Ah, the grand expedition. Into absolutely everything.", "All of /. You've mistaken me for an archaeologist.", "We're searching the kingdom now. Naturally.", "A full expedition. I expect a statue afterward."]
+            },
+            "fd.found": {
+                neutral: ["Matches below. Arrows move, Enter acts."],
+                dry: ["Found them. Naturally. Applause is optional.", "Your lost treasures. Please misplace them more responsibly.", "There. Another mystery solved by superior intellect.", "Behold the results of my entirely predictable brilliance.", "Found something. Whether it's useful is your department.", "I have narrowed the chaos. You're welcome."]
+            },
+            "fd.empty": {
+                neutral: ["Nothing matched every word."],
+                dry: ["Nothing. Have you considered that the file is imaginary?", "A magnificent search for something that apparently isn't there.", "No matches. The filesystem denies your accusations.", "Try fewer words. Or more realistic expectations.", "Perhaps it's hidden. Perhaps it's elsewhere. Perhaps it's folklore.", "Nothing found. Even I cannot locate a bad memory."]
+            },
+            "fd.error": {
+                neutral: ["fd could not search there."],
+                dry: ["The search failed. The filesystem has opinions.", "Even my brilliance cannot negotiate with that directory.", "A technical obstacle. How insultingly ordinary.", "The search collapsed. I blame permissions or architecture.", "Well. That path has declined our invitation."]
+            },
             "help.ready": {
                 neutral: ["Commands and keys, all of them. It is a short list."],
                 dry: ["The full manual. Brace yourself, it has three entries.", "Help, abridged. Very abridged."]

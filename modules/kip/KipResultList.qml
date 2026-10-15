@@ -71,7 +71,11 @@ ListView {
 
                         anchors.centerIn: parent
                         text: resultRow.modelData.origin
-                        color: resultRow.modelData.origin === "logseq" ? rootKipResultList.kipTheme.secondaryAccentColor : rootKipResultList.kipTheme.warningColor
+                        color: ({
+                                logseq: rootKipResultList.kipTheme.secondaryAccentColor,
+                                legacy: rootKipResultList.kipTheme.warningColor,
+                                dir: rootKipResultList.kipTheme.accentColor
+                            })[resultRow.modelData.origin] || rootKipResultList.kipTheme.secondaryTextColor
                         font.pixelSize: rootKipResultList.kipTheme.metaPixelSize
                     }
                 }
@@ -86,7 +90,7 @@ ListView {
                     font.pixelSize: rootKipResultList.kipTheme.bodyPixelSize
                     text: "<font color='" + rootKipResultList.kipTheme.folderColor + "'>" + rootKipResultList.escapeHtml(resultRow.modelData.folder) + "</font>"
                         + "<font color='" + rootKipResultList.kipTheme.fileColor + "'><b>" + rootKipResultList.escapeHtml(resultRow.modelData.file) + "</b></font>"
-                        + "<font color='" + rootKipResultList.kipTheme.lineNumberColor + "'>:" + rootKipResultList.rangesLabel(resultRow.modelData) + "</font>"
+                        + (resultRow.modelData.line !== undefined ? "<font color='" + rootKipResultList.kipTheme.lineNumberColor + "'>:" + rootKipResultList.rangesLabel(resultRow.modelData) + "</font>" : "")
                 }
 
                 Text {

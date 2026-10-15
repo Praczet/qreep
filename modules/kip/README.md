@@ -21,6 +21,7 @@ modules/kip/
 ├── KipJarvisService.qml # Jarvis adapter: argv, JSON/NDJSON parsing, cancellation
 ├── KipMockService.qml # fake search/ask/general, Jarvis-shaped event sequence
 ├── KipScreenshotService.qml # /last: newest files in the screenshot folder
+├── KipFileSearchService.qml # /fd: two fd passes, merged and ranked
 ├── KipChooser.qml     # numbered action chooser shared by every result type
 ├── KipShotGrid.qml    # /last thumbnails
 ├── KipResultList.qml  # ranked hits: origin, folder, basename, line range
@@ -119,6 +120,7 @@ monitor scaling.
 | `/ask ` + question | note-grounded answer (mock) |
 | `/notes ` + query (aliases `/n`, `/search`) | notes search (mock) |
 | `/last`, `/last 3` (alias `/shot`) | newest screenshot(s), capped at 12 |
+| `/fd words [--f=<dir>] [--h]` (alias `/find`) | files and folders via `fd`, live |
 | `/help`, `/?` | command list |
 | `/foo` | calm "not a command" plus the list |
 | plain text | general question (mock, no notes context) |
@@ -181,6 +183,45 @@ Arrow keys move, `Enter` asks:
 3. **Show image**: `xdg-open <path>`, i.e. your default image viewer.
 
 The actions are `KipTheme.screenshotActions`; KIP closes after one runs.
+
+## Files
+
+`/fd kip notes` searches `~`; `--f=/` or `--f=~/Notes` searches elsewhere,
+`--h` includes hidden files. Flags can sit anywhere in the text and get a chip
+in the input; an unknown or incomplete flag is outlined red and explained
+instead of searched. Results appear 250 ms after you stop typing
+(`fdDebounce`); every keystroke kills the running search.
+
+Each search runs two `fd` passes side by side, merged without duplicates:
+
+```text
+fd --color never --absolute-path --fixed-strings --max-results 200 \
+   --exclude /proc --exclude /sys --exclude /dev --exclude /run \
+   [--hidden] [--full-path] --and=notes -- kip ~
+```
+
+- Every word must match (`--and`), literally (`--fixed-strings`), smart case.
+- The **name** pass matches words in the file/folder name. The **path** pass
+  (`--full-path`) also finds "Screenshots 1134" style searches.
+- Both stop at 200. With the path pass alone, a broad search of `/` filled
+  the cap with path-only matches and `hyprland.conf` never arrived; the name
+  pass is what makes the right file show up.
+- `--and=<word>` and `--` keep a word like `-rf` a search term.
+- An uncapped search of `/` took ~13 s here, so the cap is what keeps `/` quick.
+  A rare name on `/` still walks the whole disk; results stream in meanwhile.
+
+Ranking, best first: exact name, all words in the name starting with the
+first, all words in the name, name starts with the first word, matched only
+through the folder path; then fewer folder levels, then shorter path. The
+panel shows the top 50 (`fdShownResults`).
+
+`Enter` opens the chooser:
+
+| Hit | Options (first is default) |
+| --- | --- |
+| folder | Open (file manager) / Terminal here / Broot / Copy path |
+| `.md` file | `markdownOpeners` (Logseq only inside `logseqGraphDir`) |
+| other file | Open (default app) / nvim / containing Folder / Copy path |
 
 ## Microcopy
 
