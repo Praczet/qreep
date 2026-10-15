@@ -21,6 +21,7 @@ qreep/
 │   ├── dashboard/
 │   ├── expose/
 │   ├── fastpassword/
+│   ├── kip/
 │   ├── notification/
 │   ├── osd/
 │   ├── polkit/
@@ -155,6 +156,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/dashboard/features/wotd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/expose/README.md` | `e976b0d` | `2026-07-21` |
 | `modules/fastpassword/README.md` | `1af57ac` | `2026-07-17` |
+| `modules/kip/README.md` | `8340916` | `2026-10-15` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
@@ -207,6 +209,7 @@ modules/
 ├── dashboard/
 ├── expose/
 ├── fastpassword/
+├── kip/
 ├── notification/
 ├── osd/
 ├── polkit/
@@ -1050,6 +1053,7 @@ Qreep currently has:
 - the Clipboard panel currently supports a bottom overlay, search/filter, pins filter, keyboard navigation, text/code/color/image cards, runtime image previews, restore notifications, delete, and star/unstar metadata in `~/.local/share/clipvault/pinned.json`;
 - a top-level Expose module in `modules/expose/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-expose`, with live `ToplevelManager`/`ScreencopyView` previews, `grim -T <stableId>` fallback thumbnails, centered manual layout motion, type-to-search filtering, spatial keyboard navigation, and keyboard/click activation that switches workspace before focusing the selected client;
 - a top-level Fast Password module in `modules/fastpassword/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-fast-password`, authenticating before the chooser opens, listing allowlisted KeePass entry names through `qreep-pass-list`, and copying through `qreep-pass-copy` with a short-lived auth stamp;
+- a top-level KIP module in `modules/kip/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-kip` (bound to `SUPER+K`), with a line→input open animation driven by one `openProgress` value, data-driven slash commands, event-keyed microcopy, and a `KipJarvisService` adapter that runs `jarvis --json` (notes search, note-grounded ask, general chat) with per-request processes and cancellation; `KipMockService` remains for UI work without Ollama;
 - a top-level Notification module in `modules/notification/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-notification`, and backed by `Quickshell.Services.Notifications.NotificationServer`;
 - notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;
 - notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;
