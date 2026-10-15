@@ -48,6 +48,12 @@ PanelWindow {
     property int chooserIndex: 0
     property string notice: ""
     property string currentMessage: ""
+    // service.answer as rich text, rebuilt at most every answerRenderInterval
+    // while streaming so the document is not re-parsed per token.
+    property var renderedAnswer: ({
+            html: "",
+            codeBlocks: []
+        })
 
     readonly property string messageKey: contentState === "service" ? service.eventKey : contentState === "shots" ? shots.eventKey : contentState === "files" ? files.eventKey : (parsed.mode === "idle" && !hasInteracted ? "kip.open" : parsed.eventKey)
     readonly property bool paletteVisible: contentState === "compose" && (parsed.mode === "palette" || parsed.mode === "candidate" || parsed.mode === "unknown" || (parsed.mode === "ready" && parsed.command && !parsed.command.takesArgument))
@@ -141,6 +147,37 @@ PanelWindow {
     }
 
     onMessageKeyChanged: refreshMessage()
+
+    KipMarkdown {
+        id: markdown
+
+        kipTheme: rootKipPanel.kt
+    }
+
+    Timer {
+        id: answerRenderTimer
+
+        interval: rootKipPanel.kt.answerRenderInterval
+        repeat: false
+        onTriggered: rootKipPanel.renderAnswer()
+    }
+
+    Connections {
+        target: rootKipPanel.service
+
+        function onAnswerChanged() {
+            // Throttle, not debounce: a steady stream still repaints.
+            if (rootKipPanel.service.answer.length === 0)
+                rootKipPanel.renderAnswer();
+            else if (!answerRenderTimer.running)
+                answerRenderTimer.start();
+        }
+
+        function onStatusChanged() {
+            if (!rootKipPanel.service.busy)
+                rootKipPanel.renderAnswer();
+        }
+    }
 
     // /fd searches after a pause in typing, not per keystroke.
     Timer {
@@ -654,10 +691,14 @@ PanelWindow {
                 }
             }
 
-            // One growing answer, never a pile of bubbles. Follows the stream
-            // to the bottom while generating; scroll freely once done.
+            // One growing answer, never a pile of bubbles. A single read-only
+            // TextEdit so a selection can span the whole answer. It follows the
+            // stream only while the reader is at the bottom.
             Flickable {
                 id: answerFlick
+
+                property bool follow: true
+                property bool autoScrolling: false
 
                 width: parent.width
                 height: Math.min(answerText.implicitHeight, rootKipPanel.answerLimit)
@@ -666,20 +707,40 @@ PanelWindow {
                 boundsBehavior: Flickable.StopAtBounds
                 clip: true
 
-                onContentHeightChanged: {
-                    if (rootKipPanel.service.busy && contentHeight > height)
-                        contentY = contentHeight - height;
+                onContentYChanged: {
+                    if (!autoScrolling)
+                        follow = contentY >= contentHeight - height - 8;
                 }
 
-                Text {
+                onContentHeightChanged: {
+                    if (!follow || contentHeight <= height)
+                        return;
+                    autoScrolling = true;
+                    contentY = contentHeight - height;
+                    autoScrolling = false;
+                }
+
+                TextEdit {
                     id: answerText
 
-                    width: parent.width
-                    text: rootKipPanel.service.citedAnswer(rootKipPanel.service.answer)
-                    textFormat: Text.MarkdownText
+                    width: answerFlick.width
+                    text: rootKipPanel.renderedAnswer.html
+                    textFormat: TextEdit.RichText
+                    readOnly: true
+                    selectByMouse: true
+                    persistentSelection: true
+                    wrapMode: TextEdit.Wrap
                     color: rootKipPanel.kt.primaryTextColor
-                    font.pixelSize: rootKipPanel.kt.bodyPixelSize
-                    wrapMode: Text.WordWrap
+                    selectionColor: rootKipPanel.kt.selectedRowColor
+                    selectedTextColor: rootKipPanel.kt.primaryTextColor
+                    font.pixelSize: rootKipPanel.kt.answerPixelSize
+
+                    onLinkActivated: link => rootKipPanel.answerLink(link)
+                    Keys.onPressed: event => rootKipPanel.answerKey(event)
+
+                    HoverHandler {
+                        cursorShape: answerText.hoveredLink.length > 0 ? Qt.PointingHandCursor : Qt.IBeamCursor
+                    }
                 }
             }
 
@@ -1160,6 +1221,7 @@ PanelWindow {
         }
 
         contentState = "service";
+        answerFlick.follow = true;
         resultIndex = 0;
         showSnippet = false;
         chooserHit = null;
@@ -1171,6 +1233,74 @@ PanelWindow {
             service.ask(argument);
         else
             service.general(argument);
+    }
+
+    function renderAnswer() {
+        answerRenderTimer.stop();
+        renderedAnswer = service.answer.length > 0 ? markdown.toRich(service.citedAnswer(service.answer)) : {
+            html: "",
+            codeBlocks: []
+        };
+    }
+
+    function answerLink(link) {
+        const copy = /^kip-copy:(\d+)$/.exec(link);
+
+        if (copy) {
+            const code = renderedAnswer.codeBlocks[Number(copy[1])];
+
+            if (code !== undefined) {
+                copyRequested(code);
+                notice = "Copied code block (" + code.split("\n").length + (code.split("\n").length === 1 ? " line)." : " lines).");
+            }
+            return;
+        }
+
+        // Only web links leave KIP; anything else in model output is ignored.
+        if (/^https?:\/\//.test(link))
+            Qt.openUrlExternally(link);
+    }
+
+    // Keys while the answer has focus (after a mouse selection). Copy and
+    // select-all stay native; typing goes back to the prompt.
+    function answerKey(event) {
+        const modifiers = event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier);
+
+        if (modifiers !== 0)
+            return;
+
+        switch (event.key) {
+        case Qt.Key_Escape:
+        case Qt.Key_Tab:
+            event.accepted = true;
+            answerText.deselect();
+            promptInput.forceActiveFocus();
+            return;
+        case Qt.Key_Up:
+        case Qt.Key_Down:
+        case Qt.Key_PageUp:
+        case Qt.Key_PageDown:
+            {
+                event.accepted = true;
+                const step = (event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown) ? answerFlick.height * 0.9 : 40;
+                const direction = (event.key === Qt.Key_Up || event.key === Qt.Key_PageUp) ? -1 : 1;
+
+                answerFlick.contentY = Math.max(0, Math.min(answerFlick.contentHeight - answerFlick.height, answerFlick.contentY + step * direction));
+                return;
+            }
+        case Qt.Key_Return:
+        case Qt.Key_Enter:
+            event.accepted = true;
+            promptInput.forceActiveFocus();
+            submit();
+            return;
+        }
+
+        if (event.text.length > 0 && event.text.charCodeAt(0) >= 32) {
+            event.accepted = true;
+            promptInput.forceActiveFocus();
+            promptInput.insert(promptInput.cursorPosition, event.text);
+        }
     }
 
     function activateResult() {

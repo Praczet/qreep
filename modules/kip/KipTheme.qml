@@ -209,6 +209,24 @@ QtObject {
     readonly property var copyCommand: ["wl-copy", "{text}"]
 
     readonly property int snippetMaxHeight: 180
+
+    // Answer typography (KipMarkdown). Rich text wants opaque colours, so the
+    // code surfaces are tinted from the card colour instead of using alpha.
+    readonly property int answerPixelSize: 14
+    readonly property int answerLineHeight: 145
+    readonly property int answerParagraphGap: 9
+    readonly property int answerHeadingTopGap: 14
+    readonly property int answerHeadingBottomGap: 5
+    readonly property int answerListItemGap: 3
+    readonly property int answerRenderInterval: 120
+    readonly property string answerHeadingColor: String(qreep.primary)
+    readonly property string answerCodeColor: String(qreep.on_surface)
+    readonly property string answerMetaColor: String(qreep.on_surface_variant)
+    readonly property string answerLinkColor: String(qreep.primary)
+    readonly property string answerQuoteColor: String(qreep.on_surface_variant)
+    readonly property string answerQuoteBarColor: String(qreep.outline)
+    readonly property string answerCodeBackground: String(Qt.tint(qreep.surface, Qt.rgba(0, 0, 0, 0.28)))
+    readonly property string answerInlineCodeBackground: String(Qt.tint(qreep.surface, Qt.rgba(qreep.on_surface.r, qreep.on_surface.g, qreep.on_surface.b, 0.1)))
     readonly property int answerMaxHeight: 260
     readonly property string monoFontFamily: "FiraCode Nerd Font"
 

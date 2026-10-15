@@ -25,6 +25,7 @@ modules/kip/
 ├── KipChooser.qml     # numbered action chooser shared by every result type
 ├── KipShotGrid.qml    # /last thumbnails
 ├── KipResultList.qml  # ranked hits: origin, folder, basename, line range
+├── KipMarkdown.qml    # answer Markdown → KIP-styled Qt rich text
 ├── KipTheme.qml       # placement, timings, reducedMotion, tone, colors
 └── README.md
 ```
@@ -110,6 +111,28 @@ hidden, so typing during the opening animation is kept.
 The panel picks the Hyprland-focused monitor when it opens. Sizes are logical
 pixels, so `anchorY` (100) and `panelWidth` (780, clamped to the screen) follow
 monitor scaling.
+
+## Answers
+
+Answers are Markdown from the model, converted by `KipMarkdown.qml` into Qt
+rich text with KIP's own spacing (`answer*` tokens in `KipTheme.qml`) and
+shown in one read-only `TextEdit`, so a mouse selection can span the whole
+answer. Qt's built-in Markdown mode rendered, but gave no control over
+spacing or code blocks.
+
+- Supported: paragraphs, headings (restrained sizes), nested lists, fenced
+  and inline code, bold/italic, `http(s)` links, blockquotes, rules. Model
+  text is HTML-escaped before any markup is added.
+- Each fenced block has a **Copy** link that copies the original code
+  exactly, indentation and all, through `wl-copy`.
+- Select with the mouse, `Ctrl+C` copies, `Ctrl+A` selects the answer. Typing
+  while the answer has focus goes back to the prompt; `Esc`/`Tab` return
+  focus without closing.
+- While streaming, the document is rebuilt at most every 120 ms
+  (`answerRenderInterval`), and the view follows the end only while you are
+  at the bottom. Scroll up and it stays put.
+- Limitation: a rebuild drops the selection, so select after the answer
+  finishes.
 
 ## Height
 
