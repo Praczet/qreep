@@ -153,9 +153,13 @@ The size survives closing KIP but not a Quickshell restart.
 | `/notes ` + query (aliases `/n`, `/search`) | notes search (mock) |
 | `/last`, `/last 3` (alias `/shot`) | newest screenshot(s), capped at 12 |
 | `/fd words [--f=<dir>] [--h]` (alias `/find`) | files and folders via `fd`, live |
-| `/help`, `/?` | command list |
+| `/help`, `/help fd` (alias `/?`) | commands and keys, or one command's syntax, flags, examples; live |
 | `/foo` | calm "not a command" plus the list |
 | plain text | general question (mock, no notes context) |
+
+`/help` is generated from the registry (`syntax`, `examples`, `actions`,
+flag `usage`/`help`), so help and the parser cannot disagree. A mistyped
+command gets "Did you mean /fd?" (edit distance ≤ 2).
 
 Commands live in `KipCommands.qml`: name, aliases, label, description, helper,
 event key, placeholder, icon, source hint, kind, takesArgument. The panel never

@@ -22,7 +22,10 @@ QtObject {
             icon: "󰭹",
             sourceHint: "~/Notes index · local model",
             kind: "ask",
-            takesArgument: true
+            takesArgument: true,
+            syntax: "/ask <question>",
+            examples: ["/ask How do I inspect MariaDB user privileges?"],
+            actions: "Sources appear first: Up/Down, Enter opens one, Tab shows its original text. The answer is selectable; code blocks have Copy."
         },
         {
             name: "notes",
@@ -35,7 +38,10 @@ QtObject {
             icon: "󰍉",
             sourceHint: "~/Notes · semantic index",
             kind: "search",
-            takesArgument: true
+            takesArgument: true,
+            syntax: "/notes <query>",
+            examples: ["/notes mariadb permissions", "/n borg restore"],
+            actions: "Up/Down, Enter opens the note (markdown asks Logseq / nvim / Vivify), Tab shows the original text, Ctrl+Shift+C copies path:line."
         },
         {
             name: "last",
@@ -49,7 +55,10 @@ QtObject {
             sourceHint: "screenshot folder · newest first",
             kind: "screenshots",
             takesArgument: true,
-            argumentOptional: true
+            argumentOptional: true,
+            syntax: "/last [count]",
+            examples: ["/last", "/last 3"],
+            actions: "Appears as you type. Arrows move, Enter: copy image / copy path / show image."
         },
         {
             name: "fd",
@@ -63,14 +72,21 @@ QtObject {
             sourceHint: "fd · ~ unless --f=",
             kind: "files",
             takesArgument: true,
+            syntax: "/fd <words> [--f=<dir>] [--h]",
+            examples: ["/fd kip", "/fd hyprland conf --f=/", "/fd jarvis memory --h"],
+            actions: "Live after a short pause. Enter on a folder: open / terminal / broot / copy path; on a file: open / nvim / folder / copy path; markdown gets the note openers.",
             flags: {
                 f: {
                     name: "from",
-                    takesValue: true
+                    takesValue: true,
+                    usage: "--f=<dir>",
+                    help: "search this folder instead of ~ (--f=/ for everything)"
                 },
                 h: {
                     name: "hidden",
-                    takesValue: false
+                    takesValue: false,
+                    usage: "--h",
+                    help: "include hidden files and folders"
                 }
             }
         },
@@ -78,16 +94,118 @@ QtObject {
             name: "help",
             aliases: ["?"],
             label: "Help",
-            description: "List commands and keys.",
-            helper: "Tab completes, Enter runs, Escape steps back.",
+            description: "List commands, or explain one: /help fd.",
+            helper: "Appears as you type. Add a command name for its details.",
             eventKey: "help.ready",
-            placeholder: "",
+            placeholder: "command",
             icon: "󰋖",
             sourceHint: "",
             kind: "help",
-            takesArgument: false
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/help [command]",
+            examples: ["/help", "/help fd"],
+            actions: "Read-only. Select and Ctrl+C like any answer."
         }
     ]
+
+    readonly property var keys: [
+        ["Enter", "submit, or act on the selected result"],
+        ["Tab", "complete a command; on results, show the original text"],
+        ["Up / Down", "move through commands or results"],
+        ["Esc", "results back to the prompt, then close"],
+        ["1 – 9", "pick an option in an action chooser"],
+        ["Ctrl+C", "copy the selected answer text (after selecting with the mouse)"],
+        ["Ctrl+Shift+C", "copy path:line of the selected note"]
+    ]
+
+    // Help as markdown, built from the registry above so it cannot drift
+    // from what the parser actually accepts.
+    function helpMarkdown(argument) {
+        const wanted = String(argument || "").trim().replace(/^\//, "");
+
+        if (wanted.length === 0)
+            return overviewMarkdown();
+
+        const command = find(wanted);
+
+        if (command)
+            return commandMarkdown(command);
+
+        const guess = suggest(wanted);
+
+        return "No command `/" + wanted + "`." + (guess ? " Did you mean `/" + guess.name + "`?" : "") + "\n\n" + overviewMarkdown();
+    }
+
+    function overviewMarkdown() {
+        const lines = ["## Commands", ""];
+
+        for (const command of commands)
+            lines.push("- `" + command.syntax + "` " + command.description);
+        lines.push("- plain text, no `/`: a general question to the local model, no notes as context");
+        lines.push("", "`/help <command>` shows syntax, flags and examples.", "", "## Keys", "");
+        for (const key of keys)
+            lines.push("- **" + key[0] + "**: " + key[1]);
+        return lines.join("\n");
+    }
+
+    function commandMarkdown(command) {
+        const lines = ["## /" + command.name, "", command.description, "", "```", command.syntax, "```"];
+
+        if (command.aliases.length > 0)
+            lines.push("", "Aliases: " + command.aliases.map(alias => "`/" + alias + "`").join(", "));
+
+        if (command.flags) {
+            lines.push("", "### Flags", "");
+            for (const key in command.flags)
+                lines.push("- `" + command.flags[key].usage + "` " + command.flags[key].help);
+            lines.push("", "Only these flags. Native options of the underlying tool are not passed through.");
+        }
+
+        lines.push("", "### Examples", "", "```");
+        for (const example of command.examples)
+            lines.push(example);
+        lines.push("```", "", "### After Enter", "", command.actions);
+        return lines.join("\n");
+    }
+
+    // Closest command name or alias within two edits, for typos like /fdd.
+    function suggest(token) {
+        const needle = String(token || "").toLowerCase();
+        let best = null;
+        let bestDistance = 3;
+
+        for (const command of commands) {
+            for (const name of [command.name].concat(command.aliases)) {
+                const distance = editDistance(needle, name);
+
+                if (distance < bestDistance) {
+                    best = command;
+                    bestDistance = distance;
+                }
+            }
+        }
+        return best;
+    }
+
+    function editDistance(left, right) {
+        const row = [];
+
+        for (let j = 0; j <= right.length; j++)
+            row.push(j);
+        for (let i = 1; i <= left.length; i++) {
+            let previous = row[0];
+
+            row[0] = i;
+            for (let j = 1; j <= right.length; j++) {
+                const current = row[j];
+
+                row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (left[i - 1] === right[j - 1] ? 0 : 1));
+                previous = current;
+            }
+        }
+        return row[right.length];
+    }
 
     function find(token) {
         const needle = String(token || "").toLowerCase();

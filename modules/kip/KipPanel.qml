@@ -31,7 +31,8 @@ PanelWindow {
     readonly property var parsed: commands.parse(promptInput.text)
 
     // compose: reacting to typing. service: a submitted notes/ask/general
-    // request. shots: /last screenshots.
+    // request. shots: /last screenshots. files: /fd. doc: static markdown
+    // (/help) shown in the answer viewer.
     property string contentState: "compose"
     property int paletteIndex: 0
     property int resultIndex: 0
@@ -48,6 +49,7 @@ PanelWindow {
     property int chooserIndex: 0
     property string notice: ""
     property string currentMessage: ""
+    property string docMarkdown: ""
     // service.answer as rich text, rebuilt at most every answerRenderInterval
     // while streaming so the document is not re-parsed per token.
     property var renderedAnswer: ({
@@ -702,7 +704,7 @@ PanelWindow {
 
                 width: parent.width
                 height: Math.min(answerText.implicitHeight, rootKipPanel.answerLimit)
-                visible: rootKipPanel.contentState === "service" && rootKipPanel.service.answer.length > 0
+                visible: (rootKipPanel.contentState === "service" && rootKipPanel.service.answer.length > 0) || (rootKipPanel.contentState === "doc" && rootKipPanel.docMarkdown.length > 0)
                 contentHeight: answerText.implicitHeight
                 boundsBehavior: Flickable.StopAtBounds
                 clip: true
@@ -984,6 +986,19 @@ PanelWindow {
         if (paletteIndex >= paletteItems.length)
             paletteIndex = 0;
 
+        // "/help" and "/help fd" render as you type.
+        if (parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "help") {
+            showDoc(commands.helpMarkdown(parsed.argument));
+            return;
+        }
+
+        if (parsed.mode === "unknown" && parsed.token.length > 0) {
+            const guess = commands.suggest(parsed.token);
+
+            if (guess)
+                notice = "Did you mean /" + guess.name + "?";
+        }
+
         // "/fd words" searches live after a short pause.
         if (liveFilesWanted()) {
             if (contentState === "service")
@@ -1092,7 +1107,24 @@ PanelWindow {
         service.reset();
         shots.reset();
         files.reset();
+        docMarkdown = "";
         contentState = "compose";
+        renderAnswer();
+    }
+
+    // Static markdown in the answer viewer: /help now, /tldr pages next.
+    function showDoc(text) {
+        if (contentState !== "doc" && contentState !== "compose") {
+            service.reset();
+            shots.reset();
+            files.reset();
+        }
+        chooserHit = null;
+        docMarkdown = text;
+        contentState = "doc";
+        answerFlick.follow = false;
+        renderAnswer();
+        answerFlick.contentY = 0;
     }
 
     function handleKey(event) {
@@ -1237,7 +1269,9 @@ PanelWindow {
 
     function renderAnswer() {
         answerRenderTimer.stop();
-        renderedAnswer = service.answer.length > 0 ? markdown.toRich(service.citedAnswer(service.answer)) : {
+        const source = contentState === "doc" ? docMarkdown : service.citedAnswer(service.answer);
+
+        renderedAnswer = source.length > 0 ? markdown.toRich(source) : {
             html: "",
             codeBlocks: []
         };
@@ -1510,6 +1544,8 @@ PanelWindow {
     function keyHints() {
         if (chooserHit !== null)
             return "↑↓ or 1–" + chooserOptions.length + " choose · Enter do it · Esc cancel";
+        if (contentState === "doc")
+            return "select + Ctrl+C copies · Esc back · keep typing";
         if (contentState === "files") {
             if (files.status === "error")
                 return "Enter retry · Esc back · fix --f= to search elsewhere";
