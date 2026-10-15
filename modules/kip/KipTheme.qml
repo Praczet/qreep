@@ -279,7 +279,6 @@ QtObject {
     readonly property string answerQuoteBarColor: String(qreep.outline)
     readonly property string answerCodeBackground: String(Qt.tint(qreep.surface, Qt.rgba(0, 0, 0, 0.28)))
     readonly property string answerInlineCodeBackground: String(Qt.tint(qreep.surface, Qt.rgba(qreep.on_surface.r, qreep.on_surface.g, qreep.on_surface.b, 0.1)))
-    readonly property int answerMaxHeight: 260
     readonly property string monoFontFamily: "FiraCode Nerd Font"
 
     // Microcopy tone: "neutral" or "dry". Unknown tones fall back to neutral.

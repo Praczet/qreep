@@ -110,8 +110,13 @@ PanelWindow {
     property bool resizing: false
     readonly property real availableBodyHeight: height - (kt.anchorY + kt.inputHeight + kt.bodyGap + kt.cardPadding + kt.screenMargin)
     readonly property real maxBodyHeight: Math.max(80, Math.min(userBodyLimit > 0 ? userBodyLimit : kt.maxBodyHeight, availableBodyHeight))
-    // The answer gets whatever the drag added on top of the default.
-    readonly property real answerLimit: kt.answerMaxHeight + Math.max(0, maxBodyHeight - kt.maxBodyHeight)
+    // The answer gets the body height left below whatever sits above it
+    // (sources, status) and above the notice/hint lines, so its own bottom is
+    // always inside the card. A fixed cap let the body clip the answer and
+    // hide the end of a stream. answerFlick.y depends only on items above it,
+    // so this does not loop through the answer's own height.
+    readonly property real answerBelowHeight: (noticeText.visible ? noticeText.height + bodyContent.spacing : 0) + hintsText.height + bodyContent.spacing
+    readonly property real answerLimit: Math.max(80, maxBodyHeight - answerFlick.y - answerBelowHeight)
     property real bodyAreaHeight: Math.min(bodyContent.implicitHeight, maxBodyHeight)
 
     Behavior on bodyAreaHeight {
@@ -737,17 +742,60 @@ PanelWindow {
                 boundsBehavior: Flickable.StopAtBounds
                 clip: true
 
-                onContentYChanged: {
-                    if (!autoScrolling)
-                        follow = contentY >= contentHeight - height - 8;
-                }
+                readonly property bool atEnd: contentHeight <= height || contentY >= contentHeight - height - 8
 
-                onContentHeightChanged: {
+                // Only the reader scrolling decides whether to follow; layout
+                // and re-renders moving contentY must not switch it off.
+                onContentYChanged: {
+                    if (!autoScrolling && (moving || dragging))
+                        follow = atEnd;
+                }
+                onMovementEnded: follow = atEnd
+                onContentHeightChanged: scrollToEndIfFollowing()
+                onHeightChanged: scrollToEndIfFollowing()
+
+                function scrollToEndIfFollowing() {
                     if (!follow || contentHeight <= height)
                         return;
                     autoScrolling = true;
                     contentY = contentHeight - height;
                     autoScrolling = false;
+                }
+
+                function jumpToEnd() {
+                    follow = true;
+                    scrollToEndIfFollowing();
+                }
+
+                // "There is more below": shown whenever the end is out of view.
+                Rectangle {
+                    parent: answerFlick
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.margins: 4
+                    width: moreLabel.implicitWidth + 14
+                    height: moreLabel.implicitHeight + 6
+                    radius: rootKipPanel.kt.chipRadius
+                    color: rootKipPanel.kt.chipColor
+                    border.width: 1
+                    border.color: rootKipPanel.service.busy ? rootKipPanel.kt.focusBorderColor : rootKipPanel.kt.borderColor
+                    visible: !answerFlick.atEnd
+                    z: 2
+
+                    Text {
+                        id: moreLabel
+
+                        anchors.centerIn: parent
+                        text: rootKipPanel.service.busy && rootKipPanel.contentState === "service" ? "↓ more arriving" : "↓ more"
+                        color: rootKipPanel.kt.accentColor
+                        font.pixelSize: rootKipPanel.kt.metaPixelSize + 1
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: answerFlick.jumpToEnd()
+                    }
                 }
 
                 TextEdit {
@@ -775,6 +823,8 @@ PanelWindow {
             }
 
             Text {
+                id: noticeText
+
                 width: parent.width
                 visible: rootKipPanel.notice.length > 0
                 text: rootKipPanel.notice
@@ -784,6 +834,8 @@ PanelWindow {
             }
 
             Text {
+                id: hintsText
+
                 width: parent.width
                 text: rootKipPanel.keyHints()
                 color: rootKipPanel.kt.secondaryTextColor
@@ -1425,6 +1477,7 @@ PanelWindow {
                 const direction = (event.key === Qt.Key_Up || event.key === Qt.Key_PageUp) ? -1 : 1;
 
                 answerFlick.contentY = Math.max(0, Math.min(answerFlick.contentHeight - answerFlick.height, answerFlick.contentY + step * direction));
+                answerFlick.follow = answerFlick.atEnd;
                 return;
             }
         case Qt.Key_Return:

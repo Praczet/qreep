@@ -131,7 +131,11 @@ spacing or code blocks.
   focus without closing.
 - While streaming, the document is rebuilt at most every 120 ms
   (`answerRenderInterval`), and the view follows the end only while you are
-  at the bottom. Scroll up and it stays put.
+  at the bottom. Scroll up and it stays put; scroll back down and it follows
+  again. Only your scrolling changes that, never a layout change.
+- Whenever the end is out of view, a **↓ more** chip sits at the bottom
+  right (**↓ more arriving** while streaming). Click it to jump to the end
+  and follow again.
 - Limitation: a rebuild drops the selection, so select after the answer
   finishes.
 
@@ -151,10 +155,12 @@ source's original text.
 
 ## Height
 
-The body is capped at `maxBodyHeight` (600) and a streamed answer at
-`answerMaxHeight` (260); past that they scroll. The grip on the card's bottom
-edge drags the cap up (to the screen bottom) or down (to `minBodyHeight`);
-the answer gets everything the drag adds. Double-click the grip to reset.
+The body is capped at `maxBodyHeight` (600); past that it scrolls. The
+answer takes whatever height is left below the sources/status above it, so
+its end is always inside the card (a fixed answer cap used to let the body
+clip it and hide the end of a stream). The grip on the card's bottom edge
+drags the cap up (to the screen bottom) or down (to `minBodyHeight`).
+Double-click the grip to reset.
 Longer content uses the room, short content does not stretch to fill it.
 The size survives closing KIP but not a Quickshell restart.
 
