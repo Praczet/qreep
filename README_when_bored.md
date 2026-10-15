@@ -50,6 +50,7 @@ modules/
 ├── notification/
 ├── osd/
 ├── polkit/
+├── qreeper/
 └── timer/
 ```
 
@@ -67,6 +68,7 @@ modules/bar/features/
 ├── network/
 ├── power/
 ├── potatofast/
+├── qreeper/
 ├── timer/
 ├── upchecker/
 ├── volume/
@@ -178,6 +180,7 @@ Module theme files live with their owning module:
 * `modules/notification/NotificationTheme.qml`
 * `modules/osd/OsdTheme.qml`
 * `modules/polkit/PolkitTheme.qml`
+* `modules/qreeper/QreeperTheme.qml`
 * `modules/timer/TimerTheme.qml`
 
 `QreepTheme.qml` exposes global semantic colors and the aggregated module theme:
@@ -226,6 +229,8 @@ quickshell ipc call qreep-expose toggle
 quickshell ipc call qreep-notification toggleCenter
 quickshell ipc call qreep-polkit demo
 quickshell ipc call qreep-polkit registrationState
+quickshell ipc call qreep-qreeper toggleMinimap
+quickshell ipc call qreep-qreeper toggleAtlas
 quickshell ipc call qreep-timer toggle
 quickshell ipc call osd showMessage "Hello from the questionable future" 3000
 ```
@@ -497,7 +502,7 @@ lifestyle choice.
 
 Current known runtime pills are `clock`, `workspaces`, `mpris`, `timer`,
 `upchecker`, `monitorprofile`, `borg`, `potato-fast`, `battery`, `network`,
-`language`, and `volume`.
+`language`, `volume`, `qreeper`, and `tray`.
 Unknown pill IDs return an error instead of inventing state for `banana`, which
 is growth.
 
@@ -519,6 +524,22 @@ Some Quickshell versions vary slightly in CLI syntax. If this bites, check:
 ```bash
 quickshell ipc --help
 ```
+
+## Qreeper Map
+
+The compass pill and its two surfaces render the map that the Qreeper Blightmud
+plugin will publish to `~/.local/state/qreeper/map.json`. Qreep only reads that
+JSON; the plugin's SQLite database stays the plugin's business. The publisher
+does not exist yet, so for now it runs on fixtures:
+
+```bash
+scripts/qreep-qreeper-fixture_v0.0.1 --help
+```
+
+Layer namespaces are `qreep-qreeper-minimap` (Top layer, masked, no keyboard
+focus) and `qreep-qreeper-atlas` (Overlay, exclusive keyboard focus). The
+schema, fixture scenarios, and limitations live in
+[`modules/qreeper/README.md`](modules/qreeper/README.md).
 
 ## Event JSON
 

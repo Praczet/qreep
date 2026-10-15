@@ -35,3 +35,6 @@ tools/*/target/
 *.swo
 *~
 .DS_Store
+
+# Qreeper fixture helper output; the committed fixtures stay clean.
+fixtures/qreeper/live-*

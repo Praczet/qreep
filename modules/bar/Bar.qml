@@ -7,6 +7,7 @@ import "./features/borg" as BorgFeature
 import "./features/clock" as ClockFeature
 import "./features/power" as PowerFeature
 import "./features/potatofast" as PotatoFastFeature
+import "./features/qreeper" as QreeperFeature
 import "./features/timer" as TimerFeature
 import "./features/tray" as TrayFeature
 import "./features/upchecker" as UpcheckerFeature
@@ -32,6 +33,7 @@ PanelWindow {
     property alias overlayItems: overlayLayer.data
     property alias upcheckerService: upchecker.service
     property var triageController: null
+    property var qreeperController: null
     property bool shellFullscreenSurfaceOpen: false
     readonly property bool collapsed: barModeService.collapsed
     readonly property bool reservedMode: barModeService.reserved
@@ -39,10 +41,10 @@ PanelWindow {
     readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
     readonly property int visibleFootprintHeight: collapsed ? rootBar.theme.modules.bar.collapsedHeight : rootBar.activeTopPadding + rootBar.activeBarHeight
-    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume", "tray"]
+    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume", "qreeper", "tray"]
     readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
     readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["potato-fast", "timer", "clock", "mpris"])
-    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "language", "volume", "tray"])
+    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "language", "volume", "qreeper", "tray"])
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
     signal audioMixerRequested
@@ -568,6 +570,26 @@ PanelWindow {
                     sharedTooltip.hideLater();
                 }
                 onVolumeChangedByScroll: sharedTooltip.hideLater()
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
+            }
+
+            QreeperFeature.QreeperButton {
+                id: qreeperButton
+
+                visible: rootBar.qreeperController && rootBar.pillEnabled("qreeper")
+                collapsedPill: rootBar.pillCollapsed("qreeper")
+                theme: rootBar.theme
+                service: rootBar.qreeperController ? rootBar.qreeperController.service : null
+
+                onClicked: {
+                    rootBar.qreeperController.toggleMinimap();
+                    sharedTooltip.hideLater();
+                }
+                onRightClicked: {
+                    rootBar.qreeperController.toggleAtlas();
+                    sharedTooltip.hideLater();
+                }
                 onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
                 onTooltipHideRequested: sharedTooltip.hideLater()
             }

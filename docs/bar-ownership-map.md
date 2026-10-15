@@ -78,6 +78,7 @@ as bar-owned objects:
 | Right | `NetworkButton` | Click toggles network panel. |
 | Right | `LanguageButton` | Shows the active keyboard layout; click switches to the next configured layout. |
 | Right | `VolumeButton` | Click toggles mute, right-click opens `pavucontrol`, scroll adjusts volume. |
+| Right | `QreeperButton` | Click asks the shell-hosted `Qreeper` controller to toggle the minimap; right-click toggles the Atlas. The bar owns no Qreeper state. |
 | Right | `PowerButton` | Click toggles power panel. Hidden in collapsed mode. |
 
 Small controls can stay in `Bar.qml` until they need their own controller. The
@@ -110,7 +111,7 @@ then the state model starts wearing a false mustache.
 `BarPillStateService`:
 
 ```qml
-["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume"]
+["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume", "qreeper", "tray"]
 ```
 
 Unknown pill IDs return an error. `listPills` returns the current state for all

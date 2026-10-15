@@ -24,8 +24,10 @@ qreep/
 │   ├── notification/
 │   ├── osd/
 │   ├── polkit/
+│   ├── qreeper/
 │   ├── timer/
 │   └── triage/
+├── fixtures/
 ├── scripts/
 ├── theme/
 ├── tools/
@@ -125,9 +127,9 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `e976b0d` | `2026-07-21` |
+| `AGENTS.md` | `292493f` | `2026-10-12` |
 | `README.md` | `cc7fda3` | `2026-07-21` |
-| `README_when_bored.md` | `e976b0d` | `2026-07-21` |
+| `README_when_bored.md` | `292493f` | `2026-10-12` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
@@ -156,6 +158,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
+| `modules/qreeper/README.md` | `292493f` | `2026-10-12` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
 | `modules/triage/README.md` | `9438e75` | `2026-07-20` |
 
@@ -186,6 +189,7 @@ modules/bar/features/
 ├── network/
 ├── power/
 ├── potatofast/
+├── qreeper/
 ├── timer/
 ├── upchecker/
 ├── volume/
@@ -206,6 +210,7 @@ modules/
 ├── notification/
 ├── osd/
 ├── polkit/
+├── qreeper/
 ├── timer/
 └── triage/
 ```
@@ -1016,7 +1021,7 @@ Qreep currently has:
   - `overlay`: normal bar, no exclusive zone;
   - `collapsed`: compact top strip unless a visible pinned pill needs overlay space;
 - runtime pill state in `modules/bar/BarPillStateService.qml`, exposed through IPC target `qreep-bar-pill`;
-- current runtime pill IDs: `clock`, `workspaces`, `mpris`, `timer`, `upchecker`, `monitorprofile`, `borg`, `potato-fast`, `battery`, `network`, and `volume`;
+- current runtime pill IDs: `clock`, `workspaces`, `mpris`, `timer`, `upchecker`, `monitorprofile`, `borg`, `potato-fast`, `battery`, `network`, `language`, `volume`, `qreeper`, and `tray`;
 - enabled unpinned pills become 15px collapsed strips in collapsed mode; expanded pinned pills stay full-size, overlay content, use no top padding, and do not reserve Hyprland space;
 - a reusable `QreepModule` wrapper with hover, left/middle/right click, overlay, and shared-tooltip request support;
 - a launcher button in the left slot that delegates to `LauncherService`;
@@ -1050,6 +1055,7 @@ Qreep currently has:
 - notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - a top-level Polkit module in `modules/polkit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-polkit`, using `Quickshell.Services.Polkit.PolkitAgent` when it can register as the session agent, and keeping demo IPC for visual work while `hyprpolkitagent` still owns authentication;
+- a top-level Qreeper module in `modules/qreeper/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-qreeper`, reading the read-only Qreeper map snapshot at `~/.local/state/qreeper/map.json` (override with `QREEP_QREEPER_MAP_PATH`), with a movable Top-layer minimap, a full-screen Atlas, and a bar compass pill (`qreeper`) where left click toggles the minimap and right click toggles the Atlas. QREEP never reads the Qreeper SQLite database or parses MUD text; the producer is the Qreeper Blightmud plugin's `publisher/` (atomic writes, 60 s heartbeat). Test without Blightmud using `scripts/qreep-qreeper-fixture_v0.0.1` and `fixtures/qreeper/`;
 - a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;
 - a top-level Triage module in `modules/triage/`; its Rust helper lives in `tools/triagectl/`, installs as `triagectl`, stores local state in SQLite, is read-only against system package state in v1, and shares package-update context with Upchecker;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
@@ -1141,6 +1147,16 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer p
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer resume
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer toggleRunning
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-timer stop
+```
+
+Useful Qreeper IPC commands:
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper toggleMinimap
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper toggleAtlas
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper refresh
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper recenter
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper state
 ```
 
 Useful notification IPC commands:

@@ -1,0 +1,282 @@
+#!/usr/bin/env bash
+# Description: Publish Qreeper map snapshots so the Qreep minimap and Atlas can be tested without Blightmud.
+# Usage: scripts/qreep-qreeper-fixture_v0.0.1 [--target path] [--delay seconds] [--real-state] command [args]
+# Notes: Repo-local dev helper; it reads fixtures/qreeper/ next to this script, so run it from the repo
+#        instead of installing it into ~/.local/bin. Every write is temp file + mv in the same directory,
+#        which is the same atomic replacement the planned Lua publisher will use.
+#        Target defaults to $QREEP_QREEPER_MAP_PATH, then fixtures/qreeper/live-map.json.
+#        It refuses to touch the real ~/.local/state/qreeper/map.json unless --real-state is given.
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fixture_dir="$(realpath -m "$script_dir/../fixtures/qreeper")"
+real_state="$HOME/.local/state/qreeper/map.json"
+target="${QREEP_QREEPER_MAP_PATH:-$fixture_dir/live-map.json}"
+delay_seconds=""
+allow_real_state=0
+
+usage() {
+  cat <<EOF
+Usage: ${0##*/} [--target path] [--delay seconds] [--real-state] command [args]
+
+Graph setup:
+  reset                  publish fixtures/qreeper/map.json (current room 22)
+  discover               publish map-discovered.json (new placed room 24 south of 17, now current)
+  large N                publish a synthetic N-room grid (over 3000 rooms is rejected by Qreep on purpose)
+
+Movement (graph stays as-is):
+  move ID [ID...]        one snapshot per room, --delay apart (default 0.25s)
+  coalesce ID [ID...]    publish only the last room, skipping revisions like a coalesced watcher
+  unresolved             currentRoomId = null
+  touch                  bump revision only; same room, like a failed move
+
+Same-room graph changes:
+  note TEXT              add a note to the current room
+  exit DIRECTION         add an unexplored exit (to: null) from the current room
+
+Broken input:
+  malformed              write truncated JSON
+  unsupported            write schemaVersion 2
+  remove                 delete the target file
+
+Scenarios:
+  rapid                  11, pause, then 12 22 19 20 19 12 16 at 0.15s (camera should follow 16 only)
+  drift                  large 400, then walk east 1..20 at 0.2s (safe-margin early follow)
+  named                  22 -> enter 23 (unplaced) -> out 22
+
+Target: $target
+EOF
+}
+
+die() {
+  printf '%s: %s\n' "${0##*/}" "$1" >&2
+  exit 1
+}
+
+while (($# > 0)); do
+  case "$1" in
+    --target)
+      (($# >= 2)) || die "--target needs a path"
+      target="$2"
+      shift 2
+      ;;
+    --delay)
+      (($# >= 2)) || die "--delay needs seconds"
+      delay_seconds="$2"
+      shift 2
+      ;;
+    --real-state)
+      allow_real_state=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -*)
+      die "unknown option: $1"
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+(($# > 0)) || {
+  usage >&2
+  exit 2
+}
+
+command -v jq >/dev/null 2>&1 || die "missing required command: jq"
+
+target="$(realpath -m "$target")"
+if [[ "$target" == "$(realpath -m "$real_state")" ]] && ((allow_real_state == 0)); then
+  die "refusing to write the real Qreeper state path; pass --real-state if that is genuinely the plan"
+fi
+
+# Qreep ignores revisions it has already seen, so revisions live in a sidecar instead of the fixture.
+# Using epoch seconds as the floor keeps a fresh run ahead of whatever the running shell last applied.
+revision_file="${target%.json}.revision"
+
+next_revision() {
+  local stored=0 now next
+  [[ -f "$revision_file" ]] && stored="$(<"$revision_file")"
+  [[ "$stored" =~ ^[0-9]+$ ]] || stored=0
+  now="$(date +%s)"
+  next=$((stored + 1))
+  ((now > next)) && next=$now
+  printf '%s' "$next"
+}
+
+write_atomic() {
+  local tmp
+  mkdir -p "$(dirname "$target")"
+  tmp="$(mktemp "$target.tmp.XXXXXX")"
+  cat >"$tmp"
+  mv -f "$tmp" "$target"
+}
+
+# Base for edits: the target when it is a usable v1 snapshot, otherwise the committed fixture.
+read_base() {
+  if [[ -n "$1" ]]; then
+    cat "$1"
+  elif [[ -f "$target" ]] && jq -e '.schemaVersion == 1 and (.rooms | type) == "array"' "$target" >/dev/null 2>&1; then
+    cat "$target"
+  else
+    cat "$fixture_dir/map.json"
+  fi
+}
+
+# publish BASE FILTER [jq args...] — BASE "" means current target.
+publish() {
+  local base="$1" filter="$2" revision doc
+  shift 2
+  revision="$(next_revision)"
+  doc="$(read_base "$base" | jq \
+    --argjson revision "$revision" \
+    --arg publishedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    "$@" \
+    "($filter) | .revision = \$revision | .publishedAt = \$publishedAt")"
+  printf '%s\n' "$doc" | write_atomic
+  printf '%s\n' "$revision" >"$revision_file"
+  printf 'revision %s, current room %s\n' "$revision" "$(jq -r '.currentRoomId' <<<"$doc")"
+}
+
+set_room_filter='if any(.rooms[]; .id == $id) then .currentRoomId = $id else error("room \($id) is not in the snapshot") end'
+
+require_room_id() {
+  [[ "$1" =~ ^[0-9]+$ ]] || die "room id must be a non-negative integer: $1"
+}
+
+cmd_move() {
+  (($# > 0)) || die "move needs at least one room id"
+  local delay="${delay_seconds:-0.25}" first=1 id
+  for id in "$@"; do
+    require_room_id "$id"
+    ((first)) || sleep "$delay"
+    first=0
+    publish "" "$set_room_filter" --argjson id "$id"
+  done
+}
+
+cmd_coalesce() {
+  (($# > 0)) || die "coalesce needs at least one room id"
+  local last="${!#}" stored
+  require_room_id "$last"
+  stored="$(next_revision)"
+  # Burn the revisions the watcher "missed" so the gap is visible in the state IPC.
+  printf '%s\n' "$((stored + $# - 2))" >"$revision_file"
+  publish "" "$set_room_filter" --argjson id "$last"
+}
+
+cmd_large() {
+  local count="${1:-}"
+  [[ "$count" =~ ^[0-9]+$ ]] && ((count > 0)) || die "large needs a positive room count"
+  # East edges are one-way and south edges two-way: about 3N exits, under the 10000 exit limit up to N=3000.
+  publish "$fixture_dir/map.json" '
+    ($n | sqrt | ceil) as $w
+    | {
+        schemaVersion: 1,
+        world: "synthetic",
+        currentRoomId: 1,
+        rooms: [range(1; $n + 1) | {
+          id: .,
+          name: "Synthetic Room",
+          description: null,
+          realm: "Synthetic",
+          area: "Grid",
+          level: 0,
+          x: ((. - 1) % $w),
+          y: (((. - 1) / $w) | floor),
+          z: 0,
+          positionStatus: "inferred",
+          notes: (if . % 97 == 0 then [{id: ., text: "Synthetic note", createdAt: "2026-10-12T10:00:00Z"}] else [] end)
+        }],
+        exits: [range(1; $n + 1) as $id
+          | (if (($id - 1) % $w) < $w - 1 and $id < $n then {from: $id, direction: "east", to: ($id + 1), geometry: "regular"} else empty end),
+            (if $id + $w <= $n then
+              {from: $id, direction: "south", to: ($id + $w), geometry: "regular"},
+              {from: ($id + $w), direction: "north", to: $id, geometry: "regular"}
+            else empty end)
+        ],
+        layout: {anchorRoomId: 1, coordinateSystem: "east+x,south+y,up+z"}
+      }' --argjson n "$count"
+}
+
+case "$1" in
+  reset)
+    publish "$fixture_dir/map.json" '.'
+    ;;
+  discover)
+    publish "$fixture_dir/map-discovered.json" '.'
+    ;;
+  large)
+    shift
+    cmd_large "$@"
+    ;;
+  move)
+    shift
+    cmd_move "$@"
+    ;;
+  coalesce)
+    shift
+    cmd_coalesce "$@"
+    ;;
+  unresolved)
+    publish "" '.currentRoomId = null'
+    ;;
+  touch)
+    publish "" '.'
+    ;;
+  note)
+    (($# >= 2)) || die "note needs text"
+    publish "" '
+      if .currentRoomId == null then error("no current room to annotate") else . end
+      | .currentRoomId as $room
+      | ([.rooms[].notes[]?.id | numbers] | max // 0) as $max
+      | .rooms |= map(if .id == $room then .notes = ((.notes // []) + [{id: ($max + 1), text: $text, createdAt: $publishedAt}]) else . end)
+    ' --arg text "$2"
+    ;;
+  exit)
+    (($# >= 2)) || die "exit needs a direction"
+    publish "" '
+      if .currentRoomId == null then error("no current room to add an exit to") else . end
+      | .exits += [{from: .currentRoomId, direction: $direction, to: null, geometry: "unknown"}]
+    ' --arg direction "$2"
+    ;;
+  malformed)
+    printf '{"schemaVersion": 1, "revision": 999999999999, "rooms": [' | write_atomic
+    printf 'wrote truncated JSON\n'
+    ;;
+  unsupported)
+    publish "" '.schemaVersion = 2'
+    ;;
+  remove)
+    rm -f -- "$target"
+    printf 'removed %s\n' "$target"
+    ;;
+  rapid)
+    publish "$fixture_dir/map.json" "$set_room_filter" --argjson id 11
+    sleep 1.5
+    delay_seconds="${delay_seconds:-0.15}"
+    cmd_move 12 22 19 20 19 12 16
+    ;;
+  drift)
+    cmd_large 400
+    sleep 1.5
+    delay_seconds="${delay_seconds:-0.2}"
+    cmd_move $(seq 2 20)
+    ;;
+  named)
+    publish "$fixture_dir/map.json" "$set_room_filter" --argjson id 22
+    sleep 1.5
+    cmd_move 23
+    sleep 2
+    cmd_move 22
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

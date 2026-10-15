@@ -7,6 +7,7 @@ import "modules/expose" as ExposeModule
 import "modules/fastpassword" as FastPasswordModule
 import "modules/osd" as OsdModule
 import "modules/polkit" as PolkitModule
+import "modules/qreeper" as QreeperModule
 import "modules/screenshot" as ScreenshotModule
 import "modules/timer" as TimerModule
 import "modules/triage" as TriageModule
@@ -41,11 +42,18 @@ ShellRoot {
         timerController: timer
         timerService: timer.service
         triageController: triage
-        shellFullscreenSurfaceOpen: dashboard.open || expose.open
+        qreeperController: qreeper
+        shellFullscreenSurfaceOpen: dashboard.open || expose.open || qreeper.atlasOpen
 
         onVolumeFeedbackRequested: (percent, muted, icon) => {
             osd.showMessage(percent + "%", qreepTheme.modules.osd.defaultDuration, qreepTheme.modules.osd.defaultPosition, muted ? "Volume (Muted)" : "Volume", icon, qreepTheme.modules.osd.progressIconSize, percent / 100);
         }
+    }
+
+    QreeperModule.Qreeper {
+        id: qreeper
+
+        theme: qreepTheme
     }
 
     AegisModule.Aegis {

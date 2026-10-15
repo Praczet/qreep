@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "world": "3scapes",
+  "revision": 42,
+  "publishedAt": "2026-10-12T10:00:00Z",
+  "currentRoomId": 22,
+  "rooms": [
+    {"id": 11, "name": "Newbie Tower: Forest", "description": "The forest path begins beside a weathered tower.", "realm": "Newbieland", "area": "Newbie Tower: Forest", "level": 0, "x": 0, "y": 0, "z": 0, "positionStatus": "fixed", "notes": []},
+    {"id": 12, "name": "Newbie Tower: Forest", "description": "A broad path passes beneath young trees.", "realm": "Newbieland", "area": "Newbie Tower: Forest", "level": 0, "x": 0, "y": 1, "z": 0, "positionStatus": "inferred", "notes": []},
+    {"id": 16, "name": "Newbie Tower: Forest", "description": "The path bends around a mossy stone.", "realm": "Newbieland", "area": "Newbie Tower: Forest", "level": 0, "x": 1, "y": 1, "z": 0, "positionStatus": "inferred", "notes": []},
+    {"id": 17, "name": "Newbie Tower: Forest", "description": "A narrow clearing opens between the trees.", "realm": "Newbieland", "area": "Newbie Tower: Forest", "level": 0, "x": 2, "y": 1, "z": 0, "positionStatus": "inferred", "notes": []},
+    {"id": 18, "name": "Newbie Tower: Forest", "description": "Roots knot across the damp trail.", "realm": "Newbieland", "area": "Newbie Tower: Forest", "level": 0, "x": 1, "y": 2, "z": 0, "positionStatus": "inferred", "notes": [{"id": 9, "text": "A hidden cache was mentioned here.", "createdAt": "2026-10-12T09:05:00Z"}]},
+    {"id": 19, "name": "Newbie Tower: Forest", "description": "The forest grows quieter to the west.", "realm": "Newbieland", "area": "Newbie Tower: Forest", "level": 0, "x": -1, "y": 2, "z": 0, "positionStatus": "inferred", "notes": []},
+    {"id": 20, "name": "Newbie Tower: Forest", "description": "A fallen trunk divides the trail.", "realm": "Newbieland", "area": "Newbie Tower: Forest", "level": 0, "x": -1, "y": 3, "z": 0, "positionStatus": "inferred", "notes": []},
+    {"id": 21, "name": "Newbie Tower: Upper Walk", "description": "A wooden walk circles the tower above the forest.", "realm": "Newbieland", "area": "Newbie Tower", "level": 1, "x": 0, "y": 0, "z": 1, "positionStatus": "fixed", "notes": []},
+    {"id": 22, "name": "Newbie Tower: Forest", "description": "A trail runs between dense trees.", "realm": "Newbieland", "area": "Newbie Tower: Forest", "level": 0, "x": 0, "y": 2, "z": 0, "positionStatus": "inferred", "notes": [{"id": 8, "text": "Thieves here", "createdAt": "2026-10-12T09:00:00Z"}]},
+    {"id": 23, "name": "Inside the Hollow Tree", "description": "The inside of the tree does not agree with its outside dimensions.", "realm": "Newbieland", "area": "Newbie Tower: Forest", "level": null, "x": null, "y": null, "z": null, "positionStatus": "unplaced", "notes": []}
+  ],
+  "exits": [
+    {"from": 11, "direction": "south", "to": 12, "geometry": "regular"},
+    {"from": 12, "direction": "north", "to": 11, "geometry": "regular"},
+    {"from": 12, "direction": "south", "to": 22, "geometry": "regular"},
+    {"from": 22, "direction": "north", "to": 12, "geometry": "regular"},
+    {"from": 12, "direction": "east", "to": 16, "geometry": "regular"},
+    {"from": 16, "direction": "west", "to": 12, "geometry": "regular"},
+    {"from": 16, "direction": "east", "to": 17, "geometry": "regular"},
+    {"from": 17, "direction": "west", "to": 16, "geometry": "regular"},
+    {"from": 22, "direction": "west", "to": 19, "geometry": "regular"},
+    {"from": 19, "direction": "east", "to": 22, "geometry": "regular"},
+    {"from": 19, "direction": "south", "to": 20, "geometry": "regular"},
+    {"from": 20, "direction": "north", "to": 19, "geometry": "regular"},
+    {"from": 22, "direction": "northeast", "to": 18, "geometry": "irregular"},
+    {"from": 18, "direction": "west", "to": 22, "geometry": "irregular"},
+    {"from": 22, "direction": "northwest", "to": null, "geometry": "unknown"},
+    {"from": 11, "direction": "up", "to": 21, "geometry": "named"},
+    {"from": 21, "direction": "down", "to": 11, "geometry": "named"},
+    {"from": 22, "direction": "enter", "to": 23, "geometry": "unplaced"},
+    {"from": 23, "direction": "out", "to": 22, "geometry": "named"}
+  ],
+  "layout": {
+    "anchorRoomId": 11,
+    "coordinateSystem": "east+x,south+y,up+z"
+  }
+}
