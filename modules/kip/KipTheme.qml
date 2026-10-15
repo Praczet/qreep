@@ -100,6 +100,53 @@ QtObject {
         }
     ]
 
+    // Enter after a finished answer. local: handled by the panel, no command.
+    // Order is the chooser order; the first that applies is the default.
+    readonly property var answerActions: [
+        {
+            id: "copy-markdown",
+            label: "Copy answer",
+            hint: "as Markdown",
+            icon: "󰆏",
+            local: true
+        },
+        {
+            id: "copy-plain",
+            label: "Copy plain",
+            hint: "as plain text, markers stripped",
+            icon: "󰅍",
+            local: true
+        },
+        {
+            id: "copy-selection",
+            label: "Copy selection",
+            hint: "the text you selected",
+            icon: "󰆐",
+            local: true
+        },
+        {
+            id: "open-source",
+            label: "Open source",
+            hint: "the highlighted source note",
+            icon: "󰈙",
+            local: true
+        },
+        {
+            id: "retry",
+            label: "Retry",
+            hint: "ask again; replaces this answer",
+            icon: "󰑐",
+            local: true
+        },
+        {
+            id: "explain",
+            label: "More detail",
+            hint: "ask again for a longer explanation",
+            icon: "󰈈",
+            local: true
+        }
+    ]
+
     // /tldr reads the tldr client's cache directly; it never runs the client.
     readonly property string tldrCacheDir: Quickshell.env("HOME") + "/.cache/tldr"
     readonly property var tldrPlatforms: ["linux", "common"]

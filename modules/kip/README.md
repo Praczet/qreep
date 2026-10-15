@@ -135,6 +135,20 @@ spacing or code blocks.
 - Limitation: a rebuild drops the selection, so select after the answer
   finishes.
 
+`Enter` on a finished answer opens its actions (`KipTheme.answerActions`):
+
+1. **Copy answer**: the Markdown as written (default).
+2. **Copy plain**: markers stripped, code kept.
+3. **Copy selection**: only listed when something is selected.
+4. **Open source**: `/ask` only, the highlighted source (same openers as `/notes`).
+5. **Retry**: asks again and replaces the answer.
+6. **More detail**: asks again with `jarvis -explain`, which adds
+   `prompts/explain.md` to the system message.
+
+Options that cannot apply are left out, so the numbers match what you see.
+`Up`/`Down` still moves through `/ask` sources and `Tab` still shows a
+source's original text.
+
 ## Height
 
 The body is capped at `maxBodyHeight` (600) and a streamed answer at

@@ -33,6 +33,8 @@ Item {
     property string errorKind: ""
     property string eventKey: ""
     property string model: ""
+    // Last request asked for the detailed (-explain) answer; retry repeats it.
+    property bool explain: false
     property int requestId: 0
     property bool backendAvailable: true
 
@@ -107,18 +109,21 @@ Item {
         launch(searchProcessComponent, ["--json", "-search-notes=" + text]);
     }
 
-    function ask(text) {
+    function ask(text, detailed) {
         begin("ask", text);
+        explain = detailed === true;
         status = "searching";
         eventKey = "ask.submitted";
-        launch(streamProcessComponent, ["--json", "-ask-notes=" + text]);
+        launch(streamProcessComponent, ["--json"].concat(explain ? ["-explain"] : [], ["-ask-notes=" + text]));
     }
 
-    function general(text) {
+    // "-explain" must come before "--"; everything after it is the question.
+    function general(text, detailed) {
         begin("general", text);
+        explain = detailed === true;
         status = "generating";
         eventKey = "general.generating";
-        launch(streamProcessComponent, ["--json", "--", text]);
+        launch(streamProcessComponent, ["--json"].concat(explain ? ["-explain"] : [], ["--", text]));
     }
 
     function cancel() {

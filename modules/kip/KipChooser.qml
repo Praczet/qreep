@@ -13,6 +13,24 @@ Rectangle {
 
     signal picked(int index)
 
+    // Label column fits the longest label in bold, so hints never overlap.
+    readonly property real labelWidth: {
+        let widest = 0;
+
+        for (let index = 0; index < options.length; index++) {
+            labelMetrics.text = (index + 1) + "  " + options[index].label;
+            widest = Math.max(widest, labelMetrics.advanceWidth);
+        }
+        return Math.ceil(widest) + 12;
+    }
+
+    TextMetrics {
+        id: labelMetrics
+
+        font.pixelSize: rootKipChooser.kipTheme.bodyPixelSize
+        font.bold: true
+    }
+
     height: chooserColumn.implicitHeight + 16
     radius: rootKipChooser.kipTheme.rowRadius
     color: rootKipChooser.kipTheme.inputColor
@@ -71,7 +89,7 @@ Rectangle {
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 90
+                        width: rootKipChooser.labelWidth
                         text: (openerRow.index + 1) + "  " + openerRow.modelData.label
                         color: rootKipChooser.kipTheme.primaryTextColor
                         font.pixelSize: rootKipChooser.kipTheme.bodyPixelSize

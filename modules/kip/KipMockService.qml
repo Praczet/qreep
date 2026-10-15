@@ -19,6 +19,7 @@ Item {
     property string errorKind: ""
     property string eventKey: ""
     property string model: "mock"
+    property bool explain: false
     property var rawSources: []
     readonly property bool backendAvailable: true
     property int requestId: 0

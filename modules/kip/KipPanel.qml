@@ -1266,7 +1266,9 @@ PanelWindow {
 
         if (contentState === "service") {
             if (service.status === "error")
-                run(service.kind, service.query);
+                run(service.kind, service.query, service.explain);
+            else if (answerDone())
+                openAnswerActions();
             else if (resultsVisible)
                 activateResult();
             return;
@@ -1297,7 +1299,7 @@ PanelWindow {
         }
     }
 
-    function run(kind, argument) {
+    function run(kind, argument, detailed) {
         if (kind === "files") {
             if (fileFlagProblem().length === 0)
                 runFiles();
@@ -1319,9 +1321,55 @@ PanelWindow {
         if (kind === "search")
             service.search(argument);
         else if (kind === "ask")
-            service.ask(argument);
+            service.ask(argument, detailed === true);
         else
-            service.general(argument);
+            service.general(argument, detailed === true);
+    }
+
+    function answerDone() {
+        return contentState === "service" && !service.busy && service.status !== "error" && service.answer.length > 0;
+    }
+
+    // Question → answer → Enter → these. Options that cannot apply are left
+    // out, so the numbers always match what is shown.
+    function openAnswerActions() {
+        const options = kt.answerActions.filter(option => {
+            if (option.id === "copy-selection")
+                return answerText.selectedText.length > 0;
+            if (option.id === "open-source")
+                return service.kind === "ask" && resultsVisible && !service.mock;
+            return true;
+        });
+
+        openChooser({
+            kind: "answer"
+        }, service.kind === "ask" ? "Answer, sources above" : "Answer", options);
+    }
+
+    function runLocalAction(id) {
+        switch (id) {
+        case "copy-markdown":
+            copyRequested(service.answer);
+            notice = "Copied the answer as Markdown.";
+            return;
+        case "copy-plain":
+            copyRequested(markdown.toPlain(service.answer));
+            notice = "Copied the answer as plain text.";
+            return;
+        case "copy-selection":
+            copyRequested(answerText.selectedText);
+            notice = "Copied the selection.";
+            return;
+        case "open-source":
+            activateResult();
+            return;
+        case "retry":
+            run(service.kind, service.query, service.explain);
+            return;
+        case "explain":
+            run(service.kind, service.query, true);
+            return;
+        }
     }
 
     function renderAnswer() {
@@ -1503,7 +1551,9 @@ PanelWindow {
 
         chooserHit = null;
 
-        if (hit && opener)
+        if (hit && opener && opener.local)
+            runLocalAction(opener.id);
+        else if (hit && opener)
             actionRequested(hit, opener);
     }
 
@@ -1548,6 +1598,8 @@ PanelWindow {
         if (contentState === "service") {
             if (service.status === "error")
                 return "retry";
+            if (answerDone())
+                return "actions";
             return resultsVisible ? "open" : "";
         }
 
@@ -1620,6 +1672,8 @@ PanelWindow {
         if (contentState === "service") {
             if (service.status === "error")
                 return "Enter retry · Esc back · keep typing to start over";
+            if (answerDone())
+                return (resultsVisible ? "↑↓ sources · Tab source text · " : "") + "Enter actions · select + Ctrl+C · Esc back";
             return resultsVisible ? "↑↓ move · Enter open · Tab source · Ctrl+Shift+C copy path · Esc back" : "Esc back · keep typing to start over";
         }
         if (paletteVisible)
