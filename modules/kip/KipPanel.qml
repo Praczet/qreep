@@ -17,6 +17,8 @@ PanelWindow {
     required property bool panelOpen
 
     signal closeRequested
+    // Dragging the bottom edge; the controller keeps it so a reopen remembers.
+    signal bodyLimitRequested(real limit)
     signal closeFinished
     // option is an entry of markdownOpeners / screenshotActions (or the plain
     // default opener); the controller runs its command for item.
@@ -90,11 +92,19 @@ PanelWindow {
     readonly property real boxHeight: lerp(kt.lineHeight, kt.inputHeight, morphT)
     readonly property real boxX: (width - boxWidth) / 2
     readonly property real boxY: lineCenterY - boxHeight / 2
-    readonly property real maxBodyHeight: Math.max(80, Math.min(kt.maxBodyHeight, height - (kt.anchorY + kt.inputHeight + kt.bodyGap + kt.cardPadding + kt.screenMargin)))
+    // Height cap for the body: the theme default, or what the bottom edge was
+    // dragged to (userBodyLimit > 0), never past the bottom of the screen.
+    property real userBodyLimit: 0
+    property bool resizing: false
+    readonly property real availableBodyHeight: height - (kt.anchorY + kt.inputHeight + kt.bodyGap + kt.cardPadding + kt.screenMargin)
+    readonly property real maxBodyHeight: Math.max(80, Math.min(userBodyLimit > 0 ? userBodyLimit : kt.maxBodyHeight, availableBodyHeight))
+    // The answer gets whatever the drag added on top of the default.
+    readonly property real answerLimit: kt.answerMaxHeight + Math.max(0, maxBodyHeight - kt.maxBodyHeight)
     property real bodyAreaHeight: Math.min(bodyContent.implicitHeight, maxBodyHeight)
 
     Behavior on bodyAreaHeight {
-        enabled: !rootKipPanel.kt.reducedMotion && rootKipPanel.openProgress >= 1
+        // Off while dragging, or the edge lags behind the pointer.
+        enabled: !rootKipPanel.kt.reducedMotion && rootKipPanel.openProgress >= 1 && !rootKipPanel.resizing
 
         NumberAnimation {
             duration: rootKipPanel.kt.bodyResizeDuration
@@ -650,7 +660,7 @@ PanelWindow {
                 id: answerFlick
 
                 width: parent.width
-                height: Math.min(answerText.implicitHeight, rootKipPanel.kt.answerMaxHeight)
+                height: Math.min(answerText.implicitHeight, rootKipPanel.answerLimit)
                 visible: rootKipPanel.contentState === "service" && rootKipPanel.service.answer.length > 0
                 contentHeight: answerText.implicitHeight
                 boundsBehavior: Flickable.StopAtBounds
@@ -836,6 +846,51 @@ PanelWindow {
                 color: rootKipPanel.kt.accentColor
                 font.pixelSize: rootKipPanel.kt.metaPixelSize + 1
             }
+        }
+    }
+
+    // Bottom-edge grip. Drag to raise or lower the height cap; double-click
+    // goes back to the theme default. Longer content uses the room; short
+    // content does not stretch to fill it.
+    MouseArea {
+        id: resizeHandle
+
+        property real pressY: 0
+        property real pressLimit: 0
+
+        x: card.x + card.width * 0.25
+        y: card.y + card.height - height / 2
+        width: card.width * 0.5
+        height: 14
+        visible: rootKipPanel.bodyT >= 1 && rootKipPanel.panelOpen
+        hoverEnabled: true
+        cursorShape: Qt.SizeVerCursor
+        preventStealing: true
+
+        onPressed: mouse => {
+            pressY = mapToItem(null, mouse.x, mouse.y).y;
+            pressLimit = rootKipPanel.maxBodyHeight;
+            rootKipPanel.resizing = true;
+        }
+        onPositionChanged: mouse => {
+            if (!pressed)
+                return;
+
+            const delta = mapToItem(null, mouse.x, mouse.y).y - pressY;
+
+            rootKipPanel.bodyLimitRequested(Math.max(rootKipPanel.kt.minBodyHeight, Math.min(rootKipPanel.availableBodyHeight, pressLimit + delta)));
+        }
+        onReleased: rootKipPanel.resizing = false
+        onCanceled: rootKipPanel.resizing = false
+        onDoubleClicked: rootKipPanel.bodyLimitRequested(0)
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 44
+            height: 4
+            radius: 2
+            color: resizeHandle.pressed || resizeHandle.containsMouse ? rootKipPanel.kt.accentColor : rootKipPanel.kt.borderColor
+            opacity: resizeHandle.pressed || resizeHandle.containsMouse ? 1 : 0.7
         }
     }
 

@@ -111,6 +111,15 @@ The panel picks the Hyprland-focused monitor when it opens. Sizes are logical
 pixels, so `anchorY` (100) and `panelWidth` (780, clamped to the screen) follow
 monitor scaling.
 
+## Height
+
+The body is capped at `maxBodyHeight` (600) and a streamed answer at
+`answerMaxHeight` (260); past that they scroll. The grip on the card's bottom
+edge drags the cap up (to the screen bottom) or down (to `minBodyHeight`);
+the answer gets everything the drag adds. Double-click the grip to reset.
+Longer content uses the room, short content does not stretch to fill it.
+The size survives closing KIP but not a Quickshell restart.
+
 ## Commands and keys
 
 | Input | Mode |

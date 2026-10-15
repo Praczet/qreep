@@ -40,6 +40,8 @@ QtObject {
     readonly property int inputIconWidth: 30
     readonly property int bodyGap: 12
     readonly property int maxBodyHeight: 600
+    // Lowest the bottom-edge drag may shrink the body to.
+    readonly property int minBodyHeight: 120
     readonly property int rowHeight: 52
     readonly property int commandRowHeight: 38
     readonly property int rowRadius: 7

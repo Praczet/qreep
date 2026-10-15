@@ -12,6 +12,9 @@ Scope {
     // Stays true through the closing animation; the panel reports when it is done.
     property bool panelLoaded: false
     property var targetScreen: null
+    // Dragged body height cap (0 = theme default). Runtime only, like the
+    // rest of KIP's state; a Quickshell restart forgets it.
+    property real bodyLimit: 0
     // "jarvis" or "mock"; starts from the theme, switchable over IPC for testing.
     property string backend: theme.modules.kip.backend
     readonly property QtObject service: backend === "mock" ? mockService : jarvisService
@@ -143,10 +146,12 @@ Scope {
             messages: kipMessages
             service: rootKip.service
             shots: shotService
+            userBodyLimit: rootKip.bodyLimit
             files: fileService
             panelOpen: rootKip.open
 
             onCloseRequested: rootKip.hide()
+            onBodyLimitRequested: limit => rootKip.bodyLimit = limit
             onActionRequested: (item, option) => rootKip.runAction(item, option)
             onCopyRequested: text => rootKip.copyText(text)
             onCloseFinished: {
