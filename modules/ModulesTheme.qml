@@ -7,6 +7,7 @@ import "dashboard" as DashboardModule
 import "dashboard/features/aegis" as AegisFeature
 import "expose" as ExposeModule
 import "fastpassword" as FastPasswordModule
+import "kip" as KipModule
 import "notification" as NotificationModule
 import "osd" as OsdModule
 import "polkit" as PolkitModule
@@ -45,6 +46,10 @@ QtObject {
     }
 
     readonly property QtObject fastPassword: FastPasswordModule.FastPasswordTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject kip: KipModule.KipTheme {
         qreep: rootModulesTheme.qreep
     }
 

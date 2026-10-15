@@ -5,6 +5,7 @@ import "modules/clipboard" as ClipboardModule
 import "modules/dashboard" as DashboardModule
 import "modules/expose" as ExposeModule
 import "modules/fastpassword" as FastPasswordModule
+import "modules/kip" as KipModule
 import "modules/osd" as OsdModule
 import "modules/polkit" as PolkitModule
 import "modules/qreeper" as QreeperModule
@@ -82,6 +83,12 @@ ShellRoot {
 
     FastPasswordModule.FastPassword {
         id: fastPassword
+
+        theme: qreepTheme
+    }
+
+    KipModule.Kip {
+        id: kip
 
         theme: qreepTheme
     }
