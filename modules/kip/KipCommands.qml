@@ -5,7 +5,8 @@ import QtQuick
 QtObject {
     id: rootKipCommands
 
-    // kind: what Enter does. "ask" and "search" take an argument, "help" does not.
+    // kind: what Enter does. "ask" and "search" take an argument, "help" does
+    // not, "screenshots" takes one optionally (argumentOptional).
     readonly property var commands: [
         {
             name: "ask",
@@ -32,6 +33,20 @@ QtObject {
             sourceHint: "~/Notes · semantic index",
             kind: "search",
             takesArgument: true
+        },
+        {
+            name: "last",
+            aliases: ["shot"],
+            label: "Last screenshots",
+            description: "Show the newest screenshots. /last 3 shows three.",
+            helper: "Enter shows them. Then Enter on one to copy it, copy its path, or open it.",
+            eventKey: "last.ready",
+            placeholder: "how many (default 1)",
+            icon: "󰹑",
+            sourceHint: "screenshot folder · newest first",
+            kind: "screenshots",
+            takesArgument: true,
+            argumentOptional: true
         },
         {
             name: "help",
@@ -89,7 +104,8 @@ QtObject {
 
             const exact = find(token);
 
-            if (exact && !exact.takesArgument)
+            // "/help" and a bare "/last" are complete as typed.
+            if (exact && (!exact.takesArgument || exact.argumentOptional))
                 return result("ready", exact.eventKey, exact, token, "", commands);
 
             const matches = matching(token);

@@ -12,11 +12,14 @@ PanelWindow {
     required property QtObject commands
     required property QtObject messages
     required property QtObject service
+    required property QtObject shots
     required property bool panelOpen
 
     signal closeRequested
     signal closeFinished
-    signal openRequested(var hit, string openerId)
+    // option is an entry of markdownOpeners / screenshotActions (or the plain
+    // default opener); the controller runs its command for item.
+    signal actionRequested(var item, var option)
     signal copyRequested(string text)
 
     readonly property QtObject kt: theme.modules.kip
@@ -24,25 +27,30 @@ PanelWindow {
     property real openProgress: 0
     readonly property var parsed: commands.parse(promptInput.text)
 
-    // compose: reacting to typing. service: showing a submitted request.
+    // compose: reacting to typing. service: a submitted notes/ask/general
+    // request. shots: /last screenshots.
     property string contentState: "compose"
     property int paletteIndex: 0
     property int resultIndex: 0
+    property int shotIndex: 0
     property bool hasInteracted: false
     // Original retrieved text of the selected hit, toggled with Tab.
     property bool showSnippet: false
-    // Logseq markdown hit waiting for an "Open with" choice; null when closed.
+    // Item waiting for an action choice ("Open with", screenshot actions);
+    // null when the chooser is closed.
     property var chooserHit: null
-    // Openers that apply to chooserHit: Logseq only for Logseq-graph files.
     property var chooserOptions: []
+    property string chooserTitle: ""
     property int chooserIndex: 0
     property string notice: ""
     property string currentMessage: ""
 
-    readonly property string messageKey: contentState === "service" ? service.eventKey : (parsed.mode === "idle" && !hasInteracted ? "kip.open" : parsed.eventKey)
+    readonly property string messageKey: contentState === "service" ? service.eventKey : contentState === "shots" ? shots.eventKey : (parsed.mode === "idle" && !hasInteracted ? "kip.open" : parsed.eventKey)
     readonly property bool paletteVisible: contentState === "compose" && (parsed.mode === "palette" || parsed.mode === "candidate" || parsed.mode === "unknown" || (parsed.mode === "ready" && parsed.command && !parsed.command.takesArgument))
     readonly property var paletteItems: paletteVisible ? parsed.matches : []
     readonly property bool resultsVisible: contentState === "service" && service.results.length > 0
+    readonly property bool shotsVisible: contentState === "shots" && shots.shots.length > 0
+    readonly property int shotColumns: Math.max(1, Math.min(kt.screenshotColumns, shots.shots.length))
 
     readonly property string phase: {
         if (!panelOpen)
@@ -119,6 +127,18 @@ PanelWindow {
     }
 
     onMessageKeyChanged: refreshMessage()
+
+    // Typing "/last 12" refreshes once, not once per digit.
+    Timer {
+        id: shotRefreshTimer
+
+        interval: 120
+        repeat: false
+        onTriggered: {
+            if (rootKipPanel.liveShotsWanted())
+                rootKipPanel.runShots(rootKipPanel.parsed.argument);
+        }
+    }
 
     NumberAnimation {
         id: progressAnimation
@@ -507,7 +527,119 @@ PanelWindow {
                 }
             }
 
-            // "Open with" for Logseq markdown. Logseq is first, so the default.
+            // /last: newest screenshots. One gets a big preview, more get a grid.
+            Text {
+                width: parent.width
+                visible: rootKipPanel.contentState === "shots"
+                text: rootKipPanel.shotsStatus()
+                color: rootKipPanel.shots.status === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.tertiaryAccentColor
+                font.pixelSize: rootKipPanel.kt.metaPixelSize
+                elide: Text.ElideMiddle
+            }
+
+            GridView {
+                id: shotGrid
+
+                width: parent.width
+                height: Math.min(Math.ceil(rootKipPanel.shots.shots.length / rootKipPanel.shotColumns) * cellHeight, rootKipPanel.maxBodyHeight * 0.75)
+                visible: rootKipPanel.shotsVisible
+                model: rootKipPanel.shots.shots
+                cellWidth: width / rootKipPanel.shotColumns
+                cellHeight: (rootKipPanel.shots.shots.length === 1 ? rootKipPanel.kt.screenshotSinglePreviewHeight : Math.round(cellWidth * 0.5625)) + 38
+                currentIndex: rootKipPanel.shotIndex
+                interactive: contentHeight > height
+                boundsBehavior: Flickable.StopAtBounds
+                clip: true
+
+                onCurrentIndexChanged: {
+                    if (currentIndex >= 0)
+                        positionViewAtIndex(currentIndex, GridView.Contain);
+                }
+
+                delegate: Item {
+                    id: shotCell
+
+                    required property var modelData
+                    required property int index
+
+                    readonly property bool selected: index === rootKipPanel.shotIndex
+
+                    width: GridView.view.cellWidth
+                    height: GridView.view.cellHeight
+
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        radius: rootKipPanel.kt.rowRadius
+                        color: shotCell.selected ? rootKipPanel.kt.selectedRowColor : (shotMouse.containsMouse ? rootKipPanel.kt.hoveredRowColor : rootKipPanel.kt.inputColor)
+                        border.width: shotCell.selected ? 1 : 0
+                        border.color: rootKipPanel.kt.focusBorderColor
+
+                        Image {
+                            id: shotImage
+
+                            anchors {
+                                left: parent.left
+                                right: parent.right
+                                top: parent.top
+                                margins: 6
+                            }
+                            height: parent.height - 44
+                            source: "file://" + shotCell.modelData.absolutePath.split("/").map(encodeURIComponent).join("/")
+                            sourceSize.width: Math.round(width * 1.5)
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                            cache: false
+                        }
+
+                        Text {
+                            anchors.centerIn: shotImage
+                            visible: shotImage.status === Image.Error
+                            text: "preview failed"
+                            color: rootKipPanel.kt.secondaryTextColor
+                            font.pixelSize: rootKipPanel.kt.metaPixelSize
+                        }
+
+                        Column {
+                            anchors {
+                                left: parent.left
+                                right: parent.right
+                                bottom: parent.bottom
+                                margins: 6
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: shotCell.modelData.file
+                                color: rootKipPanel.kt.fileColor
+                                font.pixelSize: rootKipPanel.kt.metaPixelSize + 1
+                                elide: Text.ElideMiddle
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: rootKipPanel.shots.age(shotCell.modelData.modified)
+                                color: rootKipPanel.kt.secondaryTextColor
+                                font.pixelSize: rootKipPanel.kt.metaPixelSize
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: shotMouse
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            rootKipPanel.shotIndex = shotCell.index;
+                            rootKipPanel.activateShot();
+                        }
+                    }
+                }
+            }
+
+            // Action chooser: "Open with" for markdown, actions for screenshots.
+            // The first option is the default.
             Rectangle {
                 width: parent.width
                 height: chooserColumn.implicitHeight + 16
@@ -530,7 +662,7 @@ PanelWindow {
 
                     Text {
                         width: parent.width
-                        text: "Open " + (rootKipPanel.chooserHit ? rootKipPanel.chooserHit.file : "") + " with"
+                        text: rootKipPanel.chooserTitle
                         color: rootKipPanel.kt.secondaryTextColor
                         font.pixelSize: rootKipPanel.kt.metaPixelSize + 1
                         elide: Text.ElideMiddle
@@ -777,7 +909,7 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: promptInput.text.length === 0 || (rootKipPanel.parsed.mode === "ready" && rootKipPanel.parsed.argument.length === 0 && rootKipPanel.parsed.command && rootKipPanel.parsed.command.takesArgument)
                 x: promptInput.text.length === 0 ? 0 : promptInput.contentWidth + 2
-                text: promptInput.text.length === 0 ? "Ask, search, or type / for commands" : (rootKipPanel.parsed.command ? rootKipPanel.parsed.command.placeholder : "")
+                text: promptInput.text.length === 0 ? "Ask, search, or type / for commands" : (rootKipPanel.parsed.command ? (promptInput.text.endsWith(" ") ? "" : " ") + rootKipPanel.parsed.command.placeholder : "")
                 color: rootKipPanel.kt.secondaryTextColor
                 font: promptInput.font
             }
@@ -837,11 +969,34 @@ PanelWindow {
         if (paletteIndex >= paletteItems.length)
             paletteIndex = 0;
 
-        // Editing after a submit means a new question; drop the old request.
-        if (contentState === "service") {
-            service.reset();
-            contentState = "compose";
+        // "/last " and "/last 2" preview live, no Enter needed.
+        if (liveShotsWanted()) {
+            if (contentState === "service")
+                service.reset();
+            if (contentState === "shots") {
+                shotRefreshTimer.restart();
+            } else {
+                runShots(parsed.argument);
+            }
+            return;
         }
+
+        // Editing after a submit means a new question; drop the old request.
+        if (contentState !== "compose")
+            backToCompose();
+    }
+
+    // /last followed by a space (and maybe a count). A bare "/last" waits,
+    // so typing "/la" on the way to something else does not run find.
+    function liveShotsWanted() {
+        return parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "screenshots" && promptInput.text.length > parsed.token.length + 1;
+    }
+
+    function backToCompose() {
+        chooserHit = null;
+        service.reset();
+        shots.reset();
+        contentState = "compose";
     }
 
     function handleKey(event) {
@@ -851,13 +1006,19 @@ PanelWindow {
         switch (event.key) {
         case Qt.Key_Escape:
             event.accepted = true;
-            if (contentState === "service") {
-                chooserHit = null;
-                service.reset();
-                contentState = "compose";
+            if (contentState !== "compose") {
+                backToCompose();
                 notice = "";
             } else {
                 closeRequested();
+            }
+            return;
+        case Qt.Key_Left:
+        case Qt.Key_Right:
+            // Only in the screenshot grid; otherwise the cursor keeps them.
+            if (shotsVisible) {
+                shotIndex = clampIndex(shotIndex + (event.key === Qt.Key_Right ? 1 : -1), shots.shots.length);
+                event.accepted = true;
             }
             return;
         case Qt.Key_Up:
@@ -865,7 +1026,10 @@ PanelWindow {
             {
                 const step = event.key === Qt.Key_Down ? 1 : -1;
 
-                if (resultsVisible) {
+                if (shotsVisible) {
+                    shotIndex = clampIndex(shotIndex + step * shotColumns, shots.shots.length);
+                    event.accepted = true;
+                } else if (resultsVisible) {
                     resultIndex = clampIndex(resultIndex + step, service.results.length);
                     event.accepted = true;
                 } else if (paletteItems.length > 0) {
@@ -896,6 +1060,14 @@ PanelWindow {
     }
 
     function submit() {
+        if (contentState === "shots") {
+            if (shots.status === "error")
+                runShots(String(shots.requested));
+            else if (shotsVisible)
+                activateShot();
+            return;
+        }
+
         if (contentState === "service") {
             if (service.status === "error")
                 run(service.kind, service.query);
@@ -917,7 +1089,7 @@ PanelWindow {
                     complete(paletteItems[paletteIndex]);
                 return;
             }
-            if (parsed.argument.length === 0) {
+            if (parsed.argument.length === 0 && !parsed.command.argumentOptional) {
                 notice = "/" + parsed.command.name + " needs " + parsed.command.placeholder + ".";
                 return;
             }
@@ -930,6 +1102,11 @@ PanelWindow {
     }
 
     function run(kind, argument) {
+        if (kind === "screenshots") {
+            runShots(argument);
+            return;
+        }
+
         contentState = "service";
         resultIndex = 0;
         showSnippet = false;
@@ -957,13 +1134,57 @@ PanelWindow {
         }
 
         if (/\.md$/i.test(hit.file)) {
-            chooserOptions = kt.markdownOpeners.filter(opener => !opener.logseqOnly || hit.origin === "logseq");
-            chooserIndex = 0;
-            chooserHit = hit;
+            openChooser(hit, "Open " + hit.file + " with", kt.markdownOpeners.filter(opener => !opener.logseqOnly || hit.origin === "logseq"));
             return;
         }
 
-        openRequested(hit, "default");
+        actionRequested(hit, {
+            id: "default",
+            command: kt.openCommand
+        });
+    }
+
+    // "/last" → 1, "/last 4" → 4, capped at maxScreenshots.
+    function runShots(argument) {
+        const text = String(argument || "").trim();
+
+        if (text.length > 0 && !/^\d+$/.test(text)) {
+            if (contentState === "shots")
+                backToCompose();
+            notice = "/last takes a number, like /last 3.";
+            return;
+        }
+
+        const wanted = text.length > 0 ? Number(text) : 1;
+        const count = Math.max(1, Math.min(kt.maxScreenshots, wanted));
+
+        chooserHit = null;
+        notice = wanted > count ? "Capped at " + count + ". Nobody needs " + wanted + " screenshots at once." : "";
+
+        // Already showing shots: refresh in place, keep the selection if it still fits.
+        if (contentState === "shots") {
+            shotIndex = Math.min(shotIndex, count - 1);
+            shots.refresh(count);
+            return;
+        }
+
+        contentState = "shots";
+        shotIndex = 0;
+        shots.load(count);
+    }
+
+    function activateShot() {
+        const shot = shots.shots[shotIndex];
+
+        if (shot)
+            openChooser(shot, shot.file, kt.screenshotActions);
+    }
+
+    function openChooser(item, title, options) {
+        chooserOptions = options;
+        chooserTitle = title;
+        chooserIndex = 0;
+        chooserHit = item;
     }
 
     // Returns true when the chooser consumed the key. Typing anything else
@@ -1010,7 +1231,7 @@ PanelWindow {
         chooserHit = null;
 
         if (hit && opener)
-            openRequested(hit, opener.id);
+            actionRequested(hit, opener);
     }
 
     function copyResult() {
@@ -1038,11 +1259,15 @@ PanelWindow {
 
     function refreshMessage() {
         currentMessage = messages.pick(messageKey, {
-            count: service.results.length
+            count: contentState === "shots" ? shots.shots.length : service.results.length
         });
     }
 
     function enterLabel() {
+        if (chooserHit !== null)
+            return "pick";
+        if (contentState === "shots")
+            return shots.status === "error" ? "retry" : (shotsVisible ? "actions" : "");
         if (contentState === "service") {
             if (service.status === "error")
                 return "retry";
@@ -1050,7 +1275,7 @@ PanelWindow {
         }
 
         if (parsed.mode === "ready" && parsed.command && parsed.command.takesArgument)
-            return parsed.argument.length > 0 ? parsed.command.name : "";
+            return parsed.argument.length > 0 || parsed.command.argumentOptional ? parsed.command.name : "";
         if (parsed.mode === "palette" || parsed.mode === "candidate")
             return "complete";
         if (parsed.mode === "plain")
@@ -1084,9 +1309,28 @@ PanelWindow {
         return prefix + service.status;
     }
 
+    function shotsStatus() {
+        switch (shots.status) {
+        case "loading":
+            return "listing " + kt.screenshotDir;
+        case "done":
+            return shots.shots.length + (shots.shots.length === 1 ? " newest · " : " newest · ") + kt.screenshotDir;
+        case "empty":
+            return "no images in " + kt.screenshotDir;
+        case "error":
+            return shots.errorText;
+        }
+        return "";
+    }
+
     function keyHints() {
         if (chooserHit !== null)
-            return "↑↓ or 1–" + chooserOptions.length + " choose · Enter open · Esc cancel";
+            return "↑↓ or 1–" + chooserOptions.length + " choose · Enter do it · Esc cancel";
+        if (contentState === "shots") {
+            if (shots.status === "error")
+                return "Enter retry · Esc back";
+            return shotsVisible ? (shotColumns > 1 ? "←→↑↓ move · " : "") + "Enter actions · Esc back" : "Esc back";
+        }
         if (contentState === "service") {
             if (service.status === "error")
                 return "Enter retry · Esc back · keep typing to start over";

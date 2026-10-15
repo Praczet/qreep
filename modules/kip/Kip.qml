@@ -37,6 +37,12 @@ Scope {
         theme: rootKip.theme
     }
 
+    KipScreenshotService {
+        id: shotService
+
+        theme: rootKip.theme
+    }
+
     // Opener and clipboard copy run detached: closing KIP must not kill nvim.
     Process {
         id: openRunner
@@ -96,6 +102,7 @@ Scope {
                 + " kind=" + (rootKip.service.kind || "-")
                 + " results=" + rootKip.service.results.length
                 + " answerChars=" + rootKip.service.answer.length
+                + " shots=" + shotService.status + ":" + shotService.shots.map(shot => shot.file).join(",")
                 + " error=" + (rootKip.service.errorKind || "-")
                 + " backend=" + rootKip.backend
                 + " screen=" + (rootKip.targetScreen ? rootKip.targetScreen.name : "none");
@@ -128,10 +135,11 @@ Scope {
             commands: kipCommands
             messages: kipMessages
             service: rootKip.service
+            shots: shotService
             panelOpen: rootKip.open
 
             onCloseRequested: rootKip.hide()
-            onOpenRequested: (hit, openerId) => rootKip.openSource(hit, openerId)
+            onActionRequested: (item, option) => rootKip.runAction(item, option)
             onCopyRequested: text => rootKip.copyText(text)
             onCloseFinished: {
                 if (!rootKip.open)
@@ -171,6 +179,7 @@ Scope {
 
         open = false;
         service.cancel();
+        shotService.cancel();
         unloadGuard.restart();
     }
 
@@ -181,22 +190,24 @@ Scope {
             show();
     }
 
-    function openSource(hit, openerId) {
+    // Runs one chooser option (markdownOpeners, screenshotActions, or the plain
+    // default opener) for a note hit or a screenshot, then closes KIP.
+    function runAction(item, option) {
         const kipTheme = theme.modules.kip;
-        const opener = kipTheme.markdownOpeners.find(candidate => candidate.id === openerId);
         const values = {
-            path: hit.absolutePath,
-            line: String(hit.line)
+            path: item.absolutePath,
+            line: String(item.line || 1),
+            mime: item.mime || ""
         };
 
-        if (openerId === "logseq") {
+        if (option.id === "logseq") {
             values.graph = encodeURIComponent(kipTheme.logseqGraph);
-            values.page = encodeURIComponent(logseqPageName(hit));
+            values.page = encodeURIComponent(logseqPageName(item));
         }
 
-        const command = fill(opener ? opener.command : kipTheme.openCommand, values);
+        const command = fill(option.command, values);
 
-        if (openerId === "logseq" && !logseqRunning())
+        if (option.id === "logseq" && !logseqRunning())
             waitForLogseq(command);
 
         launch(command);
@@ -324,6 +335,8 @@ Scope {
             service.search(parsed.argument);
         else if (parsed.mode === "ready" && parsed.command.kind === "ask" && parsed.argument.length > 0)
             service.ask(parsed.argument);
+        else if (parsed.mode === "ready" && parsed.command.kind === "screenshots")
+            shotService.load(Math.max(1, Math.min(theme.modules.kip.maxScreenshots, Number(parsed.argument) || 1)));
     }
 
     function screenForFocusedMonitor() {

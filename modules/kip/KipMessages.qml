@@ -22,6 +22,26 @@ QtObject {
                 neutral: ["Pick a command. Tab completes."],
                 dry: ["A command. How decisive.", "Choose wisely. Or Tab, which is faster."]
             },
+            "last.ready": {
+                neutral: ["Screenshots, newest first. Add a number for more."],
+                dry: ["Evidence from your screen. Admissible, mostly.", "The last thing you thought worth capturing. Let's see if it was.", "Screenshots: proof something happened, rarely proof of what."]
+            },
+            "last.loading": {
+                neutral: ["Looking in the screenshot folder."],
+                dry: ["Checking the folder of things you meant to look at later."]
+            },
+            "last.found": {
+                neutral: ["{count} newest. Arrows move, Enter acts."],
+                dry: ["Here. Fresh from the screen, still warm.", "{count} captured moments. Context not included.", "There it is. You were apparently looking at this."]
+            },
+            "last.empty": {
+                neutral: ["No screenshots in that folder."],
+                dry: ["No screenshots. Either a clean desk or the wrong folder.", "Nothing here. Suspiciously tidy."]
+            },
+            "last.error": {
+                neutral: ["Could not read the screenshot folder."],
+                dry: ["The screenshot folder is not where I was told it would be.", "Can't read the folder. Check screenshotDir in KipTheme.qml."]
+            },
             "help.ready": {
                 neutral: ["Commands and keys, all of them. It is a short list."],
                 dry: ["The full manual. Brace yourself, it has three entries.", "Help, abridged. Very abridged."]

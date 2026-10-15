@@ -20,6 +20,7 @@ modules/kip/
 ├── KipMessages.qml    # event-keyed microcopy, picked on state entry
 ├── KipJarvisService.qml # Jarvis adapter: argv, JSON/NDJSON parsing, cancellation
 ├── KipMockService.qml # fake search/ask/general, Jarvis-shaped event sequence
+├── KipScreenshotService.qml # /last: newest files in the screenshot folder
 ├── KipResultList.qml  # ranked hits: origin, folder, basename, line range
 ├── KipTheme.qml       # placement, timings, reducedMotion, tone, colors
 └── README.md
@@ -115,6 +116,7 @@ monitor scaling.
 | `/as` | candidate, `/ask` highlighted |
 | `/ask ` + question | note-grounded answer (mock) |
 | `/notes ` + query (aliases `/n`, `/search`) | notes search (mock) |
+| `/last`, `/last 3` (alias `/shot`) | newest screenshot(s), capped at 12 |
 | `/help`, `/?` | command list |
 | `/foo` | calm "not a command" plus the list |
 | plain text | general question (mock, no notes context) |
@@ -157,6 +159,26 @@ Keys:
 
 Mock backend triggers: a query containing `nothing` returns zero results, and
 one containing `fail` returns a backend error.
+
+## Screenshots
+
+`/last [n]` lists `KipTheme.screenshotDir` (default `~/Pictures/Screenshots`)
+with `find -maxdepth 1 -printf '%T@\t%p\n'`, keeps png/jpg/jpeg/webp, and
+shows the `n` newest by modification time. One shot gets a large preview,
+more get a grid (`screenshotColumns`, 3).
+
+It previews live: typing `/last ` (with the space) shows the newest shot,
+typing the count updates it in place (debounced 120 ms, old shots stay until
+the new list lands). A bare `/last` without the space waits for Enter.
+Arrow keys move, `Enter` asks:
+
+1. **Copy image** (default): `wl-copy --type <mime>` with the file on stdin.
+   This is the one place `sh` appears, only for the `<` redirect; the mime
+   and path are passed as `$1`/`$2`, never pasted into the script.
+2. **Copy path**: `wl-copy <path>`.
+3. **Show image**: `xdg-open <path>`, i.e. your default image viewer.
+
+The actions are `KipTheme.screenshotActions`; KIP closes after one runs.
 
 ## Microcopy
 

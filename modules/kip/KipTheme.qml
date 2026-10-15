@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 
 QtObject {
     id: rootKipTheme
@@ -64,6 +65,38 @@ QtObject {
     // Open a source at a line. Plain argv, no shell; {path} and {line} are
     // substituted per argument.
     readonly property var openCommand: ["ghostty", "-e", "nvim", "+{line}", "{path}"]
+
+    // /last
+    readonly property string screenshotDir: Quickshell.env("HOME") + "/Pictures/Screenshots"
+    readonly property int maxScreenshots: 12
+    readonly property int screenshotColumns: 3
+    readonly property int screenshotSinglePreviewHeight: 280
+    // Enter on a screenshot asks; the first entry is the default. {mime} is
+    // derived from the extension. sh only for the stdin redirect; values go in
+    // as $1/$2, never into the script text.
+    readonly property var screenshotActions: [
+        {
+            id: "copy-image",
+            label: "Copy image",
+            hint: "to the clipboard, as an image",
+            icon: "󰆏",
+            command: ["sh", "-c", "wl-copy --type \"$1\" < \"$2\"", "kip-copy-image", "{mime}", "{path}"]
+        },
+        {
+            id: "copy-path",
+            label: "Copy path",
+            hint: "the file path as text",
+            icon: "󰅍",
+            command: ["wl-copy", "{path}"]
+        },
+        {
+            id: "show",
+            label: "Show image",
+            hint: "in the default image viewer",
+            icon: "󰋩",
+            command: ["xdg-open", "{path}"]
+        }
+    ]
 
     // {graph} and {page} are URL-encoded before substitution.
     readonly property string logseqGraph: "Logseq"
