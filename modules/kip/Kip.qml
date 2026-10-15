@@ -52,6 +52,12 @@ Scope {
         theme: rootKip.theme
     }
 
+    KipTldrService {
+        id: tldrService
+
+        theme: rootKip.theme
+    }
+
     // Opener and clipboard copy run detached: closing KIP must not kill nvim.
     Process {
         id: openRunner
@@ -148,6 +154,7 @@ Scope {
             shots: shotService
             userBodyLimit: rootKip.bodyLimit
             files: fileService
+            tldr: tldrService
             panelOpen: rootKip.open
 
             onCloseRequested: rootKip.hide()

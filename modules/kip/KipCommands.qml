@@ -91,6 +91,22 @@ QtObject {
             }
         },
         {
+            name: "tldr",
+            aliases: ["tl"],
+            label: "tldr page",
+            description: "Real tldr examples from the local cache, never the model's guess.",
+            helper: "A curated examples page, not a summary of --help. Copy on each example.",
+            eventKey: "tldr.ready",
+            placeholder: "command, e.g. tar or git commit",
+            icon: "󰘦",
+            sourceHint: "~/.cache/tldr · offline",
+            kind: "tldr",
+            takesArgument: true,
+            syntax: "/tldr <command> [subcommand]",
+            examples: ["/tldr tar", "/tldr fd", "/tldr git commit"],
+            actions: "Live as you type. Each example has Copy (placeholders like path/to/file stay as text to edit). Enter copies the whole page. Nothing is ever run. Pages come only from the local cache; refresh it yourself with tldr --update."
+        },
+        {
             name: "help",
             aliases: ["?"],
             label: "Help",

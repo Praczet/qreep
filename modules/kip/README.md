@@ -22,6 +22,7 @@ modules/kip/
 ├── KipMockService.qml # fake search/ask/general, Jarvis-shaped event sequence
 ├── KipScreenshotService.qml # /last: newest files in the screenshot folder
 ├── KipFileSearchService.qml # /fd: two fd passes, merged and ranked
+├── KipTldrService.qml # /tldr: pages from the local tldr cache
 ├── KipChooser.qml     # numbered action chooser shared by every result type
 ├── KipShotGrid.qml    # /last thumbnails
 ├── KipResultList.qml  # ranked hits: origin, folder, basename, line range
@@ -153,6 +154,7 @@ The size survives closing KIP but not a Quickshell restart.
 | `/notes ` + query (aliases `/n`, `/search`) | notes search (mock) |
 | `/last`, `/last 3` (alias `/shot`) | newest screenshot(s), capped at 12 |
 | `/fd words [--f=<dir>] [--h]` (alias `/find`) | files and folders via `fd`, live |
+| `/tldr tar`, `/tldr git commit` (alias `/tl`) | real tldr page from the local cache; live |
 | `/help`, `/help fd` (alias `/?`) | commands and keys, or one command's syntax, flags, examples; live |
 | `/foo` | calm "not a command" plus the list |
 | plain text | general question (mock, no notes context) |
@@ -258,6 +260,28 @@ panel shows the top 50 (`fdShownResults`).
 | folder | Open (file manager) / Terminal here / Broot / Copy path |
 | `.md` file | `markdownOpeners` (Logseq only inside `logseqGraphDir`) |
 | other file | Open (default app) / nvim / containing Folder / Copy path |
+
+## tldr
+
+`/tldr <command> [subcommand]` shows the real tldr page, never a model's
+version of it. `git commit` reads `git-commit.md`; `linux/` is tried before
+`common/`.
+
+- Pages are read straight from the tldr client's cache,
+  `~/.cache/tldr/pages/`. KIP never runs the client, so a lookup cannot
+  download anything. Fill or refresh the cache yourself:
+
+  ```bash
+  tldr --update
+  ```
+
+  (7582 pages for `en` on 2026-10-15, about a second.)
+- Names are checked against `[a-z0-9._+-]` before they touch a path, so
+  `../../etc/passwd` or `rm; ls` are rejected, not looked up.
+- "No page" and "empty cache" are different messages. A missing page
+  suggests `man` / `--help` to run yourself; KIP runs nothing.
+- Each example is its own code block with **Copy**. `{{placeholders}}` lose
+  their braces, so you copy an editable template. `Enter` copies the page.
 
 ## Microcopy
 

@@ -14,6 +14,7 @@ PanelWindow {
     required property QtObject service
     required property QtObject shots
     required property QtObject files
+    required property QtObject tldr
     required property bool panelOpen
 
     signal closeRequested
@@ -50,6 +51,9 @@ PanelWindow {
     property string notice: ""
     property string currentMessage: ""
     property string docMarkdown: ""
+    // help | tldr; and the message key a doc wants (empty: use the command's).
+    property string docKind: ""
+    property string docEventKey: ""
     // service.answer as rich text, rebuilt at most every answerRenderInterval
     // while streaming so the document is not re-parsed per token.
     property var renderedAnswer: ({
@@ -57,7 +61,7 @@ PanelWindow {
             codeBlocks: []
         })
 
-    readonly property string messageKey: contentState === "service" ? service.eventKey : contentState === "shots" ? shots.eventKey : contentState === "files" ? files.eventKey : (parsed.mode === "idle" && !hasInteracted ? "kip.open" : parsed.eventKey)
+    readonly property string messageKey: contentState === "service" ? service.eventKey : contentState === "shots" ? shots.eventKey : contentState === "files" ? files.eventKey : contentState === "doc" && docEventKey.length > 0 ? docEventKey : (parsed.mode === "idle" && !hasInteracted ? "kip.open" : parsed.eventKey)
     readonly property bool paletteVisible: contentState === "compose" && (parsed.mode === "palette" || parsed.mode === "candidate" || parsed.mode === "unknown" || (parsed.mode === "ready" && parsed.command && !parsed.command.takesArgument))
     readonly property var paletteItems: paletteVisible ? parsed.matches : []
     readonly property bool resultsVisible: contentState === "service" && service.results.length > 0
@@ -178,6 +182,30 @@ PanelWindow {
         function onStatusChanged() {
             if (!rootKipPanel.service.busy)
                 rootKipPanel.renderAnswer();
+        }
+    }
+
+    // /tldr looks up after a pause, so "ta" on the way to "tar" stays quiet.
+    Timer {
+        id: tldrTimer
+
+        interval: rootKipPanel.kt.tldrDebounce
+        repeat: false
+        onTriggered: {
+            if (rootKipPanel.liveTldrWanted()) {
+                rootKipPanel.tldr.lookup(rootKipPanel.parsed.argument);
+                rootKipPanel.showTldr();
+            }
+        }
+    }
+
+    // The cache probe answers asynchronously for missing pages.
+    Connections {
+        target: rootKipPanel.tldr
+
+        function onStatusChanged() {
+            if (rootKipPanel.liveTldrWanted())
+                rootKipPanel.showTldr();
         }
     }
 
@@ -988,8 +1016,16 @@ PanelWindow {
 
         // "/help" and "/help fd" render as you type.
         if (parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "help") {
-            showDoc(commands.helpMarkdown(parsed.argument));
+            showDoc(commands.helpMarkdown(parsed.argument), "help", "");
             return;
+        }
+
+        if (parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "tldr") {
+            if (parsed.argument.length > 0) {
+                tldrTimer.restart();
+                return;
+            }
+            tldrTimer.stop();
         }
 
         if (parsed.mode === "unknown" && parsed.token.length > 0) {
@@ -1108,12 +1144,23 @@ PanelWindow {
         shots.reset();
         files.reset();
         docMarkdown = "";
+        docKind = "";
+        docEventKey = "";
         contentState = "compose";
         renderAnswer();
     }
 
+    function liveTldrWanted() {
+        return parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "tldr" && parsed.argument.length > 0;
+    }
+
+    function showTldr() {
+        if (tldr.status !== "idle")
+            showDoc(tldr.markdown, "tldr", tldr.eventKey);
+    }
+
     // Static markdown in the answer viewer: /help now, /tldr pages next.
-    function showDoc(text) {
+    function showDoc(text, kind, eventKey) {
         if (contentState !== "doc" && contentState !== "compose") {
             service.reset();
             shots.reset();
@@ -1121,6 +1168,8 @@ PanelWindow {
         }
         chooserHit = null;
         docMarkdown = text;
+        docKind = kind;
+        docEventKey = eventKey;
         contentState = "doc";
         answerFlick.follow = false;
         renderAnswer();
@@ -1191,6 +1240,14 @@ PanelWindow {
     }
 
     function submit() {
+        if (contentState === "doc") {
+            if (docKind === "tldr" && tldr.status === "done") {
+                copyRequested(tldr.rawPage);
+                notice = "Copied the tldr page for " + tldr.name + ".";
+            }
+            return;
+        }
+
         if (contentState === "files") {
             if (filesVisible)
                 activateFile();
@@ -1486,6 +1543,8 @@ PanelWindow {
             return shots.status === "error" ? "retry" : (shotsVisible ? "actions" : "");
         if (contentState === "files")
             return filesVisible ? "actions" : (files.status === "error" ? "retry" : "");
+        if (contentState === "doc")
+            return docKind === "tldr" && tldr.status === "done" ? "copy page" : "";
         if (contentState === "service") {
             if (service.status === "error")
                 return "retry";
@@ -1544,6 +1603,8 @@ PanelWindow {
     function keyHints() {
         if (chooserHit !== null)
             return "↑↓ or 1–" + chooserOptions.length + " choose · Enter do it · Esc cancel";
+        if (contentState === "doc" && docKind === "tldr")
+            return tldr.status === "done" ? "Copy on an example · Enter copies the page · Esc back" : "Esc back · keep typing";
         if (contentState === "doc")
             return "select + Ctrl+C copies · Esc back · keep typing";
         if (contentState === "files") {

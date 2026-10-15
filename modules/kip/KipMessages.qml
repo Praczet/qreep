@@ -66,6 +66,22 @@ QtObject {
                 neutral: ["fd could not search there."],
                 dry: ["The search failed. The filesystem has opinions.", "Even my brilliance cannot negotiate with that directory.", "A technical obstacle. How insultingly ordinary.", "The search collapsed. I blame permissions or architecture.", "Well. That path has declined our invitation."]
             },
+            "tldr.ready": {
+                neutral: ["tldr pages: curated examples, read from the local cache."],
+                dry: ["Real documentation. A refreshing change from guesswork.", "Name the command. I'll fetch examples written by actual humans.", "tldr: for when you want the answer, not the manual's memoirs."]
+            },
+            "tldr.found": {
+                neutral: ["The tldr page. Copy on any example."],
+                dry: ["Straight from the page. I added nothing, for once.", "Curated examples. Placeholders are yours to fill in.", "Here's how it's actually used. Accept no imitations, especially mine."]
+            },
+            "tldr.missing": {
+                neutral: ["No tldr page for that one."],
+                dry: ["No page. Even the curators gave up on that one.", "Nothing in the cache. The man page awaits, grimly."]
+            },
+            "tldr.nocache": {
+                neutral: ["The tldr cache is empty. Run tldr --update once."],
+                dry: ["The cache is empty. One tldr --update and I'm useful again."]
+            },
             "help.ready": {
                 neutral: ["Commands and keys, all of them. It is a short list."],
                 dry: ["Instructions! An unexpected display of wisdom.", "Ah, asking for help. Character development.", "The ancient manual. Mercifully short.", "You seek knowledge. Finally, we have something in common.", "Behold my capabilities. Try not to be overwhelmed.", "A guide to operating me. An ambitious undertaking."]

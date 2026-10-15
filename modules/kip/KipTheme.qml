@@ -100,6 +100,11 @@ QtObject {
         }
     ]
 
+    // /tldr reads the tldr client's cache directly; it never runs the client.
+    readonly property string tldrCacheDir: Quickshell.env("HOME") + "/.cache/tldr"
+    readonly property var tldrPlatforms: ["linux", "common"]
+    readonly property int tldrDebounce: 250
+
     // /fd
     readonly property string fdCommand: "fd"
     readonly property string fdDefaultRoot: "~"
