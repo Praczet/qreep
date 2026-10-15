@@ -21,6 +21,8 @@ modules/kip/
 ├── KipJarvisService.qml # Jarvis adapter: argv, JSON/NDJSON parsing, cancellation
 ├── KipMockService.qml # fake search/ask/general, Jarvis-shaped event sequence
 ├── KipScreenshotService.qml # /last: newest files in the screenshot folder
+├── KipChooser.qml     # numbered action chooser shared by every result type
+├── KipShotGrid.qml    # /last thumbnails
 ├── KipResultList.qml  # ranked hits: origin, folder, basename, line range
 ├── KipTheme.qml       # placement, timings, reducedMotion, tone, colors
 └── README.md

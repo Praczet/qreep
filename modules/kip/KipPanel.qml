@@ -537,197 +537,33 @@ PanelWindow {
                 elide: Text.ElideMiddle
             }
 
-            GridView {
-                id: shotGrid
-
+            KipShotGrid {
                 width: parent.width
-                height: Math.min(Math.ceil(rootKipPanel.shots.shots.length / rootKipPanel.shotColumns) * cellHeight, rootKipPanel.maxBodyHeight * 0.75)
                 visible: rootKipPanel.shotsVisible
-                model: rootKipPanel.shots.shots
-                cellWidth: width / rootKipPanel.shotColumns
-                cellHeight: (rootKipPanel.shots.shots.length === 1 ? rootKipPanel.kt.screenshotSinglePreviewHeight : Math.round(cellWidth * 0.5625)) + 38
-                currentIndex: rootKipPanel.shotIndex
-                interactive: contentHeight > height
-                boundsBehavior: Flickable.StopAtBounds
-                clip: true
+                kipTheme: rootKipPanel.kt
+                shots: rootKipPanel.shots
+                columns: rootKipPanel.shotColumns
+                selectedIndex: rootKipPanel.shotIndex
+                maxHeight: rootKipPanel.maxBodyHeight * 0.75
 
-                onCurrentIndexChanged: {
-                    if (currentIndex >= 0)
-                        positionViewAtIndex(currentIndex, GridView.Contain);
-                }
-
-                delegate: Item {
-                    id: shotCell
-
-                    required property var modelData
-                    required property int index
-
-                    readonly property bool selected: index === rootKipPanel.shotIndex
-
-                    width: GridView.view.cellWidth
-                    height: GridView.view.cellHeight
-
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: 4
-                        radius: rootKipPanel.kt.rowRadius
-                        color: shotCell.selected ? rootKipPanel.kt.selectedRowColor : (shotMouse.containsMouse ? rootKipPanel.kt.hoveredRowColor : rootKipPanel.kt.inputColor)
-                        border.width: shotCell.selected ? 1 : 0
-                        border.color: rootKipPanel.kt.focusBorderColor
-
-                        Image {
-                            id: shotImage
-
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                                top: parent.top
-                                margins: 6
-                            }
-                            height: parent.height - 44
-                            source: "file://" + shotCell.modelData.absolutePath.split("/").map(encodeURIComponent).join("/")
-                            sourceSize.width: Math.round(width * 1.5)
-                            fillMode: Image.PreserveAspectFit
-                            asynchronous: true
-                            cache: false
-                        }
-
-                        Text {
-                            anchors.centerIn: shotImage
-                            visible: shotImage.status === Image.Error
-                            text: "preview failed"
-                            color: rootKipPanel.kt.secondaryTextColor
-                            font.pixelSize: rootKipPanel.kt.metaPixelSize
-                        }
-
-                        Column {
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                                bottom: parent.bottom
-                                margins: 6
-                            }
-
-                            Text {
-                                width: parent.width
-                                text: shotCell.modelData.file
-                                color: rootKipPanel.kt.fileColor
-                                font.pixelSize: rootKipPanel.kt.metaPixelSize + 1
-                                elide: Text.ElideMiddle
-                            }
-
-                            Text {
-                                width: parent.width
-                                text: rootKipPanel.shots.age(shotCell.modelData.modified)
-                                color: rootKipPanel.kt.secondaryTextColor
-                                font.pixelSize: rootKipPanel.kt.metaPixelSize
-                            }
-                        }
-                    }
-
-                    MouseArea {
-                        id: shotMouse
-
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            rootKipPanel.shotIndex = shotCell.index;
-                            rootKipPanel.activateShot();
-                        }
-                    }
+                onActivated: index => {
+                    rootKipPanel.shotIndex = index;
+                    rootKipPanel.activateShot();
                 }
             }
 
-            // Action chooser: "Open with" for markdown, actions for screenshots.
-            // The first option is the default.
-            Rectangle {
+            KipChooser {
                 width: parent.width
-                height: chooserColumn.implicitHeight + 16
                 visible: rootKipPanel.chooserHit !== null
-                radius: rootKipPanel.kt.rowRadius
-                color: rootKipPanel.kt.inputColor
-                border.width: 1
-                border.color: rootKipPanel.kt.focusBorderColor
+                kipTheme: rootKipPanel.kt
+                iconFontFamily: rootKipPanel.theme.iconFontFamily
+                title: rootKipPanel.chooserTitle
+                options: rootKipPanel.chooserOptions
+                selectedIndex: rootKipPanel.chooserIndex
 
-                Column {
-                    id: chooserColumn
-
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        top: parent.top
-                        margins: 8
-                    }
-                    spacing: 2
-
-                    Text {
-                        width: parent.width
-                        text: rootKipPanel.chooserTitle
-                        color: rootKipPanel.kt.secondaryTextColor
-                        font.pixelSize: rootKipPanel.kt.metaPixelSize + 1
-                        elide: Text.ElideMiddle
-                        bottomPadding: 4
-                    }
-
-                    Repeater {
-                        model: rootKipPanel.chooserOptions
-
-                        Rectangle {
-                            id: openerRow
-
-                            required property var modelData
-                            required property int index
-
-                            readonly property bool selected: index === rootKipPanel.chooserIndex
-
-                            width: parent.width
-                            height: rootKipPanel.kt.commandRowHeight - 6
-                            radius: rootKipPanel.kt.rowRadius
-                            color: selected ? rootKipPanel.kt.selectedRowColor : (openerMouse.containsMouse ? rootKipPanel.kt.hoveredRowColor : "transparent")
-
-                            Row {
-                                anchors.verticalCenter: parent.verticalCenter
-                                x: 8
-                                spacing: 10
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 22
-                                    text: openerRow.modelData.icon
-                                    color: rootKipPanel.kt.accentColor
-                                    font.family: rootKipPanel.theme.iconFontFamily
-                                    font.pixelSize: rootKipPanel.kt.iconPixelSize - 2
-                                }
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 90
-                                    text: (openerRow.index + 1) + "  " + openerRow.modelData.label
-                                    color: rootKipPanel.kt.primaryTextColor
-                                    font.pixelSize: rootKipPanel.kt.bodyPixelSize
-                                    font.bold: openerRow.selected
-                                }
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: openerRow.modelData.hint
-                                    color: rootKipPanel.kt.secondaryTextColor
-                                    font.pixelSize: rootKipPanel.kt.metaPixelSize + 1
-                                }
-                            }
-
-                            MouseArea {
-                                id: openerMouse
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: {
-                                    rootKipPanel.chooserIndex = openerRow.index;
-                                    rootKipPanel.confirmChooser();
-                                }
-                            }
-                        }
-                    }
+                onPicked: index => {
+                    rootKipPanel.chooserIndex = index;
+                    rootKipPanel.confirmChooser();
                 }
             }
 
