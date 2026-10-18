@@ -46,7 +46,7 @@ INDEX = Path(os.getenv('JARVIS_INDEX', str(HOME / '.local/share/jarvis/notes.sql
 URL = os.getenv('JARVIS_OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')
 EMBED = os.getenv('JARVIS_EMBED_MODEL', 'nomic-embed-text-v2-moe')
 PROFILES = {'fast': 'adam-jarvis-tiny', 'default': 'adam-jarvis-fast',
-            'code': 'adam-jarvis', 'creative': 'adam-jarvis'}
+            'code': 'adam-jarvis-v3', 'creative': 'adam-jarvis-v3'}
 MAX_FILE_BYTES = int(os.getenv('JARVIS_MAX_FILE_BYTES', '2000000'))
 MAX_CHUNK_CHARS = 400  # Conservative size for Nomic v2 MoE's 512-token context.
 INDEX_FORMAT_VERSION = 2  # Include parent context in Logseq chunk embeddings.
