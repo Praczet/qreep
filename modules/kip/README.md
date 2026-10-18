@@ -69,12 +69,19 @@ panel as `host` and use `contentState`, `parsed`, `notice`, `setInput()`,
 quickshell -c qreep ipc call qreep-kip toggle
 quickshell -c qreep ipc call qreep-kip showMe
 quickshell -c qreep ipc call qreep-kip hideMe
-quickshell -c qreep ipc call qreep-kip state   # open, phase, service, results, error, backend
+quickshell -c qreep ipc call qreep-kip showWith "/run "     # open with the input already typed
+quickshell -c qreep ipc call qreep-kip toggleWith "/run "   # same; closes if already on /run
+quickshell -c qreep ipc call qreep-kip state   # open, phase, view, input, service, results, error, backend
 quickshell -c qreep ipc call qreep-kip setBackend mock     # or jarvis
 quickshell -c qreep ipc call qreep-kip run "/notes MariaDB permissions"  # no panel needed
 ```
 
 `run` exists for testing the backend path headlessly; poll `state` afterwards.
+
+`showWith`/`toggleWith` put the text in the input exactly as if typed, so any
+command works (`"/browse ~/"`, `"/win "`, `""` for the launcher). Keep the
+trailing space for commands that preview live. `toggleWith` closes KIP when
+the input already starts with that command, and switches to it otherwise.
 
 ## Backend
 
@@ -508,7 +515,14 @@ None of these talk to the model or the network.
 
 `/run` runs **what you typed**, nothing else: no answer, tldr example or
 Copy link ever fills it in. It shares rofi-runner's history
-(`~/.local/state/rofi-runner/history`), so `F2` and `/run` see the same list.
+(`~/.local/state/rofi-runner/history`), so old rofi-runner history still shows
+up; the file is all KIP needs, not the rofi-runner script.
+
+Hyprland bind that replaces rofi-runner (`binds.lua`):
+
+```lua
+A.exec(mainMod .. " + F2", "KIP run", qreep .. " ipc call qreep-kip toggleWith '/run '")
+```
 
 Typing shows matching history and a preview: where it will run and why.
 Terminal or background is decided in this order:

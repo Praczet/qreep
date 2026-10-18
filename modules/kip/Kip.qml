@@ -22,6 +22,8 @@ Scope {
     property string backend: theme.modules.kip.backend
     readonly property QtObject service: backend === "mock" ? mockService : jarvisService
     readonly property string phase: panelLoader.item ? panelLoader.item.phase : "hidden"
+    // Input for a panel that did not exist yet when showWith was called.
+    property var pendingInput: null
 
     KipCommands {
         id: kipCommands
@@ -168,9 +170,22 @@ Scope {
             rootKip.hide();
         }
 
+        // Open with the input already typed, e.g. "/run " or "/browse ~/".
+        function showWith(text: string) {
+            rootKip.showWith(text);
+        }
+
+        // Same, but closes KIP when it already shows that command, so one
+        // Hyprland bind opens and closes it.
+        function toggleWith(text: string) {
+            rootKip.toggleWith(text);
+        }
+
         function state(): string {
             return "open=" + rootKip.open
                 + " phase=" + rootKip.phase
+                + " view=" + (panelLoader.item ? panelLoader.item.contentState : "-")
+                + " input=" + JSON.stringify(panelLoader.item ? panelLoader.item.inputText() : "")
                 + " service=" + rootKip.service.status
                 + " kind=" + (rootKip.service.kind || "-")
                 + " results=" + rootKip.service.results.length
@@ -204,6 +219,8 @@ Scope {
         active: rootKip.panelLoaded
 
         KipPanel {
+            id: kipPanel
+
             screen: rootKip.targetScreen
             theme: rootKip.theme
             commands: kipCommands
@@ -231,6 +248,13 @@ Scope {
             onCloseFinished: {
                 if (!rootKip.open)
                     rootKip.panelLoaded = false;
+            }
+
+            Component.onCompleted: {
+                if (rootKip.pendingInput !== null) {
+                    kipPanel.switchMode(rootKip.pendingInput);
+                    rootKip.pendingInput = null;
+                }
             }
         }
     }
@@ -281,6 +305,25 @@ Scope {
             hide();
         else
             show();
+    }
+
+    // Same as typing it: the panel routes the text like any other input.
+    function showWith(text) {
+        show();
+        if (panelLoader.item)
+            panelLoader.item.switchMode(text);
+        else
+            pendingInput = text;
+    }
+
+    // Open on another command switches to this one; open on this one closes.
+    function toggleWith(text) {
+        const panel = panelLoader.item;
+
+        if (open && panel && panel.inputText().startsWith(text.trim()))
+            hide();
+        else
+            showWith(text);
     }
 
     // Runs one chooser option (markdownOpeners, screenshotActions, or the plain
