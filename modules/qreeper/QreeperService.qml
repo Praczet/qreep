@@ -6,6 +6,8 @@ QtObject {
     id: rootQreeperService
 
     required property QtObject theme
+    // Asleep: no file watch, no polling. The controller wakes it per session.
+    property bool active: true
     readonly property string defaultSnapshotPath: Quickshell.env("HOME") + "/.local/state/qreeper/map.json"
     readonly property string snapshotPath: String(Quickshell.env("QREEP_QREEPER_MAP_PATH") || defaultSnapshotPath)
     property string loadState: "waiting"
@@ -34,7 +36,7 @@ QtObject {
     signal confirmedRoomTransition(var previousRoomId, var nextRoomId)
 
     readonly property FileView snapshotFile: FileView {
-        path: rootQreeperService.snapshotPath
+        path: rootQreeperService.active ? rootQreeperService.snapshotPath : ""
         preload: true
         watchChanges: true
         printErrors: false
@@ -42,7 +44,10 @@ QtObject {
         onLoaded: refreshDebounce.restart()
         onTextChanged: refreshDebounce.restart()
         onFileChanged: refreshDebounce.restart()
-        onLoadFailed: error => rootQreeperService.handleLoadFailure(error)
+        onLoadFailed: error => {
+            if (rootQreeperService.active)
+                rootQreeperService.handleLoadFailure(error);
+        }
     }
 
     readonly property Timer refreshDebounce: Timer {
@@ -56,18 +61,20 @@ QtObject {
     readonly property Timer watcherFallback: Timer {
         interval: rootQreeperService.theme.modules.qreeper.watcherFallbackInterval
         repeat: true
-        running: true
+        running: rootQreeperService.active
         onTriggered: rootQreeperService.snapshotFile.reload()
     }
 
     readonly property Timer staleTimer: Timer {
         interval: 30000
         repeat: true
-        running: true
+        running: rootQreeperService.active
         onTriggered: rootQreeperService.updateStaleState()
     }
 
     function refresh() {
+        if (!active)
+            return;
         snapshotFile.reload();
         refreshDebounce.restart();
     }

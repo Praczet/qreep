@@ -577,7 +577,8 @@ PanelWindow {
             QreeperFeature.QreeperButton {
                 id: qreeperButton
 
-                visible: rootBar.qreeperController && rootBar.pillEnabled("qreeper")
+                // Only during a Qreeper session; see Qreeper.qml start/stop.
+                visible: rootBar.qreeperController && rootBar.qreeperController.active && rootBar.pillEnabled("qreeper")
                 collapsedPill: rootBar.pillCollapsed("qreeper")
                 theme: rootBar.theme
                 service: rootBar.qreeperController ? rootBar.qreeperController.service : null

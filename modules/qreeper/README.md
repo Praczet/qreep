@@ -2,6 +2,19 @@
 
 QREEP renders Qreeper's published map. It does not read the Blightmud database, parse MUD output, infer successful movement, or write back notes. The Lua plugin remains the adult in that particular room.
 
+## On demand
+
+Qreeper is a play-time feature, so it starts asleep: no snapshot watch, no
+fallback polling, and no compass pill in the bar. A session starts with
+`start`, or by opening the minimap or Atlas (IPC, a keybind, or KIP's
+`/qreep` Qreeper group). `stop` closes both surfaces and puts it back to
+sleep. Nothing about this is persisted; a Qreep restart means asleep again.
+
+```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper start
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper stop
+```
+
 ## Controls
 
 - Left-click the compass pill to toggle the floating minimap.
@@ -19,11 +32,14 @@ The pill can be hidden with the normal bar-pill API:
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar-pill disablePill qreeper
 ```
 
-That only hides the button. The controller and IPC remain alive.
+That only hides the button, and it wins over a running session. The
+controller and IPC remain alive either way.
 
 ## IPC
 
 ```bash
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper start
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper stop
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper toggleMinimap
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper showMinimap
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-qreeper hideMinimap

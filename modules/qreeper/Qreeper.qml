@@ -6,6 +6,10 @@ Scope {
     id: rootQreeper
 
     required property QtObject theme
+    // Qreeper is a play-time feature: asleep until a session starts (start,
+    // or opening the minimap/Atlas), so the snapshot is not watched and the
+    // bar pill stays hidden while nobody is playing.
+    property bool active: false
     property bool minimapOpen: false
     property bool atlasOpen: false
     readonly property alias service: qreeperService
@@ -13,6 +17,7 @@ Scope {
     QreeperService {
         id: qreeperService
         theme: rootQreeper.theme
+        active: rootQreeper.active
     }
 
     // One layout for both views, so the minimap and the Atlas always agree.
@@ -26,6 +31,8 @@ Scope {
     readonly property IpcHandler ipc: IpcHandler {
         target: "qreep-qreeper"
 
+        function start() { rootQreeper.start(); }
+        function stop() { rootQreeper.stop(); }
         function toggleMinimap() { rootQreeper.toggleMinimap(); }
         function showMinimap() { rootQreeper.showMinimap(); }
         function hideMinimap() { rootQreeper.hideMinimap(); }
@@ -70,11 +77,13 @@ Scope {
         }
     }
 
-    function toggleMinimap() { minimapOpen = !minimapOpen; }
-    function showMinimap() { qreeperService.refresh(); minimapOpen = true; }
+    function start() { active = true; qreeperService.refresh(); }
+    function stop() { minimapOpen = false; atlasOpen = false; active = false; }
+    function toggleMinimap() { minimapOpen ? hideMinimap() : showMinimap(); }
+    function showMinimap() { start(); minimapOpen = true; }
     function hideMinimap() { minimapOpen = false; }
     function toggleAtlas() { atlasOpen ? hideAtlas() : showAtlas(); }
-    function showAtlas() { qreeperService.refresh(); atlasOpen = true; }
+    function showAtlas() { start(); atlasOpen = true; }
     function hideAtlas() { atlasOpen = false; }
     function refresh() { qreeperService.refresh(); }
     function recenter() {
@@ -91,7 +100,8 @@ Scope {
         setFontScale(theme.modules.qreeper.fontScale + direction * theme.modules.qreeper.fontScaleStep);
     }
     function state() {
-        return "snapshot=" + qreeperService.displayState
+        return "active=" + active
+            + " snapshot=" + qreeperService.displayState
             + " revision=" + qreeperService.revision
             + " room=" + qreeperService.currentRoomId
             + " minimap=" + minimapOpen
