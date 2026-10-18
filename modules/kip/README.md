@@ -15,21 +15,53 @@ says `Local AI · mock` when it is active.
 ```text
 modules/kip/
 ├── Kip.qml            # Scope/controller: IPC, open state, lazy panel, focused screen
-├── KipPanel.qml       # PanelWindow: open/close motion, input, body, keys
+├── KipPanel.qml       # PanelWindow: open/close motion, layout, routing to commands
+├── KipHeader.qml      # title row, Help chip, backend status chip
+├── KipInput.qml       # input box: icon, flag chips, command highlight, Enter hint
+├── KipAnswerView.qml  # answer/doc viewer: throttled render, follow, Copy links
 ├── KipCommands.qml    # command registry + parse(text)
 ├── KipMessages.qml    # event-keyed microcopy, picked on state entry
 ├── KipJarvisService.qml # Jarvis adapter: argv, JSON/NDJSON parsing, cancellation
 ├── KipMockService.qml # fake search/ask/general, Jarvis-shaped event sequence
 ├── KipScreenshotService.qml # /last: newest files in the screenshot folder
+├── KipShotsCommand.qml # /last in the panel: count, live refresh, grid keys
 ├── KipFileSearchService.qml # /fd: two fd passes, merged and ranked
+├── KipFilesCommand.qml # /fd in the panel: debounce, flag complaints, selection
 ├── KipTldrService.qml # /tldr: pages from the local tldr cache
+├── KipCalcService.qml # /calc: qalc, offline
+├── KipDictService.qml # /def: sdcv (StarDict), offline
+├── KipWindowService.qml # /win: hyprctl clients, focus via Expose
+├── KipWindowView.qml  # /win: grid/list of icons or live previews
+├── KipWindowsCommand.qml # /win in the panel: selection, Ctrl+L/Ctrl+P, focus
+├── KipQreepService.qml # /qreep: quickshell ipc show/call for this process
+├── KipQreepCatalog.qml # /qreep: labels, groups, icons, what is listed
+├── KipQreepList.qml   # /qreep: grouped rows with icons
+├── KipQreepCommand.qml # /qreep in the panel: Tab completion, calling, Ctrl+H
+├── KipGrepService.qml # /rg: ripgrep --json, capped, path:line hits
+├── KipGrepCommand.qml # /rg in the panel: debounce, flag complaints, selection
+├── KipBrowseService.qml # /browse: one folder via fd, local filter, preview bytes
+├── KipBrowsePreview.qml # /browse: Alt+P preview pane
+├── KipBrowseCommand.qml # /browse in the panel: input-as-path, Tab/Alt keys
+├── KipAppService.qml  # launcher: desktop entries, grouping, search, launch log
+├── KipAppView.qml     # launcher: toolbar + sectioned grid/list, spatial keys
+├── KipTimerCommand.qml # /timer: plan + preview against the Qreep timer
+├── KipRunService.qml  # /run: rofi-runner history, terminal/background decision
+├── KipRunCommand.qml  # /run in the panel: history picking, preview, danger arm, keys
 ├── KipChooser.qml     # numbered action chooser shared by every result type
+├── KipShortcuts.qml   # Ctrl+/ keys sheet, current group first
 ├── KipShotGrid.qml    # /last thumbnails
 ├── KipResultList.qml  # ranked hits: origin, folder, basename, line range
 ├── KipMarkdown.qml    # answer Markdown → KIP-styled Qt rich text
 ├── KipTheme.qml       # placement, timings, reducedMotion, tone, colors
 └── README.md
 ```
+
+`*Service.qml` runs the tool; `*Command.qml` is that command's behaviour in
+the panel (selection, timers, keys, status line, Enter). Commands get the
+panel as `host` and use `contentState`, `parsed`, `notice`, `setInput()`,
+`backToCompose()` and the chooser functions; `*View.qml`, `KipHeader` and
+`KipInput` only draw and emit signals. A new command with its own view gets a
+`*Command.qml` and one line in `KipPanel.activeCommand`.
 
 ## IPC
 
@@ -49,8 +81,8 @@ quickshell -c qreep ipc call qreep-kip run "/notes MariaDB permissions"  # no pa
 | KIP input | Jarvis call | Output |
 | --- | --- | --- |
 | `/notes <q>` | `jarvis --json -search-notes=<q>` | one JSON object (`notes.search.results`) |
-| `/ask <q>` | `jarvis --json -ask-notes=<q>` | NDJSON: `response.start`, `response.sources`, `response.delta`…, `response.done` |
-| plain text | `jarvis --json -- <q>` | same NDJSON, no sources |
+| `/notes-ask <q>` | `jarvis --json -ask-notes=<q>` | NDJSON: `response.start`, `response.sources`, `response.delta`…, `response.done` |
+| `/ask <q>` | `jarvis --json -- <q>` | same NDJSON, no sources |
 
 Details that were verified against the installed Jarvis on 2026-10-15:
 
@@ -144,13 +176,13 @@ spacing or code blocks.
 1. **Copy answer**: the Markdown as written (default).
 2. **Copy plain**: markers stripped, code kept.
 3. **Copy selection**: only listed when something is selected.
-4. **Open source**: `/ask` only, the highlighted source (same openers as `/notes`).
+4. **Open source**: `/notes-ask` only, the highlighted source (same openers as `/notes`).
 5. **Retry**: asks again and replaces the answer.
 6. **More detail**: asks again with `jarvis -explain`, which adds
    `prompts/explain.md` to the system message.
 
 Options that cannot apply are left out, so the numbers match what you see.
-`Up`/`Down` still moves through `/ask` sources and `Tab` still shows a
+`Up`/`Down` still moves through `/notes-ask` sources and `Tab` still shows a
 source's original text.
 
 ## Height
@@ -168,16 +200,27 @@ The size survives closing KIP but not a Quickshell restart.
 
 | Input | Mode |
 | --- | --- |
+| empty input | app launcher: Most used, Recent, then groups |
 | `/` | command palette |
 | `/as` | candidate, `/ask` highlighted |
-| `/ask ` + question | note-grounded answer (mock) |
+| `/ask ` + question (alias `/a`) | general question, no notes context (mock) |
+| `/notes-ask ` + question (alias `/na`) | note-grounded answer (mock) |
 | `/notes ` + query (aliases `/n`, `/search`) | notes search (mock) |
 | `/last`, `/last 3` (alias `/shot`) | newest screenshot(s), capped at 12 |
 | `/fd words [--f=<dir>] [--h]` (alias `/find`) | files and folders via `fd`, live |
+| `/rg text [--f=<dir>] [--h] [--t=<type>]` (alias `/grep`) | file contents via ripgrep, live from 3 chars |
+| `/qreep [target] [function] [args]` (alias `/q`) | call any Qreep IPC function; list from `ipc show` |
+| `/browse [path]` (aliases `/b`, `/ls`) | walk folders; the input is the path, text after the last `/` filters |
 | `/tldr tar`, `/tldr git commit` (alias `/tl`) | real tldr page from the local cache; live |
+| `/calc 5 km to mi` (aliases `/c`, `/=`) | qalc result plus how qalc read it; live, Enter copies |
+| `/def word` (alias `/define`) | offline dictionary via sdcv; live, Enter copies |
+| `/win [words]` (aliases `/w`, `/window`) | windows by class/title/workspace; Enter switches and focuses |
+| `/timer 25m Tea`, `15:03 x`, `up x`, `pause`, `resume`, `stop` (alias `/t`) | preview, then Enter does it |
+| `/run <command>` (alias `/r`) | run what you typed, in Ghostty or the background; preview first |
 | `/help`, `/help fd` (alias `/?`) | commands and keys, or one command's syntax, flags, examples; live |
+| `/app [name]` (alias `/apps`) | app launcher, same as empty input / plain text |
 | `/foo` | calm "not a command" plus the list |
-| plain text | general question (mock, no notes context) |
+| plain text | filters apps, ranked; Enter launches the selected one |
 
 `/help` is generated from the registry (`syntax`, `examples`, `actions`,
 flag `usage`/`help`), so help and the parser cannot disagree. A mistyped
@@ -189,6 +232,11 @@ hardcodes `/ask`.
 
 Keys:
 
+- `Ctrl+/` or the header's **Help** chip: a floating keys sheet, grouped by
+  where each key applies, the current group first. The groups live in
+  `KipCommands.shortcutGroups`; `/help` prints the same list.
+- `F1` app launcher (empty input), `F2` `/browse ` at `~`, `F3` `/fd `, `Shift+F3` `/rg `, `F4` `/win `. They
+  rewrite the input, work from any view, and close an open action menu.
 - `Enter` submits. Single-line on purpose.
 - `Tab` completes the highlighted command.
 - `Up`/`Down` move through the palette or results.
@@ -197,8 +245,10 @@ Keys:
 - `Enter` on any **markdown** hit asks first, wherever the file lives.
   `Up`/`Down` or the number keys, `Enter` confirms, `Esc` cancels. Options live
   in `KipTheme.markdownOpeners`; the first one shown is the default. Files in
-  the Logseq graph get all three, anything else (`toreview/`, ...) gets
-  Default and Vivify. Non-markdown hits open with Default directly.
+  the Logseq graph get all three. In `/fd` and `/browse`, markdown outside
+  the graph gets the normal file menu with Vivify after nvim; `/notes` hits
+  outside the graph (`toreview/`, ...) get Default and Vivify. Non-markdown
+  `/notes` hits open with Default directly.
   1. **Logseq** (Logseq graph only): `xdg-open logseq://graph/Logseq?page=<page>`. Page-level only;
      Logseq URLs cannot jump to a line without a block uuid.
      If Logseq is not running, the first link only starts it (a cold Logseq
@@ -221,6 +271,62 @@ Keys:
 
 Mock backend triggers: a query containing `nothing` returns zero results, and
 one containing `fail` returns a backend error.
+
+## Header banner
+
+The top of the card shows an image behind the title and input, faded into the
+card colour before the body starts, like the rofi theme does. Theme tokens in
+`KipTheme.qml`:
+
+- `headerImage`: `"bloom"` follows Unclaimed Bloom's current wallpaper by
+  watching `~/.cache/unclaimed-bloom/current-wallpaper` (so `wallset` updates
+  it while KIP is open); any other value is an image path; `""` turns it off.
+- `headerImageHeight`, `headerImageOpacity`, `headerImageFadeStart` (solid
+  part before the fade), `headerImageAlign` (`top`/`center`/`bottom` of the
+  cropped image).
+
+KIP reads that one file itself instead of borrowing the Bloom module's
+service, so it works whether or not the Bloom surface is loaded.
+
+## Launcher
+
+KIP opens as an app launcher: empty input, plain text and `/app [name]` all
+show it. Typing `/` hands the body to the command palette as before.
+
+- Apps come from Quickshell's `DesktopEntries` (`NoDisplay=true` skipped).
+- Without a query: **Most used** (top `appMostUsedCount`, default 10),
+  **Recent** (last `appRecentCount`, default 5), then the grouping:
+  category (freedesktop main categories, folded: Audio/Video → Multimedia,
+  Network → Internet, Utility → Utilities, the rest → Other), name, or A–Z.
+- With a query: one ranked section. Every word must match; name prefix beats
+  word start beats substring beats generic name / keywords / comment / id.
+  Ties go to whatever you launch more.
+- `Ctrl+G` cycles grouping, `Ctrl+L` toggles grid/list; the toolbar chips do
+  the same. Defaults are `appDefaultGrouping` / `appDefaultView`. The choice
+  lives in `KipAppService` for the session; a Quickshell restart forgets it.
+- Arrows move spatially (Up/Down keep the column across sections), `Enter`
+  launches and closes KIP. Left/Right belong to the grid here, not the cursor.
+- `Terminal=true` entries run as `ghostty -e <command>` (`appTerminal`);
+  everything else goes through `DesktopEntry.execute()`.
+
+Habit remarks: on a fresh open, `appNudgeChance` (0.5) of the time KIP
+replaces the generic line with one about your launches, with the app's icon
+in front, and preselects that app so Enter takes the hint. Three kinds, picked
+at random among those that apply (`apps.nudge.*` in `KipMessages.qml`):
+**most** (top app), **hour** (most launched around the current hour, ±1 h),
+**recent** (last launch within `appNudgeRecentWindow`, default 3 h). An app
+needs `appNudgeMinLaunches` (3) launches before KIP gets smug about it.
+
+Launch log: `~/.local/share/qreep/kip/apps.db`, one table,
+`launches(app_id, launched_at)`, written through the `sqlite3` CLI (path and
+SQL passed as arguments, ids quote-escaped). It records desktop entry id and
+time of launches *from KIP*, nothing else. Deleting the file resets Most used
+and Recent; KIP recreates it.
+
+```bash
+sqlite3 ~/.local/share/qreep/kip/apps.db \
+  "SELECT app_id, COUNT(*) FROM launches GROUP BY app_id ORDER BY 2 DESC LIMIT 10;"
+```
 
 ## Screenshots
 
@@ -281,6 +387,64 @@ panel shows the top 50 (`fdShownResults`).
 | `.md` file | `markdownOpeners` (Logseq only inside `logseqGraphDir`) |
 | other file | Open (default app) / nvim / containing Folder / Copy path |
 
+## Qreep IPC
+
+`/qreep ` lists every IPC function of the running Qreep, read from
+`quickshell ipc --pid <KIP's own process> show`, so it is whatever the shell
+registers right now, not a copied list. `--pid` matters: the instance runs
+from `~/.config/quickshell/qreep`, and `--path` to the repo finds nothing.
+
+- `KipQreepCatalog.qml` curates the live list: a label, group (Surfaces,
+  System, Timer, Bar, Qreeper), icon, and known argument values per action.
+  Script getters, hooks other programs call (`osd`, `bloom`, `calendar`,
+  `monitor-profile`), `showMe`/`hideMe`/`refresh` duplicates, KIP itself and
+  `fast-password copy` are hidden; `Ctrl+H` shows everything, dimmed. A
+  function the catalog does not mention lands in "Uncatalogued", visible,
+  until someone decides what it is.
+- Hidden is a tidy-up, not a lock: exact `target function args` still calls it.
+- Typing filters on label, target and function (`upd`, `upch tog`). Targets
+  show without the `qreep-` prefix.
+- Actions with known values (pill ids, Aegis mode, timer alert style): Tab
+  cycles them, Enter takes a unique prefix and refuses anything else.
+- Enter on a function without parameters calls it. With parameters, Enter
+  or Tab fills the input (`/qreep timer startCountdown `) and the status line
+  shows the signature; the last parameter takes the rest of the line, so
+  `/qreep timer startCountdown 25m Tea break` passes `"Tea break"`.
+- `void` calls run detached and KIP closes, so the panel they open gets the
+  focus. Calls returning a value stay and show the answer, selectable.
+
+## Contents search
+
+`/rg` runs `rg --json --fixed-strings --smart-case` over `~` (or `--f=`),
+so the query is literal text and gitignored files are skipped like rg always
+does. `--h` adds hidden files, `--t=py` limits to one rg file type. Caps:
+`rgMaxPerFile` (5) matches per file, `rgMaxResults` (200) in total, after
+which KIP stops rg itself; `.git` and `node_modules` are always skipped
+(`rgExcludeGlobs`). Results show `path:line` with the line underneath.
+Enter opens the file menu with **nvim at the line** first; markdown gets
+Vivify at the line as well.
+
+## Browse
+
+`/browse` lists one folder at a time with `fd --exact-depth 1`. The input is
+the whole state: `/browse ~/.config/hy` lists `~/.config/` filtered by `hy`,
+so typing, Backspace and pasting a path all just work. Relative paths start at
+`~`. Folders sort first, then names starting with the filter, then the rest.
+
+| Key | Does |
+| --- | --- |
+| `Enter` on a folder, `Tab` | go in (rewrites the input) |
+| `Enter` on a file | action menu (markdown gets the note openers) |
+| `Shift+Enter` | action menu, also for folders |
+| `Alt+Up`, `../` | parent folder |
+| `Alt+H` | hidden files on/off |
+| `Alt+I` | hide what `.gitignore`/`.ignore` would hide, on/off |
+| `Alt+P` | preview pane: first `browsePreviewBytes` of text, images, a note for binaries |
+
+Starting values are `browseShowHidden`, `browseRespectGitignore` and
+`browsePreview`; the toggles last until Quickshell restarts. The listing is
+re-read only when the folder or a toggle changes; filtering is local.
+
 ## tldr
 
 `/tldr <command> [subcommand]` shows the real tldr page, never a model's
@@ -303,19 +467,89 @@ version of it. `git commit` reads `git-commit.md`; `linux/` is tried before
 - Each example is its own code block with **Copy**. `{{placeholders}}` lose
   their braces, so you copy an editable template. `Enter` copies the page.
 
+## Local tools
+
+None of these talk to the model or the network.
+
+- **`/calc`** runs `qalc -nocurrencies <expr>` (one argv item) and shows the
+  result with qalc's own reading of the input, because qalc will turn almost
+  anything into units (`foo bar` is `femtobyte*byte*bar`). Results qalc
+  cannot reduce (`1/0`) say so, with qalc's warning. Currencies are off, so no
+  exchange-rate downloads; `100 EUR to USD` stays `EUR 100`.
+- **`/def`** runs `sdcv -n -j -e -- <word>` (exact matches only; fuzzy hits for
+  half-typed words are noise). Entries are parsed, not dumped: WordNet
+  (`n 1:`, `adj :`, quoted examples, `[syn: {…}]`) and Wiktionary dumps
+  (`n.` lines, `(l en x)`, `(gloss: …)`, `(lb …)`, `#English` residue) become
+  part of speech → numbered senses with examples and synonyms, as wrapping
+  prose. Other dictionaries fall back to plain paragraphs. Enter copies the
+  cleaned text. **No dictionaries are installed yet** (2026-10-15):
+  StarDict dictionaries go in `~/.stardict/dic/`, the AUR has them
+  (`paru -S stardict-wordnet` installs to `/usr/share/stardict/dic/`, read by
+  default), `sdcv -l` lists what sdcv sees. Until then `/def` says so and
+  shows that command.
+- **`/win`** reads `hyprctl clients -j` once when `/win ` is typed and filters
+  locally; most recently focused first. Focus goes through
+  `ExposeService.focusClientObject` (workspace switch, then `focuswindow`,
+  Lua dispatch aware), so Qreep has one focus path.
+  Grid or list (`Ctrl+L`), icons or live previews (`Ctrl+P`), both runtime
+  only; defaults are `windowDefaultView`/`windowDefaultDisplay` in
+  `KipTheme.qml`. Previews are `ScreencopyView` on the `Toplevel` that
+  `ExposeService.previewSourceForClient` matches, fitted to the window's
+  aspect. No safe match, no preview: the card shows the icon. Icons come from
+  `DesktopEntries.heuristicLookup`, then Expose's class fixes.
+- **`/timer`** plans against the Qreep timer service (`shell.qml` passes
+  `timer.service` in) using its own `parseDuration`/`parseFinishAt`, so KIP
+  accepts exactly what the bar does. The preview says what will happen and
+  which running timer it replaces; nothing changes until Enter.
+
+`/calc` and `/def` refresh 180 ms after you stop typing (`liveDocDebounce`).
+
+## Run
+
+`/run` runs **what you typed**, nothing else: no answer, tldr example or
+Copy link ever fills it in. It shares rofi-runner's history
+(`~/.local/state/rofi-runner/history`), so `F2` and `/run` see the same list.
+
+Typing shows matching history and a preview: where it will run and why.
+Terminal or background is decided in this order:
+
+1. your remembered choice (`~/.local/state/qreep/kip/run-modes.json`, command
+   word → mode, written only by Shift+Enter);
+2. `sudo`/`doas` always get a terminal (password prompt);
+3. the script's `# %terminal: true|false` header (your `~/.local/bin` convention);
+4. the `.desktop` file's `Terminal=` for that command;
+5. ELF binaries: GTK/Qt/Wayland/X11/SDL libraries → background, none → terminal;
+6. shell aliases/functions → terminal; anything else → background.
+
+Checks go through `bash -ic`, like rofi-runner, so bash aliases count (zsh-only
+aliases do not). `cinfo` adds its summary; a command it marks
+`Danger: YES` needs a second Enter.
+
+- **Terminal**: `ghostty --wait-after-command=true -e bash -ic "<cmd>"`, so
+  the window stays open after the command ends.
+- **Background**: `setsid bash -ic "<cmd>"`, in its own session, so a
+  Quickshell reload cannot kill it. A wrapper watches 2 s: still running →
+  started, KIP closes; exited → exit code and output shown in KIP.
+- Successful commands are added to the shared history; failed ones are not.
+- Up/Down picks a history entry **into the input** (Enter again runs it);
+  Ctrl+Delete forgets the selected entry; Shift+Enter runs the other way and
+  remembers it.
+
 ## Microcopy
 
 `KipMessages.qml` maps event keys (`kip.open`, `ask.ready`, `notes.found`,
 `error.backend`, ...) to short lines, with `neutral` and `dry` tones
 (`KipTheme.tone`). A line is picked when the state is **entered**, so typing a
-question after `/ask ` does not reroll the message. Lines only claim what is
+question after `/notes-ask ` does not reroll the message. Lines only claim what is
 true at that point: no "Searching..." before a search exists.
 
 ## Not done yet
 
-- Plain text goes to general Jarvis chat. If that turns out to be a bad
-  default, route it to `/notes` instead in `KipPanel.submit()`.
-- First `/ask` after a cold Ollama spends ~10 s loading the model before the
+- Plain text filters the app launcher. General chat moved to `/ask`;
+  note-grounded answers to `/notes-ask`.
+- Launcher: no desktop actions (right-click "New window" etc.), no pinning,
+  and launches from rofi or Hyprland binds are not logged.
+- First `/ask` or `/notes-ask` after a cold Ollama spends ~10 s loading the model before the
   first token. The status line says `waiting for <model>` so it doesn't look stuck.
 - No Hyprland layer rule ships with this. If you want blur behind the card:
 

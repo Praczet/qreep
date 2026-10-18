@@ -15,6 +15,9 @@ Scope {
     // Dragged body height cap (0 = theme default). Runtime only, like the
     // rest of KIP's state; a Quickshell restart forgets it.
     property real bodyLimit: 0
+    // Other Qreep services KIP drives directly (shell.qml passes them in).
+    property QtObject timerService: null
+    property QtObject exposeService: null
     // "jarvis" or "mock"; starts from the theme, switchable over IPC for testing.
     property string backend: theme.modules.kip.backend
     readonly property QtObject service: backend === "mock" ? mockService : jarvisService
@@ -56,6 +59,61 @@ Scope {
         id: tldrService
 
         theme: rootKip.theme
+    }
+
+    KipCalcService {
+        id: calcService
+
+        theme: rootKip.theme
+    }
+
+    KipDictService {
+        id: dictService
+
+        theme: rootKip.theme
+    }
+
+    KipWindowService {
+        id: windowService
+
+        kipTheme: rootKip.theme.modules.kip
+        exposeService: rootKip.exposeService
+    }
+
+    KipRunService {
+        id: runService
+
+        theme: rootKip.theme
+    }
+
+    KipQreepService {
+        id: qreepService
+
+        theme: rootKip.theme
+    }
+
+    KipGrepService {
+        id: grepService
+
+        theme: rootKip.theme
+    }
+
+    KipBrowseService {
+        id: browseService
+
+        theme: rootKip.theme
+    }
+
+    KipAppService {
+        id: appService
+
+        theme: rootKip.theme
+    }
+
+    KipTimerCommand {
+        id: kipTimerCommand
+
+        timerService: rootKip.timerService
     }
 
     // Opener and clipboard copy run detached: closing KIP must not kill nvim.
@@ -155,6 +213,15 @@ Scope {
             userBodyLimit: rootKip.bodyLimit
             files: fileService
             tldr: tldrService
+            calc: calcService
+            dict: dictService
+            windows: windowService
+            timerCommand: kipTimerCommand
+            runner: runService
+            apps: appService
+            browser: browseService
+            grep: grepService
+            qreep: qreepService
             panelOpen: rootKip.open
 
             onCloseRequested: rootKip.hide()
@@ -201,6 +268,11 @@ Scope {
         service.cancel();
         shotService.cancel();
         fileService.cancel();
+        calcService.cancel();
+        dictService.cancel();
+        browseService.cancel();
+        grepService.cancel();
+        qreepService.cancel();
         unloadGuard.restart();
     }
 
@@ -351,7 +423,7 @@ Scope {
     function submitText(text) {
         const parsed = kipCommands.parse(text);
 
-        if (parsed.mode === "plain")
+        if (parsed.mode === "ready" && parsed.command.kind === "general" && parsed.argument.length > 0)
             service.general(parsed.argument);
         else if (parsed.mode === "ready" && parsed.command.kind === "search" && parsed.argument.length > 0)
             service.search(parsed.argument);

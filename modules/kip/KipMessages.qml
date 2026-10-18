@@ -82,6 +82,74 @@ QtObject {
                 neutral: ["The tldr cache is empty. Run tldr --update once."],
                 dry: ["The cache is empty. One tldr --update and I'm useful again."]
             },
+            "calc.ready": {
+                neutral: ["Type an expression. qalc does the maths, offline."],
+                dry: ["Arithmetic. Finally, a question with a correct answer.", "Numbers, units, regret. qalc handles the first two.", "Go on. I promise not to round anything dramatically."]
+            },
+            "calc.found": {
+                neutral: ["Result below. Enter copies it."],
+                dry: ["Computed. Check how qalc read it before trusting me.", "There. Mathematics remains undefeated.", "An answer that is actually correct. Savour it."]
+            },
+            "calc.error": {
+                neutral: ["qalc could not make a number of that."],
+                dry: ["That is not maths. That is a cry for help.", "qalc stared at it and gave up. Rare, but earned."]
+            },
+            "def.ready": {
+                neutral: ["Look up a word in the offline dictionaries."],
+                dry: ["A word you don't know. How refreshingly honest.", "Name the word. I'll pretend I knew it all along."]
+            },
+            "def.found": {
+                neutral: ["Definition below. Enter copies it."],
+                dry: ["Defined. Use it in a sentence to feel superior.", "There. Your vocabulary grows; your humility does not."]
+            },
+            "def.empty": {
+                neutral: ["No exact entry for that word."],
+                dry: ["No entry. Either it's misspelled or it's beyond lexicography."]
+            },
+            "def.nodict": {
+                neutral: ["sdcv has no dictionaries installed yet."],
+                dry: ["I have a dictionary reader and no dictionaries. A library of empty shelves."]
+            },
+            "win.ready": {
+                neutral: ["Pick a window. Type to narrow it down."],
+                dry: ["Somewhere among your windows is the one you want.", "Your windows, lined up for inspection. Most recent first."]
+            },
+            "win.found": {
+                neutral: ["Up/Down to choose, Enter to switch."],
+                dry: ["Candidates assembled. Choose your destination.", "There they are. Try not to open a new one instead."]
+            },
+            "win.empty": {
+                neutral: ["No window matches."],
+                dry: ["No such window. Perhaps you closed it in a moment of clarity."]
+            },
+            "timer.ready": {
+                neutral: ["Duration, clock time, up, pause, resume or stop."],
+                dry: ["Time management. Bold of you.", "How long shall we pretend you'll focus?", "Name a duration. I'll hold you to it."]
+            },
+            "run.ready": {
+                neutral: ["Type a command. The preview says where it will run."],
+                dry: ["Command me. Within reason. Mostly within reason.", "Your shell, minus the typing of a terminal first.", "What shall we unleash?"]
+            },
+            "run.running": {
+                neutral: ["Starting."],
+                dry: ["Launching. Stand back."]
+            },
+            "run.started": {
+                neutral: ["Started."],
+                dry: ["Off it goes.", "Launched. Its problems are its own now."]
+            },
+            "run.output": {
+                neutral: ["It finished quickly; output below."],
+                dry: ["Done before I could blink. Here's what it said."]
+            },
+            "run.failed": {
+                neutral: ["It exited with an error. Output below."],
+                dry: ["That did not go well. Evidence below.", "It failed, loudly. Details below."]
+            },
+            "run.danger": {
+                neutral: ["cinfo marks this command dangerous. Enter again to run it."],
+                dry: ["This one has teeth, says cinfo. Enter again if you mean it."]
+            },
             "help.ready": {
                 neutral: ["Commands and keys, all of them. It is a short list."],
                 dry: ["Instructions! An unexpected display of wisdom.", "Ah, asking for help. Character development.", "The ancient manual. Mercifully short.", "You seek knowledge. Finally, we have something in common.", "Behold my capabilities. Try not to be overwhelmed.", "A guide to operating me. An ambitious undertaking."]
@@ -89,6 +157,76 @@ QtObject {
             "command.unknown": {
                 neutral: ["That is not a command I know. These are."],
                 dry: ["An intriguing command. Entirely fictional, unfortunately.", "I admire your confidence. Not your syntax.", "You invented a command. Shall we notify the historians?", "Unknown command. A bold attempt at communication.", "I understand many things. That isn't one of them.", "Creative. Wrong, but creative."]
+            },
+            "apps.ready": {
+                neutral: ["Applications. Type to filter, Enter launches."],
+                dry: ["Pick something to run. I'll pretend I'm not judging.", "Your applications, grouped as if by someone organised.", "Launching things. Finally, a job with clear outcomes.", "So many apps. Most of them were installed once, on a Tuesday.", "Choose wisely. Or quickly. Usually it's quickly."]
+            },
+            // Habit remarks on open. {app} is the app's name; the panel shows
+            // its icon and preselects it, so "Enter" in a line is true.
+            "apps.nudge.most": {
+                neutral: ["Most used: {app}, {count} launches. Enter opens it."],
+                dry: ["{app}, {count} launches. At this point it's a relationship.", "You've opened {app} {count} times. I've stopped asking why.", "{app} again? It's selected. I know you.", "{count} times {app}. Shall I just make it the wallpaper?", "{app}. Obviously. Enter, and we can both pretend you considered alternatives."]
+            },
+            "apps.nudge.hour": {
+                neutral: ["Around {hour} you usually open {app}. Enter opens it."],
+                dry: ["It's {hour}. Historically, that means {app}. Enter.", "{hour}: the traditional hour of {app}. I've selected it. Don't fight it.", "Around this time you always open {app}. Predictable. Almost endearing.", "{app} o'clock. I've done the hard part."]
+            },
+            "apps.nudge.recent": {
+                neutral: ["Last launched: {app}, {ago}. Enter opens it again."],
+                dry: ["{app}, {ago}. Back for more? It's selected.", "You opened {app} {ago}. I sense a pattern forming.", "{app} was {ago}. Again? Enter, then.", "Still {app}? It's been {ago}. Commitment. Rare."]
+            },
+            "browse.ready": {
+                neutral: ["Enter goes into a folder, or shows what to do with a file."],
+                dry: ["Your filesystem. I've seen worse. Not often.", "Folders inside folders. Very modern.", "Exploring. Try not to get lost in ~/Downloads.", "Ah, the archaeology of your home directory.", "Somewhere in here is the file you want. Statistically."]
+            },
+            "browse.empty": {
+                neutral: ["This folder is empty. Or everything in it is hidden."],
+                dry: ["Empty. Or shy. Alt+H for the shy ones.", "Nothing here. A rare moment of tidiness.", "An empty folder. Minimalism, or a mistake?"]
+            },
+            "browse.nomatch": {
+                neutral: ["Nothing here matches that."],
+                dry: ["No such thing in this folder. Wrong folder, perhaps?", "Nothing matches. Backspace is right there.", "You typed with confidence. The folder disagrees."]
+            },
+            "browse.error": {
+                neutral: ["Could not list that folder."],
+                dry: ["That folder refused to cooperate.", "No such folder, or no permission. Either way, no.", "The filesystem said no. I'd respect it."]
+            },
+            "rg.ready": {
+                neutral: ["Type text to find inside files."],
+                dry: ["What did you write, and where did you bury it?", "Grep. The oldest form of memory.", "Somewhere, a line knows what you mean."]
+            },
+            "rg.searching": {
+                neutral: ["Searching file contents."],
+                dry: ["Reading your files so you don't have to.", "Ripping through text. Politely.", "Scanning. Your config files have so much to say."]
+            },
+            "rg.found": {
+                neutral: ["Matching lines, by file."],
+                dry: ["Found it. Several times, apparently.", "There it is. Copy-paste leaves traces.", "Lines located. Enter takes you to them."]
+            },
+            "rg.empty": {
+                neutral: ["No file contains that."],
+                dry: ["Nobody wrote that. Not even you.", "Zero matches. Gitignored, or imaginary?", "Nothing. Try --h, or a different folder."]
+            },
+            "rg.error": {
+                neutral: ["ripgrep could not search there."],
+                dry: ["rg refused. It usually has reasons.", "Search failed. The folder may not exist.", "ripgrep is unhappy. Details below."]
+            },
+            "qreep.ready": {
+                neutral: ["Qreep's actions, grouped. Enter calls one."],
+                dry: ["The control room. Please touch everything.", "All the levers. Some of them even do things.", "Qreep's nervous system, exposed. Charming.", "Pick a function. I'll press the button for you."]
+            },
+            "qreep.nomatch": {
+                neutral: ["No IPC function matches that."],
+                dry: ["No such lever. Not yet, anyway.", "Qreep doesn't do that. Write it, perhaps?", "Nothing matches. The shell is smaller than your ambitions."]
+            },
+            "qreep.called": {
+                neutral: ["Called. Here is what it said."],
+                dry: ["It answered. Briefly, as is its way.", "Done. It even replied.", "The shell has spoken."]
+            },
+            "qreep.error": {
+                neutral: ["That IPC call failed."],
+                dry: ["The shell declined. Details below.", "Something in Qreep said no.", "That call bounced. Arguments, perhaps?"]
             },
             "general.ready": {
                 neutral: ["General question. Enter sends it."],

@@ -1,6 +1,8 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 
 // KIP surface. All opening/closing geometry derives from one number,
 // openProgress (0 → 1), so a toggle mid-animation just reverses direction.
@@ -15,6 +17,15 @@ PanelWindow {
     required property QtObject shots
     required property QtObject files
     required property QtObject tldr
+    required property QtObject calc
+    required property QtObject dict
+    required property QtObject windows
+    required property QtObject timerCommand
+    required property QtObject runner
+    required property QtObject apps
+    required property QtObject browser
+    required property QtObject grep
+    required property QtObject qreep
     required property bool panelOpen
 
     signal closeRequested
@@ -29,7 +40,10 @@ PanelWindow {
     readonly property QtObject kt: theme.modules.kip
 
     property real openProgress: 0
-    readonly property var parsed: commands.parse(promptInput.text)
+    // Re-parsed first thing in handleTextChanged. A binding on the text
+    // updated after the handler ran, so handlers read the previous input:
+    // /browse listed the folder you had just left.
+    property var parsed: commands.parse("")
 
     // compose: reacting to typing. service: a submitted notes/ask/general
     // request. shots: /last screenshots. files: /fd. doc: static markdown
@@ -37,8 +51,7 @@ PanelWindow {
     property string contentState: "compose"
     property int paletteIndex: 0
     property int resultIndex: 0
-    property int shotIndex: 0
-    property int fileIndex: 0
+    property int appIndex: 0
     property bool hasInteracted: false
     // Original retrieved text of the selected hit, toggled with Tab.
     property bool showSnippet: false
@@ -48,27 +61,62 @@ PanelWindow {
     property var chooserOptions: []
     property string chooserTitle: ""
     property int chooserIndex: 0
+    // Image shown beside the actions, so a menu opened before a distraction
+    // still says which screenshot it belongs to. Empty for non-images.
+    property string chooserPreview: ""
     property string notice: ""
+    // Help sheet (header chip, Ctrl+/). Typing closes it.
+    property bool shortcutsOpen: false
     property string currentMessage: ""
+    // Icon in front of the message: the app a habit remark is about.
+    property string messageIcon: ""
     property string docMarkdown: ""
     // help | tldr; and the message key a doc wants (empty: use the command's).
     property string docKind: ""
     property string docEventKey: ""
-    // service.answer as rich text, rebuilt at most every answerRenderInterval
-    // while streaming so the document is not re-parsed per token.
-    property var renderedAnswer: ({
-            html: "",
-            codeBlocks: []
-        })
 
-    readonly property string messageKey: contentState === "service" ? service.eventKey : contentState === "shots" ? shots.eventKey : contentState === "files" ? files.eventKey : contentState === "doc" && docEventKey.length > 0 ? docEventKey : (parsed.mode === "idle" && !hasInteracted ? "kip.open" : parsed.eventKey)
+    // The Kip*Command that owns the current view, or null (compose, service,
+    // doc). Its keys go first; Enter, labels and hints are its call.
+    readonly property var activeCommand: ({
+            run: runCommand,
+            browse: browseCommand,
+            qreep: qreepCommand,
+            grep: grepCommand,
+            files: filesCommand,
+            shots: shotsCommand,
+            windows: windowsCommand
+        })[contentState] || null
+    // The text field lives in KipInput.
+    readonly property TextInput promptInput: inputBox.field
+
+    readonly property string messageKey: activeCommand !== null ? activeCommand.eventKey : contentState === "service" ? service.eventKey : contentState === "doc" && docEventKey.length > 0 ? docEventKey : (parsed.mode === "idle" && !hasInteracted ? "kip.open" : parsed.eventKey)
     readonly property bool paletteVisible: contentState === "compose" && (parsed.mode === "palette" || parsed.mode === "candidate" || parsed.mode === "unknown" || (parsed.mode === "ready" && parsed.command && !parsed.command.takesArgument))
     readonly property var paletteItems: paletteVisible ? parsed.matches : []
     readonly property bool resultsVisible: contentState === "service" && service.results.length > 0
-    readonly property bool shotsVisible: contentState === "shots" && shots.shots.length > 0
-    readonly property int shotColumns: Math.max(1, Math.min(kt.screenshotColumns, shots.shots.length))
-    readonly property var shownFiles: files.results.slice(0, kt.fdShownResults)
-    readonly property bool filesVisible: contentState === "files" && shownFiles.length > 0
+    // Launcher: empty input, plain text, or /app [name]. A compose-time view
+    // like the palette, so "/" still takes over the moment you type it.
+    readonly property bool appsMode: contentState === "compose" && (parsed.mode === "idle" || parsed.mode === "plain" || (parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "apps"))
+    readonly property string appsQuery: appsMode && parsed.mode !== "idle" ? parsed.argument : ""
+    readonly property var appSections: appsMode ? apps.sections(appsQuery, apps.grouping) : []
+    readonly property bool appsVisible: appsMode && appView.count > 0
+
+    property string bloomWallpaper: ""
+    readonly property string headerImagePath: kt.headerImage === "bloom" ? bloomWallpaper : kt.headerImage
+    readonly property string headerImageUrl: headerImagePath.length > 0 ? "file://" + headerImagePath.split("/").map(encodeURIComponent).join("/") : ""
+
+    // Unclaimed Bloom writes the wallpaper path here; read only when wanted.
+    FileView {
+        id: bloomWallpaperFile
+
+        path: rootKipPanel.kt.headerImage === "bloom" ? rootKipPanel.kt.bloomWallpaperFile : ""
+        preload: true
+        watchChanges: true
+        printErrors: false
+
+        onFileChanged: reload()
+        onLoaded: rootKipPanel.bloomWallpaper = text().trim()
+        onLoadFailed: rootKipPanel.bloomWallpaper = ""
+    }
 
     readonly property string phase: {
         if (!panelOpen)
@@ -113,11 +161,12 @@ PanelWindow {
     // The answer gets the body height left below whatever sits above it
     // (sources, status) and above the notice/hint lines, so its own bottom is
     // always inside the card. A fixed cap let the body clip the answer and
-    // hide the end of a stream. answerFlick.y depends only on items above it,
+    // hide the end of a stream. answerView.y depends only on items above it,
     // so this does not loop through the answer's own height.
     readonly property real answerBelowHeight: (noticeText.visible ? noticeText.height + bodyContent.spacing : 0) + hintsText.height + bodyContent.spacing
-    readonly property real answerLimit: Math.max(80, maxBodyHeight - answerFlick.y - answerBelowHeight)
-    property real bodyAreaHeight: Math.min(bodyContent.implicitHeight, maxBodyHeight)
+    readonly property real answerLimit: Math.max(80, maxBodyHeight - answerView.y - answerBelowHeight)
+    // Room for the floating chooser too, so a short list does not clip it.
+    property real bodyAreaHeight: Math.min(Math.max(bodyContent.implicitHeight, chooserOverlay.visible ? chooserOverlay.height + 2 * kt.chooserOverlayMargin + hintsText.height + bodyContent.spacing : 0), maxBodyHeight)
 
     Behavior on bodyAreaHeight {
         // Off while dragging, or the edge lags behind the pointer.
@@ -159,34 +208,92 @@ PanelWindow {
 
     onMessageKeyChanged: refreshMessage()
 
-    KipMarkdown {
-        id: markdown
+    // /calc and /def run their tool after a pause in typing.
+    Timer {
+        id: liveDocTimer
 
-        kipTheme: rootKipPanel.kt
+        interval: rootKipPanel.kt.liveDocDebounce
+        repeat: false
+        onTriggered: rootKipPanel.refreshLiveDoc()
     }
 
-    Timer {
-        id: answerRenderTimer
+    // Commands with their own view: each keeps its selection, timers, keys,
+    // status line and Enter. The panel routes to them; see the host API
+    // (setInput, inputText, backToCompose, chooser functions) further down.
+    KipRunCommand {
+        id: runCommand
 
-        interval: rootKipPanel.kt.answerRenderInterval
-        repeat: false
-        onTriggered: rootKipPanel.renderAnswer()
+        host: rootKipPanel
+        runner: rootKipPanel.runner
+    }
+
+    KipBrowseCommand {
+        id: browseCommand
+
+        host: rootKipPanel
+        browser: rootKipPanel.browser
+    }
+
+    KipQreepCommand {
+        id: qreepCommand
+
+        host: rootKipPanel
+        qreep: rootKipPanel.qreep
+    }
+
+    KipGrepCommand {
+        id: grepCommand
+
+        host: rootKipPanel
+        grep: rootKipPanel.grep
+    }
+
+    KipFilesCommand {
+        id: filesCommand
+
+        host: rootKipPanel
+        files: rootKipPanel.files
+    }
+
+    KipShotsCommand {
+        id: shotsCommand
+
+        host: rootKipPanel
+        shots: rootKipPanel.shots
+    }
+
+    KipWindowsCommand {
+        id: windowsCommand
+
+        host: rootKipPanel
+        windows: rootKipPanel.windows
+        view: windowView
+    }
+
+    // A timer preview counts down while it is on screen.
+    Timer {
+        interval: 1000
+        repeat: true
+        running: rootKipPanel.contentState === "doc" && rootKipPanel.docKind === "timer"
+        onTriggered: rootKipPanel.showTimerPreview()
+    }
+
+    // Results land asynchronously; markdown is assigned last in both services.
+    Connections {
+        target: rootKipPanel.calc
+
+        function onMarkdownChanged() {
+            if (rootKipPanel.liveKind() === "calc" && rootKipPanel.calc.markdown.length > 0)
+                rootKipPanel.showDoc(rootKipPanel.calc.markdown, "calc", rootKipPanel.calc.eventKey);
+        }
     }
 
     Connections {
-        target: rootKipPanel.service
+        target: rootKipPanel.dict
 
-        function onAnswerChanged() {
-            // Throttle, not debounce: a steady stream still repaints.
-            if (rootKipPanel.service.answer.length === 0)
-                rootKipPanel.renderAnswer();
-            else if (!answerRenderTimer.running)
-                answerRenderTimer.start();
-        }
-
-        function onStatusChanged() {
-            if (!rootKipPanel.service.busy)
-                rootKipPanel.renderAnswer();
+        function onMarkdownChanged() {
+            if (rootKipPanel.liveKind() === "def" && rootKipPanel.dict.markdown.length > 0)
+                rootKipPanel.showDoc(rootKipPanel.dict.markdown, "def", rootKipPanel.dict.eventKey);
         }
     }
 
@@ -211,30 +318,6 @@ PanelWindow {
         function onStatusChanged() {
             if (rootKipPanel.liveTldrWanted())
                 rootKipPanel.showTldr();
-        }
-    }
-
-    // /fd searches after a pause in typing, not per keystroke.
-    Timer {
-        id: fileSearchTimer
-
-        interval: rootKipPanel.kt.fdDebounce
-        repeat: false
-        onTriggered: {
-            if (rootKipPanel.liveFilesWanted())
-                rootKipPanel.runFiles();
-        }
-    }
-
-    // Typing "/last 12" refreshes once, not once per digit.
-    Timer {
-        id: shotRefreshTimer
-
-        interval: 120
-        repeat: false
-        onTriggered: {
-            if (rootKipPanel.liveShotsWanted())
-                rootKipPanel.runShots(rootKipPanel.parsed.argument);
         }
     }
 
@@ -276,7 +359,7 @@ PanelWindow {
     Rectangle {
         id: card
 
-        readonly property real topExtent: (rootKipPanel.kt.cardPadding + rootKipPanel.kt.headerHeight + rootKipPanel.kt.headerGap) * rootKipPanel.headerT
+        readonly property real topExtent: (rootKipPanel.kt.cardPadding + rootKipPanel.kt.headerHeroSpace + rootKipPanel.kt.headerHeight + rootKipPanel.kt.headerGap) * rootKipPanel.headerT
         readonly property real bottomExtent: rootKipPanel.kt.cardPadding * rootKipPanel.headerT + (rootKipPanel.kt.bodyGap + rootKipPanel.bodyAreaHeight) * rootKipPanel.bodyT
 
         x: rootKipPanel.boxX - rootKipPanel.kt.cardPadding * rootKipPanel.headerT
@@ -290,6 +373,67 @@ PanelWindow {
         opacity: rootKipPanel.headerT
         visible: opacity > 0.01
 
+        // Banner image behind header and input. The mask rounds the top
+        // corners to the card; the gradient on top fades it into the body.
+        Item {
+            id: banner
+
+            x: 1
+            y: 1
+            width: parent.width - 2
+            height: Math.min(rootKipPanel.kt.headerImageHeight, parent.height - 2)
+            visible: rootKipPanel.headerImageUrl.length > 0 && bannerImage.status === Image.Ready
+            layer.enabled: visible
+            layer.effect: MultiEffect {
+                maskEnabled: true
+                maskSource: bannerMask
+            }
+
+            Image {
+                id: bannerImage
+
+                anchors.fill: parent
+                source: rootKipPanel.headerImageUrl
+                // Fixed decode size: the card width animates on open.
+                sourceSize.width: rootKipPanel.kt.panelWidth
+                fillMode: Image.PreserveAspectCrop
+                verticalAlignment: rootKipPanel.kt.headerImageAlign === "top" ? Image.AlignTop : rootKipPanel.kt.headerImageAlign === "bottom" ? Image.AlignBottom : Image.AlignVCenter
+                opacity: rootKipPanel.kt.headerImageOpacity
+                asynchronous: true
+                cache: false
+            }
+
+            Rectangle {
+                anchors.fill: parent
+
+                gradient: Gradient {
+                    GradientStop {
+                        position: 0
+                        color: "transparent"
+                    }
+                    GradientStop {
+                        position: rootKipPanel.kt.headerImageFadeStart
+                        color: "transparent"
+                    }
+                    // Opaque card colour: a translucent end leaves a faint image edge.
+                    GradientStop {
+                        position: 1
+                        color: Qt.rgba(rootKipPanel.kt.cardColor.r, rootKipPanel.kt.cardColor.g, rootKipPanel.kt.cardColor.b, 1)
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            id: bannerMask
+
+            width: banner.width
+            height: banner.height
+            radius: rootKipPanel.kt.cardRadius - 1
+            visible: false
+            layer.enabled: true
+        }
+
         // Swallow clicks so the outside-click catcher does not close KIP.
         MouseArea {
             anchors.fill: parent
@@ -297,77 +441,80 @@ PanelWindow {
         }
     }
 
+    // Microcopy. Changes only when messageKey changes. Lives in the hero
+    // space, centred between the title row and the input, and arrives with
+    // the header.
+    Text {
+        id: messageText
+
+        x: rootKipPanel.boxX
+        y: header.y + rootKipPanel.kt.headerHeight + (rootKipPanel.kt.headerHeroSpace - height) / 2
+        width: rootKipPanel.boxWidth
+        opacity: rootKipPanel.headerT
+        maximumLineCount: 2
+        elide: Text.ElideRight
+        text: rootKipPanel.currentMessage
+        visible: text.length > 0 && opacity > 0.01
+        color: rootKipPanel.contentState === "service" && rootKipPanel.service.status === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.messageColor
+        font.pixelSize: rootKipPanel.kt.messagePixelSize
+        font.italic: true
+        font.weight: Font.Medium
+        // It sits on the wallpaper; the shadow keeps it readable over
+        // whatever the image does there.
+        style: Text.Raised
+        styleColor: rootKipPanel.kt.messageShadowColor
+        wrapMode: Text.WordWrap
+        leftPadding: rootKipPanel.messageIcon.length > 0 ? rootKipPanel.kt.messageIconSize + 8 : 0
+
+        Image {
+            visible: rootKipPanel.messageIcon.length > 0
+            y: (messageText.font.pixelSize * 1.3 - height) / 2
+            width: rootKipPanel.kt.messageIconSize
+            height: width
+            source: rootKipPanel.messageIcon
+            sourceSize.width: width * 2
+            sourceSize.height: height * 2
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+        }
+    }
+
+    // Keys sheet: floats over the body like the action chooser, not clipped
+    // by it, so it fits even when the body is short.
+    KipShortcuts {
+        x: rootKipPanel.boxX
+        y: rootKipPanel.boxY + rootKipPanel.boxHeight + rootKipPanel.kt.bodyGap
+        z: 20
+        width: rootKipPanel.boxWidth
+        visible: rootKipPanel.shortcutsOpen && rootKipPanel.bodyT > 0.99
+        kipTheme: rootKipPanel.kt
+        groups: rootKipPanel.commands.shortcutGroups
+        activeGroup: rootKipPanel.shortcutContext()
+        maxHeight: Math.max(200, rootKipPanel.maxBodyHeight)
+
+        onCloseRequested: rootKipPanel.shortcutsOpen = false
+    }
+
     // Header: slides up from behind the input; icon drifts left, status right.
-    Item {
+    // It sits at the top of the card; the hero space is between it and the input.
+    KipHeader {
         id: header
 
         x: rootKipPanel.boxX
-        y: rootKipPanel.boxY - rootKipPanel.kt.headerGap - rootKipPanel.kt.headerHeight + (1 - rootKipPanel.headerT) * rootKipPanel.kt.headerHeight * 0.7
+        y: rootKipPanel.boxY - rootKipPanel.kt.headerGap - (rootKipPanel.kt.headerHeroSpace + rootKipPanel.kt.headerHeight) * rootKipPanel.headerT
         width: rootKipPanel.boxWidth
         height: rootKipPanel.kt.headerHeight
         opacity: rootKipPanel.headerT
         visible: opacity > 0.01
+        kipTheme: rootKipPanel.kt
+        service: rootKipPanel.service
+        iconFontFamily: rootKipPanel.theme.iconFontFamily
+        reveal: rootKipPanel.headerT
+        helpOpen: rootKipPanel.shortcutsOpen
 
-        Row {
-            anchors.verticalCenter: parent.verticalCenter
-            x: (1 - rootKipPanel.headerT) * 36
-            spacing: 8
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: rootKipPanel.kt.kipIcon
-                color: rootKipPanel.kt.accentColor
-                font.family: rootKipPanel.theme.iconFontFamily
-                font.pixelSize: rootKipPanel.kt.headerIconPixelSize
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "KIP"
-                color: rootKipPanel.kt.primaryTextColor
-                font.pixelSize: rootKipPanel.kt.titlePixelSize
-                font.bold: true
-                font.letterSpacing: 2
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Knowledge & Intelligence Presence"
-                color: rootKipPanel.kt.secondaryTextColor
-                font.pixelSize: rootKipPanel.kt.subtitlePixelSize
-            }
-        }
-
-        Rectangle {
-            anchors.verticalCenter: parent.verticalCenter
-            x: parent.width - width - (1 - rootKipPanel.headerT) * 36
-            width: statusRow.implicitWidth + 16
-            height: statusRow.implicitHeight + 8
-            radius: rootKipPanel.kt.chipRadius
-            color: rootKipPanel.kt.chipColor
-
-            Row {
-                id: statusRow
-
-                anchors.centerIn: parent
-                spacing: 6
-
-                Rectangle {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 7
-                    height: 7
-                    radius: 4
-                    // Mock backend: amber, not green. Green is for things that exist.
-                    color: rootKipPanel.service.status === "error" || !rootKipPanel.service.backendAvailable ? rootKipPanel.kt.errorColor : (rootKipPanel.service.mock ? rootKipPanel.kt.warningColor : rootKipPanel.kt.successColor)
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: rootKipPanel.service.mock ? "Local AI · mock" : (rootKipPanel.service.model.length > 0 ? "Local AI · " + rootKipPanel.service.model : "Local AI")
-                    color: rootKipPanel.kt.secondaryTextColor
-                    font.pixelSize: rootKipPanel.kt.metaPixelSize
-                }
-            }
+        onHelpClicked: {
+            rootKipPanel.shortcutsOpen = !rootKipPanel.shortcutsOpen;
+            promptInput.forceActiveFocus();
         }
     }
 
@@ -389,24 +536,12 @@ PanelWindow {
             width: parent.width
             spacing: 10
 
-            // Microcopy. Changes only when messageKey changes.
-            Text {
-                id: messageText
-
-                width: parent.width
-                text: rootKipPanel.currentMessage
-                visible: text.length > 0
-                color: rootKipPanel.contentState === "service" && rootKipPanel.service.status === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.secondaryTextColor
-                font.pixelSize: rootKipPanel.kt.bodyPixelSize
-                font.italic: true
-                wrapMode: Text.WordWrap
-            }
-
-            // Recognized command with an argument slot (/ask, /notes).
+            // Recognized command with an argument slot (/ask, /notes). Not for
+            // /app: the launcher's toolbar and hints already say all of it.
             Column {
                 width: parent.width
                 spacing: 6
-                visible: rootKipPanel.contentState === "compose" && rootKipPanel.parsed.mode === "ready" && rootKipPanel.parsed.command !== null && rootKipPanel.parsed.command.takesArgument
+                visible: rootKipPanel.contentState === "compose" && rootKipPanel.parsed.mode === "ready" && rootKipPanel.parsed.command !== null && rootKipPanel.parsed.command.takesArgument && !rootKipPanel.appsMode
 
                 Row {
                     spacing: 8
@@ -444,32 +579,22 @@ PanelWindow {
                 }
             }
 
-            // Plain text: explicit, simulated general-question mode.
-            Row {
-                spacing: 8
-                visible: rootKipPanel.contentState === "compose" && rootKipPanel.parsed.mode === "plain"
+            KipAppView {
+                id: appView
 
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "󰍩"
-                    color: rootKipPanel.kt.accentColor
-                    font.family: rootKipPanel.theme.iconFontFamily
-                    font.pixelSize: rootKipPanel.kt.iconPixelSize
-                }
+                width: parent.width
+                visible: rootKipPanel.appsMode
+                kipTheme: rootKipPanel.kt
+                apps: rootKipPanel.apps
+                iconFontFamily: rootKipPanel.theme.iconFontFamily
+                sections: rootKipPanel.appSections
+                searching: rootKipPanel.appsQuery.length > 0
+                selectedIndex: rootKipPanel.appIndex
+                maxHeight: rootKipPanel.maxBodyHeight * 0.85
 
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "General question"
-                    color: rootKipPanel.kt.primaryTextColor
-                    font.pixelSize: rootKipPanel.kt.bodyPixelSize + 1
-                    font.bold: true
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "no notes as context · simulated in Phase 1"
-                    color: rootKipPanel.kt.tertiaryAccentColor
-                    font.pixelSize: rootKipPanel.kt.metaPixelSize
+                onActivated: index => {
+                    rootKipPanel.appIndex = index;
+                    rootKipPanel.launchSelectedApp();
                 }
             }
 
@@ -629,7 +754,7 @@ PanelWindow {
             Text {
                 width: parent.width
                 visible: rootKipPanel.contentState === "shots"
-                text: rootKipPanel.shotsStatus()
+                text: shotsCommand.status()
                 color: rootKipPanel.shots.status === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.tertiaryAccentColor
                 font.pixelSize: rootKipPanel.kt.metaPixelSize
                 elide: Text.ElideMiddle
@@ -639,7 +764,7 @@ PanelWindow {
             Text {
                 width: parent.width
                 visible: rootKipPanel.contentState === "files"
-                text: rootKipPanel.filesStatus()
+                text: filesCommand.status()
                 color: rootKipPanel.files.status === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.tertiaryAccentColor
                 font.pixelSize: rootKipPanel.kt.metaPixelSize
                 elide: Text.ElideMiddle
@@ -648,45 +773,167 @@ PanelWindow {
             KipResultList {
                 width: parent.width
                 height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.75)
-                visible: rootKipPanel.filesVisible
+                visible: filesCommand.listVisible
                 kipTheme: rootKipPanel.kt
-                results: rootKipPanel.shownFiles
+                results: filesCommand.shown
                 compact: true
-                currentIndex: rootKipPanel.fileIndex
+                currentIndex: filesCommand.index
 
                 onActivated: index => {
-                    rootKipPanel.fileIndex = index;
-                    rootKipPanel.activateFile();
+                    filesCommand.index = index;
+                    filesCommand.activate();
+                }
+            }
+
+            // /qreep: curated IPC actions, grouped, raw call on the right.
+            Text {
+                width: parent.width
+                visible: rootKipPanel.contentState === "qreep"
+                text: qreepCommand.status()
+                color: rootKipPanel.qreep.status === "error" || rootKipPanel.qreep.callStatus === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.tertiaryAccentColor
+                font.pixelSize: rootKipPanel.kt.metaPixelSize
+                elide: Text.ElideMiddle
+            }
+
+            KipQreepList {
+                width: parent.width
+                height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.7)
+                visible: qreepCommand.listVisible
+                kipTheme: rootKipPanel.kt
+                iconFontFamily: rootKipPanel.theme.iconFontFamily
+                groupIcons: rootKipPanel.qreep.groupIcons
+                results: rootKipPanel.qreep.results
+                currentIndex: qreepCommand.index
+
+                onActivated: index => {
+                    qreepCommand.index = index;
+                    qreepCommand.submit();
+                }
+            }
+
+            // What a returning call said, selectable for Ctrl+C.
+            TextEdit {
+                width: parent.width
+                visible: rootKipPanel.contentState === "qreep" && rootKipPanel.qreep.callOutput.length > 0
+                text: rootKipPanel.qreep.callOutput
+                readOnly: true
+                selectByMouse: true
+                wrapMode: TextEdit.Wrap
+                color: rootKipPanel.qreep.callStatus === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.primaryTextColor
+                font.family: rootKipPanel.kt.monoFontFamily
+                font.pixelSize: rootKipPanel.kt.metaPixelSize + 2
+            }
+
+            // /rg: matching lines, path:line with the line itself underneath.
+            Text {
+                width: parent.width
+                visible: rootKipPanel.contentState === "grep"
+                text: grepCommand.status()
+                color: rootKipPanel.grep.status === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.tertiaryAccentColor
+                font.pixelSize: rootKipPanel.kt.metaPixelSize
+                elide: Text.ElideMiddle
+            }
+
+            KipResultList {
+                width: parent.width
+                height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.75)
+                visible: grepCommand.listVisible
+                kipTheme: rootKipPanel.kt
+                results: rootKipPanel.grep.results
+                currentIndex: grepCommand.index
+
+                onActivated: index => {
+                    grepCommand.index = index;
+                    grepCommand.activate();
+                }
+            }
+
+            // /browse: one folder, names only; the folder itself is in the input.
+            Text {
+                width: parent.width
+                visible: rootKipPanel.contentState === "browse"
+                text: browseCommand.status()
+                color: rootKipPanel.browser.status === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.tertiaryAccentColor
+                font.pixelSize: rootKipPanel.kt.metaPixelSize
+                elide: Text.ElideMiddle
+            }
+
+            Row {
+                width: parent.width
+                spacing: 8
+                visible: rootKipPanel.contentState === "browse" && rootKipPanel.browser.status !== "error"
+
+                KipResultList {
+                    id: browseList
+
+                    width: rootKipPanel.browser.preview ? Math.round(parent.width * 0.5) : parent.width
+                    // With a preview the height stays put, so the pane does not jump while filtering.
+                    height: rootKipPanel.browser.preview ? rootKipPanel.maxBodyHeight * 0.7 : Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.75)
+                    kipTheme: rootKipPanel.kt
+                    results: rootKipPanel.browser.results
+                    compact: true
+                    currentIndex: browseCommand.index
+
+                    onActivated: index => {
+                        browseCommand.index = index;
+                        browseCommand.submit(false);
+                    }
+                }
+
+                KipBrowsePreview {
+                    width: parent.width - browseList.width - parent.spacing
+                    height: browseList.height
+                    visible: rootKipPanel.browser.preview
+                    kipTheme: rootKipPanel.kt
+                    browser: rootKipPanel.browser
+                }
+            }
+
+            // /win: windows, most recently focused first, as icons or live previews.
+            KipWindowView {
+                id: windowView
+
+                width: parent.width
+                visible: rootKipPanel.contentState === "windows"
+                kipTheme: rootKipPanel.kt
+                windows: rootKipPanel.windows
+                selectedIndex: windowsCommand.index
+                maxHeight: rootKipPanel.maxBodyHeight * 0.85
+
+                onActivated: index => {
+                    windowsCommand.index = index;
+                    windowsCommand.focusSelected();
+                }
+            }
+
+            // /run: matching history entries, newest first.
+            KipResultList {
+                width: parent.width
+                height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.4)
+                visible: rootKipPanel.contentState === "run" && rootKipPanel.runner.matches.length > 0 && rootKipPanel.runner.runStatus !== "failed" && rootKipPanel.runner.runStatus !== "exited"
+                kipTheme: rootKipPanel.kt
+                results: rootKipPanel.runner.matches
+                compact: true
+                currentIndex: runCommand.picking ? runCommand.index : -1
+
+                onActivated: index => {
+                    runCommand.index = index;
+                    runCommand.pick();
                 }
             }
 
             KipShotGrid {
                 width: parent.width
-                visible: rootKipPanel.shotsVisible
+                visible: shotsCommand.listVisible
                 kipTheme: rootKipPanel.kt
                 shots: rootKipPanel.shots
-                columns: rootKipPanel.shotColumns
-                selectedIndex: rootKipPanel.shotIndex
+                columns: shotsCommand.columns
+                selectedIndex: shotsCommand.index
                 maxHeight: rootKipPanel.maxBodyHeight * 0.75
 
                 onActivated: index => {
-                    rootKipPanel.shotIndex = index;
-                    rootKipPanel.activateShot();
-                }
-            }
-
-            KipChooser {
-                width: parent.width
-                visible: rootKipPanel.chooserHit !== null
-                kipTheme: rootKipPanel.kt
-                iconFontFamily: rootKipPanel.theme.iconFontFamily
-                title: rootKipPanel.chooserTitle
-                options: rootKipPanel.chooserOptions
-                selectedIndex: rootKipPanel.chooserIndex
-
-                onPicked: index => {
-                    rootKipPanel.chooserIndex = index;
-                    rootKipPanel.confirmChooser();
+                    shotsCommand.index = index;
+                    shotsCommand.activate();
                 }
             }
 
@@ -726,99 +973,31 @@ PanelWindow {
                 }
             }
 
-            // One growing answer, never a pile of bubbles. A single read-only
-            // TextEdit so a selection can span the whole answer. It follows the
-            // stream only while the reader is at the bottom.
-            Flickable {
-                id: answerFlick
-
-                property bool follow: true
-                property bool autoScrolling: false
+            KipAnswerView {
+                id: answerView
 
                 width: parent.width
-                height: Math.min(answerText.implicitHeight, rootKipPanel.answerLimit)
-                visible: (rootKipPanel.contentState === "service" && rootKipPanel.service.answer.length > 0) || (rootKipPanel.contentState === "doc" && rootKipPanel.docMarkdown.length > 0)
-                contentHeight: answerText.implicitHeight
-                boundsBehavior: Flickable.StopAtBounds
-                clip: true
+                maxHeight: rootKipPanel.answerLimit
+                visible: (rootKipPanel.contentState === "service" && rootKipPanel.service.answer.length > 0) || (answerView.showsDoc && rootKipPanel.docMarkdown.length > 0)
+                kipTheme: rootKipPanel.kt
+                service: rootKipPanel.service
+                showsDoc: rootKipPanel.contentState === "doc" || rootKipPanel.contentState === "run"
+                docMarkdown: rootKipPanel.docMarkdown
 
-                readonly property bool atEnd: contentHeight <= height || contentY >= contentHeight - height - 8
+                onCopyCodeRequested: code => {
+                    const lines = code.split("\n").length;
 
-                // Only the reader scrolling decides whether to follow; layout
-                // and re-renders moving contentY must not switch it off.
-                onContentYChanged: {
-                    if (!autoScrolling && (moving || dragging))
-                        follow = atEnd;
+                    rootKipPanel.copyRequested(code);
+                    rootKipPanel.notice = "Copied code block (" + lines + (lines === 1 ? " line)." : " lines).");
                 }
-                onMovementEnded: follow = atEnd
-                onContentHeightChanged: scrollToEndIfFollowing()
-                onHeightChanged: scrollToEndIfFollowing()
-
-                function scrollToEndIfFollowing() {
-                    if (!follow || contentHeight <= height)
-                        return;
-                    autoScrolling = true;
-                    contentY = contentHeight - height;
-                    autoScrolling = false;
+                onFocusReturned: promptInput.forceActiveFocus()
+                onSubmitRequested: {
+                    promptInput.forceActiveFocus();
+                    rootKipPanel.submit();
                 }
-
-                function jumpToEnd() {
-                    follow = true;
-                    scrollToEndIfFollowing();
-                }
-
-                // "There is more below": shown whenever the end is out of view.
-                Rectangle {
-                    parent: answerFlick
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.margins: 4
-                    width: moreLabel.implicitWidth + 14
-                    height: moreLabel.implicitHeight + 6
-                    radius: rootKipPanel.kt.chipRadius
-                    color: rootKipPanel.kt.chipColor
-                    border.width: 1
-                    border.color: rootKipPanel.service.busy ? rootKipPanel.kt.focusBorderColor : rootKipPanel.kt.borderColor
-                    visible: !answerFlick.atEnd
-                    z: 2
-
-                    Text {
-                        id: moreLabel
-
-                        anchors.centerIn: parent
-                        text: rootKipPanel.service.busy && rootKipPanel.contentState === "service" ? "↓ more arriving" : "↓ more"
-                        color: rootKipPanel.kt.accentColor
-                        font.pixelSize: rootKipPanel.kt.metaPixelSize + 1
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: answerFlick.jumpToEnd()
-                    }
-                }
-
-                TextEdit {
-                    id: answerText
-
-                    width: answerFlick.width
-                    text: rootKipPanel.renderedAnswer.html
-                    textFormat: TextEdit.RichText
-                    readOnly: true
-                    selectByMouse: true
-                    persistentSelection: true
-                    wrapMode: TextEdit.Wrap
-                    color: rootKipPanel.kt.primaryTextColor
-                    selectionColor: rootKipPanel.kt.selectedRowColor
-                    selectedTextColor: rootKipPanel.kt.primaryTextColor
-                    font.pixelSize: rootKipPanel.kt.answerPixelSize
-
-                    onLinkActivated: link => rootKipPanel.answerLink(link)
-                    Keys.onPressed: event => rootKipPanel.answerKey(event)
-
-                    HoverHandler {
-                        cursorShape: answerText.hoveredLink.length > 0 ? Qt.PointingHandCursor : Qt.IBeamCursor
-                    }
+                onTyped: text => {
+                    promptInput.forceActiveFocus();
+                    promptInput.insert(promptInput.cursorPosition, text);
                 }
             }
 
@@ -843,6 +1022,43 @@ PanelWindow {
                 elide: Text.ElideRight
             }
         }
+
+        // Action chooser floats over the lists instead of queueing after
+        // them: a full grid fills the body limit, and a menu clipped below
+        // it is not much of a menu. Centered above the key hints, with a
+        // shadow so it reads as a layer and not as one more grid row.
+        KipChooser {
+            id: chooserOverlay
+
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset: -(hintsText.height + bodyContent.spacing) / 2
+            width: Math.min(parent.width - 2 * rootKipPanel.kt.chooserOverlayMargin, rootKipPanel.kt.chooserOverlayMaxWidth + (rootKipPanel.chooserPreview.length > 0 ? rootKipPanel.kt.chooserPreviewWidth + 8 : 0))
+            z: 1
+            color: rootKipPanel.kt.chooserColor
+
+            layer.enabled: visible
+            layer.effect: MultiEffect {
+                shadowEnabled: true
+                autoPaddingEnabled: true
+                shadowHorizontalOffset: 0
+                shadowVerticalOffset: rootKipPanel.kt.chooserShadowOffset
+                shadowBlur: rootKipPanel.kt.chooserShadowBlur
+                shadowColor: rootKipPanel.kt.chooserShadowColor
+            }
+            visible: rootKipPanel.chooserHit !== null
+            kipTheme: rootKipPanel.kt
+            iconFontFamily: rootKipPanel.theme.iconFontFamily
+            title: rootKipPanel.chooserTitle
+            options: rootKipPanel.chooserOptions
+            selectedIndex: rootKipPanel.chooserIndex
+            previewSource: rootKipPanel.chooserPreview
+
+            onPicked: index => {
+                rootKipPanel.chooserIndex = index;
+                rootKipPanel.confirmChooser();
+            }
+        }
     }
 
     // The line, then the input box. Same geometry; they crossfade during morph.
@@ -857,7 +1073,7 @@ PanelWindow {
         visible: opacity > 0.01
     }
 
-    Rectangle {
+    KipInput {
         id: inputBox
 
         x: rootKipPanel.boxX
@@ -865,131 +1081,15 @@ PanelWindow {
         width: rootKipPanel.boxWidth
         height: rootKipPanel.boxHeight
         radius: Math.min(height / 2, rootKipPanel.lerp(1, rootKipPanel.kt.inputRadius, rootKipPanel.morphT))
-        color: rootKipPanel.kt.inputColor
-        border.width: 1
-        border.color: promptInput.activeFocus ? rootKipPanel.kt.focusBorderColor : rootKipPanel.kt.borderColor
         opacity: rootKipPanel.morphT
-        clip: true
+        kipTheme: rootKipPanel.kt
+        iconFontFamily: rootKipPanel.theme.iconFontFamily
+        parsed: rootKipPanel.parsed
+        enterLabel: rootKipPanel.enterLabel()
+        contentReveal: rootKipPanel.inputContentT
 
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.IBeamCursor
-            onClicked: promptInput.forceActiveFocus()
-        }
-
-        Text {
-            id: inputIcon
-
-            anchors.verticalCenter: parent.verticalCenter
-            x: rootKipPanel.kt.inputPadding
-            width: rootKipPanel.kt.inputIconWidth
-            opacity: rootKipPanel.inputContentT
-            text: rootKipPanel.parsed.mode === "ready" && rootKipPanel.parsed.command ? rootKipPanel.parsed.command.icon : (rootKipPanel.parsed.mode === "plain" ? "󰍩" : rootKipPanel.kt.kipIcon)
-            color: rootKipPanel.kt.accentColor
-            font.family: rootKipPanel.theme.iconFontFamily
-            font.pixelSize: rootKipPanel.kt.iconPixelSize
-        }
-
-        // Flag chips, e.g. "--f=/". Red outline for flags /fd does not know.
-        Repeater {
-            model: rootKipPanel.parsed.flagRanges
-
-            Rectangle {
-                required property var modelData
-
-                readonly property real startX: promptInput.text.length >= 0 ? promptInput.positionToRectangle(modelData.start).x : 0
-                readonly property real endX: promptInput.text.length >= 0 ? promptInput.positionToRectangle(Math.min(promptInput.text.length, modelData.end)).x : 0
-
-                anchors.verticalCenter: parent.verticalCenter
-                x: promptInput.x + startX - 3
-                width: endX - startX + 6
-                height: promptInput.height + 4
-                radius: rootKipPanel.kt.chipRadius
-                color: modelData.known ? rootKipPanel.kt.commandHighlightColor : "transparent"
-                border.width: 1
-                border.color: modelData.known ? rootKipPanel.kt.focusBorderColor : rootKipPanel.kt.errorColor
-                opacity: rootKipPanel.inputContentT
-            }
-        }
-
-        // Highlight behind the recognized command token, e.g. "/ask".
-        Rectangle {
-            readonly property bool active: rootKipPanel.parsed.mode === "ready" || (rootKipPanel.parsed.mode === "candidate" && rootKipPanel.parsed.command !== null)
-            readonly property real startX: promptInput.text.length >= 0 ? promptInput.positionToRectangle(0).x : 0
-            readonly property real endX: promptInput.text.length >= 0 ? promptInput.positionToRectangle(Math.min(promptInput.text.length, rootKipPanel.parsed.token.length + 1)).x : 0
-
-            anchors.verticalCenter: parent.verticalCenter
-            x: promptInput.x + startX - 5
-            width: endX - startX + 10
-            height: promptInput.height + 6
-            radius: rootKipPanel.kt.chipRadius
-            color: rootKipPanel.kt.commandHighlightColor
-            border.width: 1
-            border.color: rootKipPanel.parsed.mode === "ready" ? rootKipPanel.kt.focusBorderColor : "transparent"
-            opacity: active ? rootKipPanel.inputContentT : 0
-            visible: opacity > 0.01
-
-            Behavior on opacity {
-                enabled: !rootKipPanel.kt.reducedMotion
-
-                NumberAnimation {
-                    duration: rootKipPanel.kt.contentFadeDuration
-                }
-            }
-        }
-
-        TextInput {
-            id: promptInput
-
-            anchors.verticalCenter: parent.verticalCenter
-            x: inputIcon.x + inputIcon.width + 6
-            width: parent.width - x - enterHint.width - rootKipPanel.kt.inputPadding * 2
-            // Focused from frame one; only its opacity waits for the morph.
-            opacity: rootKipPanel.inputContentT
-            color: rootKipPanel.kt.primaryTextColor
-            selectionColor: rootKipPanel.kt.selectedRowColor
-            selectedTextColor: rootKipPanel.kt.primaryTextColor
-            font.pixelSize: rootKipPanel.kt.inputPixelSize
-            clip: true
-            focus: true
-
-            onTextChanged: rootKipPanel.handleTextChanged()
-
-            Keys.onPressed: event => rootKipPanel.handleKey(event)
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: promptInput.text.length === 0 || (rootKipPanel.parsed.mode === "ready" && rootKipPanel.parsed.argument.length === 0 && rootKipPanel.parsed.command && rootKipPanel.parsed.command.takesArgument)
-                x: promptInput.text.length === 0 ? 0 : promptInput.contentWidth + 2
-                text: promptInput.text.length === 0 ? "Ask, search, or type / for commands" : (rootKipPanel.parsed.command ? (promptInput.text.endsWith(" ") ? "" : " ") + rootKipPanel.parsed.command.placeholder : "")
-                color: rootKipPanel.kt.secondaryTextColor
-                font: promptInput.font
-            }
-        }
-
-        Rectangle {
-            id: enterHint
-
-            readonly property string label: rootKipPanel.enterLabel()
-
-            anchors.verticalCenter: parent.verticalCenter
-            x: parent.width - width - rootKipPanel.kt.inputPadding
-            width: label.length > 0 ? enterText.implicitWidth + 14 : 0
-            height: enterText.implicitHeight + 6
-            radius: rootKipPanel.kt.chipRadius
-            color: rootKipPanel.kt.chipColor
-            opacity: label.length > 0 ? rootKipPanel.inputContentT : 0
-            visible: opacity > 0.01
-
-            Text {
-                id: enterText
-
-                anchors.centerIn: parent
-                text: "↵ " + enterHint.label
-                color: rootKipPanel.kt.accentColor
-                font.pixelSize: rootKipPanel.kt.metaPixelSize + 1
-            }
-        }
+        onEdited: rootKipPanel.handleTextChanged()
+        onKeyPressed: event => rootKipPanel.handleKey(event)
     }
 
     // Bottom-edge grip. Drag to raise or lower the height cap; double-click
@@ -1056,12 +1156,17 @@ PanelWindow {
     }
 
     function handleTextChanged() {
+        parsed = commands.parse(promptInput.text);
+        shortcutsOpen = false;
+
         if (promptInput.text.length > 0)
             hasInteracted = true;
 
         notice = "";
         showSnippet = false;
         chooserHit = null;
+        // New query, new ranking: the best match is first.
+        appIndex = 0;
 
         if (paletteIndex >= paletteItems.length)
             paletteIndex = 0;
@@ -1080,6 +1185,42 @@ PanelWindow {
             tldrTimer.stop();
         }
 
+        // /calc and /def: their tool runs after a pause; the old result stays up.
+        if ((liveKind() === "calc" || liveKind() === "def") && parsed.argument.length > 0) {
+            liveDocTimer.restart();
+            return;
+        }
+
+        // /timer previews instantly: no process, just the timer's own parsers.
+        if (liveKind() === "timer") {
+            showTimerPreview();
+            return;
+        }
+
+        // "/qreep words": the IPC list narrows; exact names take arguments.
+        if (liveKind() === "qreep") {
+            qreepCommand.show();
+            return;
+        }
+
+        // "/browse path/filter": the input is the location.
+        if (liveKind() === "browse") {
+            browseCommand.show();
+            return;
+        }
+
+        // "/win " lists windows; typing narrows them.
+        if (liveKind() === "windows") {
+            windowsCommand.show();
+            return;
+        }
+
+        // "/run cmd": history matches and a preview; nothing runs before Enter.
+        if (liveKind() === "run") {
+            runCommand.show();
+            return;
+        }
+
         if (parsed.mode === "unknown" && parsed.token.length > 0) {
             const guess = commands.suggest(parsed.token);
 
@@ -1087,28 +1228,35 @@ PanelWindow {
                 notice = "Did you mean /" + guess.name + "?";
         }
 
+        // "/rg text" searches live after a short pause, from rgMinChars.
+        if (grepCommand.wanted()) {
+            if (contentState !== "grep" && contentState !== "compose")
+                backToCompose();
+            grepCommand.schedule();
+            return;
+        }
+
+        if (grepCommand.flagProblem().length > 0)
+            notice = grepCommand.flagProblem();
+
         // "/fd words" searches live after a short pause.
-        if (liveFilesWanted()) {
+        if (filesCommand.wanted()) {
             if (contentState === "service")
                 service.reset();
             if (contentState === "shots")
                 shots.reset();
-            fileSearchTimer.restart();
+            filesCommand.schedule();
             return;
         }
 
-        if (fileFlagProblem().length > 0)
-            notice = fileFlagProblem();
+        if (filesCommand.flagProblem().length > 0)
+            notice = filesCommand.flagProblem();
 
         // "/last " and "/last 2" preview live, no Enter needed.
-        if (liveShotsWanted()) {
+        if (shotsCommand.wanted()) {
             if (contentState === "service")
                 service.reset();
-            if (contentState === "shots") {
-                shotRefreshTimer.restart();
-            } else {
-                runShots(parsed.argument);
-            }
+            shotsCommand.schedule();
             return;
         }
 
@@ -1117,84 +1265,88 @@ PanelWindow {
             backToCompose();
     }
 
-    // /last followed by a space (and maybe a count). A bare "/last" waits,
-    // so typing "/la" on the way to something else does not run find.
-    function liveShotsWanted() {
-        return parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "screenshots" && promptInput.text.length > parsed.token.length + 1;
+    // Host API for the Kip*Command files, next to contentState, parsed,
+    // notice, chooserHit, docMarkdown, kt, closeRequested and clampIndex.
+    // inputText is a function, not a binding: a binding on the text can lag
+    // behind onTextChanged (see parsed).
+    function inputText() {
+        return promptInput.text;
     }
 
-    function liveFilesWanted() {
-        return parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "files" && parsed.argument.length > 0 && parsed.unknownFlags.length === 0;
+    function setInput(text) {
+        promptInput.text = text;
+        promptInput.cursorPosition = promptInput.text.length;
     }
 
-    // "--f" without a value or an unknown flag: say which, instead of searching.
-    function fileFlagProblem() {
-        if (parsed.mode !== "ready" || !parsed.command || parsed.command.kind !== "files" || parsed.unknownFlags.length === 0)
-            return "";
-
-        const flag = parsed.unknownFlags[0];
-        const key = flag.replace(/^--/, "").replace(/=.*$/, "");
-
-        if (key === "f")
-            return "--f needs a folder: --f=/ or --f=~/Notes.";
-        if (key === "h")
-            return "--h takes no value; it just means hidden files too.";
-        return "I don't know " + flag + ". /fd knows --f=<dir> and --h.";
-    }
-
-    // Keeps the current list up while a new search runs (refresh in place).
-    function runFiles() {
-        const fresh = contentState !== "files";
-
-        if (fresh)
-            fileIndex = 0;
-
-        contentState = "files";
-        chooserHit = null;
-        files.search(parsed.argument, parsed.flags.from || "", parsed.flags.hidden === true, !fresh);
-    }
-
-    function activateFile() {
-        const hit = shownFiles[fileIndex];
-
-        if (!hit)
-            return;
+    // The action menu for a file or folder hit (/fd, /rg and /browse share it).
+    function chooseActionsFor(hit) {
+        const title = hit.title || hit.folder + hit.file;
 
         if (hit.isDir) {
-            openChooser(hit, hit.folder + hit.file, kt.folderActions);
+            openChooser(hit, title, kt.folderActions);
             return;
         }
+
+        // Graph pages get the note openers; any other markdown is a file
+        // like the rest, plus Vivify after nvim.
+        if (/\.md$/i.test(hit.file) && hit.inLogseq) {
+            openChooser(hit, "Open " + hit.file + " with", kt.markdownOpeners);
+            return;
+        }
+
+        // A hit on a line (/rg) wants the editor first, not the default app.
+        const actions = hit.atLine ? kt.fileActions.filter(action => action.id === "default").concat(kt.fileActions.filter(action => action.id !== "default")) : kt.fileActions;
 
         if (/\.md$/i.test(hit.file)) {
-            openChooser(hit, "Open " + hit.file + " with", kt.markdownOpeners.filter(opener => !opener.logseqOnly || hit.inLogseq));
+            const vivify = kt.markdownOpeners.filter(opener => opener.id === "vivify");
+
+            openChooser(hit, title, actions.slice(0, 2).concat(vivify, actions.slice(2)));
             return;
         }
 
-        openChooser(hit, hit.folder + hit.file, kt.fileActions);
+        openChooser(hit, title, actions);
     }
 
-    function filesStatus() {
-        const where = files.tilde(files.root);
-        const hiddenNote = files.hidden ? " · hidden included" : "";
+    // Which shortcut group applies right now (KipCommands.shortcutGroups ids).
+    function shortcutContext() {
+        if (chooserHit !== null)
+            return "menus";
+        if (contentState === "browse")
+            return "browse";
+        if (contentState === "qreep")
+            return "qreep";
+        if (contentState === "run")
+            return "run";
+        if (contentState === "shots")
+            return "shots";
+        if (contentState === "service")
+            return answerDone() && !resultsVisible ? "answers" : "results";
+        if (contentState === "files" || contentState === "windows" || contentState === "grep")
+            return "results";
+        if (appsMode)
+            return "apps";
+        return "everywhere";
+    }
 
-        switch (files.status) {
-        case "searching":
-            return "searching " + where + hiddenNote;
-        case "done":
-            return Math.min(files.results.length, kt.fdShownResults) + (files.truncated ? " of " + kt.fdMaxResults + "+" : (files.results.length > kt.fdShownResults ? " of " + files.results.length : "")) + " in " + where + hiddenNote;
-        case "empty":
-            return "nothing in " + where + hiddenNote;
-        case "error":
-            return files.errorText;
-        }
-        return "";
+    // F1 launcher (empty input), F2 /browse at ~, F3 /fd, F4 /win. Same as typing it.
+    function switchMode(text) {
+        chooserHit = null;
+        shortcutsOpen = false;
+        setInput(text);
     }
 
     function backToCompose() {
         chooserHit = null;
         service.reset();
-        shots.reset();
-        files.reset();
+        shotsCommand.reset();
+        filesCommand.reset();
+        calc.reset();
+        dict.reset();
+        windowsCommand.reset();
+        runCommand.reset();
+        browseCommand.reset();
+        grepCommand.reset();
+        qreepCommand.reset();
         docMarkdown = "";
         docKind = "";
         docEventKey = "";
@@ -1211,7 +1363,32 @@ PanelWindow {
             showDoc(tldr.markdown, "tldr", tldr.eventKey);
     }
 
-    // Static markdown in the answer viewer: /help now, /tldr pages next.
+    // The command whose live view the input currently asks for, or "".
+    // Needs the space after the command, so "/ca" on the way somewhere stays quiet.
+    function liveKind() {
+        if (parsed.mode !== "ready" || parsed.command === null || promptInput.text.length <= parsed.token.length + 1)
+            return "";
+        return parsed.command.kind;
+    }
+
+    function refreshLiveDoc() {
+        if (liveKind() === "calc")
+            calc.evaluate(parsed.argument);
+        else if (liveKind() === "def")
+            dict.lookup(parsed.argument);
+    }
+
+    function showTimerPreview() {
+        if (liveKind() !== "timer" && !(parsed.mode === "ready" && parsed.command && parsed.command.kind === "timer"))
+            return;
+
+        const planned = timerCommand.plan(parsed.argument);
+
+        notice = planned.error;
+        showDoc(planned.preview, "timer", "timer.ready");
+    }
+
+    // Static markdown in the answer viewer: /help, /tldr, /calc, /def, /timer.
     function showDoc(text, kind, eventKey) {
         if (contentState !== "doc" && contentState !== "compose") {
             service.reset();
@@ -1223,13 +1400,44 @@ PanelWindow {
         docKind = kind;
         docEventKey = eventKey;
         contentState = "doc";
-        answerFlick.follow = false;
+        answerView.follow = false;
         renderAnswer();
-        answerFlick.contentY = 0;
+        answerView.contentY = 0;
     }
 
     function handleKey(event) {
+        // Mode keys work everywhere, menus included.
+        const shifted = (event.modifiers & Qt.ShiftModifier) !== 0;
+        const modeText = ({
+                [Qt.Key_F1]: "",
+                [Qt.Key_F2]: "/browse ",
+                [Qt.Key_F3]: shifted ? "/rg " : "/fd ",
+                [Qt.Key_F4]: "/win "
+            })[event.key];
+
+        if (modeText !== undefined) {
+            event.accepted = true;
+            switchMode(modeText);
+            return;
+        }
+
+        if (event.key === Qt.Key_Slash && (event.modifiers & Qt.ControlModifier)) {
+            event.accepted = true;
+            shortcutsOpen = !shortcutsOpen;
+            return;
+        }
+
+        if (shortcutsOpen && event.key === Qt.Key_Escape) {
+            event.accepted = true;
+            shortcutsOpen = false;
+            return;
+        }
+
         if (chooserHit !== null && handleChooserKey(event))
+            return;
+
+        // The current command's own keys first; what it leaves falls through.
+        if (activeCommand !== null && activeCommand.handleKey(event))
             return;
 
         switch (event.key) {
@@ -1244,9 +1452,9 @@ PanelWindow {
             return;
         case Qt.Key_Left:
         case Qt.Key_Right:
-            // Only in the screenshot grid; otherwise the cursor keeps them.
-            if (shotsVisible) {
-                shotIndex = clampIndex(shotIndex + (event.key === Qt.Key_Right ? 1 : -1), shots.shots.length);
+            // Only in grids; otherwise the cursor keeps them.
+            if (appsVisible) {
+                appIndex = appView.neighbor(appIndex, event.key === Qt.Key_Right ? 1 : -1, 0);
                 event.accepted = true;
             }
             return;
@@ -1255,11 +1463,8 @@ PanelWindow {
             {
                 const step = event.key === Qt.Key_Down ? 1 : -1;
 
-                if (shotsVisible) {
-                    shotIndex = clampIndex(shotIndex + step * shotColumns, shots.shots.length);
-                    event.accepted = true;
-                } else if (filesVisible) {
-                    fileIndex = clampIndex(fileIndex + step, shownFiles.length);
+                if (appsVisible) {
+                    appIndex = appView.neighbor(appIndex, 0, step);
                     event.accepted = true;
                 } else if (resultsVisible) {
                     resultIndex = clampIndex(resultIndex + step, service.results.length);
@@ -1277,6 +1482,20 @@ PanelWindow {
             else if (paletteItems.length > 0)
                 complete(paletteItems[paletteIndex]);
             return;
+        case Qt.Key_G:
+            if (appsMode && (event.modifiers & Qt.ControlModifier)) {
+                event.accepted = true;
+                apps.cycleGrouping();
+                appIndex = 0;
+            }
+            return;
+        case Qt.Key_L:
+            if (appsMode && (event.modifiers & Qt.ControlModifier)) {
+                event.accepted = true;
+                apps.toggleView();
+                appIndex = 0;
+            }
+            return;
         case Qt.Key_C:
             if (resultsVisible && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier)) {
                 event.accepted = true;
@@ -1286,33 +1505,37 @@ PanelWindow {
         case Qt.Key_Return:
         case Qt.Key_Enter:
             event.accepted = true;
-            submit();
+            submit((event.modifiers & Qt.ShiftModifier) !== 0);
             return;
         }
     }
 
-    function submit() {
+    function submit(shifted) {
+        if (activeCommand !== null) {
+            activeCommand.submit(shifted === true);
+            return;
+        }
+
         if (contentState === "doc") {
             if (docKind === "tldr" && tldr.status === "done") {
                 copyRequested(tldr.rawPage);
                 notice = "Copied the tldr page for " + tldr.name + ".";
+            } else if (docKind === "calc" && calc.status === "done") {
+                copyRequested(calc.result);
+                notice = "Copied " + calc.result + ".";
+            } else if (docKind === "def" && dict.status === "done") {
+                copyRequested(dict.plainText());
+                notice = "Copied the definition of " + dict.word + ".";
+            } else if (docKind === "timer") {
+                const planned = timerCommand.plan(parsed.argument);
+
+                if (planned.valid) {
+                    timerCommand.run(planned);
+                    closeRequested();
+                } else if (planned.error.length > 0) {
+                    notice = planned.error;
+                }
             }
-            return;
-        }
-
-        if (contentState === "files") {
-            if (filesVisible)
-                activateFile();
-            else if (files.status === "error" && liveFilesWanted())
-                runFiles();
-            return;
-        }
-
-        if (contentState === "shots") {
-            if (shots.status === "error")
-                runShots(String(shots.requested));
-            else if (shotsVisible)
-                activateShot();
             return;
         }
 
@@ -1327,6 +1550,10 @@ PanelWindow {
         }
 
         switch (parsed.mode) {
+        case "idle":
+        case "plain":
+            launchSelectedApp();
+            return;
         case "palette":
         case "candidate":
         case "unknown":
@@ -1345,26 +1572,77 @@ PanelWindow {
             }
             run(parsed.command.kind, parsed.argument);
             return;
-        case "plain":
-            run("general", parsed.argument);
-            return;
         }
     }
 
+    function launchSelectedApp() {
+        const entry = appView.selectedEntry;
+
+        if (!appsVisible || !entry) {
+            notice = appsQuery.length > 0 ? "No app matches \"" + appsQuery + "\". /ask if it was a question." : "";
+            return;
+        }
+
+        apps.launch(entry);
+        closeRequested();
+    }
+
     function run(kind, argument, detailed) {
+        // Local commands never reach the model, even if Enter beats the
+        // live preview's debounce.
+        switch (kind) {
+        case "qreep":
+            qreepCommand.show();
+            return;
+        case "grep":
+            grepCommand.searchNow();
+            return;
+        case "browse":
+            browseCommand.show();
+            return;
+        case "apps":
+            launchSelectedApp();
+            return;
+        case "calc":
+            liveDocTimer.stop();
+            calc.evaluate(argument);
+            return;
+        case "def":
+            liveDocTimer.stop();
+            dict.lookup(argument);
+            return;
+        case "tldr":
+            tldrTimer.stop();
+            tldr.lookup(argument);
+            showTldr();
+            return;
+        case "timer":
+            showTimerPreview();
+            return;
+        case "windows":
+            windowsCommand.show();
+            return;
+        case "run":
+            runCommand.show();
+            return;
+        case "help":
+            showDoc(commands.helpMarkdown(argument), "help", "");
+            return;
+        }
+
         if (kind === "files") {
-            if (fileFlagProblem().length === 0)
-                runFiles();
+            if (filesCommand.flagProblem().length === 0)
+                filesCommand.search();
             return;
         }
 
         if (kind === "screenshots") {
-            runShots(argument);
+            shotsCommand.load(argument);
             return;
         }
 
         contentState = "service";
-        answerFlick.follow = true;
+        answerView.follow = true;
         resultIndex = 0;
         showSnippet = false;
         chooserHit = null;
@@ -1387,7 +1665,7 @@ PanelWindow {
     function openAnswerActions() {
         const options = kt.answerActions.filter(option => {
             if (option.id === "copy-selection")
-                return answerText.selectedText.length > 0;
+                return answerView.selectedText.length > 0;
             if (option.id === "open-source")
                 return service.kind === "ask" && resultsVisible && !service.mock;
             return true;
@@ -1405,11 +1683,11 @@ PanelWindow {
             notice = "Copied the answer as Markdown.";
             return;
         case "copy-plain":
-            copyRequested(markdown.toPlain(service.answer));
+            copyRequested(answerView.toPlain(service.answer));
             notice = "Copied the answer as plain text.";
             return;
         case "copy-selection":
-            copyRequested(answerText.selectedText);
+            copyRequested(answerView.selectedText);
             notice = "Copied the selection.";
             return;
         case "open-source":
@@ -1425,74 +1703,7 @@ PanelWindow {
     }
 
     function renderAnswer() {
-        answerRenderTimer.stop();
-        const source = contentState === "doc" ? docMarkdown : service.citedAnswer(service.answer);
-
-        renderedAnswer = source.length > 0 ? markdown.toRich(source) : {
-            html: "",
-            codeBlocks: []
-        };
-    }
-
-    function answerLink(link) {
-        const copy = /^kip-copy:(\d+)$/.exec(link);
-
-        if (copy) {
-            const code = renderedAnswer.codeBlocks[Number(copy[1])];
-
-            if (code !== undefined) {
-                copyRequested(code);
-                notice = "Copied code block (" + code.split("\n").length + (code.split("\n").length === 1 ? " line)." : " lines).");
-            }
-            return;
-        }
-
-        // Only web links leave KIP; anything else in model output is ignored.
-        if (/^https?:\/\//.test(link))
-            Qt.openUrlExternally(link);
-    }
-
-    // Keys while the answer has focus (after a mouse selection). Copy and
-    // select-all stay native; typing goes back to the prompt.
-    function answerKey(event) {
-        const modifiers = event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier);
-
-        if (modifiers !== 0)
-            return;
-
-        switch (event.key) {
-        case Qt.Key_Escape:
-        case Qt.Key_Tab:
-            event.accepted = true;
-            answerText.deselect();
-            promptInput.forceActiveFocus();
-            return;
-        case Qt.Key_Up:
-        case Qt.Key_Down:
-        case Qt.Key_PageUp:
-        case Qt.Key_PageDown:
-            {
-                event.accepted = true;
-                const step = (event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown) ? answerFlick.height * 0.9 : 40;
-                const direction = (event.key === Qt.Key_Up || event.key === Qt.Key_PageUp) ? -1 : 1;
-
-                answerFlick.contentY = Math.max(0, Math.min(answerFlick.contentHeight - answerFlick.height, answerFlick.contentY + step * direction));
-                answerFlick.follow = answerFlick.atEnd;
-                return;
-            }
-        case Qt.Key_Return:
-        case Qt.Key_Enter:
-            event.accepted = true;
-            promptInput.forceActiveFocus();
-            submit();
-            return;
-        }
-
-        if (event.text.length > 0 && event.text.charCodeAt(0) >= 32) {
-            event.accepted = true;
-            promptInput.forceActiveFocus();
-            promptInput.insert(promptInput.cursorPosition, event.text);
-        }
+        answerView.render();
     }
 
     function activateResult() {
@@ -1518,45 +1729,10 @@ PanelWindow {
         });
     }
 
-    // "/last" → 1, "/last 4" → 4, capped at maxScreenshots.
-    function runShots(argument) {
-        const text = String(argument || "").trim();
-
-        if (text.length > 0 && !/^\d+$/.test(text)) {
-            if (contentState === "shots")
-                backToCompose();
-            notice = "/last takes a number, like /last 3.";
-            return;
-        }
-
-        const wanted = text.length > 0 ? Number(text) : 1;
-        const count = Math.max(1, Math.min(kt.maxScreenshots, wanted));
-
-        chooserHit = null;
-        notice = wanted > count ? "Capped at " + count + ". Nobody needs " + wanted + " screenshots at once." : "";
-
-        // Already showing shots: refresh in place, keep the selection if it still fits.
-        if (contentState === "shots") {
-            shotIndex = Math.min(shotIndex, count - 1);
-            shots.refresh(count);
-            return;
-        }
-
-        contentState = "shots";
-        shotIndex = 0;
-        shots.load(count);
-    }
-
-    function activateShot() {
-        const shot = shots.shots[shotIndex];
-
-        if (shot)
-            openChooser(shot, shot.file, kt.screenshotActions);
-    }
-
-    function openChooser(item, title, options) {
+    function openChooser(item, title, options, preview) {
         chooserOptions = options;
         chooserTitle = title;
+        chooserPreview = preview || "";
         chooserIndex = 0;
         chooserHit = item;
     }
@@ -1628,26 +1804,59 @@ PanelWindow {
         if (!command)
             return;
 
-        promptInput.text = "/" + command.name + (command.takesArgument ? " " : "");
-        promptInput.cursorPosition = promptInput.text.length;
+        setInput("/" + command.name + (command.takesArgument ? " " : ""));
         paletteIndex = 0;
     }
 
     function refreshMessage() {
+        messageIcon = "";
+
+        if (messageKey === "kip.open" && Math.random() < kt.appNudgeChance && nudgeAboutApps())
+            return;
+
         currentMessage = messages.pick(messageKey, {
-            count: contentState === "shots" ? shots.shots.length : contentState === "files" ? files.results.length : service.results.length
+            count: contentState === "shots" ? shots.shots.length : contentState === "files" ? files.results.length : contentState === "windows" ? windows.results.length : service.results.length
         });
+    }
+
+    // A habit remark instead of the generic open line. Selects the app it
+    // talks about, so "Enter" in the line is a promise the panel keeps.
+    function nudgeAboutApps() {
+        const nudge = apps.nudge();
+
+        if (!nudge || !appsMode)
+            return false;
+
+        const tiles = appView.layout.tiles;
+        const index = tiles.findIndex(tile => tile.entry.id === nudge.entry.id);
+
+        if (index < 0)
+            return false;
+
+        currentMessage = messages.pick("apps.nudge." + nudge.kind, nudge.values);
+        messageIcon = apps.iconSource(nudge.entry);
+        appIndex = index;
+        return true;
     }
 
     function enterLabel() {
         if (chooserHit !== null)
             return "pick";
-        if (contentState === "shots")
-            return shots.status === "error" ? "retry" : (shotsVisible ? "actions" : "");
-        if (contentState === "files")
-            return filesVisible ? "actions" : (files.status === "error" ? "retry" : "");
-        if (contentState === "doc")
-            return docKind === "tldr" && tldr.status === "done" ? "copy page" : "";
+        if (activeCommand !== null)
+            return activeCommand.enterLabel();
+        if (appsMode)
+            return appsVisible ? "launch" : "";
+        if (contentState === "doc") {
+            if (docKind === "tldr")
+                return tldr.status === "done" ? "copy page" : "";
+            if (docKind === "calc")
+                return calc.status === "done" ? "copy" : "";
+            if (docKind === "def")
+                return dict.status === "done" ? "copy" : "";
+            if (docKind === "timer")
+                return timerCommand.plan(parsed.argument).valid ? "do it" : "";
+            return "";
+        }
         if (contentState === "service") {
             if (service.status === "error")
                 return "retry";
@@ -1660,8 +1869,6 @@ PanelWindow {
             return parsed.argument.length > 0 || parsed.command.argumentOptional ? parsed.command.name : "";
         if (parsed.mode === "palette" || parsed.mode === "candidate")
             return "complete";
-        if (parsed.mode === "plain")
-            return "send";
         return "";
     }
 
@@ -1691,37 +1898,22 @@ PanelWindow {
         return prefix + service.status;
     }
 
-    function shotsStatus() {
-        switch (shots.status) {
-        case "loading":
-            return "listing " + kt.screenshotDir;
-        case "done":
-            return shots.shots.length + (shots.shots.length === 1 ? " newest · " : " newest · ") + kt.screenshotDir;
-        case "empty":
-            return "no images in " + kt.screenshotDir;
-        case "error":
-            return shots.errorText;
-        }
-        return "";
-    }
-
     function keyHints() {
         if (chooserHit !== null)
             return "↑↓ or 1–" + chooserOptions.length + " choose · Enter do it · Esc cancel";
+        if (activeCommand !== null)
+            return activeCommand.keyHints();
+        if (contentState === "doc" && (docKind === "calc" || docKind === "def")) {
+            // Only promise a copy when there is something to copy.
+            const ready = docKind === "calc" ? calc.status === "done" : dict.status === "done";
+            return (ready ? "Enter copies · " : "") + "Esc back · keep typing";
+        }
+        if (contentState === "doc" && docKind === "timer")
+            return "Enter does it and closes KIP · Esc back";
         if (contentState === "doc" && docKind === "tldr")
             return tldr.status === "done" ? "Copy on an example · Enter copies the page · Esc back" : "Esc back · keep typing";
         if (contentState === "doc")
             return "select + Ctrl+C copies · Esc back · keep typing";
-        if (contentState === "files") {
-            if (files.status === "error")
-                return "Enter retry · Esc back · fix --f= to search elsewhere";
-            return filesVisible ? "↑↓ move · Enter actions · Esc back · keep typing to refine" : "Esc back · keep typing to refine";
-        }
-        if (contentState === "shots") {
-            if (shots.status === "error")
-                return "Enter retry · Esc back";
-            return shotsVisible ? (shotColumns > 1 ? "←→↑↓ move · " : "") + "Enter actions · Esc back" : "Esc back";
-        }
         if (contentState === "service") {
             if (service.status === "error")
                 return "Enter retry · Esc back · keep typing to start over";
@@ -1729,6 +1921,8 @@ PanelWindow {
                 return (resultsVisible ? "↑↓ sources · Tab source text · " : "") + "Enter actions · select + Ctrl+C · Esc back";
             return resultsVisible ? "↑↓ move · Enter open · Tab source · Ctrl+Shift+C copy path · Esc back" : "Esc back · keep typing to start over";
         }
+        if (appsMode)
+            return (appsVisible ? "←→↑↓ move · Enter launch · " : "no app matches · ") + "Ctrl+G group · Ctrl+L grid/list · / commands · Esc close";
         if (paletteVisible)
             return "↑↓ choose · Tab complete · Esc close";
         return "/ commands · Enter submit · Esc close";

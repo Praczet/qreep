@@ -5,15 +5,49 @@ import QtQuick
 QtObject {
     id: rootKipCommands
 
-    // kind: what Enter does. "ask" and "search" take an argument, "help" does
-    // not, "screenshots" takes one optionally (argumentOptional).
+    // kind: what Enter does. "ask" (notes-grounded), "general" (plain local
+    // model) and "search" take an argument, "screenshots" takes one optionally
+    // (argumentOptional).
     // flags: --key or --key=value tokens anywhere in the argument, parsed out
     // before the rest becomes the argument. Only commands with flags get them;
     // "/ask --foo" stays literal text.
     readonly property var commands: [
         {
+            name: "app",
+            aliases: ["apps"],
+            label: "Applications",
+            description: "Launch an application. Also what an empty input and plain text show.",
+            helper: "Type to filter. Arrows move, Enter launches. Ctrl+G groups, Ctrl+L grid/list.",
+            eventKey: "apps.ready",
+            placeholder: "app name",
+            icon: "󰀻",
+            sourceHint: "desktop entries · launch log",
+            kind: "apps",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/app [name]",
+            examples: ["/app", "/app firefox", "logseq"],
+            actions: "Most used and Recent come first, from KIP's own launch log in ~/.local/share/qreep/kip/apps.db. Then category, name or A–Z groups (Ctrl+G), as a grid or list (Ctrl+L). Typing ranks every app by name, then generic name, keywords and id. Enter launches and closes KIP."
+        },
+        {
             name: "ask",
             aliases: ["a"],
+            label: "Ask local AI",
+            description: "A general question to the local model, no notes as context.",
+            helper: "Type the question, then Enter. For answers from your notes use /notes-ask.",
+            eventKey: "general.ready",
+            placeholder: "question",
+            icon: "󰍩",
+            sourceHint: "local model · no notes",
+            kind: "general",
+            takesArgument: true,
+            syntax: "/ask <question>",
+            examples: ["/ask What does SIGPIPE mean?"],
+            actions: "The answer is selectable; code blocks have Copy. Enter on a finished answer opens its actions."
+        },
+        {
+            name: "notes-ask",
+            aliases: ["na"],
             label: "Ask notes",
             description: "Answer a question using your indexed notes as context.",
             helper: "Type the question, then Enter. Sources come first, prose second.",
@@ -23,8 +57,8 @@ QtObject {
             sourceHint: "~/Notes index · local model",
             kind: "ask",
             takesArgument: true,
-            syntax: "/ask <question>",
-            examples: ["/ask How do I inspect MariaDB user privileges?"],
+            syntax: "/notes-ask <question>",
+            examples: ["/notes-ask How do I inspect MariaDB user privileges?", "/na borg restore steps"],
             actions: "Sources appear first: Up/Down, Enter opens one, Tab shows its original text. The answer is selectable; code blocks have Copy."
         },
         {
@@ -91,6 +125,59 @@ QtObject {
             }
         },
         {
+            name: "rg",
+            aliases: ["grep"],
+            label: "Search contents",
+            description: "Search inside files with ripgrep. Literal text, smart case.",
+            helper: "--f=<dir> searches elsewhere (default ~), --h includes hidden files, --t=<type> limits to a file type (rg --type-list).",
+            eventKey: "rg.ready",
+            placeholder: "text inside files",
+            icon: "󱎸",
+            sourceHint: "ripgrep · ~ unless --f=",
+            kind: "grep",
+            takesArgument: true,
+            syntax: "/rg <text> [--f=<dir>] [--h] [--t=<type>]",
+            examples: ["/rg SUPER+TAB --f=~/.config/hypr", "/rg TODO --t=rust", "/rg bind --h"],
+            actions: "Live after a short pause from 3 characters (Enter searches sooner). Gitignored files are skipped, like rg does. Up to 5 matches per file, 200 in total. Enter opens the action menu with nvim at the line first; markdown gets Vivify at the line too.",
+            flags: {
+                f: {
+                    name: "from",
+                    takesValue: true,
+                    usage: "--f=<dir>",
+                    help: "search this folder instead of ~"
+                },
+                h: {
+                    name: "hidden",
+                    takesValue: false,
+                    usage: "--h",
+                    help: "include hidden files and folders"
+                },
+                t: {
+                    name: "type",
+                    takesValue: true,
+                    usage: "--t=<type>",
+                    help: "only this rg file type, e.g. py, rust, md (rg --type-list)"
+                }
+            }
+        },
+        {
+            name: "browse",
+            aliases: ["b", "ls"],
+            label: "Browse",
+            description: "Walk folders one level at a time. The input is the path.",
+            helper: "Enter opens a folder, or the actions of a file. Shift+Enter: folder actions. Alt+H hidden, Alt+I gitignored, Alt+P preview.",
+            eventKey: "browse.ready",
+            placeholder: "path, e.g. ~/.config/",
+            icon: "󰉓",
+            sourceHint: "fd · one level",
+            kind: "browse",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/browse [path]",
+            examples: ["/browse", "/browse ~/.config/hypr/", "/browse /etc/sys"],
+            actions: "What follows the last / filters the folder before it, so typing and Backspace walk around. Enter or Tab on a folder goes in, Alt+Up goes to the parent, ../ is listed too. Enter on a file opens its action menu (markdown gets the note openers); Shift+Enter on a folder opens the folder menu. Alt+H hidden files, Alt+I hide gitignored files, Alt+P preview of the selected file (text, image, or a note that it is binary)."
+        },
+        {
             name: "tldr",
             aliases: ["tl"],
             label: "tldr page",
@@ -105,6 +192,106 @@ QtObject {
             syntax: "/tldr <command> [subcommand]",
             examples: ["/tldr tar", "/tldr fd", "/tldr git commit"],
             actions: "Live as you type. Each example has Copy (placeholders like path/to/file stay as text to edit). Enter copies the whole page. Nothing is ever run. Pages come only from the local cache; refresh it yourself with tldr --update."
+        },
+        {
+            name: "calc",
+            aliases: ["c", "="],
+            label: "Calculate",
+            description: "Maths and units with qalc, offline. Shows how qalc read your input.",
+            helper: "Live as you type. Enter copies the result.",
+            eventKey: "calc.ready",
+            placeholder: "expression, e.g. 5 km to mi",
+            icon: "󰃬",
+            sourceHint: "qalc · no currencies",
+            kind: "calc",
+            takesArgument: true,
+            syntax: "/calc <expression>",
+            examples: ["/calc 2^10 * 3", "/calc 5 km to mi", "/calc 90 min to h", "/calc sqrt(2)"],
+            actions: "Live as you type. Enter copies the result. qalc's own reading of the input is shown, because it will happily interpret nonsense as units. Currency is off: no exchange-rate downloads."
+        },
+        {
+            name: "def",
+            aliases: ["define"],
+            label: "Define",
+            description: "Offline dictionary lookup with sdcv (StarDict).",
+            helper: "Exact word matches. Enter copies the definition.",
+            eventKey: "def.ready",
+            placeholder: "word",
+            icon: "󰗚",
+            sourceHint: "sdcv · offline",
+            kind: "def",
+            takesArgument: true,
+            syntax: "/def <word>",
+            examples: ["/def serendipity", "/def ephemeral"],
+            actions: "Live after a short pause. Enter copies the definition as plain text. Needs StarDict dictionaries in ~/.stardict/dic (see sdcv -l)."
+        },
+        {
+            name: "win",
+            aliases: ["w", "window"],
+            label: "Windows",
+            description: "Switch to a window by class, title or workspace.",
+            helper: "Every word must match. Enter switches workspace and focuses it.",
+            eventKey: "win.ready",
+            placeholder: "class or title words",
+            icon: "󰖯",
+            sourceHint: "hyprctl clients",
+            kind: "windows",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/win [words]",
+            examples: ["/win", "/win firefox", "/win ghostty qreep"],
+            actions: "Lists windows, most recently focused first, as soon as you type the space, as a grid or list (Ctrl+L) of icons or live previews (Ctrl+P). Previews come from Expose's window matching; a window it cannot match safely shows its icon. Arrows move, Enter switches to the window's workspace and focuses it, then KIP closes."
+        },
+        {
+            name: "timer",
+            aliases: ["t"],
+            label: "Timer",
+            description: "Start, pause, resume or stop the Qreep timer.",
+            helper: "Preview first, Enter does it. Same durations as the bar timer.",
+            eventKey: "timer.ready",
+            placeholder: "25m Tea · 15:03 Tea · up Focus · pause · stop",
+            icon: "󰔛",
+            sourceHint: "qreep-timer",
+            kind: "timer",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/timer [25m|1h30m|15:03|up|pause|resume|stop] [label]",
+            examples: ["/timer", "/timer 25m Tea", "/timer 15:03 Standup", "/timer up Focus", "/timer stop"],
+            actions: "Shows what will happen, including which running timer it replaces. Enter does it and closes KIP. Bare /timer shows the current timer."
+        },
+        {
+            name: "run",
+            aliases: ["r"],
+            label: "Run",
+            description: "Run a command, rofi-runner style, sharing its history. Terminal or background is decided for you.",
+            helper: "Preview first: where it runs and why. Enter runs, Shift+Enter runs it the other way.",
+            eventKey: "run.ready",
+            placeholder: "command",
+            icon: "󰆍",
+            sourceHint: "rofi-runner history",
+            kind: "run",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/run <command line>",
+            examples: ["/run htop", "/run pavucontrol", "/run df -h"],
+            actions: "Up/Down picks from history and puts it in the input (Enter once more runs it). Enter runs; Shift+Enter runs it in the other mode and remembers that. Commands cinfo marks dangerous need a second Enter. Ctrl+Delete removes the selected history entry. Only what you type here ever runs."
+        },
+        {
+            name: "qreep",
+            aliases: ["q"],
+            label: "Qreep",
+            description: "Qreep actions: open panels, check updates, run the bar, wake Qreeper.",
+            helper: "Grouped actions from what the running shell registers. Enter calls it; Ctrl+H shows every function.",
+            eventKey: "qreep.ready",
+            placeholder: "target function [arguments]",
+            icon: "󰒓",
+            sourceHint: "quickshell ipc · this instance",
+            kind: "qreep",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/qreep [target] [function] [arguments]",
+            examples: ["/qreep upchecker toggle", "/qreep timer startCountdown 25m Tea break", "/qreep bar setCollapsed"],
+            actions: "The list comes from quickshell ipc show for this process, so it is always what Qreep actually has; KipQreepCatalog.qml decides labels, groups, icons and what is worth listing. Script getters, hooks other programs call and duplicates are hidden; Ctrl+H shows them. Typing filters labels, targets and function names. Enter on an action without arguments calls it; with arguments it fills the input, and Tab cycles known values such as pill ids. Exact \"target function args\" calls hidden functions too. Calls that return nothing close KIP; calls that return a value show it."
         },
         {
             name: "help",
@@ -125,14 +312,55 @@ QtObject {
         }
     ]
 
-    readonly property var keys: [
-        ["Enter", "submit, or act on the selected result"],
-        ["Tab", "complete a command; on results, show the original text"],
-        ["Up / Down", "move through commands or results"],
-        ["Esc", "results back to the prompt, then close"],
-        ["1 – 9", "pick an option in an action chooser"],
-        ["Ctrl+C", "copy the selected answer text (after selecting with the mouse)"],
-        ["Ctrl+Shift+C", "copy path:line of the selected note"]
+    // Shortcuts, grouped by where they apply. The Help sheet (header chip,
+    // Ctrl+/) and /help both read this, so there is one list to keep honest.
+    // id matches KipPanel.shortcutContext(), which puts the current group first.
+    readonly property var shortcutGroups: [
+        {
+            id: "everywhere",
+            title: "Everywhere",
+            keys: [["F1", "app launcher"], ["F2", "/browse, starting at ~"], ["F3", "/fd"], ["Shift+F3", "/rg"], ["F4", "/win"], ["Ctrl+/", "this sheet"], ["/", "command palette"], ["Tab", "complete the highlighted command"], ["Enter", "submit, or act on the selection"], ["Esc", "back one step, then close"]]
+        },
+        {
+            id: "apps",
+            title: "Launcher",
+            keys: [["←→↑↓", "move through the apps"], ["Enter", "launch and close KIP"], ["Ctrl+G", "group: category / name / A–Z"], ["Ctrl+L", "grid or list"], ["typing", "filter all apps, ranked"]]
+        },
+        {
+            id: "browse",
+            title: "/browse",
+            keys: [["Enter, Tab", "into the folder"], ["Enter (file)", "its action menu"], ["Shift+Enter", "action menu, folders too"], ["Alt+↑", "parent folder"], ["Alt+H", "hidden files on/off"], ["Alt+I", "gitignored files on/off"], ["Alt+P", "preview on/off"]]
+        },
+        {
+            id: "results",
+            title: "/fd, /rg, /notes, /win",
+            keys: [["↑↓", "move"], ["Enter", "open, or its action menu"], ["Tab", "original text of a note hit"], ["Ctrl+Shift+C", "copy path:line of a note hit"]]
+        },
+        {
+            id: "menus",
+            title: "Action menus",
+            keys: [["↑↓, 1–9", "choose"], ["Enter", "do it"], ["Esc", "cancel"]]
+        },
+        {
+            id: "run",
+            title: "/run",
+            keys: [["↑↓", "history into the input"], ["Enter", "run"], ["Shift+Enter", "run it the other way, remembered"], ["Ctrl+Delete", "forget that history entry"]]
+        },
+        {
+            id: "answers",
+            title: "Answers",
+            keys: [["Enter", "answer actions: copy, retry, more detail"], ["Ctrl+C", "copy the selected text"], ["↑↓", "/notes-ask sources"]]
+        },
+        {
+            id: "qreep",
+            title: "/qreep",
+            keys: [["typing", "filter actions"], ["↑↓", "move"], ["Enter", "call it, or fill in its arguments"], ["Tab", "complete the name, then cycle argument values"], ["Ctrl+H", "show every function, debug and hidden too"]]
+        },
+        {
+            id: "shots",
+            title: "/last",
+            keys: [["←→↑↓", "move"], ["Enter", "copy image / copy path / show"]]
+        }
     ]
 
     // Help as markdown, built from the registry above so it cannot drift
@@ -158,10 +386,13 @@ QtObject {
 
         for (const command of commands)
             lines.push("- `" + command.syntax + "` " + command.description);
-        lines.push("- plain text, no `/`: a general question to the local model, no notes as context");
-        lines.push("", "`/help <command>` shows syntax, flags and examples.", "", "## Keys", "");
-        for (const key of keys)
-            lines.push("- **" + key[0] + "**: " + key[1]);
+        lines.push("- plain text, no `/`: filter applications, same as `/app <name>`");
+        lines.push("", "`/help <command>` shows syntax, flags and examples. Ctrl+/ shows the keys as a sheet.", "", "## Keys");
+        for (const group of shortcutGroups) {
+            lines.push("", "### " + group.title, "");
+            for (const key of group.keys)
+                lines.push("- **" + key[0] + "**: " + key[1]);
+        }
         return lines.join("\n");
     }
 
@@ -252,7 +483,7 @@ QtObject {
             return result("idle", "kip.ready", null, "", "", []);
 
         if (!raw.startsWith("/"))
-            return result("plain", "general.ready", null, "", trimmed, []);
+            return result("plain", "apps.ready", null, "", trimmed, []);
 
         const spaceAt = raw.search(/\s/);
         const token = spaceAt < 0 ? raw.slice(1) : raw.slice(1, spaceAt);

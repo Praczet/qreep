@@ -91,6 +91,8 @@ ShellRoot {
         id: kip
 
         theme: qreepTheme
+        timerService: timer.service
+        exposeService: expose.service
     }
 
     BloomModule.Bloom {

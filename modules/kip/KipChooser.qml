@@ -10,6 +10,9 @@ Rectangle {
     required property string title
     required property var options
     property int selectedIndex: 0
+    // Optional image left of the options (screenshots). Empty hides it.
+    property string previewSource: ""
+    readonly property bool previewShown: previewSource.length > 0
 
     signal picked(int index)
 
@@ -41,7 +44,7 @@ Rectangle {
         id: chooserColumn
 
         anchors {
-            left: parent.left
+            left: rootKipChooser.previewShown ? previewFrame.right : parent.left
             right: parent.right
             top: parent.top
             margins: 8
@@ -114,6 +117,42 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    Rectangle {
+        id: previewFrame
+
+        anchors {
+            left: parent.left
+            top: parent.top
+            bottom: parent.bottom
+            margins: 8
+        }
+        width: rootKipChooser.kipTheme.chooserPreviewWidth
+        visible: rootKipChooser.previewShown
+        radius: rootKipChooser.kipTheme.rowRadius
+        color: rootKipChooser.kipTheme.inputColor
+        clip: true
+
+        Image {
+            id: previewImage
+
+            anchors.fill: parent
+            anchors.margins: 4
+            source: rootKipChooser.previewSource
+            sourceSize.width: Math.round(width * 1.5)
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+            cache: false
+        }
+
+        Text {
+            anchors.centerIn: parent
+            visible: previewImage.status === Image.Error
+            text: "preview failed"
+            color: rootKipChooser.kipTheme.secondaryTextColor
+            font.pixelSize: rootKipChooser.kipTheme.metaPixelSize
         }
     }
 }
