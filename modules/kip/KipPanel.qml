@@ -20,6 +20,7 @@ PanelWindow {
     required property QtObject calc
     required property QtObject dict
     required property QtObject windows
+    required property QtObject binds
     required property QtObject timerCommand
     required property QtObject runner
     required property QtObject apps
@@ -84,7 +85,8 @@ PanelWindow {
             grep: grepCommand,
             files: filesCommand,
             shots: shotsCommand,
-            windows: windowsCommand
+            windows: windowsCommand,
+            keys: keysCommand
         })[contentState] || null
     // The text field lives in KipInput.
     readonly property TextInput promptInput: inputBox.field
@@ -261,6 +263,13 @@ PanelWindow {
         host: rootKipPanel
         windows: rootKipPanel.windows
         view: windowView
+    }
+
+    KipKeysCommand {
+        id: keysCommand
+
+        host: rootKipPanel
+        binds: rootKipPanel.binds
     }
 
     // A timer preview counts down while it is on screen.
@@ -899,6 +908,31 @@ PanelWindow {
                 }
             }
 
+            // /keys: Hyprland binds, combo in the chip, description beside it.
+            Text {
+                width: parent.width
+                visible: rootKipPanel.contentState === "keys"
+                text: keysCommand.status()
+                color: rootKipPanel.binds.status === "error" ? rootKipPanel.kt.errorColor : rootKipPanel.kt.tertiaryAccentColor
+                font.pixelSize: rootKipPanel.kt.metaPixelSize
+                elide: Text.ElideMiddle
+            }
+
+            KipResultList {
+                width: parent.width
+                height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.75)
+                visible: keysCommand.listVisible
+                kipTheme: rootKipPanel.kt
+                results: rootKipPanel.binds.results
+                compact: true
+                currentIndex: keysCommand.index
+
+                onActivated: index => {
+                    keysCommand.index = index;
+                    keysCommand.submit();
+                }
+            }
+
             // /run: matching history entries, newest first.
             KipResultList {
                 width: parent.width
@@ -1195,6 +1229,12 @@ PanelWindow {
             return;
         }
 
+        // "/keys " lists Hyprland binds; typing narrows them.
+        if (liveKind() === "keys") {
+            keysCommand.show();
+            return;
+        }
+
         // "/run cmd": history matches and a preview; nothing runs before Enter.
         if (liveKind() === "run") {
             runCommand.show();
@@ -1301,7 +1341,7 @@ PanelWindow {
             return "shots";
         if (contentState === "service")
             return answerDone() && !resultsVisible ? "answers" : "results";
-        if (contentState === "files" || contentState === "windows" || contentState === "grep")
+        if (contentState === "files" || contentState === "windows" || contentState === "grep" || contentState === "keys")
             return "results";
         if (appsMode)
             return "apps";
@@ -1323,6 +1363,7 @@ PanelWindow {
         calc.reset();
         dict.reset();
         windowsCommand.reset();
+        keysCommand.reset();
         runCommand.reset();
         browseCommand.reset();
         grepCommand.reset();
@@ -1601,6 +1642,9 @@ PanelWindow {
             return;
         case "windows":
             windowsCommand.show();
+            return;
+        case "keys":
+            keysCommand.show();
             return;
         case "run":
             runCommand.show();

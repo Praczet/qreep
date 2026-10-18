@@ -33,6 +33,8 @@ modules/kip/
 ├── KipWindowService.qml # /win: hyprctl clients, focus via Expose
 ├── KipWindowView.qml  # /win: grid/list of icons or live previews
 ├── KipWindowsCommand.qml # /win in the panel: selection, Ctrl+L/Ctrl+P, focus
+├── KipBindsService.qml # /keys: hyprctl binds -j, mods decoded, local filter
+├── KipKeysCommand.qml # /keys in the panel: selection, Enter copies the keys
 ├── KipQreepService.qml # /qreep: quickshell ipc show/call for this process
 ├── KipQreepCatalog.qml # /qreep: labels, groups, icons, what is listed
 ├── KipQreepList.qml   # /qreep: grouped rows with icons
@@ -122,10 +124,12 @@ Error states, each with its own message:
 
 Enter retries after an error.
 
-Hyprland bind (lives in `~/.config/hypr/modules/binds.lua`, not here):
+Hyprland binds (live in `~/.config/hypr/modules/binds.lua`, not here):
 
 ```lua
-A.exec(mainMod .. " + K", "KIP (qreep)", qreep .. " ipc call qreep-kip toggle")
+A.exec(mainMod .. " + SPACE", "KIP (qreep)", qreep .. " ipc call qreep-kip toggle")
+A.exec(mainMod .. " + slash", "KIP (qreep)", qreep .. " ipc call qreep-kip toggle")
+A.exec(mainMod .. " + F1", "Keybindings", qreep .. " ipc call qreep-kip toggleWith '/keys '")
 ```
 
 ## Motion
@@ -221,6 +225,7 @@ The size survives closing KIP but not a Quickshell restart.
 | `/calc 5 km to mi` (aliases `/c`, `/=`) | qalc result plus how qalc read it; live, Enter copies |
 | `/def word` (alias `/define`) | offline dictionary via sdcv; live, Enter copies |
 | `/win [words]` (aliases `/w`, `/window`) | windows by class/title/workspace; Enter switches and focuses |
+| `/keys [words]` (aliases `/binds`, `/k`) | Hyprland keybindings by description or keys; Enter copies the keys |
 | `/timer 25m Tea`, `15:03 x`, `up x`, `pause`, `resume`, `stop` (alias `/t`) | preview, then Enter does it |
 | `/run <command>` (alias `/r`) | run what you typed, in Ghostty or the background; preview first |
 | `/help`, `/help fd` (alias `/?`) | commands and keys, or one command's syntax, flags, examples; live |
@@ -493,6 +498,13 @@ None of these talk to the model or the network.
   (`paru -S stardict-wordnet` installs to `/usr/share/stardict/dic/`, read by
   default), `sdcv -l` lists what sdcv sees. Until then `/def` says so and
   shows that command.
+- **`/keys`** reads `hyprctl binds -j` once when `/keys ` is typed and filters
+  locally: every word must match the keys (`SUPER+SHIFT+S`), the description
+  or the submap, and binds whose keys match come first. Descriptions are the
+  ones `A.bind` registers, so the list cannot drift from the config. Enter
+  copies the keys. Nothing runs: with the Lua config every bind reports
+  dispatcher `__lua`, so there is no command to replay. Replaces the rofi
+  `binds.sh` viewer (bind above).
 - **`/win`** reads `hyprctl clients -j` once when `/win ` is typed and filters
   locally; most recently focused first. Focus goes through
   `ExposeService.focusClientObject` (workspace switch, then `focuswindow`,

@@ -82,6 +82,10 @@ Scope {
         exposeService: rootKip.exposeService
     }
 
+    KipBindsService {
+        id: bindsService
+    }
+
     KipRunService {
         id: runService
 
@@ -233,6 +237,7 @@ Scope {
             calc: calcService
             dict: dictService
             windows: windowService
+            binds: bindsService
             timerCommand: kipTimerCommand
             runner: runService
             apps: appService

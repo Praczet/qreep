@@ -110,6 +110,18 @@ QtObject {
                 neutral: ["sdcv has no dictionaries installed yet."],
                 dry: ["I have a dictionary reader and no dictionaries. A library of empty shelves."]
             },
+            "keys.ready": {
+                neutral: ["Hyprland keybindings. Type what it does or the keys."],
+                dry: ["The sacred list of things your fingers were supposed to remember.", "Your keybindings. All of them. You configured these, allegedly."]
+            },
+            "keys.found": {
+                neutral: ["Up/Down to choose, Enter copies the keys."],
+                dry: ["There it is. Try to remember it this time.", "Found. Your muscle memory sends its apologies."]
+            },
+            "keys.empty": {
+                neutral: ["No keybinding matches."],
+                dry: ["No such bind. Perhaps it was only ever a dream."]
+            },
             "win.ready": {
                 neutral: ["Pick a window. Type to narrow it down."],
                 dry: ["Somewhere among your windows is the one you want.", "Your windows, lined up for inspection. Most recent first."]

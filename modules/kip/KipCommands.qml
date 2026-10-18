@@ -243,6 +243,23 @@ QtObject {
             actions: "Lists windows, most recently focused first, as soon as you type the space, as a grid or list (Ctrl+L) of icons or live previews (Ctrl+P). Previews come from Expose's window matching; a window it cannot match safely shows its icon. Arrows move, Enter switches to the window's workspace and focuses it, then KIP closes."
         },
         {
+            name: "keys",
+            aliases: ["binds", "k"],
+            label: "Keys",
+            description: "Look up a Hyprland keybinding by what it does or by its keys.",
+            helper: "Every word must match the keys or the description. Enter copies the keys.",
+            eventKey: "keys.ready",
+            placeholder: "what it does, or keys",
+            icon: "󰌌",
+            sourceHint: "hyprctl binds",
+            kind: "keys",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/keys [words]",
+            examples: ["/keys", "/keys screenshot", "/keys super shift"],
+            actions: "Lists every bind with its description, in config order, as soon as you type the space. Words filter keys, description and submap; binds whose keys match come first. Enter copies the keys (SUPER+SHIFT+S). Nothing is run: with the Lua config every bind reports dispatcher __lua, so there is no command to replay."
+        },
+        {
             name: "timer",
             aliases: ["t"],
             label: "Timer",
@@ -333,7 +350,7 @@ QtObject {
         },
         {
             id: "results",
-            title: "/fd, /rg, /notes, /win",
+            title: "/fd, /rg, /notes, /win, /keys",
             keys: [["↑↓", "move"], ["Enter", "open, or its action menu"], ["Tab", "original text of a note hit"], ["Ctrl+Shift+C", "copy path:line of a note hit"]]
         },
         {
