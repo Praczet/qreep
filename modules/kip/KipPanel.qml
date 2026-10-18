@@ -125,8 +125,6 @@ PanelWindow {
             return "signal";
         if (openProgress < kt.descendEnd)
             return "descend";
-        if (openProgress < kt.morphEnd)
-            return "morph";
         if (openProgress < 1)
             return "assemble";
         if (contentState === "service")
@@ -137,21 +135,16 @@ PanelWindow {
     // Motion slices, each eased on its own.
     readonly property real signalT: ease(segment(0, kt.signalEnd))
     readonly property real descendT: ease(segment(kt.signalEnd, kt.descendEnd))
-    readonly property real morphT: ease(segment(kt.descendEnd, kt.morphEnd))
-    readonly property real inputContentT: ease(segment(kt.descendEnd + (kt.morphEnd - kt.descendEnd) * 0.5, kt.morphEnd))
-    readonly property real headerT: ease(segment(kt.morphEnd, kt.morphEnd + (1 - kt.morphEnd) * 0.6))
-    readonly property real bodyT: ease(segment(kt.morphEnd + (1 - kt.morphEnd) * 0.3, 1))
+    readonly property real headerT: ease(segment(kt.descendEnd, kt.descendEnd + (1 - kt.descendEnd) * 0.6))
+    readonly property real bodyT: ease(segment(kt.descendEnd + (1 - kt.descendEnd) * 0.3, 1))
 
-    // Geometry.
+    // Geometry. The input box is full size from the first frame, so typing
+    // works at once; it only fades in at the top and slides down.
     readonly property real cardWidth: Math.max(0, Math.min(kt.panelWidth, width - kt.screenMargin * 2))
-    readonly property real inputFinalWidth: cardWidth - kt.cardPadding * 2
-    readonly property real inputCenterY: kt.anchorY + kt.inputHeight / 2
-    readonly property real lineCenterY: lerp(kt.signalTopY, inputCenterY, descendT)
-    readonly property real lineWidth: lerp(kt.lineStartWidth * signalT, inputFinalWidth * kt.lineDescendWidthRatio, descendT)
-    readonly property real boxWidth: lerp(lineWidth, inputFinalWidth, morphT)
-    readonly property real boxHeight: lerp(kt.lineHeight, kt.inputHeight, morphT)
+    readonly property real boxWidth: cardWidth - kt.cardPadding * 2
+    readonly property real boxHeight: kt.inputHeight
     readonly property real boxX: (width - boxWidth) / 2
-    readonly property real boxY: lineCenterY - boxHeight / 2
+    readonly property real boxY: lerp(kt.signalTopY, kt.anchorY, descendT)
     // Height cap for the body: the theme default, or what the bottom edge was
     // dragged to (userBodyLimit > 0), never past the bottom of the screen.
     property real userBodyLimit: 0
@@ -341,17 +334,17 @@ PanelWindow {
         onClicked: rootKipPanel.closeRequested()
     }
 
-    // Glow: brightest mid-morph, settles to a faint focus halo.
+    // Glow: brightest mid-descent, settles to a faint focus halo.
     Rectangle {
         x: rootKipPanel.boxX - 3
         y: rootKipPanel.boxY - 3
         width: rootKipPanel.boxWidth + 6
         height: rootKipPanel.boxHeight + 6
-        radius: rootKipPanel.lerp(2, rootKipPanel.kt.inputRadius + 3, rootKipPanel.morphT)
+        radius: rootKipPanel.kt.inputRadius + 3
         color: "transparent"
         border.width: 3
         border.color: rootKipPanel.kt.glowColor
-        opacity: rootKipPanel.signalT * (0.45 + 0.55 * Math.sin(Math.PI * rootKipPanel.morphT)) * (1 - 0.6 * rootKipPanel.headerT)
+        opacity: rootKipPanel.signalT * (0.45 + 0.55 * Math.sin(Math.PI * rootKipPanel.descendT)) * (1 - 0.6 * rootKipPanel.headerT)
         visible: opacity > 0.01
     }
 
@@ -1061,18 +1054,6 @@ PanelWindow {
         }
     }
 
-    // The line, then the input box. Same geometry; they crossfade during morph.
-    Rectangle {
-        x: rootKipPanel.boxX
-        y: rootKipPanel.boxY
-        width: rootKipPanel.boxWidth
-        height: rootKipPanel.boxHeight
-        radius: Math.min(height / 2, rootKipPanel.lerp(1, rootKipPanel.kt.inputRadius, rootKipPanel.morphT))
-        color: rootKipPanel.kt.lineColor
-        opacity: rootKipPanel.signalT * (1 - rootKipPanel.morphT)
-        visible: opacity > 0.01
-    }
-
     KipInput {
         id: inputBox
 
@@ -1080,13 +1061,12 @@ PanelWindow {
         y: rootKipPanel.boxY
         width: rootKipPanel.boxWidth
         height: rootKipPanel.boxHeight
-        radius: Math.min(height / 2, rootKipPanel.lerp(1, rootKipPanel.kt.inputRadius, rootKipPanel.morphT))
-        opacity: rootKipPanel.morphT
+        radius: rootKipPanel.kt.inputRadius
+        opacity: rootKipPanel.signalT
         kipTheme: rootKipPanel.kt
         iconFontFamily: rootKipPanel.theme.iconFontFamily
         parsed: rootKipPanel.parsed
         enterLabel: rootKipPanel.enterLabel()
-        contentReveal: rootKipPanel.inputContentT
 
         onEdited: rootKipPanel.handleTextChanged()
         onKeyPressed: event => rootKipPanel.handleKey(event)

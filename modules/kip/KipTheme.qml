@@ -16,21 +16,18 @@ QtObject {
     readonly property int screenMargin: 24
     readonly property int signalTopY: 4
 
-    // Motion. reducedMotion skips the line/descend/morph theatre entirely.
+    // Motion. reducedMotion skips the slide/assemble theatre entirely.
     readonly property bool reducedMotion: false
-    readonly property int openDuration: 580
+    readonly property int openDuration: 480
     readonly property int closeDuration: 340
     readonly property int contentFadeDuration: 140
     readonly property int bodyResizeDuration: 180
 
-    // openProgress slices: signal → descend → morph → assemble.
-    readonly property real signalEnd: 0.12
-    readonly property real descendEnd: 0.45
-    readonly property real morphEnd: 0.72
-
-    readonly property int lineHeight: 2
-    readonly property int lineStartWidth: 120
-    readonly property real lineDescendWidthRatio: 0.62
+    // openProgress slices: signal (input fades in at signalTopY) → descend
+    // (slides to anchorY) → assemble (header up, body down). The input is
+    // full size and typeable throughout.
+    readonly property real signalEnd: 0.15
+    readonly property real descendEnd: 0.55
 
     // Card and input.
     readonly property int cardPadding: 14
@@ -409,7 +406,6 @@ QtObject {
     readonly property color chooserShadowColor: Qt.rgba(0, 0, 0, 0.55)
     readonly property color borderColor: qreep.outline
     readonly property color focusBorderColor: qreep.primary
-    readonly property color lineColor: qreep.primary
     readonly property color glowColor: withAlpha(qreep.primary, 0.32)
     readonly property color accentColor: qreep.primary
     readonly property color secondaryAccentColor: qreep.secondary

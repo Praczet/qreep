@@ -1,10 +1,9 @@
 import QtQuick
 
 // The input box: command icon, flag chips, the command-token highlight, the
-// text field and the Enter hint. The panel owns geometry and the morph
-// (x/y/size/radius/opacity); contentReveal fades the contents in late.
-// The text field has focus from frame one, so typing during the opening
-// animation is kept.
+// text field and the Enter hint. The panel owns geometry and the slide-in
+// (x/y/size/radius/opacity). The text field has focus from frame one, so
+// typing during the opening animation is kept.
 Rectangle {
     id: rootKipInput
 
@@ -18,7 +17,6 @@ Rectangle {
             flagRanges: []
         })
     property string enterLabel: ""
-    property real contentReveal: 1
     readonly property alias field: promptInput
 
     signal edited
@@ -41,7 +39,6 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         x: rootKipInput.kipTheme.inputPadding
         width: rootKipInput.kipTheme.inputIconWidth
-        opacity: rootKipInput.contentReveal
         text: rootKipInput.parsed.mode === "ready" && rootKipInput.parsed.command ? rootKipInput.parsed.command.icon : (rootKipInput.parsed.mode === "plain" ? "󰀻" : rootKipInput.kipTheme.kipIcon)
         color: rootKipInput.kipTheme.accentColor
         font.family: rootKipInput.iconFontFamily
@@ -66,7 +63,6 @@ Rectangle {
             color: modelData.known ? rootKipInput.kipTheme.commandHighlightColor : "transparent"
             border.width: 1
             border.color: modelData.known ? rootKipInput.kipTheme.focusBorderColor : rootKipInput.kipTheme.errorColor
-            opacity: rootKipInput.contentReveal
         }
     }
 
@@ -84,7 +80,7 @@ Rectangle {
         color: rootKipInput.kipTheme.commandHighlightColor
         border.width: 1
         border.color: rootKipInput.parsed.mode === "ready" ? rootKipInput.kipTheme.focusBorderColor : "transparent"
-        opacity: active ? rootKipInput.contentReveal : 0
+        opacity: active ? 1 : 0
         visible: opacity > 0.01
 
         Behavior on opacity {
@@ -102,8 +98,7 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         x: inputIcon.x + inputIcon.width + 6
         width: parent.width - x - enterHint.width - rootKipInput.kipTheme.inputPadding * 2
-        // Focused from frame one; only its opacity waits for the morph.
-        opacity: rootKipInput.contentReveal
+        // Focused from frame one.
         color: rootKipInput.kipTheme.primaryTextColor
         selectionColor: rootKipInput.kipTheme.selectedRowColor
         selectedTextColor: rootKipInput.kipTheme.primaryTextColor
@@ -136,7 +131,7 @@ Rectangle {
         height: enterText.implicitHeight + 6
         radius: rootKipInput.kipTheme.chipRadius
         color: rootKipInput.kipTheme.chipColor
-        opacity: label.length > 0 ? rootKipInput.contentReveal : 0
+        opacity: label.length > 0 ? 1 : 0
         visible: opacity > 0.01
 
         Text {

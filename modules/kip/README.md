@@ -134,17 +134,16 @@ All open/close geometry derives from one number, `openProgress` (0 → 1):
 
 | Slice | Phase | What moves |
 | --- | --- | --- |
-| `0 → signalEnd` | signal | line fades in at the top edge |
-| `signalEnd → descendEnd` | descend | line drops to `anchorY`, widens |
-| `descendEnd → morphEnd` | morph | line becomes the input box |
-| `morphEnd → 1` | assemble | header up, icon left, status right, body down |
+| `0 → signalEnd` | signal | input box fades in at the top edge (`signalTopY`) |
+| `signalEnd → descendEnd` | descend | input box slides down to `anchorY` |
+| `descendEnd → 1` | assemble | header up, icon left, status right, body down |
 
 Closing animates the same number back to 0, faster. A toggle mid-animation just
 reverses direction, so there is no state machine to wedge. Content state
 (`ready → processing → results/error`) is separate from motion.
 
-The input has keyboard focus from the first frame and is only faded, never
-hidden, so typing during the opening animation is kept.
+The input box is full size from the first frame and has keyboard focus, so
+you can type while it is still sliding in.
 
 `KipTheme.reducedMotion: true` skips the theatre and snaps open/closed.
 
