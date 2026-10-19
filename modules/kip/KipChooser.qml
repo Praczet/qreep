@@ -17,17 +17,17 @@ Rectangle {
     signal picked(int index)
 
     // Label column fits the longest label in bold, so hints never overlap.
+    // FontMetrics.advanceWidth(text) measures without setting a property;
+    // writing TextMetrics.text inside this binding was a binding loop.
     readonly property real labelWidth: {
         let widest = 0;
 
-        for (let index = 0; index < options.length; index++) {
-            labelMetrics.text = (index + 1) + "  " + options[index].label;
-            widest = Math.max(widest, labelMetrics.advanceWidth);
-        }
+        for (let index = 0; index < options.length; index++)
+            widest = Math.max(widest, labelMetrics.advanceWidth((index + 1) + "  " + options[index].label));
         return Math.ceil(widest) + 12;
     }
 
-    TextMetrics {
+    FontMetrics {
         id: labelMetrics
 
         font.pixelSize: rootKipChooser.kipTheme.bodyPixelSize
