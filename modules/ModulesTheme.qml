@@ -16,6 +16,7 @@ import "qreeper" as QreeperModule
 import "screenshot" as ScreenshotModule
 import "timer" as TimerModule
 import "triage" as TriageModule
+import "wallpaper" as WallpaperModule
 
 QtObject {
     id: rootModulesTheme
@@ -83,6 +84,10 @@ QtObject {
     }
 
     readonly property QtObject triage: TriageModule.TriageTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject wallpaper: WallpaperModule.WallpaperTheme {
         qreep: rootModulesTheme.qreep
     }
 }

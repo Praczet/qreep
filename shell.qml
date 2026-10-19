@@ -15,6 +15,7 @@ import "modules/screenshot" as ScreenshotModule
 import "modules/timer" as TimerModule
 import "modules/triage" as TriageModule
 import "modules/bloom" as BloomModule
+import "modules/wallpaper" as WallpaperModule
 import "modules/bar" as BarModule
 import "theme" as Theme
 
@@ -114,6 +115,12 @@ ShellRoot {
 
     BloomModule.Bloom {
         id: bloom
+
+        theme: qreepTheme
+    }
+
+    WallpaperModule.Wallpaper {
+        id: wallpaper
 
         theme: qreepTheme
     }

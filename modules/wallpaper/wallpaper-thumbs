@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# wallpaper-thumbs: the Wallpaper module's worker.
+#
+#   wallpaper-thumbs list  <dir> <cache>   one TSV line per image, by name:
+#                                          name, bytes, width, height, thumbed (0/1)
+#   wallpaper-thumbs build <dir> <cache>   make missing or stale thumbnails:
+#                                          "todo <n>", then "made <name>" per image
+#
+# Thumbnails: <cache>/800/<name>.jpg (fits 800x600, never upscaled) and
+# <cache>/400/<name>.jpg (fits 400x300, made from the 800 one). The source
+# size goes to <cache>/800/<name>.dim once, so listing never decodes images.
+# A thumbnail older than its image is remade; ones without an image are removed.
+
+set -uo pipefail
+
+mode=${1:-}
+dir=${2:-}
+cache=${3:-}
+
+if [[ -z $mode || -z $dir || -z $cache ]]; then
+    echo "usage: wallpaper-thumbs list|build <dir> <cache>" >&2
+    exit 2
+fi
+if [[ ! -d $dir ]]; then
+    echo "Wallpaper folder not found: $dir" >&2
+    exit 1
+fi
+
+images() {
+    find "$dir" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) -printf '%f\n' | sort
+}
+
+stale() {
+    local name=$1
+    local big="$cache/800/$name.jpg"
+    [[ ! -f $big || ! -f "$cache/400/$name.jpg" || ! -f "$cache/800/$name.dim" || "$dir/$name" -nt $big ]]
+}
+
+thumb() {
+    local name=$1
+    local src="$dir/$name"
+    local big="$cache/800/$name.jpg"
+
+    magick identify -ping -format '%w %h' "$src[0]" > "$cache/800/$name.dim" 2>/dev/null || echo "0 0" > "$cache/800/$name.dim"
+    magick "$src[0]" -auto-orient -thumbnail '800x600>' -quality 85 "$big" 2>/dev/null \
+        && magick "$big" -thumbnail '400x300>' -quality 85 "$cache/400/$name.jpg" 2>/dev/null
+    echo "made $name"
+}
+
+case $mode in
+list)
+    while IFS= read -r name; do
+        bytes=$(stat -c %s "$dir/$name")
+        width=0 height=0
+        # .dim has no trailing newline: read reports EOF but still fills both.
+        [[ -f "$cache/800/$name.dim" ]] && read -r width height < "$cache/800/$name.dim"
+        if stale "$name"; then thumbed=0; else thumbed=1; fi
+        printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$bytes" "${width:-0}" "${height:-0}" "$thumbed"
+    done < <(images)
+    ;;
+build)
+    mkdir -p "$cache/800" "$cache/400"
+
+    # Thumbnails whose image is gone.
+    for file in "$cache"/800/*.jpg; do
+        [[ -e $file ]] || continue
+        name=$(basename "$file" .jpg)
+        [[ -f "$dir/$name" ]] || rm -f "$file" "$cache/400/$name.jpg" "$cache/800/$name.dim"
+    done
+
+    todo=()
+    while IFS= read -r name; do
+        stale "$name" && todo+=("$name")
+    done < <(images)
+
+    echo "todo ${#todo[@]}"
+    (( ${#todo[@]} == 0 )) && exit 0
+
+    export dir cache
+    export -f thumb
+    printf '%s\0' "${todo[@]}" | xargs -0 -P "$(nproc)" -I{} bash -c 'thumb "$1"' _ {}
+    ;;
+*)
+    echo "unknown mode: $mode" >&2
+    exit 2
+    ;;
+esac

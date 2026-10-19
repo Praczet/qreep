@@ -129,7 +129,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `129b13a` | `2026-10-19` |
+| `AGENTS.md` | `b5b9bda` | `2026-10-19` |
 | `README.md` | `cc7fda3` | `2026-07-21` |
 | `README_when_bored.md` | `292493f` | `2026-10-12` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
@@ -158,15 +158,16 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/dashboard/features/wotd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/expose/README.md` | `e976b0d` | `2026-07-21` |
 | `modules/fastpassword/README.md` | `1af57ac` | `2026-07-17` |
-| `modules/kip/README.md` | `96d2e15` | `2026-10-19` |
+| `modules/kip/README.md` | `b5b9bda` | `2026-10-19` |
 | `tools/jarvis/README.md` | `4481015` | `2026-10-15` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/places/README.md` | `76a1a69` | `2026-10-19` |
+| `modules/places/README.md` | `b5b9bda` | `2026-10-19` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
 | `modules/qreeper/README.md` | `292493f` | `2026-10-12` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
 | `modules/triage/README.md` | `9438e75` | `2026-07-20` |
+| `modules/wallpaper/README.md` | `b5b9bda` | `2026-10-19` |
 
 ## Quickshell / QML rules
 
@@ -1071,6 +1072,7 @@ Qreep currently has:
 - a top-level Qreeper module in `modules/qreeper/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-qreeper`, reading the read-only Qreeper map snapshot at `~/.local/state/qreeper/map.json` (override with `QREEP_QREEPER_MAP_PATH`), with a movable Top-layer minimap, a full-screen Atlas, and a bar compass pill (`qreeper`) where left click toggles the minimap and right click toggles the Atlas. Qreeper is on demand: asleep (no watch, no polling, no pill) until `start` or opening the minimap/Atlas, back asleep on `stop`. QREEP never reads the Qreeper SQLite database or parses MUD text; the producer is the Qreeper Blightmud plugin's `publisher/` (atomic writes, 60 s heartbeat). Test without Blightmud using `scripts/qreep-qreeper-fixture_v0.0.1` and `fixtures/qreeper/`;
 - a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;
 - a top-level Triage module in `modules/triage/`; its Rust helper lives in `tools/triagectl/`, installs as `triagectl`, stores local state in SQLite, is read-only against system package state in v1, and shares package-update context with Upchecker;
+- a top-level Wallpaper module in `modules/wallpaper/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-wallpaper` (bound to `SUPER+T`; Unclaimed Bloom's `wallset` without a path opens it), replacing wallset's rofi picker: a centered overlay with a grid (S/M/L/XL tiles) or list of `~/.config/backgrounds`, a preview pane for list/S/M, filter by name, view and size remembered in `~/.local/state/qreep/wallpaper.json`; Enter runs `wallset <path>` (sow, grow, awww, plant). Thumbnails (800x600 and 400x300, letterboxed) are made by the `wallpaper-thumbs` worker into `~/.cache/qreep/wallpapers/`, in parallel, only for new or changed images;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
 - watched local/generated calendar sources loaded through `modules/bar/features/clock/EventStore.qml`: repo `events.json`, `~/.cache/qreep/calendar/events.json`, and `~/.cache/qreep/calendar/microsoft-events.json`;
