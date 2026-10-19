@@ -14,6 +14,8 @@ Scope {
     property var targetScreen: null
     // Section to show on the next open: "favorites", "history" or "palette:<id>".
     property string requestedSection: ""
+    // A colour to open the universe on, next time the panel opens.
+    property string requestedUniverse: ""
     readonly property bool panelLoaded: open || closeTimer.running
     readonly property alias service: prismService
 
@@ -70,6 +72,16 @@ Scope {
             return palette + " / " + combo.name + ": " + combo.colors.length + " colours";
         }
 
+        // Open straight into the universe on a colour (#hex, rgb(), ...).
+        function universe(color: string): string {
+            const hex = prismService.parseColor(color);
+            if (!hex)
+                return "not a colour: " + color;
+            rootPrism.requestedUniverse = hex;
+            rootPrism.show();
+            return hex;
+        }
+
         function state(): string {
             return "open=" + rootPrism.open
                 + " loaded=" + prismService.loaded
@@ -90,6 +102,7 @@ Scope {
             service: prismService
             panelOpen: rootPrism.open
             requestedSection: rootPrism.requestedSection
+            requestedUniverse: rootPrism.requestedUniverse
 
             onCloseRequested: rootPrism.hide()
         }
@@ -117,6 +130,7 @@ Scope {
         closeTimer.restart();
         open = false;
         requestedSection = "";
+        requestedUniverse = "";
     }
 
     function toggle() {

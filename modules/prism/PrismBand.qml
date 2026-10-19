@@ -14,6 +14,10 @@ Rectangle {
     property bool favorite: false
     property bool interactive: true
     property string iconFont: ""
+    // Set both to make the band draggable onto the sidebar (PrismPanel's
+    // dragPress / dragMove / dragRelease / consumeDragClick).
+    property var dragGhost: null
+    property var dragHost: null
 
     signal clicked
     signal doubleClicked
@@ -79,10 +83,34 @@ Rectangle {
     }
 
     MouseArea {
+        id: bandMouse
+
+        readonly property bool draggable: rootPrismBand.dragGhost !== null && rootPrismBand.dragHost !== null
+
         anchors.fill: parent
         enabled: rootPrismBand.interactive
         cursorShape: Qt.PointingHandCursor
-        onClicked: rootPrismBand.clicked()
+        drag.target: draggable ? rootPrismBand.dragGhost : null
+        drag.threshold: 10
+        preventStealing: draggable
+
+        onPressed: mouse => {
+            if (draggable)
+                rootPrismBand.dragHost.dragPress(bandMouse, mouse, rootPrismBand.hex, rootPrismBand.name);
+        }
+        onPositionChanged: {
+            if (draggable)
+                rootPrismBand.dragHost.dragMove(bandMouse);
+        }
+        onReleased: {
+            if (draggable)
+                rootPrismBand.dragHost.dragRelease();
+        }
+        onClicked: {
+            if (draggable && rootPrismBand.dragHost.consumeDragClick())
+                return;
+            rootPrismBand.clicked();
+        }
         onDoubleClicked: rootPrismBand.doubleClicked()
     }
 }

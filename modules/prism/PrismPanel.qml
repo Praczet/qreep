@@ -15,6 +15,7 @@ PanelWindow {
     required property QtObject service
     required property bool panelOpen
     property string requestedSection: ""
+    property string requestedUniverse: ""
 
     readonly property QtObject pt: theme.modules.prism
 
@@ -22,6 +23,10 @@ PanelWindow {
     property string section: "history"
     // An open combo inside the palette section; "" shows the combo grid.
     property string comboId: ""
+    // The universe (editor) over whatever section is underneath.
+    property bool universeOpen: false
+    // Ctrl+P / "save as combo" from the universe: a whole harmony at once.
+    property var pendingHarmony: null
     property int index: 0
     property string query: ""
     property bool presented: false
@@ -44,14 +49,15 @@ PanelWindow {
 
     readonly property var palette: section.indexOf("palette:") === 0 ? service.paletteById(section.slice(8)) : null
     readonly property var combo: palette && comboId.length > 0 ? palette.combos.find(item => item.id === comboId) || null : null
-    // "colors" | "combos" | "poster"
-    readonly property string view: combo ? "poster" : palette ? "combos" : "colors"
-    readonly property var sourceItems: view === "poster" ? combo.colors : view === "combos" ? palette.combos : section === "favorites" ? service.favoriteEntries() : service.history
+    // "universe" | "colors" | "combos" | "poster"
+    readonly property string view: universeOpen ? "universe" : combo ? "poster" : palette ? "combos" : "colors"
+    readonly property var sourceItems: view === "universe" ? [] : view === "poster" ? combo.colors : view === "combos" ? palette.combos : section === "favorites" ? service.favoriteEntries() : service.history
     // Filtered; each keeps its index in the section (sourceIndex) for edits.
     readonly property var items: filter(sourceItems.map((item, i) => Object.assign({ sourceIndex: i }, item)), query)
     readonly property var selected: items.length > 0 ? items[Math.max(0, Math.min(index, items.length - 1))] : null
-    // The selected colour, wherever it is (not in the combo grid).
-    readonly property var selectedColor: view === "combos" ? null : selected
+    // The selected colour, wherever it is (not in the combo grid). In the
+    // universe it is the colour being edited.
+    readonly property var selectedColor: view === "universe" ? ({ hex: universe.hex, name: service.nameOf(universe.hex) }) : view === "combos" ? null : selected
     readonly property var sections: [
         { key: "favorites", label: "Favourites", icon: "󰓎", count: service.favorites.length },
         { key: "history", label: "History", icon: "󰋚", count: service.history.length }
@@ -86,7 +92,9 @@ PanelWindow {
     }, []))
     // The sidebar row that is "here": a combo row when a combo is open.
     readonly property string currentKey: combo ? "combo:" + palette.id + ":" + combo.id : section
-    readonly property var chooserOptions: chooserMode === "actions" ? actionOptions : addOptions
+    readonly property var chooserOptions: chooserMode === "actions" ? (view === "universe" ? actionOptions.filter(option => option.action !== "universe") : actionOptions) : chooserMode === "harmony" ? harmonyOptions : addOptions
+    // Where a saved harmony goes: a new combo in a palette, or a new palette.
+    readonly property var harmonyOptions: service.palettes.map(item => ({ kind: "newCombo", paletteId: item.id, comboId: "", label: item.name + "  ›  New combo", colors: [] })).concat([{ kind: "newPalette", paletteId: "", comboId: "", label: "New palette…", colors: [] }])
     readonly property var actionOptions: selectedColor ? [
         { kind: "action", action: "copyClose", label: "Copy " + selectedColor.hex + " and close", hint: "Enter", colors: [] },
         { kind: "action", action: "copy", label: "Copy, stay open", hint: "Shift+Enter", colors: [] },
@@ -97,7 +105,7 @@ PanelWindow {
         { kind: "action", action: "favorite", label: service.isFavorite(selectedColor.hex) ? "󰓎  Unfavourite" : "󰓒  Favourite", hint: "Ctrl+S", colors: [] },
         { kind: "action", action: "add", label: "Add to a combo…", hint: "Ctrl+P", colors: [] },
         // Step 2: wheels, sliders, harmonies.
-        { kind: "action", action: "universe", label: "Open the universe", hint: "next", disabled: true, colors: [] }
+        { kind: "action", action: "universe", label: "Open the universe", hint: "Ctrl+E", colors: [] }
     ] : []
     readonly property var addOptions: {
         const options = [];
@@ -119,7 +127,7 @@ PanelWindow {
         { keys: "Ctrl+Enter, click", action: "Actions: copy as rgb / hsl / Qt.rgba, favourite, add…" },
         { keys: "Ctrl+S", action: "Favourite / unfavourite" },
         { keys: "Ctrl+P", action: "Add the colour to a combo" },
-        { keys: "drag a swatch", action: "Onto a combo: add · palette: new combo · Favourites" },
+        { keys: "drag any colour", action: "Onto a combo: add · palette: new combo · Favourites" },
         { keys: "Shift+Delete", action: "Remove (a combo: press twice)" },
         { keys: "Ctrl+1  Ctrl+2", action: "Favourites, History" },
         { keys: "Ctrl+3", action: "First palette" },
@@ -131,6 +139,9 @@ PanelWindow {
         { keys: "Shift+F2", action: "Rename the palette" },
         { keys: "Alt+arrows", action: "Move the colour / combo" },
         { keys: "Ctrl+Shift+Delete", action: "Delete the palette (twice)" },
+        { keys: "Ctrl+E", action: "Open the universe (editor) on the colour" },
+        { keys: "universe: ←→ ↑↓", action: "Hue, value (Alt+↑↓ saturation, Shift ×10)" },
+        { keys: "universe: type", action: "Jump to a typed colour" },
         { keys: "F1", action: "This sheet" },
         { keys: "Esc", action: "Back out: menu, prompt, sheet, combo, filter, close" }
     ]
@@ -171,6 +182,7 @@ PanelWindow {
         index = 0;
         confirmDelete = "";
         chooserOpen = false;
+        universeOpen = false;
     }
     onComboIdChanged: chooserOpen = false
     onSelectedColorChanged: {
@@ -186,6 +198,10 @@ PanelWindow {
         index = 0;
         notice = "";
         search.forceActiveFocus();
+        if (requestedUniverse.length > 0) {
+            universe.open(requestedUniverse);
+            universeOpen = true;
+        }
         if (panelOpen)
             enterTimer.restart();
     }
@@ -226,6 +242,8 @@ PanelWindow {
     // A sidebar row: a section, or "combo:<palette>:<combo>" (opens it).
     // Choosing a palette unfolds it.
     function selectKey(key) {
+        // Going anywhere from the sidebar leaves the universe.
+        universeOpen = false;
         if (key.indexOf("combo:") === 0) {
             const parts = key.split(":");
             section = "palette:" + parts[1];
@@ -238,6 +256,41 @@ PanelWindow {
         section = key;
         if (key.indexOf("palette:") === 0)
             service.setExpanded(key.slice(8), true);
+    }
+
+    // --- dragging a colour (any swatch, band or universe box) -------------------
+    // A MouseArea with drag.target: dragGhost calls these three; the ghost
+    // carries hex and name to the sidebar's DropAreas.
+    function dragPress(area, mouse, hex, name) {
+        const at = area.mapToItem(dragGhost.parent, mouse.x, mouse.y);
+        dragGhost.wasDragged = false;
+        dragGhost.hex = hex;
+        dragGhost.name = name;
+        dragGhost.x = at.x - dragGhost.width / 2;
+        dragGhost.y = at.y - dragGhost.height / 2;
+    }
+
+    function dragMove(area) {
+        if (area.drag.active && !dragGhost.Drag.active) {
+            chooserOpen = false;
+            dragGhost.Drag.active = true;
+        }
+    }
+
+    function dragRelease() {
+        if (dragGhost.Drag.active) {
+            dragGhost.Drag.drop();
+            dragGhost.Drag.active = false;
+            dragGhost.wasDragged = true;
+        }
+    }
+
+    // A click that ends a drag is not a click.
+    function consumeDragClick() {
+        if (!dragGhost.wasDragged)
+            return false;
+        dragGhost.wasDragged = false;
+        return true;
     }
 
     // A colour dropped on a sidebar row: a combo gets it, a palette gets a
@@ -316,7 +369,9 @@ PanelWindow {
         pendingHex = "";
         search.text = query;
 
-        if (mode === "newPalette" || mode === "newPaletteAdd") {
+        if (mode === "newPaletteHarmony" && pendingHarmony) {
+            storeHarmony(service.createPalette(value));
+        } else if (mode === "newPalette" || mode === "newPaletteAdd") {
             const paletteId = service.createPalette(value);
             if (mode === "newPaletteAdd" && hex) {
                 const newCombo = service.createCombo(paletteId, "");
@@ -338,6 +393,7 @@ PanelWindow {
         return ({
                 newPalette: "New palette",
                 newPaletteAdd: "New palette",
+                newPaletteHarmony: "New palette",
                 renamePalette: "Rename palette",
                 renameCombo: "Rename combo",
                 renameColor: "Rename colour"
@@ -387,6 +443,40 @@ PanelWindow {
         notice = "New combo. Ctrl+P on colours in History or Favourites fills it.";
     }
 
+    function openUniverse() {
+        if (!selectedColor || view === "universe")
+            return;
+        universe.open(selectedColor.hex);
+        chooserOpen = false;
+        cancelPrompt();
+        universeOpen = true;
+        search.text = "";
+        notice = "";
+    }
+
+    function closeUniverse() {
+        universeOpen = false;
+        chooserOpen = false;
+        search.text = query;
+    }
+
+    function saveHarmony(colors, label) {
+        pendingHarmony = { colors: colors, label: label };
+        chooserMode = "harmony";
+        chooserIndex = 0;
+        chooserOpen = true;
+    }
+
+    // A harmony into a combo of its own (named after the harmony).
+    function storeHarmony(paletteId) {
+        const id = service.createCombo(paletteId, pendingHarmony.label);
+        for (const hex of pendingHarmony.colors)
+            service.addToCombo(paletteId, id, hex, "");
+        service.setExpanded(paletteId, true);
+        notice = "Saved " + pendingHarmony.label + " to " + service.paletteById(paletteId).name + ".";
+        pendingHarmony = null;
+    }
+
     function openActions() {
         if (!selectedColor)
             return;
@@ -414,6 +504,8 @@ PanelWindow {
             notice = service.isFavorite(color.hex) ? color.name + " is a favourite." : color.name + " is no longer a favourite.";
         } else if (action === "add") {
             openChooser();
+        } else if (action === "universe") {
+            openUniverse();
         }
     }
 
@@ -429,6 +521,14 @@ PanelWindow {
         if (option && option.kind === "action") {
             if (!option.disabled)
                 runAction(option.action);
+            return;
+        }
+        if (chooserMode === "harmony" && option && pendingHarmony) {
+            chooserOpen = false;
+            if (option.kind === "newPalette")
+                startPrompt("newPaletteHarmony", pendingHarmony.label);
+            else
+                storeHarmony(option.paletteId);
             return;
         }
         chooserOpen = false;
@@ -481,6 +581,39 @@ PanelWindow {
                 applyPrompt();
             }
             return;
+        }
+
+        if (ctrl && event.key === Qt.Key_E) {
+            event.accepted = true;
+            openUniverse();
+            return;
+        }
+
+        // In the universe: Esc goes back, arrows move through colour space.
+        if (view === "universe") {
+            const big = shift ? 10 : 1;
+            if (event.key === Qt.Key_Escape) {
+                event.accepted = true;
+                if (shortcutsOpen)
+                    shortcutsOpen = false;
+                else
+                    closeUniverse();
+                return;
+            }
+            if (!ctrl && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
+                event.accepted = true;
+                universe.nudge((event.key === Qt.Key_Right ? 1 : -1) * big, 0, 0);
+                return;
+            }
+            if (!ctrl && (event.key === Qt.Key_Up || event.key === Qt.Key_Down)) {
+                event.accepted = true;
+                const step = (event.key === Qt.Key_Up ? 1 : -1) * big / 100;
+                if (alt)
+                    universe.nudge(0, step, 0);
+                else
+                    universe.nudge(0, 0, step);
+                return;
+            }
         }
 
         if (ctrl && event.key >= Qt.Key_1 && event.key <= Qt.Key_3) {
@@ -602,6 +735,8 @@ PanelWindow {
     function hints() {
         if (promptMode.length > 0)
             return "Enter save · Esc cancel";
+        if (view === "universe" && !chooserOpen)
+            return "←→ hue · ↑↓ value · Alt+↑↓ saturation (Shift: ×10) · type a colour · Enter copy · Ctrl+Enter more · Ctrl+S favourite · Ctrl+P add to combo · Esc back";
         if (chooserOpen)
             return "↑↓ or 1–9 choose · Enter " + (chooserMode === "actions" ? "do it" : "add") + " · Esc cancel";
         if (view === "combos")
@@ -747,6 +882,12 @@ PanelWindow {
                 onTextEdited: {
                     if (rootPrismPanel.promptMode.length > 0)
                         return;
+                    if (rootPrismPanel.universeOpen) {
+                        const typed = rootPrismPanel.service.parseColor(text);
+                        if (typed)
+                            universe.setHex(typed);
+                        return;
+                    }
                     rootPrismPanel.query = text;
                     rootPrismPanel.index = 0;
                 }
@@ -755,7 +896,7 @@ PanelWindow {
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: search.text.length === 0
-                    text: rootPrismPanel.promptMode.length > 0 ? "a name, Enter to save" : "type to filter by name or hex"
+                    text: rootPrismPanel.promptMode.length > 0 ? "a name, Enter to save" : rootPrismPanel.universeOpen ? "type a colour: #hex, rgb(), hsl(), rgba(rrggbbaa)" : "type to filter by name or hex"
                     color: rootPrismPanel.pt.secondaryTextColor
                     font.pixelSize: rootPrismPanel.pt.searchPixelSize
                 }
@@ -770,6 +911,8 @@ PanelWindow {
                     verticalCenter: parent.verticalCenter
                 }
                 readonly property string noun: rootPrismPanel.view === "combos" ? " combos" : " colours"
+
+                visible: !rootPrismPanel.universeOpen
 
                 text: rootPrismPanel.items.length === rootPrismPanel.sourceItems.length ? rootPrismPanel.items.length + noun : rootPrismPanel.items.length + " of " + rootPrismPanel.sourceItems.length + noun
                 color: rootPrismPanel.pt.secondaryTextColor
@@ -998,13 +1141,14 @@ PanelWindow {
                 id: crumb
 
                 width: parent.width
-                height: rootPrismPanel.palette !== null ? rootPrismPanel.pt.titlePixelSize + 16 : 0
-                visible: rootPrismPanel.palette !== null
+                height: rootPrismPanel.palette !== null || rootPrismPanel.universeOpen ? rootPrismPanel.pt.titlePixelSize + 16 : 0
+                visible: rootPrismPanel.palette !== null || rootPrismPanel.universeOpen
 
                 Text {
                     anchors.top: parent.top
                     width: parent.width
-                    text: rootPrismPanel.palette ? rootPrismPanel.palette.name + (rootPrismPanel.combo ? "  ›  " + rootPrismPanel.combo.name : "") : ""
+                    text: rootPrismPanel.universeOpen ? "󰐱  Universe" : rootPrismPanel.palette ? rootPrismPanel.palette.name + (rootPrismPanel.combo ? "  ›  " + rootPrismPanel.combo.name : "") : ""
+                    font.family: rootPrismPanel.universeOpen ? rootPrismPanel.theme.iconFontFamily : Qt.application.font.family
                     color: rootPrismPanel.pt.primaryTextColor
                     font.pixelSize: rootPrismPanel.pt.titlePixelSize
                     font.bold: true
@@ -1020,6 +1164,24 @@ PanelWindow {
                     right: parent.right
                     top: crumb.bottom
                     bottom: parent.bottom
+                }
+
+                PrismUniverse {
+                    id: universe
+
+                    anchors.fill: parent
+                    visible: rootPrismPanel.universeOpen
+                    pt: rootPrismPanel.pt
+                    service: rootPrismPanel.service
+                    iconFont: rootPrismPanel.theme.iconFontFamily
+                    dragGhost: dragGhost
+                    dragHost: rootPrismPanel
+
+                    onCopyRequested: text => {
+                        rootPrismPanel.service.copy(text);
+                        rootPrismPanel.notice = "Copied " + text + ".";
+                    }
+                    onSaveHarmony: (colors, label) => rootPrismPanel.saveHarmony(colors, label)
                 }
 
                 // Favourites / History: colour swatches.
@@ -1121,33 +1283,13 @@ PanelWindow {
                             // The grid flicks on drag too; the swatch drag wins.
                             preventStealing: true
 
-                            onPressed: mouse => {
-                                const at = mapToItem(dragGhost.parent, mouse.x, mouse.y);
-                                dragGhost.wasDragged = false;
-                                dragGhost.hex = swatch.modelData.hex;
-                                dragGhost.name = swatch.modelData.name;
-                                dragGhost.x = at.x - dragGhost.width / 2;
-                                dragGhost.y = at.y - dragGhost.height / 2;
-                            }
-                            onPositionChanged: {
-                                if (drag.active && !dragGhost.Drag.active) {
-                                    rootPrismPanel.chooserOpen = false;
-                                    dragGhost.Drag.active = true;
-                                }
-                            }
-                            onReleased: {
-                                if (dragGhost.Drag.active) {
-                                    dragGhost.Drag.drop();
-                                    dragGhost.Drag.active = false;
-                                    dragGhost.wasDragged = true;
-                                }
-                            }
+                            onPressed: mouse => rootPrismPanel.dragPress(swatchMouse, mouse, swatch.modelData.hex, swatch.modelData.name)
+                            onPositionChanged: rootPrismPanel.dragMove(swatchMouse)
+                            onReleased: rootPrismPanel.dragRelease()
                             // One click: the actions menu; double click: copy and close.
                             onClicked: {
-                                if (dragGhost.wasDragged) {
-                                    dragGhost.wasDragged = false;
+                                if (rootPrismPanel.consumeDragClick())
                                     return;
-                                }
                                 rootPrismPanel.index = swatch.index;
                                 rootPrismPanel.openActions();
                             }
@@ -1267,6 +1409,8 @@ PanelWindow {
                         selected: index === rootPrismPanel.index
                         favorite: rootPrismPanel.service.isFavorite(modelData.hex)
                         iconFont: rootPrismPanel.theme.iconFontFamily
+                        dragGhost: dragGhost
+                        dragHost: rootPrismPanel
                         // Round only the poster's outer corners, not where bands meet.
                         topLeftRadius: index === 0 ? rootPrismPanel.pt.swatchRadius : 0
                         topRightRadius: index === 0 ? rootPrismPanel.pt.swatchRadius : 0
@@ -1287,7 +1431,7 @@ PanelWindow {
                 Text {
                     anchors.centerIn: parent
                     width: parent.width * 0.7
-                    visible: rootPrismPanel.items.length === 0
+                    visible: rootPrismPanel.items.length === 0 && !rootPrismPanel.universeOpen
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.Wrap
                     text: rootPrismPanel.service.lastError.length > 0 ? rootPrismPanel.service.lastError

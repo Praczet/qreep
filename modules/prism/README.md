@@ -14,8 +14,14 @@ posters; Enter opens one full size: one band per colour, lettered in the
 combo colour that reads best on it, the way design accounts post colour
 combos (Timberwolf on American Brown).
 
-Step 2, not built yet: the editor. Wheels, sliders, complementary / triadic /
-analogous harmonies.
+The **universe** is the editor (`Ctrl+E`, or "Open the universe" in the
+colour menu): a hue ring with a saturation/value square inside, H S V A
+sliders painted with what they change, the colour in every notation (click to
+copy), and its harmonies: complementary, split complementary, analogous,
+triadic, tetradic, monochromatic (one hue, contrast from lightness and saturation, the Timberwolf / American Brown kind), shades, tints. Click a harmony swatch to travel there
+(double click copies it), ↺ returns to where you started, and "save as combo"
+stores a whole harmony as a combo, named after it. Copy, favourite and
+add-to-combo act on the colour you are editing.
 
 ## Use
 
@@ -31,7 +37,7 @@ analogous harmonies.
 | `Ctrl+S` | favourite / unfavourite |
 | `Ctrl+P` | add the colour to a combo (the last one used comes first), a new combo, or a new palette |
 | `Shift+Delete` | remove from this section; a combo goes on the second press |
-| drag a swatch | onto a sidebar combo: add it; onto a palette: a new combo with it; onto Favourites: favourite |
+| drag any colour box | (History / Favourites swatches, combo bands, the universe's preview, origin and harmony swatches) onto a sidebar combo: add it; onto a palette: a new combo with it; onto Favourites: favourite |
 | `Ctrl+1` `Ctrl+2` `Ctrl+3` | Favourites, History, first palette |
 | `Ctrl+↑` `Ctrl+↓` | previous / next in the sidebar, combos of unfolded palettes included |
 | `Ctrl+→` `Ctrl+←` | unfold / fold the current palette in the sidebar |
@@ -40,6 +46,9 @@ analogous harmonies.
 | `F2` / `Shift+F2` | rename the colour or combo / the palette |
 | `Alt+arrows` | move the colour within its combo, or the combo within its palette |
 | `Ctrl+Shift+Delete` | delete the palette (press twice) |
+| `Ctrl+E` | open the universe on the colour |
+| universe: `←→` `↑↓` | hue, value; `Alt+↑↓` saturation; `Shift` for ×10 |
+| universe: type | jump to a typed colour (`#hex`, `rgb()`, `hsl()`, `rgba(rrggbbaa)`) |
 | `F1` | shortcuts sheet |
 | `Esc` | back out: menu, prompt, sheet, open combo, filter, then close |
 
@@ -81,6 +90,7 @@ quickshell ipc -c qreep call qreep-prism pick
 quickshell ipc -c qreep call qreep-prism showSection history
 quickshell ipc -c qreep call qreep-prism showSection "Logo Idea Book"
 quickshell ipc -c qreep call qreep-prism addCombo "Color combos" "#d6ccd0=Timberwolf #763948=American Brown"
+quickshell ipc -c qreep call qreep-prism universe "#e9c46a"
 quickshell ipc -c qreep call qreep-prism state
 ```
 
@@ -91,5 +101,7 @@ quickshell ipc -c qreep call qreep-prism state
 * `PrismPanel.qml` - overlay: sidebar, swatch grid, combo grid, combo poster, prompts, keys.
 * `PrismPoster.qml` - a combo as a small poster (palette grid).
 * `PrismBand.qml` - one colour band: name, hex box, lettered in the combo's ink.
+* `PrismUniverse.qml` - the editor: wheel, sliders, notations, harmonies.
+* `PrismSlider.qml` - one painted channel slider.
 * `PrismNames.qml` - nearest CSS colour name for new colours.
 * `PrismTheme.qml` - paths, sizes, colours.

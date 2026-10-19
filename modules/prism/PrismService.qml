@@ -182,6 +182,69 @@ Item {
         return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
     }
 
+    // --- the universe: HSV and harmonies -------------------------------------
+
+    // { h 0-360, s 0-1, v 0-1, a 0-1 }
+    function hexToHsv(hex) {
+        const rgb = rgbOf(hex).map(value => value / 255);
+        const max = Math.max(rgb[0], rgb[1], rgb[2]);
+        const min = Math.min(rgb[0], rgb[1], rgb[2]);
+        const d = max - min;
+        let h = 0;
+
+        if (d > 0) {
+            if (max === rgb[0])
+                h = ((rgb[1] - rgb[2]) / d) % 6;
+            else if (max === rgb[1])
+                h = (rgb[2] - rgb[0]) / d + 2;
+            else
+                h = (rgb[0] - rgb[1]) / d + 4;
+            h = (h * 60 + 360) % 360;
+        }
+        return {
+            h: h,
+            s: max === 0 ? 0 : d / max,
+            v: max,
+            a: hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1
+        };
+    }
+
+    function hsvToHex(h, s, v, a) {
+        const hue = ((h % 360) + 360) % 360;
+        const c = v * s;
+        const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
+        const m = v - c;
+        const sector = Math.floor(hue / 60);
+        const rgb = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]][sector] || [c, x, 0];
+
+        return rgbToHex((rgb[0] + m) * 255, (rgb[1] + m) * 255, (rgb[2] + m) * 255, a === undefined ? 1 : a);
+    }
+
+    // Colour schemes from one colour. Hue rotations keep its saturation
+    // and value; shades and tints walk value and saturation instead.
+    function harmonies(h, s, v, a) {
+        const at = offsets => offsets.map(offset => hsvToHex(h + offset, s, v, a));
+
+        return [
+            { key: "complementary", label: "Complementary", colors: at([0, 180]) },
+            { key: "split", label: "Split complementary", colors: at([0, 150, 210]) },
+            { key: "analogous", label: "Analogous", colors: at([-30, 0, 30]) },
+            { key: "triadic", label: "Triadic", colors: at([0, 120, 240]) },
+            { key: "tetradic", label: "Tetradic", colors: at([0, 90, 180, 270]) },
+            // Tonal: one hue, contrast from lightness and saturation alone
+            // (Timberwolf on American Brown): pale and greyish to deep and rich.
+            { key: "monochromatic", label: "Monochromatic", colors: [
+                    hsvToHex(h, s * 0.1, Math.max(v, 0.86), a),
+                    hsvToHex(h, s * 0.45, Math.max(v, 0.7), a),
+                    hsvToHex(h, s, v, a),
+                    hsvToHex(h, Math.min(1, s * 1.15), v * 0.62, a),
+                    hsvToHex(h, Math.min(1, s * 1.2), v * 0.36, a)
+                ] },
+            { key: "shades", label: "Shades", colors: [1, 0.8, 0.6, 0.4, 0.25].map(f => hsvToHex(h, s, v * f, a)) },
+            { key: "tints", label: "Tints", colors: [1, 0.75, 0.5, 0.3, 0.15].map(f => hsvToHex(h, s * f, v + (1 - v) * (1 - f), a)) }
+        ];
+    }
+
     function nameOf(hex) {
         return names.nearest(rgbOf(hex));
     }
