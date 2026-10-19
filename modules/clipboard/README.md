@@ -15,6 +15,7 @@ modules/clipboard/
 ├── ClipboardService.qml   # clipvault calls, filtering, restore/delete/pins
 ├── ClipboardCard.qml      # text/code/color/image card rendering
 ├── ClipboardTheme.qml     # sizes, colors, placement, timing
+├── clipboard-pins         # pin store: pin / unpin / restore / list / migrate
 └── README.md
 ```
 
@@ -33,7 +34,13 @@ Current backend behavior:
 - `clipvault list` loads recent entries;
 - `clipvault get | wl-copy` restores the selected entry;
 - `clipvault delete` deletes the selected entry when supported by the backend;
-- pins are stored as entry IDs in `~/.local/share/clipvault/pinned.json`;
+- pins are copies of the content in `~/.local/share/qreep/clipboard-pins/`
+  (`index.json` plus one file per pin), made by the `clipboard-pins` worker
+  next to the QML. clipvault prunes old entries and renumbers its ids, so the
+  old id-only `pinned.json` lost pins; it is migrated once (whatever clipvault
+  still had) and renamed `pinned.json.migrated`. Restoring a pin runs
+  `wl-copy` from the file; deleting a pin unpins it; a history entry with the
+  same preview as a pin is hidden behind the pin;
 - image previews are exported from `clipvault get` into `$XDG_RUNTIME_DIR/qreep-clipboard-previews`.
 
 The exported image previews are runtime files, not a second clipboard database.
@@ -72,9 +79,11 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboa
 - `Down` or `Tab` moves focus from search into the card grid;
 - arrow keys move selection in the grid;
 - `Enter` restores the selected card;
-- `Escape` closes the panel;
+- `Escape` closes the F1 sheet, then the panel;
+- `F1` toggles the shortcuts sheet (above the panel);
+- `Ctrl+1` pins only, `Ctrl+2` … `Ctrl+5` image, text, code, color filters (same order as the header buttons, each toggles);
 - `Ctrl+S` or `Alt+S` toggles star on the selected card;
-- `Shift+Delete` deletes the selected card;
+- `Shift+Delete` deletes the selected card (unpins a pin);
 - printable typing while cards are focused returns focus to search and appends the typed character.
 
 ## Hyprland Binding
@@ -93,6 +102,6 @@ holding the steering wheel.
 These are follow-ups, not v1 blockers:
 
 1. Watch image preview cost with large screenshot history. If it feels heavy, add deliberate thumbnail sizing/caching instead of creating a second clipboard store by accident.
-2. Decide whether pins should become durable content later. Adam has seen `clipvault` prune old starred entries; solving that means privacy design, not a cute star icon with a database taped to it.
+2. Pins are durable now, which also means a pinned secret sits in plain files under `~/.local/share/qreep/clipboard-pins/` until it is unpinned. Pin passwords and tokens at your own risk; Fast Password exists for those.
 3. Consider a type-to-search overlay if the visible search row starts feeling too chunky.
 4. Add richer image handling only if the simple runtime preview path proves too limited.

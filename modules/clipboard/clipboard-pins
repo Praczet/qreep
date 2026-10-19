@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+"""clipboard-pins: pinned clipboard entries that outlive clipvault.
+
+clipvault prunes old entries and renumbers its ids, so a pin that is only an
+id disappears with the entry. A pin here is a copy of the content:
+
+    <dir>/index.json      [{hash, file, mime, preview, pinnedAt}], newest first
+    <dir>/<hash>.<ext>    the bytes, exactly as clipvault had them
+
+Usage:
+    clipboard-pins list    <dir>                 print index.json
+    clipboard-pins pin     <dir> <id> <preview>  copy clipvault entry <id> in
+    clipboard-pins unpin   <dir> <hash>          drop a pin and its file
+    clipboard-pins restore <dir> <hash>          put it on the clipboard (wl-copy)
+    clipboard-pins migrate <dir> <pinned.json>   old id pins -> copies, once
+"""
+
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+
+IMAGE_EXT = {"image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/bmp": "bmp", "image/webp": "webp"}
+
+
+def index_path(root):
+    return os.path.join(root, "index.json")
+
+
+def load(root):
+    try:
+        with open(index_path(root), encoding="utf-8") as handle:
+            data = json.load(handle)
+        return data if isinstance(data, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def save(root, pins):
+    os.makedirs(root, exist_ok=True)
+    tmp = index_path(root) + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as handle:
+        json.dump(pins, handle, indent=2, ensure_ascii=False)
+        handle.write("\n")
+    os.replace(tmp, index_path(root))
+
+
+def mime_of(preview):
+    """Images come from clipvault's preview ("[[ binary data 9kB image/png 313x173 ]]")."""
+    match = re.search(r"image/(?:jpeg|png|gif|bmp|webp)", preview, re.IGNORECASE)
+    return match.group(0).lower() if match else "text/plain"
+
+
+def pin(root, entry_id, preview):
+    data = subprocess.run(["clipvault", "get", entry_id], capture_output=True, check=False)
+    if data.returncode != 0 or not data.stdout:
+        sys.exit(f"clipvault get {entry_id} failed: {data.stderr.decode(errors='replace').strip() or 'empty entry'}")
+
+    mime = mime_of(preview)
+    digest = hashlib.sha256(data.stdout).hexdigest()[:20]
+    name = digest + "." + IMAGE_EXT.get(mime, "txt")
+    pins = [item for item in load(root) if item.get("hash") != digest]
+
+    os.makedirs(root, exist_ok=True)
+    with open(os.path.join(root, name), "wb") as handle:
+        handle.write(data.stdout)
+    pins.insert(0, {"hash": digest, "file": name, "mime": mime, "preview": preview, "pinnedAt": int(time.time())})
+    save(root, pins)
+    print(digest)
+
+
+def unpin(root, digest):
+    pins = load(root)
+    for item in pins:
+        if item.get("hash") == digest:
+            try:
+                os.remove(os.path.join(root, item["file"]))
+            except OSError:
+                pass
+    save(root, [item for item in pins if item.get("hash") != digest])
+
+
+def restore(root, digest):
+    item = next((item for item in load(root) if item.get("hash") == digest), None)
+    if item is None:
+        sys.exit(f"no pin {digest}")
+    command = ["wl-copy"] if item["mime"] == "text/plain" else ["wl-copy", "--type", item["mime"]]
+    with open(os.path.join(root, item["file"]), "rb") as handle:
+        subprocess.run(command, stdin=handle, check=True)
+
+
+def migrate(root, old_path):
+    """Pins from the id-only pinned.json: copy what clipvault still has, then retire the file."""
+    try:
+        with open(old_path, encoding="utf-8") as handle:
+            ids = [str(value) for value in json.load(handle)]
+    except (OSError, ValueError):
+        return
+
+    listing = subprocess.run(["clipvault", "list"], capture_output=True, text=True, check=False).stdout
+    previews = dict(line.split("\t", 1) for line in listing.splitlines() if "\t" in line)
+    kept, lost = 0, 0
+    for entry_id in reversed(ids):
+        if entry_id in previews:
+            pin(root, entry_id, previews[entry_id])
+            kept += 1
+        else:
+            lost += 1
+    os.replace(old_path, old_path + ".migrated")
+    print(f"migrated {kept}, already gone {lost}", file=sys.stderr)
+
+
+def main(argv):
+    if len(argv) < 3:
+        sys.exit(__doc__)
+    mode, root = argv[1], argv[2]
+    if mode == "list":
+        print(json.dumps(load(root)))
+    elif mode == "pin" and len(argv) == 5:
+        pin(root, argv[3], argv[4])
+    elif mode == "unpin" and len(argv) == 4:
+        unpin(root, argv[3])
+    elif mode == "restore" and len(argv) == 4:
+        restore(root, argv[3])
+    elif mode == "migrate" and len(argv) == 4:
+        migrate(root, argv[3])
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main(sys.argv)

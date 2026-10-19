@@ -11,7 +11,10 @@ QtObject {
     property string searchText: ""
     property bool starredOnly: false
     property var activeTypeFilters: []
-    property var pinnedIds: []
+    // Pins: copies of the content in pinDir (clipboard-pins), not clipvault
+    // ids, so they survive clipvault pruning and renumbering.
+    // [{ hash, file, mime, preview, pinnedAt }], newest first.
+    property var pins: []
     property var entries: []
     property var filteredEntries: []
     property int selectedIndex: filteredEntries.length > 0 ? 0 : -1
@@ -25,7 +28,10 @@ QtObject {
     property var currentRestoreEntry: null
     property bool refreshAfterPinnedRead: false
 
-    readonly property string pinnedFile: Quickshell.env("HOME") + "/.local/share/clipvault/pinned.json"
+    readonly property string pinDir: Quickshell.env("HOME") + "/.local/share/qreep/clipboard-pins"
+    readonly property string pinWorker: Quickshell.shellDir + "/modules/clipboard/clipboard-pins"
+    // The old id-only pins; migrated into pinDir once, then renamed .migrated.
+    readonly property string legacyPinnedFile: Quickshell.env("HOME") + "/.local/share/clipvault/pinned.json"
     readonly property string previewDir: (Quickshell.env("XDG_RUNTIME_DIR").length > 0 ? Quickshell.env("XDG_RUNTIME_DIR") : "/tmp") + "/qreep-clipboard-previews"
     readonly property string restoreNotificationTitle: "Qreep-Clipboard"
     readonly property string restoreNotificationIcon: "edit-paste-symbolic"
@@ -178,11 +184,11 @@ QtObject {
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0) {
-                rootClipboardService.reportError("Clipboard pin write failed:", pinnedWriteStderr.text);
+                rootClipboardService.reportError("Clipboard pin failed:", pinnedWriteStderr.text);
                 return;
             }
 
-            rootClipboardService.applyFilter();
+            rootClipboardService.refresh();
         }
     }
 
@@ -219,22 +225,21 @@ QtObject {
         }
 
         refreshAfterPinnedRead = thenRefresh;
-        pinnedReader.command = ["sh", "-c", "cat " + shellQuote(pinnedFile) + " 2>/dev/null || printf '[]'"];
+        pinnedReader.command = ["sh", "-c", "if [ -f " + shellQuote(legacyPinnedFile) + " ]; then " + shellQuote(pinWorker) + " migrate " + shellQuote(pinDir) + " " + shellQuote(legacyPinnedFile) + " >/dev/null; fi; " + shellQuote(pinWorker) + " list " + shellQuote(pinDir)];
         pinnedReader.running = true;
     }
 
     function applyPinnedOutput(stdout, stderr, exitCode) {
         try {
             const parsed = JSON.parse(stdout.length > 0 ? stdout : "[]");
-            pinnedIds = Array.isArray(parsed) ? parsed.map(value => String(value)) : [];
+            pins = Array.isArray(parsed) ? parsed : [];
         } catch (error) {
-            reportError("Clipboard pinned JSON error:", error);
-            pinnedIds = [];
+            reportError("Clipboard pins JSON error:", error, stderr);
+            pins = [];
         }
 
-        reapplyPinnedIds();
-
         if (!refreshAfterPinnedRead) {
+            entries = pinEntries().concat(entries.filter(entry => !entry.pinHash));
             applyFilter();
             return;
         }
@@ -248,15 +253,26 @@ QtObject {
         listRunner.running = true;
     }
 
-    function reapplyPinnedIds() {
-        if (entries.length === 0)
-            return;
+    // Pin entries for the grid: id "pin:<hash>", always starred, the image
+    // straight from the pin file (no clipvault export needed).
+    function pinEntries() {
+        const sources = Object.assign({}, imagePreviewSources);
 
-        entries = entries.map(current => {
-            const copy = cloneEntry(current);
-            copy.starred = pinnedIds.indexOf(copy.id) !== -1;
-            return copy;
+        const result = pins.map((pin, index) => {
+            const entry = normalizeEntry("pin:" + pin.hash, String(pin.preview || ""), index);
+
+            entry.starred = true;
+            entry.pinHash = pin.hash;
+            if (entry.type === "image") {
+                entry.imagePath = pinDir + "/" + pin.file;
+                sources[entry.id] = "file://" + entry.imagePath;
+            }
+            return entry;
         });
+
+        imagePreviewSources = sources;
+        imagePreviewRevision++;
+        return result;
     }
 
     function applyListOutput(stdout, stderr, exitCode) {
@@ -285,14 +301,14 @@ QtObject {
             parsedEntries.push(normalizeEntry(id, preview, index));
         }
 
-        parsedEntries.sort((left, right) => {
-            if (left.starred !== right.starred)
-                return left.starred ? -1 : 1;
+        // A pinned value copied again lands in clipvault too; the pin shows it.
+        const pinnedPreviews = {};
+        for (const pin of pins)
+            pinnedPreviews[pin.preview] = true;
 
-            return left.listIndex - right.listIndex;
-        });
+        const history = parsedEntries.filter(entry => !pinnedPreviews[entry.preview]);
 
-        entries = parsedEntries;
+        entries = pinEntries().concat(history);
         applyFilter();
         startImagePreviewExports(parsedEntries);
     }
@@ -314,7 +330,8 @@ QtObject {
             imagePath,
             imageSource: "",
             imageReady: false,
-            starred: pinnedIds.indexOf(id) !== -1,
+            starred: false,
+            pinHash: "",
             listIndex
         };
     }
@@ -357,7 +374,7 @@ QtObject {
 
         currentRestoreEntry = cloneEntry(entry);
         restoreRunner.running = false;
-        restoreRunner.command = ["sh", "-c", "printf '%s\\t' " + shellQuote(entry.id) + " | clipvault get | wl-copy"];
+        restoreRunner.command = entry.pinHash ? [pinWorker, "restore", pinDir, entry.pinHash] : ["sh", "-c", "printf '%s\\t' " + shellQuote(entry.id) + " | clipvault get | wl-copy"];
         restoreRunner.running = true;
     }
 
@@ -366,6 +383,12 @@ QtObject {
 
         if (!entry)
             return;
+
+        // Deleting a pin unpins it; the clipvault history is not touched.
+        if (entry.pinHash) {
+            runPinWorker(["unpin", pinDir, entry.pinHash]);
+            return;
+        }
 
         deleteRunner.running = false;
         deleteRunner.command = ["sh", "-c", "printf '%s\\n' " + shellQuote(entry.id) + " | clipvault delete"];
@@ -378,32 +401,21 @@ QtObject {
         if (!entry)
             return;
 
-        const nextPinned = pinnedIds.slice();
-        const existingIndex = nextPinned.indexOf(entry.id);
-
-        if (existingIndex === -1)
-            nextPinned.unshift(entry.id);
+        // Pinning copies the content out of clipvault; unpinning drops the copy.
+        if (entry.pinHash)
+            runPinWorker(["unpin", pinDir, entry.pinHash]);
         else
-            nextPinned.splice(existingIndex, 1);
-
-        pinnedIds = nextPinned;
-        entries = entries.map(current => {
-            const copy = cloneEntry(current);
-            copy.starred = nextPinned.indexOf(copy.id) !== -1;
-            return copy;
-        });
-
-        writePinnedIds();
+            runPinWorker(["pin", pinDir, entry.id, entry.preview]);
     }
 
-    function writePinnedIds() {
+    function runPinWorker(args) {
         pinnedWriter.running = false;
-        pinnedWriter.command = ["python3", "-c", "import json, os, sys\npath = sys.argv[1]\nos.makedirs(os.path.dirname(path), exist_ok=True)\nwith open(path, 'w', encoding='utf-8') as handle:\n    json.dump(sys.argv[2:], handle, indent=2)\n    handle.write('\\n')", pinnedFile].concat(pinnedIds);
+        pinnedWriter.command = [pinWorker].concat(args);
         pinnedWriter.running = true;
     }
 
     function startImagePreviewExports(nextEntries) {
-        imagePreviewQueue = nextEntries.filter(entry => entry.type === "image" && !imagePreviewSources[entry.id] && entry.id !== currentImagePreviewId);
+        imagePreviewQueue = nextEntries.filter(entry => entry.type === "image" && !entry.pinHash && !imagePreviewSources[entry.id] && entry.id !== currentImagePreviewId);
 
         if (!imagePreviewRunner.running)
             exportNextImagePreview();
@@ -525,6 +537,7 @@ QtObject {
             imageSource: entry.imageSource || "",
             imageReady: entry.imageReady === true,
             starred: entry.starred,
+            pinHash: entry.pinHash || "",
             listIndex: entry.listIndex
         };
     }
@@ -574,7 +587,7 @@ QtObject {
     }
 
     function restoredNotificationBody(entry) {
-        return entryTypeLabel(entry.type) + " [" + entry.id + "] copied";
+        return entryTypeLabel(entry.type) + (entry.pinHash ? " (pinned)" : " [" + entry.id + "]") + " copied";
     }
 
     function entryTypeLabel(type) {
