@@ -13,14 +13,18 @@ PlacesSection {
 
     signal activated(var item)
 
+    // Live for calendar and todos, the config list for the rest.
+    readonly property var items: service.blockItems(block)
+    readonly property bool listType: block.type === "documents" || block.type === "folders" || block.type === "folder"
+
     title: block.title
-    subtitle: block.type === "apps" || block.items.length === 0 ? "" : block.items.length + (block.items.length === 1 ? " item" : " items")
+    subtitle: subtitleText()
     shortcut: detailPane.shortcutFor(block.id)
     focused: detailPane.focusedCard === block.id
 
     // documents / folders
     Repeater {
-        model: rootPlacesBlock.block.type === "apps" ? [] : rootPlacesBlock.block.items
+        model: rootPlacesBlock.listType ? rootPlacesBlock.items : []
 
         PlacesFileRow {
             required property var modelData
@@ -30,6 +34,7 @@ PlacesSection {
             tag: modelData.kind === "folder" ? "󰉋" : rootPlacesBlock.fileGlyph(modelData.path)
             tagColor: rootPlacesBlock.pt.accentColor
             path: modelData.label
+            trailing: modelData.time ? rootPlacesBlock.service.ago(modelData.time) : ""
             selected: rootPlacesBlock.detailPane.isFileSelected(rootPlacesBlock.block.id, index)
             onSelectedChanged: {
                 if (selected)
@@ -46,7 +51,7 @@ PlacesSection {
         spacing: 8
 
         Repeater {
-            model: rootPlacesBlock.block.type === "apps" ? rootPlacesBlock.block.items : []
+            model: rootPlacesBlock.block.type === "apps" ? rootPlacesBlock.items : []
 
             Rectangle {
                 id: appTile
@@ -107,13 +112,100 @@ PlacesSection {
         }
     }
 
+    // calendar: a day heading whenever the day changes, then time + title.
+    Repeater {
+        model: rootPlacesBlock.block.type === "calendar" ? rootPlacesBlock.items : []
+
+        Column {
+            id: eventItem
+
+            required property var modelData
+            required property int index
+            readonly property bool newDay: index === 0 || rootPlacesBlock.items[index - 1].day !== modelData.day
+
+            width: parent.width
+            spacing: 2
+
+            Text {
+                visible: eventItem.newDay
+                topPadding: eventItem.index === 0 ? 0 : 6
+                text: eventItem.modelData.day
+                color: rootPlacesBlock.pt.secondaryTextColor
+                font.pixelSize: rootPlacesBlock.pt.metaPixelSize
+                font.bold: true
+            }
+
+            PlacesFileRow {
+                pt: rootPlacesBlock.pt
+                tag: eventItem.modelData.allDay ? "󰃭" : "󰥔"
+                tagColor: rootPlacesBlock.pt.accentColor
+                path: eventItem.modelData.time + "  " + eventItem.modelData.title
+                trailing: eventItem.modelData.location.length > 28 ? eventItem.modelData.location.slice(0, 27) + "…" : eventItem.modelData.location
+                selected: rootPlacesBlock.detailPane.isFileSelected(rootPlacesBlock.block.id, eventItem.index)
+                onSelectedChanged: {
+                    if (selected)
+                        rootPlacesBlock.detailPane.ensureVisible(this);
+                }
+                onClicked: rootPlacesBlock.activated(eventItem.modelData)
+            }
+        }
+    }
+
+    // todos: state tag, the task, and the page it lives on.
+    Repeater {
+        model: rootPlacesBlock.block.type === "todos" ? rootPlacesBlock.items : []
+
+        PlacesFileRow {
+            required property var modelData
+            required property int index
+
+            pt: rootPlacesBlock.pt
+            tag: modelData.state === "NOW" || modelData.state === "DOING" ? "󰐊" : modelData.state === "LATER" || modelData.state === "WAITING" ? "󰔟" : "☐"
+            tagColor: modelData.state === "NOW" || modelData.state === "DOING" ? rootPlacesBlock.pt.warningColor : modelData.state === "TODO" ? rootPlacesBlock.pt.accentColor : rootPlacesBlock.pt.secondaryTextColor
+            path: modelData.text
+            trailing: modelData.page
+            selected: rootPlacesBlock.detailPane.isFileSelected(rootPlacesBlock.block.id, index)
+            onSelectedChanged: {
+                if (selected)
+                    rootPlacesBlock.detailPane.ensureVisible(this);
+            }
+            onClicked: rootPlacesBlock.activated(modelData)
+        }
+    }
+
     Text {
-        visible: rootPlacesBlock.block.items.length === 0
+        visible: rootPlacesBlock.items.length === 0
         width: parent.width
-        text: ["documents", "folders", "apps"].indexOf(rootPlacesBlock.block.type) < 0 ? "Unknown block type \"" + rootPlacesBlock.block.type + "\" (not built yet, or a typo)." : "Nothing listed yet: add \"items\" in places.json."
+        text: rootPlacesBlock.emptyText()
         color: rootPlacesBlock.pt.secondaryTextColor
         font.pixelSize: rootPlacesBlock.pt.metaPixelSize + 1
         wrapMode: Text.Wrap
+    }
+
+    function subtitleText() {
+        const count = items.length;
+
+        if (block.type === "apps" || count === 0)
+            return "";
+        if (block.type === "calendar")
+            return "next " + block.days + (block.days === 1 ? " day" : " days");
+        if (block.type === "todos")
+            return count + " open · Logseq";
+        if (block.type === "folder")
+            return service.shortPath(block.path) + (count >= block.limit ? " · first " + count : " · " + count);
+        return count + (count === 1 ? " item" : " items");
+    }
+
+    function emptyText() {
+        if (["documents", "folders", "folder", "apps", "calendar", "todos"].indexOf(block.type) < 0)
+            return "Unknown block type \"" + block.type + "\" (not built yet, or a typo).";
+        if (block.type === "calendar")
+            return "Nothing on the calendar for the next " + block.days + (block.days === 1 ? " day." : " days.");
+        if (block.type === "todos")
+            return "No open todos. Either very productive or very forgetful.";
+        if (block.type === "folder")
+            return block.path ? "Empty, or not there: " + service.shortPath(block.path) : "A folder block needs \"path\".";
+        return "Nothing listed yet: add \"items\" in places.json.";
     }
 
     function fileGlyph(path) {

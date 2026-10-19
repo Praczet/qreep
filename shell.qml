@@ -109,6 +109,7 @@ ShellRoot {
         id: places
 
         theme: qreepTheme
+        kipController: kip
     }
 
     BloomModule.Bloom {

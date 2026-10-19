@@ -23,13 +23,14 @@ Flickable {
 
     readonly property bool isPlace: project !== null && project.kind === "place"
     readonly property var blocks: project ? project.blocks : []
-    // Blocks laid out in rows: apps get a full row, the rest pair up.
+    // Blocks laid out in rows: "wide" blocks get a full row, the rest pair up
+    // in config order.
     readonly property var blockRows: {
         const rows = [];
         let pending = null;
 
         for (const block of blocks) {
-            if (block.type === "apps") {
+            if (block.wide) {
                 if (pending)
                     rows.push([pending]);
                 pending = null;
@@ -77,7 +78,7 @@ Flickable {
             return fileItems(detail.docs.slice(0, listRows).map(file => file.path));
 
         const block = blocks.find(candidate => candidate.id === card);
-        return block ? block.items : [];
+        return block ? service.blockItems(block) : [];
     }
 
     // "Alt+3" for the third card, nothing past 9.
@@ -140,6 +141,17 @@ Flickable {
 
     function moveFile(step) {
         focusedIndex = Math.max(0, Math.min(focusedItems.length - 1, focusedIndex + step));
+    }
+
+    // Apps blocks lay their items out in a row, not a column.
+    function focusedCardIsRow() {
+        const block = blocks.find(candidate => candidate.id === focusedCard);
+        return block !== undefined && block.type === "apps";
+    }
+
+    function canMoveInRow(step) {
+        const next = focusedIndex + step;
+        return next >= 0 && next < focusedItems.length;
     }
 
     function focusedItem() {
@@ -315,7 +327,7 @@ Flickable {
 
                 Text {
                     width: parent.width
-                    text: rootPlacesDetail.project ? rootPlacesDetail.project.displayPath + (rootPlacesDetail.project.group ? "  ·  " + rootPlacesDetail.project.group : "") : ""
+                    text: rootPlacesDetail.project ? [rootPlacesDetail.project.displayPath, rootPlacesDetail.project.group].filter(part => part.length > 0).join("  ·  ") : ""
                     color: rootPlacesDetail.pt.secondaryTextColor
                     font.family: rootPlacesDetail.pt.monoFontFamily
                     font.pixelSize: rootPlacesDetail.pt.metaPixelSize
@@ -602,7 +614,7 @@ Flickable {
             }
         }
 
-        // --- configured blocks: apps get a row, the rest pair up --------------------
+        // --- configured blocks: wide ones get a row, the rest pair up -------------
         Repeater {
             model: rootPlacesDetail.blockRows
 

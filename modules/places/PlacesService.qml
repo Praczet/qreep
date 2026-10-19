@@ -132,6 +132,55 @@ Item {
         id: launcher
     }
 
+    Process {
+        id: folderProcess
+
+        stdout: StdioCollector {
+            id: folderStdout
+
+            waitForEnd: true
+        }
+
+        onExited: rootPlacesService.applyFolders(folderStdout.text)
+    }
+
+    Process {
+        id: todoProcess
+
+        stdout: StdioCollector {
+            id: todoStdout
+
+            waitForEnd: true
+        }
+
+        onExited: rootPlacesService.applyTodos(todoStdout.text)
+    }
+
+    // Calendar sources, the same three files the bar clock watches.
+    Repeater {
+        model: rootPlacesService.wantsCalendar ? [
+            { key: "local", path: Quickshell.shellDir + "/events.json" },
+            { key: "google", path: rootPlacesService.home + "/.cache/qreep/calendar/events.json" },
+            { key: "microsoft", path: rootPlacesService.home + "/.cache/qreep/calendar/microsoft-events.json" }
+        ] : []
+
+        Item {
+            id: calendarSource
+
+            required property var modelData
+
+            FileView {
+                path: calendarSource.modelData.path
+                preload: true
+                watchChanges: true
+
+                onFileChanged: reload()
+                onLoaded: rootPlacesService.applyCalendarFile(calendarSource.modelData.key, text())
+                onLoadFailed: rootPlacesService.applyCalendarFile(calendarSource.modelData.key, "[]")
+            }
+        }
+    }
+
     // Selection settles before the detail read starts, so arrowing through
     // the list does not spawn a git log per row.
     Timer {
@@ -152,6 +201,8 @@ Item {
     function refresh() {
         configFile.reload();
         refreshSummaries();
+        refreshTodos();
+        refreshFolders();
         detailFor = "";
         if (selected)
             detailDelay.restart();
@@ -178,13 +229,251 @@ Item {
                             label: String(item).replace(/\.desktop$/, "")
                         }));
 
+            // folder: one directory, listed live (see folderListings).
+            const folderPath = type === "folder" ? blockPathItem(String(block.path || ""), "folder", basePath).path : "";
+
             return {
                 id: "block:" + index,
                 type: type,
-                title: String(block.title || defaultBlockTitle(type)),
-                items: items
+                title: String(block.title || (type === "folder" && folderPath ? folderPath.replace(/^.*\//, "") : defaultBlockTitle(type))),
+                path: folderPath,
+                sort: block.sort === "modified" ? "modified" : "name",
+                hidden: block.hidden === true,
+                items: items,
+                // "wide": true spans both columns; every block is one cell otherwise.
+                wide: block.wide === true,
+                // calendar: days ahead; todos: states to show. Both: limit.
+                days: Math.max(1, Number(block.days) || 2),
+                limit: Math.max(1, Number(block.limit) || 10),
+                states: Array.isArray(block.states) ? block.states.map(state => String(state).toUpperCase()) : ["NOW", "DOING", "TODO", "LATER"]
             };
         });
+    }
+
+    // Live types compute their items from current data, so a block's list
+    // follows the calendar cache and the Logseq graph while Places is open.
+    function blockItems(block) {
+        if (!block)
+            return [];
+        if (block.type === "calendar")
+            return upcomingEvents(block.days, block.limit);
+        if (block.type === "todos")
+            return todos.filter(todo => block.states.indexOf(todo.state) >= 0).slice(0, block.limit);
+        if (block.type === "folder")
+            return folderItems(block);
+        return block.items;
+    }
+
+    // --- folder: a directory's contents, one find per refresh ----------------
+
+    // path -> [{ type: "d" | "f" | ..., time, name }]
+    property var folderListings: ({})
+    readonly property var folderPaths: projects.reduce((paths, project) => paths.concat(project.blocks.filter(block => block.type === "folder" && block.path).map(block => block.path)), []).filter((path, index, all) => all.indexOf(path) === index)
+
+    onFolderPathsChanged: refreshFolders()
+
+    function refreshFolders() {
+        if (folderPaths.length === 0 || folderProcess.running)
+            return;
+
+        // GNU find: type, mtime, name per entry, one level deep. Symlinks to
+        // folders count as folders (%Y follows them).
+        folderProcess.command = ["sh", "-c", "for p in \"$@\"; do printf '@@DIR %s\\n' \"$p\"; find \"$p\" -mindepth 1 -maxdepth 1 -printf '%Y\\t%T@\\t%f\\n' 2>/dev/null; done", "places"].concat(folderPaths);
+        folderProcess.running = true;
+    }
+
+    function applyFolders(text) {
+        const next = {};
+        let current = null;
+
+        for (const line of String(text || "").split("\n")) {
+            if (line.indexOf("@@DIR ") === 0) {
+                current = line.slice(6);
+                next[current] = [];
+                continue;
+            }
+
+            const parts = line.split("\t");
+            if (!current || parts.length < 3)
+                continue;
+
+            next[current].push({
+                type: parts[0],
+                time: Number(parts[1]) || 0,
+                name: parts.slice(2).join("\t")
+            });
+        }
+
+        folderListings = next;
+    }
+
+    // Folders first, then files; by name or newest first. Dot-entries only
+    // with "hidden": true.
+    function folderItems(block) {
+        const entries = (folderListings[block.path] || []).filter(entry => block.hidden || entry.name.indexOf(".") !== 0);
+
+        entries.sort((left, right) => {
+            const leftDir = left.type === "d" ? 0 : 1;
+            const rightDir = right.type === "d" ? 0 : 1;
+
+            if (leftDir !== rightDir)
+                return leftDir - rightDir;
+            return block.sort === "modified" ? right.time - left.time : left.name.localeCompare(right.name);
+        });
+
+        return entries.slice(0, block.limit).map(entry => ({
+                    kind: entry.type === "d" ? "folder" : "file",
+                    path: block.path + "/" + entry.name,
+                    label: entry.name,
+                    time: entry.time
+                }));
+    }
+
+    readonly property bool wantsCalendar: projects.some(project => project.blocks.some(block => block.type === "calendar"))
+    readonly property bool wantsTodos: projects.some(project => project.blocks.some(block => block.type === "todos"))
+
+    // --- calendar: the files the bar clock reads (EventStore) ---------------
+
+    property var calendarFiles: ({})
+    readonly property var calendarEvents: Object.keys(calendarFiles).reduce((all, key) => all.concat(calendarFiles[key]), [])
+
+    function applyCalendarFile(key, text) {
+        let events = [];
+
+        try {
+            const parsed = JSON.parse(text);
+            events = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.events) ? parsed.events : []);
+        } catch (error) {
+            events = [];
+        }
+
+        const next = Object.assign({}, calendarFiles);
+        next[key] = events;
+        calendarFiles = next;
+    }
+
+    function eventStart(event) {
+        const raw = event.start && (event.start.dateTime || event.start.date) || event.date || "";
+        // A bare date is local midnight, not UTC midnight.
+        return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + "T00:00:00") : new Date(raw);
+    }
+
+    function eventEnd(event, start, allDay) {
+        const raw = event.end && (event.end.dateTime || event.end.date) || "";
+        const end = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + "T00:00:00") : new Date(raw);
+
+        if (!isNaN(end.getTime()))
+            return end;
+        return new Date(start.getTime() + (allDay ? 24 : 1) * 3600 * 1000);
+    }
+
+    // Events from now (still running counts) to the end of `days` days.
+    function upcomingEvents(days, limit) {
+        const now = new Date();
+        const horizon = new Date(now);
+        horizon.setHours(0, 0, 0, 0);
+        horizon.setDate(horizon.getDate() + days);
+        const seen = {};
+        const items = [];
+
+        for (const event of calendarEvents) {
+            if (!event || event.status === "cancelled" || /^canceled:/i.test(String(event.title || "")))
+                continue;
+
+            const start = eventStart(event);
+            if (isNaN(start.getTime()))
+                continue;
+
+            const allDay = event.allDay === true;
+            const end = eventEnd(event, start, allDay);
+            const key = (event.id || event.title) + start.getTime();
+
+            if (end <= now || start >= horizon || seen[key])
+                continue;
+            seen[key] = true;
+
+            items.push({
+                kind: "event",
+                title: String(event.title || "(no title)"),
+                start: start,
+                allDay: allDay,
+                time: allDay ? "all day" : Qt.formatTime(start, "HH:mm"),
+                day: dayLabel(start),
+                location: String(event.location || ""),
+                calendar: String(event.calendar || ""),
+                url: String(event.url || event.htmlLink || "")
+            });
+        }
+
+        items.sort((left, right) => left.start - right.start || (right.allDay ? 1 : 0) - (left.allDay ? 1 : 0));
+        return items.slice(0, limit);
+    }
+
+    function dayLabel(date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const day = new Date(date);
+        day.setHours(0, 0, 0, 0);
+        const offset = Math.round((day - today) / (24 * 3600 * 1000));
+
+        if (offset <= 0)
+            return "Today";
+        if (offset === 1)
+            return "Tomorrow";
+        return Qt.formatDate(day, "ddd d MMM");
+    }
+
+    // --- todos: Logseq TODO / LATER / NOW / DOING lines ----------------------
+
+    property var todos: []
+
+    // The first config load can land after refresh() ran; catch up then.
+    onWantsTodosChanged: refreshTodos()
+
+    function refreshTodos() {
+        if (!wantsTodos || todoProcess.running)
+            return;
+
+        todoProcess.command = ["rg", "--no-heading", "--line-number", "--with-filename", "--glob", "*.md", "-e", "^\\s*- (NOW|DOING|TODO|LATER|WAITING) ", theme.modules.kip.logseqGraphDir + "/journals", theme.modules.kip.logseqGraphDir + "/pages"];
+        todoProcess.running = true;
+    }
+
+    function applyTodos(text) {
+        const order = {
+            NOW: 0,
+            DOING: 0,
+            TODO: 1,
+            WAITING: 2,
+            LATER: 3
+        };
+        const next = [];
+
+        for (const line of String(text || "").split("\n")) {
+            const match = /^(.*?):(\d+):\s*- (NOW|DOING|TODO|LATER|WAITING) (.*)$/.exec(line);
+            if (!match)
+                continue;
+
+            const absolutePath = match[1];
+            const file = absolutePath.replace(/^.*\//, "");
+            const journal = /^(\d{4})_(\d{2})_(\d{2})\.md$/.exec(file);
+
+            next.push({
+                kind: "todo",
+                state: match[3],
+                // Drop Logseq noise: priorities, SCHEDULED/DEADLINE stamps.
+                text: match[4].replace(/\[#[ABC]\]\s*/g, "").replace(/(SCHEDULED|DEADLINE): <[^>]*>/g, "").trim(),
+                absolutePath: absolutePath,
+                path: absolutePath,
+                file: file,
+                line: Number(match[2]),
+                page: journal ? Qt.formatDate(new Date(Number(journal[1]), Number(journal[2]) - 1, Number(journal[3])), "d MMM yyyy") : file.replace(/\.md$/, "").replace(/___/g, "/"),
+                sortKey: journal ? journal[1] + journal[2] + journal[3] : "0"
+            });
+        }
+
+        // NOW/DOING first, then TODO, then later states; newest journal first.
+        next.sort((left, right) => order[left.state] - order[right.state] || right.sortKey.localeCompare(left.sortKey) || left.line - right.line);
+        todos = next;
     }
 
     function blockPathItem(item, kind, basePath) {
@@ -197,7 +486,8 @@ Item {
         return {
             kind: kind,
             path: path.replace(/\/+$/, ""),
-            label: String(spec.name || shortPath(path))
+            // Documents default to the file name; folders to the ~ path.
+            label: String(spec.name || (kind === "file" ? path.replace(/^.*\//, "") : shortPath(path)))
         };
     }
 
@@ -205,7 +495,10 @@ Item {
         return ({
                 documents: "Documents",
                 folders: "Folders",
-                apps: "Apps"
+                folder: "Folder",
+                apps: "Apps",
+                calendar: "Calendar",
+                todos: "Todos"
             })[type] || type;
     }
 

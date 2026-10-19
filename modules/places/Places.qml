@@ -9,6 +9,9 @@ Scope {
     id: rootPlaces
 
     required property QtObject theme
+    // KIP controller: todos open through Kip.runAction (Logseq page naming,
+    // cold-start handling) instead of a second copy of that logic.
+    property QtObject kipController: null
     property bool open: false
     property var targetScreen: null
     readonly property bool panelLoaded: open || closeTimer.running
@@ -69,6 +72,7 @@ Scope {
             theme: rootPlaces.theme
             service: placesService
             panelOpen: rootPlaces.open
+            kipController: rootPlaces.kipController
 
             onCloseRequested: rootPlaces.hide()
         }

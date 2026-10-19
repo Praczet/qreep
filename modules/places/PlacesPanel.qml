@@ -12,6 +12,7 @@ PanelWindow {
     required property QtObject theme
     required property QtObject service
     required property bool panelOpen
+    property QtObject kipController: null
 
     readonly property QtObject pt: theme.modules.places
     property bool presented: false
@@ -20,6 +21,8 @@ PanelWindow {
     // "Open with" for a clicked file: KIP's chooser and KIP's file actions,
     // editor first. chooserFile is relative to the selected project.
     property string chooserFile: ""
+    // Set for a Logseq todo: the chooser then runs through Kip.runAction.
+    property var chooserTodo: null
     property var chooserOptions: []
     property int chooserIndex: 0
     readonly property bool chooserOpen: chooserFile.length > 0
@@ -613,11 +616,19 @@ PanelWindow {
         switch (event.key) {
         case Qt.Key_Up:
         case Qt.Key_Down:
-            detail.moveFile(event.key === Qt.Key_Down ? 1 : -1);
+            // A row of app tiles has no up/down inside it: change card instead.
+            if (detail.focusedCardIsRow())
+                detail.stepCard(event.key === Qt.Key_Down ? 1 : -1);
+            else
+                detail.moveFile(event.key === Qt.Key_Down ? 1 : -1);
             break;
         case Qt.Key_Left:
         case Qt.Key_Right:
-            detail.stepCard(event.key === Qt.Key_Right ? 1 : -1);
+            // App tiles: move along the row, leave the card only past its ends.
+            if (detail.focusedCardIsRow() && detail.canMoveInRow(event.key === Qt.Key_Right ? 1 : -1))
+                detail.moveFile(event.key === Qt.Key_Right ? 1 : -1);
+            else
+                detail.stepCard(event.key === Qt.Key_Right ? 1 : -1);
             break;
         case Qt.Key_Return:
         case Qt.Key_Enter:
@@ -642,6 +653,26 @@ PanelWindow {
         if (!item)
             return;
 
+        // Calendar event: its page (Google has one), else nothing to open.
+        if (item.kind === "event") {
+            if (item.url.length > 0) {
+                service.run(["xdg-open", item.url], service.home);
+                closeRequested();
+            }
+            return;
+        }
+
+        // Logseq todo: KIP's markdown openers, Logseq page first.
+        if (item.kind === "todo") {
+            const kt = theme.modules.kip;
+
+            chooserTodo = item;
+            chooserOptions = kipController ? kt.markdownOpeners : kt.markdownOpeners.filter(opener => opener.id !== "logseq");
+            chooserIndex = 0;
+            chooserFile = item.absolutePath;
+            return;
+        }
+
         if (item.kind === "app") {
             if (service.launchApp(item.id))
                 closeRequested();
@@ -659,6 +690,8 @@ PanelWindow {
     // which put "Open with the default app" first.
     function openChooser(path, isFolder) {
         const kt = theme.modules.kip;
+
+        chooserTodo = null;
 
         if (isFolder) {
             chooserOptions = kt.folderActions;
@@ -713,14 +746,22 @@ PanelWindow {
         // Blocks hand over absolute paths; project cards relative ones.
         const path = chooserFile.indexOf("/") === 0 ? chooserFile : (project ? project.path + "/" + chooserFile : "");
         const cwd = project && project.path ? project.path : service.home;
+        const todo = chooserTodo;
 
         chooserFile = "";
+        chooserTodo = null;
         if (!option || path.length === 0)
             return;
 
+        if (todo && kipController) {
+            kipController.runAction(todo, option);
+            closeRequested();
+            return;
+        }
+
         const values = {
             path: path,
-            line: "1",
+            line: todo ? String(todo.line) : "1",
             dir: path.replace(/\/[^\/]*$/, "") || "/"
         };
         const command = option.command.map(part => String(part).replace(/\{(\w+)\}/g, (match, key) => values[key] !== undefined ? values[key] : match));

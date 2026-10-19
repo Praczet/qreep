@@ -87,12 +87,24 @@ the file cards. Every block takes `"enabled": false` and an optional `"title"`.
 | `apps` | desktop entry ids (`zen`, `org.gnome.Calculator`, `.desktop` optional) | launch (Terminal=true apps run in kitty) |
 | `documents` | paths, or `{ "name", "path" }` | Open with chooser; documents and images put "default app" first |
 | `folders` | paths, or `{ "name", "path" }` | folder chooser: yazi, terminal here, broot, copy path |
+| `folder` | none; `"path"`, `"sort"` (`name` / `modified`), `"limit"`, `"hidden"` | lists the folder's contents, subfolders first; folder chooser or Open with |
+| `calendar` | none; `"days"` (default 2), `"limit"` (default 10) | opens the event page (Google events have one) |
+| `todos` | none; `"states"` (default NOW, DOING, TODO, LATER), `"limit"` | KIP's markdown chooser: Logseq page, nvim at the line, Vivify |
 
-Paths are absolute, `~/…`, or relative to the entry's own `path`. Apps get a
-full row; other blocks pair up two per row. Cards are numbered in reading
+`calendar` reads the same files as the bar clock: repo `events.json`,
+`~/.cache/qreep/calendar/events.json` (Google) and `microsoft-events.json`.
+Events that already ended or were cancelled are skipped; the list groups by
+Today / Tomorrow / day. `todos` runs `rg` over the Logseq graph
+(`KipTheme.logseqGraphDir`, journals and pages) for `- TODO` style lines,
+NOW/DOING first, newest journal first; read-only, ticking them off stays in
+Logseq. Both follow their data while Places is open.
+
+Paths are absolute, `~/…`, or relative to the entry's own `path`. Blocks pair
+up two per row in config order; `"wide": true` gives a block the whole row. Cards are numbered in reading
 order for `Alt+1`…`Alt+9` (a project's four file cards first, then its
-blocks), and Tab walks them after the buttons. More block types (calendar,
-todos, usb, ssh, smb) are on the way; an unknown type shows a card saying so.
+blocks), and Tab walks them after the buttons. In an apps card ←→ move
+along the row and ↑↓ change card. More block types (usb, ssh,
+smb) are on the way; an unknown type shows a card saying so.
 
 ## What it finds on its own
 
