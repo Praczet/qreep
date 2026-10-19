@@ -23,6 +23,7 @@ quickshell --path . ipc call qreep-bloom showBloom <profile> <wallpaper>
 quickshell --path . ipc call qreep-bloom doneBloom
 quickshell --path . ipc call qreep-bloom hideBloom
 quickshell --path . ipc call qreep-bloom pickupBloom
+quickshell --path . ipc call qreep-bloom toggle
 quickshell --path . ipc call qreep-bloom showMe
 quickshell --path . ipc call qreep-bloom hideMe
 ```

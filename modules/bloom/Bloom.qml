@@ -46,6 +46,15 @@ Scope {
             return "ok";
         }
 
+        // The progress panel on or off; on shows the last (or running) run.
+        function toggle(): string {
+            if (rootBloom.open)
+                rootBloom.hide();
+            else
+                rootBloom.show();
+            return rootBloom.open ? "shown" : "hidden";
+        }
+
         function showMe(): string {
             rootBloom.show();
             return "ok";
