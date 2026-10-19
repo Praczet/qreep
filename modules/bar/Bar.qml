@@ -262,6 +262,7 @@ PanelWindow {
         right: true
     }
 
+    screen: barModeService.screen
     implicitHeight: rootBar.activeBarHeight + rootBar.activeTopPadding
     color: "transparent"
     mask: Region {

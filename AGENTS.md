@@ -1021,7 +1021,7 @@ v0.1.0 - usable enough to judge Waybar quietly
 Qreep currently has:
 
 - a top `PanelWindow` bar with left, center, right, and overlay slots;
-- bar mode runtime state in `modules/bar/BarModeService.qml`, exposed through IPC target `qreep-bar`;
+- bar mode and bar screen runtime state in `modules/bar/BarModeService.qml`, exposed through IPC target `qreep-bar`; the bar starts on Hyprland's focused monitor, re-picks when its screen disappears, and moves on `qreep-bar moveToFocused` (Adam's Hyprland `monitors.lua` calls that after a lid/profile change) instead of following focus around;
 - current bar modes:
   - `reserved`: normal bar, keeps layer-shell exclusive zone;
   - `overlay`: normal bar, no exclusive zone;
@@ -1081,6 +1081,8 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar set
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar setCollapsed
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar toggleOverlay
 quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar toggleCollapsed
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar moveToFocused
+quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-bar getScreen
 ```
 
 Useful pill IPC commands:
