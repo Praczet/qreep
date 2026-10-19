@@ -27,6 +27,49 @@ PanelWindow {
     property var chooserTodo: null
     // Set for a USB drive: the chooser's options are udisksctl actions.
     property var chooserUsb: null
+    // Set for an SMB share: the chooser's options are mount actions.
+    property var chooserSmb: null
+    // SMB password dialog: the share being logged into, and why.
+    property var loginShare: null
+    property string loginMessage: ""
+    property bool loginRemember: true
+    readonly property bool loginOpen: loginShare !== null
+
+    Connections {
+        target: rootPlacesPanel.service
+
+        function onSmbPasswordNeeded(share, message) {
+            rootPlacesPanel.openLogin(share, message);
+        }
+    }
+
+    function openLogin(share, message) {
+        chooserFile = "";
+        loginShare = share;
+        loginMessage = message;
+        loginRemember = true;
+        loginDomain.text = share.domain;
+        loginPassword.text = "";
+        loginPassword.forceActiveFocus();
+    }
+
+    function closeLogin() {
+        loginPassword.text = "";
+        loginShare = null;
+        search.forceActiveFocus();
+    }
+
+    function submitLogin() {
+        if (!loginShare || loginPassword.text.length === 0)
+            return;
+
+        const share = loginShare;
+        const password = loginPassword.text;
+
+        closeLogin();
+        service.smbLogin(share, loginDomain.text, password, loginRemember);
+        closeRequested();
+    }
     property var chooserOptions: []
     property int chooserIndex: 0
     readonly property bool chooserOpen: chooserFile.length > 0
@@ -104,6 +147,8 @@ PanelWindow {
         enterTimer.stop();
         presented = false;
         shortcutsOpen = false;
+        loginPassword.text = "";
+        loginShare = null;
         findMode = false;
         chooserFile = "";
     }
@@ -181,7 +226,7 @@ PanelWindow {
             id: cardContent
 
             anchors.fill: parent
-            layer.enabled: rootPlacesPanel.chooserOpen || rootPlacesPanel.shortcutsOpen
+            layer.enabled: rootPlacesPanel.chooserOpen || rootPlacesPanel.shortcutsOpen || rootPlacesPanel.loginOpen
             layer.effect: MultiEffect {
                 blurEnabled: true
                 blur: 1.0
@@ -468,6 +513,172 @@ PanelWindow {
             }
         }
 
+        // --- SMB password dialog ---------------------------------------------------
+        // The password only ever lives in loginPassword.text until it is
+        // handed to the service, which pipes it to sh on stdin.
+        Rectangle {
+            anchors.fill: parent
+            visible: rootPlacesPanel.loginOpen
+            color: rootPlacesPanel.pt.overlayColor
+            radius: card.radius
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: rootPlacesPanel.closeLogin()
+            }
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: 460
+                height: loginColumn.implicitHeight + 2 * rootPlacesPanel.pt.panelPadding
+                radius: rootPlacesPanel.pt.cardRadius
+                color: rootPlacesPanel.pt.panelColor
+                border.width: 1
+                border.color: rootPlacesPanel.pt.selectedBorderColor
+
+                MouseArea {
+                    anchors.fill: parent
+                }
+
+                Column {
+                    id: loginColumn
+
+                    anchors {
+                        fill: parent
+                        margins: rootPlacesPanel.pt.panelPadding
+                    }
+                    spacing: 10
+
+                    Text {
+                        text: rootPlacesPanel.loginShare ? "󰒍  " + rootPlacesPanel.loginShare.label : ""
+                        color: rootPlacesPanel.pt.primaryTextColor
+                        font.family: rootPlacesPanel.theme.iconFontFamily
+                        font.pixelSize: rootPlacesPanel.pt.bodyPixelSize + 2
+                        font.bold: true
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: (rootPlacesPanel.loginShare ? rootPlacesPanel.loginShare.key + (rootPlacesPanel.loginShare.user ? " as " + rootPlacesPanel.loginShare.user : "") + "\n" : "") + rootPlacesPanel.loginMessage
+                        color: rootPlacesPanel.pt.secondaryTextColor
+                        font.pixelSize: rootPlacesPanel.pt.metaPixelSize + 1
+                        wrapMode: Text.Wrap
+                    }
+
+                    Rectangle {
+                        width: loginColumn.width
+                        height: 36
+                        radius: 8
+                        color: rootPlacesPanel.pt.searchColor
+                        border.width: loginDomain.activeFocus ? 1 : 0
+                        border.color: rootPlacesPanel.pt.selectedBorderColor
+
+                        Text {
+                            anchors {
+                                left: parent.left
+                                leftMargin: 12
+                                verticalCenter: parent.verticalCenter
+                            }
+                            text: "Domain"
+                            color: rootPlacesPanel.pt.secondaryTextColor
+                            font.pixelSize: rootPlacesPanel.pt.metaPixelSize + 1
+                        }
+
+                        TextInput {
+                            id: loginDomain
+
+                            anchors {
+                                left: parent.left
+                                leftMargin: 92
+                                right: parent.right
+                                rightMargin: 12
+                                verticalCenter: parent.verticalCenter
+                            }
+                            color: rootPlacesPanel.pt.primaryTextColor
+                            font.pixelSize: rootPlacesPanel.pt.bodyPixelSize
+                            clip: true
+                            Keys.onPressed: event => rootPlacesPanel.handleLoginKey(event)
+                        }
+                    }
+
+                    Rectangle {
+                        width: loginColumn.width
+                        height: 36
+                        radius: 8
+                        color: rootPlacesPanel.pt.searchColor
+                        border.width: loginPassword.activeFocus ? 1 : 0
+                        border.color: rootPlacesPanel.pt.selectedBorderColor
+
+                        Text {
+                            anchors {
+                                left: parent.left
+                                leftMargin: 12
+                                verticalCenter: parent.verticalCenter
+                            }
+                            text: "Password"
+                            color: rootPlacesPanel.pt.secondaryTextColor
+                            font.pixelSize: rootPlacesPanel.pt.metaPixelSize + 1
+                        }
+
+                        TextInput {
+                            id: loginPassword
+
+                            anchors {
+                                left: parent.left
+                                leftMargin: 92
+                                right: parent.right
+                                rightMargin: 12
+                                verticalCenter: parent.verticalCenter
+                            }
+                            echoMode: TextInput.Password
+                            color: rootPlacesPanel.pt.primaryTextColor
+                            font.pixelSize: rootPlacesPanel.pt.bodyPixelSize
+                            clip: true
+                            Keys.onPressed: event => rootPlacesPanel.handleLoginKey(event)
+                        }
+                    }
+
+                    Rectangle {
+                        width: loginColumn.width
+                        height: 26
+                        color: "transparent"
+
+                        Row {
+                            spacing: 8
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Text {
+                                text: rootPlacesPanel.loginRemember ? "󰄵" : "󰄱"
+                                color: rootPlacesPanel.pt.accentColor
+                                font.family: rootPlacesPanel.theme.iconFontFamily
+                                font.pixelSize: rootPlacesPanel.pt.bodyPixelSize + 4
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "Remember in GNOME Keyring  (Ctrl+K)"
+                                color: rootPlacesPanel.pt.primaryTextColor
+                                font.pixelSize: rootPlacesPanel.pt.metaPixelSize + 1
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: rootPlacesPanel.loginRemember = !rootPlacesPanel.loginRemember
+                        }
+                    }
+
+                    Text {
+                        text: "Enter connect · Tab switch field · Esc cancel"
+                        color: rootPlacesPanel.pt.secondaryTextColor
+                        font.pixelSize: rootPlacesPanel.pt.metaPixelSize
+                    }
+                }
+
+            }
+        }
+
         // --- F1 shortcuts sheet ----------------------------------------------------
         Rectangle {
             anchors.fill: parent
@@ -678,6 +889,22 @@ PanelWindow {
         return true;
     }
 
+    function handleLoginKey(event) {
+        if (event.key === Qt.Key_Escape) {
+            event.accepted = true;
+            closeLogin();
+        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            event.accepted = true;
+            submitLogin();
+        } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+            event.accepted = true;
+            (loginPassword.activeFocus ? loginDomain : loginPassword).forceActiveFocus();
+        } else if (event.key === Qt.Key_K && (event.modifiers & Qt.ControlModifier)) {
+            event.accepted = true;
+            loginRemember = !loginRemember;
+        }
+    }
+
     // Arrows and Enter while a file card has focus. Returns true when used.
     function handleCardKey(event) {
         switch (event.key) {
@@ -726,6 +953,25 @@ PanelWindow {
                 service.run(["xdg-open", item.url], service.home);
                 closeRequested();
             }
+            return;
+        }
+
+        // SMB share: open / terminal / mount / unmount / password.
+        if (item.kind === "smb") {
+            chooserTodo = null;
+            chooserUsb = null;
+            chooserSmb = item;
+            chooserOptions = [{ id: "open", label: "Open", icon: "󰉋", hint: item.mounted ? "in yazi" : "mount, then yazi" }].concat(item.mounted ? [
+                    { id: "terminal", label: "Terminal", icon: "󰆍", hint: theme.terminal + " in it" },
+                    { id: "unmount", label: "Unmount", icon: "󰕔", hint: "gio mount -u" }
+                ] : [
+                    { id: "mount", label: "Mount", icon: "󰒍", hint: "no window" }
+                ], [
+                    { id: "password", label: "Change password", icon: "󰌋", hint: "ask now, save in the keyring" },
+                    { id: "forget", label: "Forget password", icon: "󰆴", hint: "delete it from the keyring" }
+                ]);
+            chooserIndex = 0;
+            chooserFile = item.label + "  (" + item.key + ")";
             return;
         }
 
@@ -786,6 +1032,7 @@ PanelWindow {
 
         chooserTodo = null;
         chooserUsb = null;
+        chooserSmb = null;
 
         if (isFolder) {
             chooserOptions = kt.folderActions;
@@ -842,10 +1089,25 @@ PanelWindow {
         const cwd = project && project.path ? project.path : service.home;
         const todo = chooserTodo;
         const usb = chooserUsb;
+        const smb = chooserSmb;
 
         chooserFile = "";
         chooserTodo = null;
         chooserUsb = null;
+
+        chooserSmb = null;
+
+        // SMB: password goes through the dialog; the rest through the service.
+        if (smb && option) {
+            if (option.id === "password") {
+                openLogin(smb, "Enter the password. It is saved in GNOME Keyring if you keep the box ticked.");
+                return;
+            }
+            service.smbAction(smb, option.id);
+            if (option.id === "open" || option.id === "terminal")
+                closeRequested();
+            return;
+        }
 
         // USB: udisksctl through the service. Only opening leaves Places.
         if (usb && option) {

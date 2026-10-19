@@ -15,7 +15,7 @@ PlacesSection {
 
     // Live for calendar and todos, the config list for the rest.
     readonly property var items: service.blockItems(block)
-    readonly property bool listType: block.type === "documents" || block.type === "folders" || block.type === "folder" || block.type === "ssh" || block.type === "usb"
+    readonly property bool listType: block.type === "documents" || block.type === "folders" || block.type === "folder" || block.type === "ssh" || block.type === "usb" || block.type === "smb"
 
     title: block.title
     subtitle: subtitleText()
@@ -31,10 +31,10 @@ PlacesSection {
             required property int index
 
             pt: rootPlacesBlock.pt
-            tag: modelData.kind === "folder" ? "󰉋" : modelData.kind === "ssh" ? "󰣀" : modelData.kind === "usb" ? "󰕓" : rootPlacesBlock.fileGlyph(modelData.path)
+            tag: modelData.kind === "folder" ? "󰉋" : modelData.kind === "ssh" ? "󰣀" : modelData.kind === "usb" ? "󰕓" : modelData.kind === "smb" ? "󰒍" : rootPlacesBlock.fileGlyph(modelData.path)
             tagColor: rootPlacesBlock.pt.accentColor
             path: modelData.label
-            trailing: modelData.kind === "ssh" || modelData.kind === "usb" ? modelData.detail : (modelData.time ? rootPlacesBlock.service.ago(modelData.time) : "")
+            trailing: modelData.kind === "ssh" || modelData.kind === "usb" || modelData.kind === "smb" ? modelData.detail : (modelData.time ? rootPlacesBlock.service.ago(modelData.time) : "")
             selected: rootPlacesBlock.detailPane.isFileSelected(rootPlacesBlock.block.id, index)
             onSelectedChanged: {
                 if (selected)
@@ -199,6 +199,8 @@ PlacesSection {
     function emptyText() {
         if (block.type === "usb")
             return "No USB drive plugged in.";
+        if (block.type === "smb")
+            return "No shares listed: add \"shares\": [{ \"name\", \"url\": \"smb://host/share\", \"user\", \"domain\" }].";
         if (["documents", "folders", "folder", "apps", "calendar", "todos", "ssh"].indexOf(block.type) < 0)
             return "Unknown block type \"" + block.type + "\" (not built yet, or a typo).";
         if (block.type === "calendar")

@@ -16,6 +16,7 @@ QtObject {
         "Blocks pair up two per row in config order; \"wide\": true takes the whole row.",
         "Ctrl+1 … Ctrl+9 jump straight to a place: Ctrl+1 Home, Ctrl+2 Work.",
         "A usb block shows plugged-in drives live; Eject unmounts and powers them off.",
+        "smb shares mount through GVFS; the password stays in GNOME Keyring, never in places.json.",
         "An ssh block with no items lists every host in ~/.ssh/config. Enter opens kitty with ssh.",
         "Tab walks the buttons, then the file cards, then around again.",
         "Click a file, or Enter on it in a card, for Open with: nvim, Vivify, app, folder, terminal, copy path.",

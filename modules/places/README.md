@@ -89,6 +89,7 @@ the file cards. Every block takes `"enabled": false` and an optional `"title"`.
 | `folders` | paths, or `{ "name", "path" }` | folder chooser: yazi, terminal here, broot, copy path |
 | `folder` | none; `"path"`, `"sort"` (`name` / `modified`), `"limit"`, `"hidden"` | lists the folder's contents, subfolders first; folder chooser or Open with |
 | `usb` | none | Open (mounts if needed, yazi), Terminal, Mount / Unmount, Eject (unmount + power off) |
+| `smb` | `"shares": [{ "name", "url": "smb://host/share", "user", "domain" }]` | Open (mounts if needed, yazi), Terminal, Mount / Unmount, Change / Forget password |
 | `ssh` | none (every `~/.ssh/config` host), or host names / `{ "name", "host", "user", "port" }`; `"exclude"` | a terminal running `ssh <host>` |
 
 `ssh` without items reads `~/.ssh/config` (watched): wildcard patterns and
@@ -110,7 +111,15 @@ Paths are absolute, `~/…`, or relative to the entry's own `path`. Blocks pair
 up two per row in config order; `"wide": true` gives a block the whole row. Cards are numbered in reading
 order for `Alt+1`…`Alt+9` (a project's four file cards first, then its
 blocks), and Tab walks them after the buttons. In an apps card ←→ move
-along the row and ↑↓ change card. The `smb` block is next; an unknown type shows a card saying so.
+along the row and ↑↓ change card. `smb` mounts through GVFS (`gio mount`). The password lives only in GNOME
+Keyring, under `service=qreep-places-smb url=smb://host/share/`
+(`secret-tool lookup service qreep-places-smb url …` shows it, `Forget
+password` deletes it). With no saved password, gio gets no input, so a login
+GVFS saved itself still works; if the server asks anyway, Places shows a
+password dialog. The password reaches `sh` and `secret-tool` on stdin, never
+on a command line, and never touches places.json or a log.
+
+Nothing else is planned right now; an unknown type shows a card saying so.
 
 ## What it finds on its own
 

@@ -226,6 +226,8 @@ Item {
                 items = raw.map(item => sshItem(typeof item === "string" ? {
                         host: item
                     } : (item || {}))).filter(item => item.host.length > 0);
+            else if (type === "smb")
+                items = raw.concat(Array.isArray(block.shares) ? block.shares : []).map(item => smbShare(item)).filter(item => item.host.length > 0);
             else if (type === "apps")
                 items = raw.map(item => ({
                             kind: "app",
@@ -271,6 +273,11 @@ Item {
             return folderItems(block);
         if (block.type === "usb")
             return usbDrives;
+        if (block.type === "smb")
+            return block.items.map(share => Object.assign({}, share, {
+                        mounted: smbIsMounted(share),
+                        detail: (share.user ? share.user + " · " : "") + (smbIsMounted(share) ? "mounted" : "not mounted")
+                    }));
         if (block.type === "ssh" && block.fromSshConfig)
             return sshConfigHosts.filter(host => block.exclude.indexOf(host.host) < 0 && !isGitForge(host)).slice(0, block.limit);
         return block.items;
@@ -387,6 +394,179 @@ Item {
             if (usbActionProcess.openAfter && exitCode === 0 && path.length > 0)
                 rootPlacesService.run(rootPlacesService.theme.terminalCommand(["yazi", path]), path);
             rootPlacesService.refreshUsb();
+        }
+    }
+
+    // --- smb: GVFS shares, password in GNOME Keyring (never in config/argv) --
+
+    readonly property bool wantsSmb: projects.some(project => project.blocks.some(block => block.type === "smb"))
+    // [{ host, share }] from `gio mount -l`, polled while Places is open.
+    property var smbMounts: []
+
+    // A share needs a password the keyring does not have: the panel asks.
+    signal smbPasswordNeeded(var share, string message)
+
+    // { name, url, user, domain } -> share item. url: smb://[user@]host/share
+    function smbShare(spec) {
+        const config = typeof spec === "string" ? {
+            url: spec
+        } : (spec || {});
+        const match = /^smb:\/\/(?:([^@\/]+)@)?([^\/]+)\/([^\/]+)/i.exec(String(config.url || ""));
+        const user = String(config.user || (match && match[1] ? decodeURIComponent(match[1]) : ""));
+        const host = match ? match[2] : "";
+        const share = match ? match[3] : "";
+
+        return {
+            kind: "smb",
+            label: String(config.name || share + " on " + host),
+            host: host,
+            share: share,
+            user: user,
+            domain: String(config.domain || ""),
+            // gio wants the user in the URL so it only asks domain + password.
+            url: host ? "smb://" + (user ? encodeURIComponent(user) + "@" : "") + host + "/" + share + "/" : "",
+            // Keyring key: one entry per share, independent of the user.
+            key: "smb://" + host + "/" + share + "/"
+        };
+    }
+
+    function smbIsMounted(share) {
+        return smbMounts.some(mount => mount.host.toLowerCase() === share.host.toLowerCase() && mount.share.toLowerCase() === share.share.toLowerCase());
+    }
+
+    Timer {
+        interval: 3000
+        repeat: true
+        running: rootPlacesService.panelActive && rootPlacesService.wantsSmb
+        triggeredOnStart: true
+        onTriggered: {
+            if (!smbListProcess.running)
+                smbListProcess.running = true;
+        }
+    }
+
+    Process {
+        id: smbListProcess
+
+        command: ["gio", "mount", "-l"]
+        stdout: StdioCollector {
+            id: smbListStdout
+
+            waitForEnd: true
+        }
+
+        onExited: {
+            const mounts = [];
+
+            for (const line of smbListStdout.text.split("\n")) {
+                const match = / -> smb:\/\/(?:[^@\/]+@)?([^\/]+)\/([^\/]+)/i.exec(line);
+                if (match)
+                    mounts.push({
+                        host: match[1],
+                        share: decodeURIComponent(match[2])
+                    });
+            }
+            rootPlacesService.smbMounts = mounts;
+        }
+    }
+
+    // open: mount if needed, then yazi on the GVFS path. terminal: kitty there.
+    // mount, unmount, forget (delete the saved password).
+    function smbAction(share, action) {
+        if (smbProcess.running)
+            return;
+
+        if (action === "forget") {
+            run(["secret-tool", "clear", "service", "qreep-places-smb", "url", share.key], home);
+            return;
+        }
+        if (action === "unmount") {
+            run(["gio", "mount", "-u", share.url], home);
+            return;
+        }
+
+        // $1 url, $2 domain, $3 key. Saved password -> piped to gio (domain,
+        // password). None -> gio with no input: GVFS may still have its own
+        // saved login; if it asks, exit 3 and the panel asks instead.
+        // Prints the local GVFS path on success.
+        const script = "out=''; "
+            + "if ! gio info \"$1\" >/dev/null 2>&1; then "
+            + "pw=$(secret-tool lookup service qreep-places-smb url \"$3\" 2>/dev/null); "
+            + "if [ -n \"$pw\" ]; then out=$(printf '%s\\n%s\\n' \"$2\" \"$pw\" | gio mount \"$1\" 2>&1); else out=$(gio mount \"$1\" </dev/null 2>&1); fi; "
+            + "gio info \"$1\" >/dev/null 2>&1 || { case \"$out\" in *assword*|*uthenticat*) exit 3;; esac; printf '%s' \"$out\" >&2; exit 1; }; fi; "
+            + "gio info \"$1\" | sed -n 's/^local path: //p'";
+
+        smbProcess.share = share;
+        smbProcess.action = action;
+        smbProcess.stdinEnabled = false;
+        smbProcess.command = ["sh", "-c", script, "places", share.url, share.domain, share.key];
+        smbProcess.running = true;
+    }
+
+    // From the password dialog. The password reaches sh on stdin, never argv;
+    // "remember" stores it in the keyring first (secret-tool reads stdin too).
+    function smbLogin(share, domain, password, remember) {
+        if (smbProcess.running)
+            return;
+
+        const script = "IFS= read -r pw; "
+            + "if [ \"$4\" = 1 ]; then printf '%s' \"$pw\" | secret-tool store --label=\"Qreep Places: $3\" service qreep-places-smb url \"$3\" || exit 4; fi; "
+            + "out=$(printf '%s\\n%s\\n' \"$2\" \"$pw\" | gio mount \"$1\" 2>&1); "
+            + "gio info \"$1\" >/dev/null 2>&1 || { case \"$out\" in *assword*|*uthenticat*) exit 3;; esac; printf '%s' \"$out\" >&2; exit 1; }; "
+            + "gio info \"$1\" | sed -n 's/^local path: //p'";
+
+        smbProcess.share = share;
+        smbProcess.action = "open";
+        smbProcess.command = ["sh", "-c", script, "places", share.url, domain, share.key, remember ? "1" : "0"];
+        smbProcess.pendingInput = password + "\n";
+        smbProcess.stdinEnabled = true;
+        smbProcess.running = true;
+    }
+
+    Process {
+        id: smbProcess
+
+        property var share: null
+        property string action: ""
+        // The password, held only until the process is up to read it.
+        property string pendingInput: ""
+
+        onStarted: {
+            if (pendingInput.length === 0)
+                return;
+            write(pendingInput);
+            pendingInput = "";
+            stdinEnabled = false;
+        }
+
+        stdout: StdioCollector {
+            id: smbStdout
+
+            waitForEnd: true
+        }
+
+        stderr: StdioCollector {
+            id: smbStderr
+
+            waitForEnd: true
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            const path = smbStdout.text.trim();
+
+            if (exitCode === 3) {
+                rootPlacesService.smbPasswordNeeded(smbProcess.share, "Password needed (or the saved one was refused).");
+            } else if (exitCode === 4) {
+                rootPlacesService.run(["notify-send", "SMB", "Could not save the password in the keyring."], rootPlacesService.home);
+            } else if (exitCode !== 0) {
+                rootPlacesService.run(["notify-send", "SMB", smbStderr.text.trim() || "Mount failed."], rootPlacesService.home);
+            } else if (path.length > 0 && smbProcess.action === "open") {
+                rootPlacesService.run(rootPlacesService.theme.terminalCommand(["yazi", path]), path);
+            } else if (path.length > 0 && smbProcess.action === "terminal") {
+                rootPlacesService.run(rootPlacesService.theme.terminalCommand([], { cwd: path }), path);
+            }
+            if (!smbListProcess.running)
+                smbListProcess.running = true;
         }
     }
 
@@ -702,7 +882,8 @@ Item {
                 calendar: "Calendar",
                 todos: "Todos",
                 ssh: "SSH",
-                usb: "USB drives"
+                usb: "USB drives",
+                smb: "Network shares"
             })[type] || type;
     }
 
