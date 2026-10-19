@@ -107,8 +107,18 @@ Today / Tomorrow / day. `todos` runs `rg` over the Logseq graph
 NOW/DOING first, newest journal first; read-only, ticking them off stays in
 Logseq. Both follow their data while Places is open.
 
-Paths are absolute, `~/…`, or relative to the entry's own `path`. Blocks pair
-up two per row in config order; `"wide": true` gives a block the whole row. Cards are numbered in reading
+Paths are absolute, `~/…`, or relative to the entry's own `path`. Blocks fill
+two columns masonry-style: each goes to the shorter column (heights estimated
+from contents), in config order. `"wide": true` gives a block the full width
+and starts a fresh pair of columns below it. `"hideWhenEmpty": true` hides a
+live block while it has nothing to show; `usb` does that by default.
+
+A place's header line summarises the page: events left today and the next
+one, todo count, mounted shares, plugged-in drives, reachable SSH hosts.
+SSH hosts get a green icon when their ssh port answers (one TCP connect per
+host when Places opens, address and port from `ssh -G`, no login), dim when
+not. A folder listing longer than its `limit` ends in "+ N more", which opens
+the folder. Cards are numbered in reading
 order for `Alt+1`…`Alt+9` (a project's four file cards first, then its
 blocks), and Tab walks them after the buttons. In an apps card ←→ move
 along the row and ↑↓ change card. `smb` mounts through GVFS (`gio mount`). The password lives only in GNOME

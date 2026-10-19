@@ -32,7 +32,8 @@ PlacesSection {
 
             pt: rootPlacesBlock.pt
             tag: modelData.kind === "folder" ? "󰉋" : modelData.kind === "ssh" ? "󰣀" : modelData.kind === "usb" ? "󰕓" : modelData.kind === "smb" ? "󰒍" : rootPlacesBlock.fileGlyph(modelData.path)
-            tagColor: rootPlacesBlock.pt.accentColor
+            // ssh: green when the port answered, dim when not, accent until checked.
+            tagColor: modelData.kind === "ssh" ? rootPlacesBlock.sshColor(modelData.host) : rootPlacesBlock.pt.accentColor
             path: modelData.label
             trailing: modelData.kind === "ssh" || modelData.kind === "usb" || modelData.kind === "smb" ? modelData.detail : (modelData.time ? rootPlacesBlock.service.ago(modelData.time) : "")
             selected: rootPlacesBlock.detailPane.isFileSelected(rootPlacesBlock.block.id, index)
@@ -41,6 +42,37 @@ PlacesSection {
                     rootPlacesBlock.detailPane.ensureVisible(this);
             }
             onClicked: rootPlacesBlock.activated(modelData)
+        }
+    }
+
+    // folder: what did not fit under "limit". Click opens the folder itself.
+    Rectangle {
+        readonly property int more: rootPlacesBlock.block.type === "folder" ? rootPlacesBlock.service.folderTotal(rootPlacesBlock.block) - rootPlacesBlock.items.length : 0
+
+        visible: more > 0
+        width: parent.width
+        height: 24
+        radius: 6
+        color: moreMouse.containsMouse ? rootPlacesBlock.pt.hoveredRowColor : "transparent"
+
+        Text {
+            anchors {
+                left: parent.left
+                leftMargin: 10
+                verticalCenter: parent.verticalCenter
+            }
+            text: "+ " + parent.more + " more in " + rootPlacesBlock.service.shortPath(rootPlacesBlock.block.path) + "  (open the folder)"
+            color: rootPlacesBlock.pt.secondaryTextColor
+            font.pixelSize: rootPlacesBlock.pt.metaPixelSize + 1
+        }
+
+        MouseArea {
+            id: moreMouse
+
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: rootPlacesBlock.activated({ kind: "folder", path: rootPlacesBlock.block.path })
         }
     }
 
@@ -182,6 +214,11 @@ PlacesSection {
         wrapMode: Text.Wrap
     }
 
+    function sshColor(host) {
+        const state = service.sshReachable[host];
+        return state === "up" ? pt.successColor : state === "down" ? pt.withAlpha(pt.secondaryTextColor, 0.6) : pt.accentColor;
+    }
+
     function subtitleText() {
         const count = items.length;
 
@@ -192,7 +229,11 @@ PlacesSection {
         if (block.type === "todos")
             return count + " open · Logseq";
         if (block.type === "folder")
-            return service.shortPath(block.path) + (count >= block.limit ? " · first " + count : " · " + count);
+            return service.shortPath(block.path) + " · " + service.folderTotal(block);
+        if (block.type === "ssh") {
+            const up = items.filter(item => service.sshReachable[item.host] === "up").length;
+            return count + (count === 1 ? " host" : " hosts") + (Object.keys(service.sshReachable).length > 0 ? " · " + up + " reachable" : "");
+        }
         return count + (count === 1 ? " item" : " items");
     }
 

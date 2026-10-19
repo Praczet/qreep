@@ -22,29 +22,58 @@ Flickable {
     property int actionIndex: 0
 
     readonly property bool isPlace: project !== null && project.kind === "place"
-    readonly property var blocks: project ? project.blocks : []
-    // Blocks laid out in rows: "wide" blocks get a full row, the rest pair up
-    // in config order.
-    readonly property var blockRows: {
-        const rows = [];
-        let pending = null;
+    // Blocks on screen: "hideWhenEmpty" ones step aside while they have
+    // nothing (usb with no drive). Alt numbers follow what is visible.
+    readonly property var blocks: project ? project.blocks.filter(block => !(block.hideWhenEmpty && service.blockItems(block).length === 0)) : []
+
+    // Masonry in segments: a "wide" block takes the full width and starts a
+    // new segment; between wide ones, each block goes to the shorter of two
+    // columns. Heights are estimated from contents (rows x row height), not
+    // measured, which would loop back into the layout.
+    readonly property var blockSegments: {
+        const segments = [];
+        let current = null;
 
         for (const block of blocks) {
             if (block.wide) {
-                if (pending)
-                    rows.push([pending]);
-                pending = null;
-                rows.push([block]);
-            } else if (pending) {
-                rows.push([pending, block]);
-                pending = null;
+                current = null;
+                segments.push({
+                    wide: block
+                });
+                continue;
+            }
+            if (!current) {
+                current = {
+                    left: [],
+                    right: [],
+                    leftHeight: 0,
+                    rightHeight: 0
+                };
+                segments.push(current);
+            }
+
+            const height = estimateBlockHeight(block);
+
+            if (current.leftHeight <= current.rightHeight) {
+                current.left.push(block);
+                current.leftHeight += height;
             } else {
-                pending = block;
+                current.right.push(block);
+                current.rightHeight += height;
             }
         }
-        if (pending)
-            rows.push([pending]);
-        return rows;
+        return segments;
+    }
+
+    function estimateBlockHeight(block) {
+        const items = service.blockItems(block);
+        const chrome = 60 + pt.sectionGap;
+
+        if (block.type === "apps")
+            return chrome + 90;
+        if (block.type === "calendar")
+            return chrome + items.length * (pt.fileRowHeight + 2) + items.filter((item, index) => index === 0 || items[index - 1].day !== item.day).length * 20;
+        return chrome + Math.max(1, items.length) * (pt.fileRowHeight + 6) + (block.type === "folder" ? 24 : 0);
     }
 
     // Something in a card was picked (click, or Enter while selected). item is
@@ -411,7 +440,8 @@ Flickable {
 
                 Text {
                     width: parent.width
-                    text: rootPlacesDetail.project ? [rootPlacesDetail.project.displayPath, rootPlacesDetail.project.group].filter(part => part.length > 0).join("  ·  ") : ""
+                    // Places: what is on the page right now. Projects: path and group.
+                    text: !rootPlacesDetail.project ? "" : rootPlacesDetail.isPlace ? rootPlacesDetail.service.placeSummary(rootPlacesDetail.project) : [rootPlacesDetail.project.displayPath, rootPlacesDetail.project.group].filter(part => part.length > 0).join("  ·  ")
                     color: rootPlacesDetail.pt.secondaryTextColor
                     font.family: rootPlacesDetail.pt.monoFontFamily
                     font.pixelSize: rootPlacesDetail.pt.metaPixelSize
@@ -698,31 +728,77 @@ Flickable {
             }
         }
 
-        // --- configured blocks: wide ones get a row, the rest pair up -------------
+        // --- configured blocks: masonry segments, wide ones full width --------------
         Repeater {
-            model: rootPlacesDetail.blockRows
+            model: rootPlacesDetail.blockSegments
 
-            Row {
-                id: blockRow
+            Item {
+                id: segment
 
                 required property var modelData
 
                 width: parent.width
-                spacing: rootPlacesDetail.pt.sectionGap
+                height: modelData.wide ? wideBlock.height : Math.max(leftColumn.implicitHeight, rightColumn.implicitHeight)
 
-                Repeater {
-                    model: blockRow.modelData
+                PlacesBlock {
+                    id: wideBlock
 
-                    PlacesBlock {
-                        required property var modelData
+                    visible: segment.modelData.wide !== undefined
+                    width: segment.width
+                    pt: rootPlacesDetail.pt
+                    service: rootPlacesDetail.service
+                    detailPane: rootPlacesDetail
+                    block: segment.modelData.wide || ({ id: "", type: "", title: "", items: [] })
+                    iconFontFamily: rootPlacesDetail.theme.iconFontFamily
+                    onActivated: item => rootPlacesDetail.itemChosen(item)
+                }
 
-                        width: blockRow.modelData.length === 1 ? blockRow.width : rootPlacesDetail.halfWidth
-                        pt: rootPlacesDetail.pt
-                        service: rootPlacesDetail.service
-                        detailPane: rootPlacesDetail
-                        block: modelData
-                        iconFontFamily: rootPlacesDetail.theme.iconFontFamily
-                        onActivated: item => rootPlacesDetail.itemChosen(item)
+                Column {
+                    id: leftColumn
+
+                    visible: !segment.modelData.wide
+                    width: rootPlacesDetail.halfWidth
+                    spacing: rootPlacesDetail.pt.sectionGap
+
+                    Repeater {
+                        model: segment.modelData.left || []
+
+                        PlacesBlock {
+                            required property var modelData
+
+                            width: leftColumn.width
+                            pt: rootPlacesDetail.pt
+                            service: rootPlacesDetail.service
+                            detailPane: rootPlacesDetail
+                            block: modelData
+                            iconFontFamily: rootPlacesDetail.theme.iconFontFamily
+                            onActivated: item => rootPlacesDetail.itemChosen(item)
+                        }
+                    }
+                }
+
+                Column {
+                    id: rightColumn
+
+                    visible: !segment.modelData.wide
+                    x: rootPlacesDetail.halfWidth + rootPlacesDetail.pt.sectionGap
+                    width: rootPlacesDetail.halfWidth
+                    spacing: rootPlacesDetail.pt.sectionGap
+
+                    Repeater {
+                        model: segment.modelData.right || []
+
+                        PlacesBlock {
+                            required property var modelData
+
+                            width: rightColumn.width
+                            pt: rootPlacesDetail.pt
+                            service: rootPlacesDetail.service
+                            detailPane: rootPlacesDetail
+                            block: modelData
+                            iconFontFamily: rootPlacesDetail.theme.iconFontFamily
+                            onActivated: item => rootPlacesDetail.itemChosen(item)
+                        }
                     }
                 }
             }

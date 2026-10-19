@@ -203,6 +203,7 @@ Item {
         refreshSummaries();
         refreshTodos();
         refreshFolders();
+        checkSsh();
         detailFor = "";
         if (selected)
             detailDelay.restart();
@@ -252,6 +253,8 @@ Item {
                 items: items,
                 // "wide": true spans both columns; every block is one cell otherwise.
                 wide: block.wide === true,
+                // Live blocks with nothing to show can step aside; usb does by default.
+                hideWhenEmpty: block.hideWhenEmpty === undefined ? type === "usb" : block.hideWhenEmpty === true,
                 // calendar: days ahead; todos: states to show. Both: limit.
                 days: Math.max(1, Number(block.days) || 2),
                 limit: Math.max(1, Number(block.limit) || 10),
@@ -641,6 +644,57 @@ Item {
         };
     }
 
+    // host -> "up" | "down"; missing = not checked yet. One TCP connect to
+    // the ssh port per host (address and port from `ssh -G`), all in
+    // parallel, 1.5 s each. No login, so no prompts and no host-key questions.
+    property var sshReachable: ({})
+
+    // ~/.ssh/config can arrive after Places opened; check once it has.
+    onSshConfigHostsChanged: {
+        if (panelActive)
+            checkSsh();
+    }
+
+    function checkSsh() {
+        const hosts = [];
+
+        for (const project of projects) {
+            for (const block of project.blocks) {
+                if (block.type === "ssh")
+                    hosts.push(...blockItems(block).map(item => item.host));
+            }
+        }
+
+        const unique = hosts.filter((host, index) => hosts.indexOf(host) === index);
+
+        if (unique.length === 0 || sshCheckProcess.running)
+            return;
+
+        sshCheckProcess.command = ["bash", "-c", "for h in \"$@\"; do ( a=$(ssh -G \"$h\" 2>/dev/null | awk '/^hostname /{print $2}'); p=$(ssh -G \"$h\" 2>/dev/null | awk '/^port /{print $2}'); if timeout 1.5 bash -c \"exec 3<>/dev/tcp/${a:-$h}/${p:-22}\" 2>/dev/null; then echo \"$h up\"; else echo \"$h down\"; fi ) & done; wait", "places"].concat(unique);
+        sshCheckProcess.running = true;
+    }
+
+    Process {
+        id: sshCheckProcess
+
+        stdout: StdioCollector {
+            id: sshCheckStdout
+
+            waitForEnd: true
+        }
+
+        onExited: {
+            const next = {};
+
+            for (const line of sshCheckStdout.text.split("\n")) {
+                const parts = line.trim().split(" ");
+                if (parts.length === 2)
+                    next[parts[0]] = parts[1];
+            }
+            rootPlacesService.sshReachable = next;
+        }
+    }
+
     // kitty ssh <host>: ssh reads the rest from ~/.ssh/config.
     function openSsh(item) {
         run(theme.terminalCommand(["ssh", item.host]), home);
@@ -687,6 +741,11 @@ Item {
         }
 
         folderListings = next;
+    }
+
+    // Entries the listing has beyond "limit", for the "+ N more" line.
+    function folderTotal(block) {
+        return (folderListings[block.path] || []).filter(entry => block.hidden || entry.name.indexOf(".") !== 0).length;
     }
 
     // Folders first, then files; by name or newest first. Dot-entries only
@@ -913,6 +972,39 @@ Item {
         else
             entry.execute();
         return true;
+    }
+
+    // One line under a place's name: what is on the page right now.
+    function placeSummary(place) {
+        if (!place || place.kind !== "place")
+            return "";
+
+        const parts = [];
+
+        for (const block of place.blocks) {
+            const items = blockItems(block);
+
+            if (block.type === "calendar") {
+                const today = items.filter(item => item.day === "Today");
+                const next = items[0];
+
+                parts.push(today.length === 0 ? "nothing left today" : today.length + (today.length === 1 ? " event" : " events") + " left today");
+                if (next)
+                    parts.push("next: " + (next.day === "Today" ? "" : next.day + " ") + next.time + " " + next.title);
+            } else if (block.type === "todos") {
+                parts.push(items.length + (items.length === 1 ? " todo" : " todos"));
+            } else if (block.type === "smb") {
+                const mounted = items.filter(item => item.mounted);
+                parts.push(mounted.length > 0 ? mounted.map(item => item.label).join(", ") + " mounted" : items.length + (items.length === 1 ? " share, not mounted" : " shares, none mounted"));
+            } else if (block.type === "usb" && items.length > 0) {
+                parts.push(items.length + (items.length === 1 ? " USB drive" : " USB drives") + " plugged in");
+            } else if (block.type === "ssh") {
+                const up = items.filter(item => sshReachable[item.host] === "up").length;
+                parts.push(items.length + " SSH hosts" + (Object.keys(sshReachable).length > 0 ? ", " + up + " reachable" : ""));
+            }
+        }
+
+        return parts.join("  ·  ");
     }
 
     function isEnabled(entry) {
