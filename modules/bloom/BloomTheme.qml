@@ -5,7 +5,8 @@ QtObject {
 
     required property QtObject qreep
 
-    readonly property color backgroundColor: Qt.rgba(qreep.background.r, qreep.background.g, qreep.background.b, 0.92)
+    // Translucent: Hyprland blurs behind the card (layer rule qreep-bloom).
+    readonly property color backgroundColor: Qt.rgba(qreep.background.r, qreep.background.g, qreep.background.b, 0.75)
     readonly property color borderColor: Qt.rgba(qreep.outline.r, qreep.outline.g, qreep.outline.b, 0.55)
     readonly property color primaryTextColor: qreep.on_surface
     readonly property color secondaryTextColor: qreep.on_surface_variant
