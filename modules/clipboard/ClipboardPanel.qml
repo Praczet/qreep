@@ -10,6 +10,21 @@ PanelWindow {
     required property bool panelOpen
 
     property bool presented: false
+    // F1 sheet. Esc closes it before it closes the panel.
+    property bool shortcutsOpen: false
+    // Ctrl+1 … Ctrl+5, in the order of the header buttons.
+    readonly property var filterKeys: ["pins", "image", "text", "code", "color"]
+    readonly property var shortcuts: [
+        { keys: "type", action: "Search" },
+        { keys: "↑ ↓ ← →", action: "Move (↑ from the top row: search)" },
+        { keys: "Enter", action: "Copy it back to the clipboard" },
+        { keys: "Ctrl+S  Alt+S", action: "Pin / unpin" },
+        { keys: "Shift+Delete", action: "Delete (a pin: unpin)" },
+        { keys: "Ctrl+1", action: "Pins only" },
+        { keys: "Ctrl+2 … Ctrl+5", action: "Images, text, code, colors" },
+        { keys: "F1", action: "This sheet" },
+        { keys: "Esc", action: "Close sheet, close" }
+    ]
 
     signal closeRequested
     signal restoreRequested(int index)
@@ -40,12 +55,46 @@ PanelWindow {
 
         enterTimer.stop();
         presented = false;
+        shortcutsOpen = false;
+    }
+
+    function toggleFilter(key) {
+        if (key === "pins")
+            service.starredOnly = !service.starredOnly;
+        else
+            service.toggleTypeFilter(key);
     }
 
     Shortcut {
         sequence: "Escape"
         context: Qt.WindowShortcut
-        onActivated: rootClipboardPanel.closeRequested()
+        onActivated: {
+            if (rootClipboardPanel.shortcutsOpen)
+                rootClipboardPanel.shortcutsOpen = false;
+            else
+                rootClipboardPanel.closeRequested();
+        }
+    }
+
+    Shortcut {
+        sequence: "F1"
+        context: Qt.WindowShortcut
+        onActivated: rootClipboardPanel.shortcutsOpen = !rootClipboardPanel.shortcutsOpen
+    }
+
+    Repeater {
+        model: rootClipboardPanel.filterKeys
+
+        Item {
+            required property string modelData
+            required property int index
+
+            Shortcut {
+                sequence: "Ctrl+" + (index + 1)
+                context: Qt.WindowShortcut
+                onActivated: rootClipboardPanel.toggleFilter(modelData)
+            }
+        }
     }
 
     Shortcut {
@@ -351,6 +400,86 @@ PanelWindow {
                     searchInput.insert(searchInput.cursorPosition, event.text);
                     rootClipboardPanel.service.searchText = searchInput.text;
                     event.accepted = true;
+                }
+            }
+        }
+    }
+
+    // --- F1 shortcuts sheet, above the panel (the strip is too low for it) ---
+    Rectangle {
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            bottom: panel.top
+            bottomMargin: 12
+        }
+        width: 480
+        height: sheet.implicitHeight + 32
+        visible: opacity > 0.01
+        opacity: rootClipboardPanel.shortcutsOpen ? 1 : 0
+        radius: rootClipboardPanel.theme.modules.clipboard.cardRadius
+        color: rootClipboardPanel.theme.modules.clipboard.sheetColor
+        border.width: 1
+        border.color: rootClipboardPanel.theme.modules.clipboard.selectedBorderColor
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 120
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: rootClipboardPanel.shortcutsOpen = false
+        }
+
+        Column {
+            id: sheet
+
+            anchors {
+                fill: parent
+                margins: 16
+            }
+            spacing: 8
+
+            Text {
+                bottomPadding: 6
+                text: "Shortcuts"
+                color: rootClipboardPanel.theme.modules.clipboard.accentColor
+                font.pixelSize: rootClipboardPanel.theme.modules.clipboard.bodyPixelSize
+                font.bold: true
+                font.capitalization: Font.AllUppercase
+                font.letterSpacing: 1
+            }
+
+            Repeater {
+                model: rootClipboardPanel.shortcuts
+
+                Row {
+                    required property var modelData
+
+                    spacing: 16
+
+                    Rectangle {
+                        width: 140
+                        height: 24
+                        radius: 6
+                        color: rootClipboardPanel.theme.modules.clipboard.searchColor
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: modelData.keys
+                            color: rootClipboardPanel.theme.modules.clipboard.accentColor
+                            font.family: rootClipboardPanel.theme.iconFontFamily
+                            font.pixelSize: rootClipboardPanel.theme.modules.clipboard.bodyPixelSize
+                        }
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: modelData.action
+                        color: rootClipboardPanel.theme.modules.clipboard.primaryTextColor
+                        font.pixelSize: rootClipboardPanel.theme.modules.clipboard.bodyPixelSize + 1
+                    }
                 }
             }
         }

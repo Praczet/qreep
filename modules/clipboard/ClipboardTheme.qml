@@ -25,8 +25,11 @@ QtObject {
     readonly property int metaPixelSize: 9
     readonly property int animationDuration: 150
 
-    readonly property real panelOpacity: 0.86
+    // Same as Places: Hyprland blurs what is behind (layer rule qreep-clipboard).
+    readonly property real panelOpacity: 0.75
     readonly property real cardOpacity: 0.72
+    // The F1 sheet floats over whatever is behind: solid enough to read.
+    readonly property color sheetColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, 0.96)
     readonly property color panelColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, panelOpacity)
     readonly property color primaryTextColor: qreep.on_surface
     readonly property color secondaryTextColor: qreep.on_surface_variant
@@ -37,7 +40,7 @@ QtObject {
     readonly property color headerBackgroundSelected: qreep.primary
     readonly property color headerSelectedTextColor: qreep.on_primary
 
-    readonly property color cardColor: qreep.surfaceContainer
+    readonly property color cardColor: withAlpha(qreep.surfaceContainer, 0.6)
     readonly property color hoveredCardColor: Qt.rgba(qreep.surfaceContainerHigh.r, qreep.surfaceContainerHigh.g, qreep.surfaceContainerHigh.b, 0.82)
     readonly property color selectedCardColor: Qt.rgba(qreep.primary.r, qreep.primary.g, qreep.primary.b, 0.18)
 
