@@ -797,9 +797,10 @@ Item {
         }
     }
 
-    // kitty ssh <host>: ssh reads the rest from ~/.ssh/config.
+    // kitty kitten ssh <host>: ssh reads the rest from ~/.ssh/config; the
+    // kitten applies ~/.config/kitty/ssh.conf (red-tinted Unclaimed Bloom).
     function openSsh(item) {
-        run(theme.terminalCommand(["ssh", item.host]), home);
+        run(theme.terminalCommand(["kitten", "ssh", item.host]), home);
     }
 
     // --- folder: a directory's contents, one find per refresh ----------------
