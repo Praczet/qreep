@@ -23,6 +23,7 @@ QtObject {
     "A usb block shows plugged-in drives live; Eject unmounts and powers them off.",
     "smb shares mount through GVFS; the password stays in GNOME Keyring, never in places.json.",
     "An ssh block with no items lists every host in ~/.ssh/config. Enter opens kitty with kitten ssh.",
+    "From KIP: `/ssh` lists the same hosts as the ssh blocks; Enter connects.",
     "Tab walks the buttons, then the file cards, then around again.",
     "Click a file, or Enter on it in a card, for Open with: nvim, Vivify, app, folder, terminal, copy path.",
     "Shift+Enter launches the cockpit: terminal and browser on the dev workspace.",

@@ -150,6 +150,22 @@ QtObject {
                 neutral: ["Places is not loaded, so there are no projects to show."],
                 dry: ["Projects live in Places, and Places is not answering."]
             },
+            "ssh.ready": {
+                neutral: ["Pick a host. Type to narrow it down."],
+                dry: ["Other people's computers, at your service.", "Somewhere out there, a server is waiting to disappoint you."]
+            },
+            "ssh.found": {
+                neutral: ["Enter connects with kitten ssh."],
+                dry: ["There it is. The background turns red so you remember where you are.", "Found it. Mind the rm -rf, it is not your machine."]
+            },
+            "ssh.empty": {
+                neutral: ["No host matches."],
+                dry: ["No such host. Maybe it lives only in your memory, not in ~/.ssh/config."]
+            },
+            "ssh.error": {
+                neutral: ["Places is not loaded, so there are no ssh hosts to show."],
+                dry: ["The hosts live in Places, and Places is not answering."]
+            },
             "timer.ready": {
                 neutral: ["Duration, clock time, up, pause, resume or stop."],
                 dry: ["Time management. Bold of you.", "How long shall we pretend you'll focus?", "Name a duration. I'll hold you to it."]

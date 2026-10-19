@@ -221,6 +221,8 @@ quickshell -c qreep ipc call qreep-places state
 A tip card sits under the project list: a random tip each time Places opens,
 click it for the next. KIP's `/p eos` lists the same projects (same service)
 and opens Places on one; Shift+Enter there goes straight to the cockpit.
+`/ssh` lists the hosts of the ssh blocks (`sshHosts` on the service) and
+connects with `kitten ssh`, like Enter on an ssh card.
 
 ## Files
 

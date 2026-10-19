@@ -88,6 +88,7 @@ PanelWindow {
             shots: shotsCommand,
             windows: windowsCommand,
             projects: projectsCommand,
+            ssh: sshCommand,
             keys: keysCommand
         })[contentState] || null
     // The text field lives in KipInput.
@@ -269,6 +270,13 @@ PanelWindow {
 
     KipProjectsCommand {
         id: projectsCommand
+
+        host: rootKipPanel
+        places: rootKipPanel.places
+    }
+
+    KipSshCommand {
+        id: sshCommand
 
         host: rootKipPanel
         places: rootKipPanel.places
@@ -959,6 +967,30 @@ PanelWindow {
                 }
             }
 
+            // /ssh: Places' ssh hosts, reachability as the chip.
+            Text {
+                width: parent.width
+                visible: rootKipPanel.contentState === "ssh"
+                text: sshCommand.status()
+                color: rootKipPanel.kt.tertiaryAccentColor
+                font.pixelSize: rootKipPanel.kt.metaPixelSize
+                elide: Text.ElideMiddle
+            }
+
+            KipResultList {
+                width: parent.width
+                height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.75)
+                visible: sshCommand.listVisible
+                kipTheme: rootKipPanel.kt
+                results: sshCommand.results
+                currentIndex: sshCommand.index
+
+                onActivated: index => {
+                    sshCommand.index = index;
+                    sshCommand.submit(false);
+                }
+            }
+
             // /keys: Hyprland binds, combo in the chip, description beside it.
             Text {
                 width: parent.width
@@ -1286,6 +1318,12 @@ PanelWindow {
             return;
         }
 
+        // "/ssh " lists Places' ssh hosts; typing narrows them.
+        if (liveKind() === "ssh") {
+            sshCommand.show();
+            return;
+        }
+
         // "/keys " lists Hyprland binds; typing narrows them.
         if (liveKind() === "keys") {
             keysCommand.show();
@@ -1398,7 +1436,7 @@ PanelWindow {
             return "shots";
         if (contentState === "service")
             return answerDone() && !resultsVisible ? "answers" : "results";
-        if (contentState === "files" || contentState === "windows" || contentState === "grep" || contentState === "keys" || contentState === "projects")
+        if (contentState === "files" || contentState === "windows" || contentState === "grep" || contentState === "keys" || contentState === "projects" || contentState === "ssh")
             return "results";
         if (appsMode)
             return "apps";
@@ -1421,6 +1459,7 @@ PanelWindow {
         dict.reset();
         windowsCommand.reset();
         projectsCommand.reset();
+        sshCommand.reset();
         keysCommand.reset();
         runCommand.reset();
         browseCommand.reset();
@@ -1703,6 +1742,9 @@ PanelWindow {
             return;
         case "projects":
             projectsCommand.show();
+            return;
+        case "ssh":
+            sshCommand.show();
             return;
         case "keys":
             keysCommand.show();

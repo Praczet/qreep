@@ -679,6 +679,26 @@ Item {
 
     readonly property bool wantsSshConfig: projects.some(project => project.blocks.some(block => block.type === "ssh" && block.fromSshConfig))
     property var sshConfigHosts: []
+    // Every host the ssh blocks show, first block wins on duplicates. KIP's
+    // /ssh lists exactly this, so the two never disagree.
+    readonly property var sshHosts: {
+        const seen = {};
+        const hosts = [];
+
+        for (const project of projects) {
+            for (const block of project.blocks) {
+                if (block.type !== "ssh")
+                    continue;
+                for (const item of blockItems(block)) {
+                    if (!seen[item.host]) {
+                        seen[item.host] = true;
+                        hosts.push(item);
+                    }
+                }
+            }
+        }
+        return hosts;
+    }
 
     FileView {
         path: rootPlacesService.wantsSshConfig ? rootPlacesService.home + "/.ssh/config" : ""
@@ -758,16 +778,7 @@ Item {
     }
 
     function checkSsh() {
-        const hosts = [];
-
-        for (const project of projects) {
-            for (const block of project.blocks) {
-                if (block.type === "ssh")
-                    hosts.push(...blockItems(block).map(item => item.host));
-            }
-        }
-
-        const unique = hosts.filter((host, index) => hosts.indexOf(host) === index);
+        const unique = sshHosts.map(item => item.host);
 
         if (unique.length === 0 || sshCheckProcess.running)
             return;

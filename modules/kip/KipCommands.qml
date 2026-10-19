@@ -260,6 +260,23 @@ QtObject {
             actions: "Lists the projects from Places with branch, age, changed files and quests. Enter opens Places on the project, Shift+Enter launches its cockpit, Ctrl+Enter opens it in its editor; KIP closes."
         },
         {
+            name: "ssh",
+            aliases: ["hosts"],
+            label: "SSH",
+            description: "Connect to an ssh host from Places.",
+            helper: "Every word must match the name, host or address. Enter connects in kitty.",
+            eventKey: "ssh.ready",
+            placeholder: "host name",
+            icon: "󰣀",
+            sourceHint: "Places ssh blocks, ~/.ssh/config",
+            kind: "ssh",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/ssh [words]",
+            examples: ["/ssh", "/ssh cmask"],
+            actions: "Lists the same ssh hosts as the Places ssh blocks, dimmed when the ssh port did not answer. Enter opens the host in kitty with kitten ssh (red-tinted theme while connected); KIP closes."
+        },
+        {
             name: "keys",
             aliases: ["binds", "k"],
             label: "Keys",
