@@ -286,6 +286,82 @@ Item {
         return block.items;
     }
 
+    // --- smarter Open with: file type, default app, remembered choice -------
+
+    // extension (or mime type for files without one) -> chooser option id,
+    // the last thing you picked for that kind of file.
+    readonly property string openersPath: (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/qreep/places-openers.json"
+    property var openers: ({})
+
+    // The chooser asked what a file is; answered once xdg-mime has spoken.
+    signal fileTypeKnown(string path, string mime, string appName)
+
+    FileView {
+        id: openersFile
+
+        path: rootPlacesService.openersPath
+        printErrors: false
+
+        onLoaded: {
+            try {
+                rootPlacesService.openers = JSON.parse(text() || "{}");
+            } catch (error) {
+                rootPlacesService.openers = {};
+            }
+        }
+    }
+
+    function openerKey(path, mime) {
+        const name = String(path).replace(/^.*\//, "");
+        const dot = name.lastIndexOf(".");
+        return dot > 0 ? name.slice(dot + 1).toLowerCase() : String(mime || "");
+    }
+
+    function rememberOpener(path, optionId, mime) {
+        const key = openerKey(path, mime);
+
+        if (key.length === 0 || optionId === "copy-path" || openers[key] === optionId)
+            return;
+
+        const next = Object.assign({}, openers);
+        next[key] = optionId;
+        openers = next;
+        openersFile.setText(JSON.stringify(next, null, 2) + "\n");
+    }
+
+    // Text by nature even when the mime type does not start with text/.
+    function isTextMime(mime) {
+        return /^text\//.test(mime) || /(json|xml|javascript|ecmascript|x-shellscript|x-sh|yaml|toml|x-php|x-python|x-perl|x-ruby|sql|x-desktop|x-subrip|x-empty)$/.test(mime);
+    }
+
+    function inspectFile(path) {
+        fileTypeProcess.running = false;
+        fileTypeProcess.path = path;
+        fileTypeProcess.command = ["sh", "-c", "m=$(xdg-mime query filetype \"$1\" 2>/dev/null); printf '%s\\n%s\\n' \"$m\" \"$(xdg-mime query default \"$m\" 2>/dev/null)\"", "places", path];
+        fileTypeProcess.running = true;
+    }
+
+    Process {
+        id: fileTypeProcess
+
+        property string path: ""
+
+        stdout: StdioCollector {
+            id: fileTypeStdout
+
+            waitForEnd: true
+        }
+
+        onExited: {
+            const lines = fileTypeStdout.text.split("\n");
+            const mime = (lines[0] || "").trim();
+            const desktopId = (lines[1] || "").trim().replace(/\.desktop$/, "");
+            const entry = desktopId ? DesktopEntries.byId(desktopId) : null;
+
+            rootPlacesService.fileTypeKnown(fileTypeProcess.path, mime, entry ? entry.name : desktopId);
+        }
+    }
+
     // --- usb: removable partitions via lsblk, actions via udisksctl ----------
 
     // Places.qml binds this to its open state: USB is polled only while visible.

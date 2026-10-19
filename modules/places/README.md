@@ -187,6 +187,13 @@ Clicking a file row (uncommitted, recent, docs, pinned) opens KIP's "Open
 with" chooser with KIP's file actions (`KipTheme.fileActions`): nvim first,
 Vivify for markdown, then the default app, its folder in yazi, a terminal in
 its folder, and copy path. The panel behind the chooser is blurred.
+The order is decided in three steps: an extension guess right away
+(documents and images: their app first), then `xdg-mime` a moment later
+(text types such as `.conf`, `.log` or JSON: nvim first; anything else: its
+default app first, named in the hint, e.g. "in LibreOffice Writer"), and
+finally whatever you picked last for that file type goes on top. Those
+choices live in `~/.local/state/qreep/places-openers.json` (extension, or
+mime type for files without one -> option id); delete a line to forget it.
 `1`–`9` or `↑↓` + `Enter` pick, `Esc` cancels. Copy path keeps Places open;
 everything else closes it.
 

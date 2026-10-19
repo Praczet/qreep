@@ -27,6 +27,21 @@ PanelWindow {
     property var chooserTodo: null
     // Set for a USB drive: the chooser's options are udisksctl actions.
     property var chooserUsb: null
+    // A plain file chooser (not folder / todo / usb / smb): its choice is
+    // remembered per file type, and xdg-mime refines its order.
+    property bool chooserIsFile: false
+    property string chooserMime: ""
+
+    Connections {
+        target: rootPlacesPanel.service
+
+        function onFileTypeKnown(path, mime, appName) {
+            if (!rootPlacesPanel.chooserIsFile || rootPlacesPanel.chooserFile !== path)
+                return;
+            rootPlacesPanel.chooserMime = mime;
+            rootPlacesPanel.refineFileChooser(path, mime, appName);
+        }
+    }
     // Set for an SMB share: the chooser's options are mount actions.
     property var chooserSmb: null
     // SMB password dialog: the share being logged into, and why.
@@ -961,6 +976,7 @@ PanelWindow {
             chooserTodo = null;
             chooserUsb = null;
             chooserSmb = item;
+            chooserIsFile = false;
             chooserOptions = [{ id: "open", label: "Open", icon: "󰉋", hint: item.mounted ? "in yazi" : "mount, then yazi" }].concat(item.mounted ? [
                     { id: "terminal", label: "Terminal", icon: "󰆍", hint: theme.terminal + " in it" },
                     { id: "unmount", label: "Unmount", icon: "󰕔", hint: "gio mount -u" }
@@ -981,6 +997,7 @@ PanelWindow {
 
             chooserTodo = null;
             chooserUsb = item;
+            chooserIsFile = false;
             chooserOptions = [{ id: "open", label: "Open", icon: "󰉋", hint: mounted ? "in yazi" : "mount, then yazi" }].concat(mounted ? [
                     { id: "terminal", label: "Terminal", icon: "󰆍", hint: theme.terminal + " in it" },
                     { id: "unmount", label: "Unmount", icon: "󰕔", hint: "keep it plugged in" }
@@ -1006,6 +1023,7 @@ PanelWindow {
             const kt = theme.modules.kip;
 
             chooserTodo = item;
+            chooserIsFile = false;
             chooserOptions = kipController ? kt.markdownOpeners : kt.markdownOpeners.filter(opener => opener.id !== "logseq");
             chooserIndex = 0;
             chooserFile = item.absolutePath;
@@ -1033,10 +1051,13 @@ PanelWindow {
         chooserTodo = null;
         chooserUsb = null;
         chooserSmb = null;
+        chooserIsFile = !isFolder;
+        chooserMime = "";
 
         if (isFolder) {
             chooserOptions = kt.folderActions;
         } else {
+            // Extension guess now; xdg-mime refines it a moment later.
             const extension = String(path).replace(/^.*\./, "").toLowerCase();
             const appFirst = appFirstExtensions.indexOf(extension) >= 0;
             const open = kt.fileActions.filter(action => action.id === "open");
@@ -1044,10 +1065,34 @@ PanelWindow {
             const rest = kt.fileActions.filter(action => action.id !== "default" && action.id !== "open");
             const vivify = /\.md$/i.test(path) ? kt.markdownOpeners.filter(opener => opener.id === "vivify") : [];
 
-            chooserOptions = appFirst ? open.concat(editor, rest) : editor.concat(vivify, open, rest);
+            chooserOptions = promoteRemembered(appFirst ? open.concat(editor, rest) : editor.concat(vivify, open, rest), path, "");
+            service.inspectFile(path);
         }
         chooserIndex = 0;
         chooserFile = path;
+    }
+
+    // The option you last picked for this kind of file goes first.
+    function promoteRemembered(options, path, mime) {
+        const remembered = service.openers[service.openerKey(path, mime)];
+        const chosen = options.filter(option => option.id === remembered);
+
+        return chosen.length > 0 ? chosen.concat(options.filter(option => option.id !== remembered)) : options;
+    }
+
+    // xdg-mime answered: text goes to the editor, the rest to its app, now
+    // named in the hint. A remembered choice still wins.
+    function refineFileChooser(path, mime, appName) {
+        const named = chooserOptions.map(option => option.id === "open" && appName ? Object.assign({}, option, {
+                hint: "in " + appName
+            }) : option);
+        const editor = named.filter(option => option.id === "default" || option.id === "vivify");
+        const open = named.filter(option => option.id === "open");
+        const rest = named.filter(option => ["default", "vivify", "open"].indexOf(option.id) < 0);
+        const ordered = mime.length === 0 ? named : service.isTextMime(mime) ? editor.concat(open, rest) : open.concat(editor, rest);
+
+        chooserOptions = promoteRemembered(ordered, path, mime);
+        chooserIndex = 0;
     }
 
     function handleChooserKey(event) {
@@ -1132,6 +1177,9 @@ PanelWindow {
             dir: path.replace(/\/[^\/]*$/, "") || "/"
         };
         const command = option.command.map(part => String(part).replace(/\{(\w+)\}/g, (match, key) => values[key] !== undefined ? values[key] : match));
+
+        if (chooserIsFile)
+            service.rememberOpener(path, option.id, chooserMime);
 
         service.run(command, cwd);
         // Copying a path is not a launch; Places stays for the next click.
