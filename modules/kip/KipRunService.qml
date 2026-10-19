@@ -255,7 +255,8 @@ Item {
         exitCode = 0;
 
         if (chosen === "terminal") {
-            launcher.command = ["ghostty", "--wait-after-command=true", "-e", "bash", "-ic", text];
+            // hold: the window stays after the command, so its output can be read.
+            launcher.command = theme.terminalCommand(["bash", "-ic", text], { hold: true });
             launcher.startDetached();
             addToHistory(text);
             runStatus = "started";

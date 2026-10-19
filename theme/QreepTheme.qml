@@ -42,6 +42,25 @@ QtObject {
     }
 
     readonly property string iconFontFamily: "FiraCode Nerd Font"
+
+    // The terminal everything in Qreep launches. Change it here, nowhere else.
+    // Kitty takes the program as plain arguments (no -e); --working-directory
+    // and --hold are its spellings. Another terminal needs terminalCommand()
+    // taught its flags.
+    readonly property string terminal: "kitty"
+
+    // ["kitty", "--working-directory=…", "--hold", ...command]
+    // options: { cwd: string, hold: bool }; placeholders like {path} pass through.
+    function terminalCommand(command, options) {
+        const opts = options || {};
+        const result = [terminal];
+
+        if (opts.cwd)
+            result.push("--working-directory=" + opts.cwd);
+        if (opts.hold)
+            result.push("--hold");
+        return result.concat(command || []);
+    }
     readonly property int animationFastDuration: 100
 
     readonly property string logNotificationBackend: "notify-send"

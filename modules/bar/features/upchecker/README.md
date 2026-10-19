@@ -52,7 +52,7 @@ commands, restart checks, and the configured update command.
 The default update path is:
 
 ```text
-Upchecker Update button -> ghostty -e update-btw
+Upchecker Update button -> kitty update-btw   (QreepTheme.terminal)
 ```
 
 `update-btw` is Adam's local helper at `~/.local/bin/update-btw`, not a repo

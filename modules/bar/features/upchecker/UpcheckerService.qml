@@ -6,7 +6,8 @@ QtObject {
     id: rootUpcheckerService
 
     property QtObject log
-    property string updateTerminalCommand: "ghostty"
+    // Terminal prefix from QreepTheme.terminalCommand([]); the update command is appended.
+    property var updateTerminalCommand: ["kitty"]
     property string updateCommand: "update-btw"
     property string restartCheckCommand: "restart-check"
     property string restartCheckTimezone: "Europe/Luxembourg"
@@ -180,7 +181,7 @@ QtObject {
 
     function openUpdaterTerminal() {
         updateRunner.running = false;
-        updateRunner.command = [updateTerminalCommand, "-e", updateCommand];
+        updateRunner.command = updateTerminalCommand.concat([updateCommand]);
         updateRunner.startDetached();
     }
 

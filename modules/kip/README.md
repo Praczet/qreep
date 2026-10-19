@@ -252,7 +252,7 @@ Keys:
 - `Enter` submits. Single-line on purpose.
 - `Tab` completes the highlighted command.
 - `Up`/`Down` move through the palette or results.
-- `Enter` on a result opens it at the line: `ghostty -e nvim +<line> <path>`
+- `Enter` on a result opens it at the line: `kitty nvim +<line> <path>`
   (`KipTheme.openCommand`), then closes KIP.
 - `Enter` on any **markdown** hit asks first, wherever the file lives.
   `Up`/`Down` or the number keys, `Enter` confirms, `Esc` cancels. Options live
@@ -318,7 +318,7 @@ show it. Typing `/` hands the body to the command palette as before.
   lives in `KipAppService` for the session; a Quickshell restart forgets it.
 - Arrows move spatially (Up/Down keep the column across sections), `Enter`
   launches and closes KIP. Left/Right belong to the grid here, not the cursor.
-- `Terminal=true` entries run as `ghostty -e <command>` (`appTerminal`);
+- `Terminal=true` entries run in Qreep's terminal (`QreepTheme.terminal`, kitty);
   everything else goes through `DesktopEntry.execute()`.
 
 Habit remarks: on a fresh open, `appNudgeChance` (0.5) of the time KIP
@@ -561,7 +561,7 @@ Checks go through `bash -ic`, like rofi-runner, so bash aliases count (zsh-only
 aliases do not). `cinfo` adds its summary; a command it marks
 `Danger: YES` needs a second Enter.
 
-- **Terminal**: `ghostty --wait-after-command=true -e bash -ic "<cmd>"`, so
+- **Terminal**: `kitty --hold bash -ic "<cmd>"`, so
   the window stays open after the command ends.
 - **Background**: `setsid bash -ic "<cmd>"`, in its own session, so a
   Quickshell reload cannot kill it. A wrapper watches 2 s: still running →

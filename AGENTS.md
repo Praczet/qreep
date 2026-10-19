@@ -568,7 +568,7 @@ Upchecker and Triage are connected at the controller level:
 - Upchecker can show triage decision badges, open Triage on Updates, and open
   Triage focused to a selected package.
 - Triage can reuse `UpcheckerService.update()` from its Updates view.
-- Keep one update command path. Duplicating `ghostty -e update-btw` in Triage is
+- Keep one update command path. Duplicating the terminal + `update-btw` launch in Triage is
   how future Adam gets two buttons with different opinions.
 
 V1 safety rule:

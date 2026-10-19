@@ -8,7 +8,7 @@ QtObject {
     readonly property int buttonIconPixelSize: 24
     readonly property int buttonTextPixelSize: 14
     readonly property int buttonContentSpacing: 8
-    readonly property string updateTerminalCommand: "ghostty"
+    readonly property var updateTerminalCommand: qreep.terminalCommand([])
     readonly property string updateCommand: "update-btw"
     readonly property string restartCheckCommand: "restart-check"
     readonly property string restartCheckTimezone: "Europe/Luxembourg"

@@ -18,7 +18,6 @@ next look without restarting Qreep. Minimum per project: a name and a path.
 ```json
 {
   "defaultEditor": "nvim",
-  "terminal": ["ghostty", "--working-directory={cwd}"],
   "fileManager": { "command": ["yazi", "{path}"], "terminal": true },
   "editors": {
     "nvim": { "command": ["nvim", "{path}"], "terminal": true },
@@ -56,8 +55,8 @@ next look without restarting Qreep. Minimum per project: a name and a path.
 | `links` | Related folders, opened in the file manager. |
 | `cockpit` | Command for Shift+Enter, run in the project folder. |
 
-`{path}` is the file or folder being opened and `{cwd}` the project folder.
-Commands with `"terminal": true` run as `terminal ... -e command`.
+`{path}` is the file or folder being opened. Commands with `"terminal": true`
+run in Qreep's terminal (`QreepTheme.terminal`, kitty) in the project folder.
 
 ## What it finds on its own
 

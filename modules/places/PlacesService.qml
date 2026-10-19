@@ -564,7 +564,7 @@ Item {
     function openTerminal(project) {
         if (!project)
             return;
-        run(terminalPrefix(project.path), project.path);
+        run(theme.terminalCommand([], { cwd: project.path }), project.path);
     }
 
     function openCockpit(project) {
@@ -587,14 +587,9 @@ Item {
         if (command.length === 0)
             return;
 
-        run(spec.terminal ? terminalPrefix(cwd).concat(["-e"]).concat(command) : command, cwd);
+        run(spec.terminal ? theme.terminalCommand(command, { cwd: cwd }) : command, cwd);
     }
 
-    function terminalPrefix(cwd) {
-        const prefix = Array.isArray(config.terminal) ? config.terminal : ["ghostty", "--working-directory={cwd}"];
-
-        return prefix.map(arg => expand(String(arg).replace("{cwd}", cwd)));
-    }
 
     function run(command, cwd) {
         launcher.command = command;

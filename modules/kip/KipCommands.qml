@@ -239,7 +239,7 @@ QtObject {
             takesArgument: true,
             argumentOptional: true,
             syntax: "/win [words]",
-            examples: ["/win", "/win firefox", "/win ghostty qreep"],
+            examples: ["/win", "/win firefox", "/win kitty qreep"],
             actions: "Lists windows, most recently focused first, as soon as you type the space, as a grid or list (Ctrl+L) of icons or live previews (Ctrl+P). Previews come from Expose's window matching; a window it cannot match safely shows its icon. Arrows move, Enter switches to the window's workspace and focuses it, then KIP closes."
         },
         {

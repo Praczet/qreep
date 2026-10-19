@@ -97,13 +97,13 @@ Item {
 
         const lines = [];
 
-        lines.push(runner.mode === "terminal" ? "## Opens in Ghostty" : "## Runs in the background");
+        lines.push(runner.mode === "terminal" ? "## Opens in " + host.theme.terminal : "## Runs in the background");
         lines.push("", "`" + text + "`", "", "Because " + runner.reason + ".");
         if (runner.dangerous)
             lines.push("", "> **cinfo marks `" + word + "` as dangerous.** Enter arms it, a second Enter runs it.");
         if (runner.info.length > 0)
             lines.push("", "```text", runner.info.slice(0, 6).join("\n"), "```");
-        lines.push("", "_Shift+Enter: " + (runner.mode === "terminal" ? "run in the background instead" : "open in Ghostty instead") + ", and remember that for `" + word + "`._");
+        lines.push("", "_Shift+Enter: " + (runner.mode === "terminal" ? "run in the background instead" : "open in " + host.theme.terminal + " instead") + ", and remember that for `" + word + "`._");
         return lines.join("\n");
     }
 
@@ -189,7 +189,7 @@ Item {
             return "use";
         if (runner.inspectStatus !== "done" || runner.commandType.length === 0)
             return "";
-        return armedFor.length > 0 ? "run anyway" : (runner.mode === "terminal" ? "run in ghostty" : "run");
+        return armedFor.length > 0 ? "run anyway" : (runner.mode === "terminal" ? "run in " + host.theme.terminal : "run");
     }
 
     function keyHints() {

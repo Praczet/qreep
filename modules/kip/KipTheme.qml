@@ -66,7 +66,7 @@ QtObject {
 
     // Open a source at a line. Plain argv, no shell; {path} and {line} are
     // substituted per argument.
-    readonly property var openCommand: ["ghostty", "-e", "nvim", "+{line}", "{path}"]
+    readonly property var openCommand: qreep.terminalCommand(["nvim", "+{line}", "{path}"])
 
     // Header banner behind the title and input, faded into the card so the
     // body stays plain. "bloom" follows Unclaimed Bloom's current wallpaper
@@ -123,7 +123,6 @@ QtObject {
     readonly property int appNudgeRecentWindow: 3 * 60 * 60 * 1000
     readonly property int messageIconSize: 22
     // Desktop entries with Terminal=true run in this, as `<terminal> -e <command>`.
-    readonly property string appTerminal: "ghostty"
 
     // /last
     readonly property string screenshotDir: Quickshell.env("HOME") + "/Pictures/Screenshots"
@@ -269,7 +268,7 @@ QtObject {
     // yazi, a Terminal=true app, and plain xdg-open has no terminal to put it
     // in, so it exited without a word. Given a file, yazi opens its folder
     // with that file hovered.
-    readonly property var fileManagerCommand: ["ghostty", "-e", "yazi"]
+    readonly property var fileManagerCommand: qreep.terminalCommand(["yazi"])
     readonly property var folderActions: [
         {
             id: "file-manager",
@@ -281,16 +280,16 @@ QtObject {
         {
             id: "terminal",
             label: "Terminal",
-            hint: "ghostty in this folder",
+            hint: qreep.terminal + " in this folder",
             icon: "󰆍",
-            command: ["ghostty", "--working-directory={path}"]
+            command: qreep.terminalCommand([], { cwd: "{path}" })
         },
         {
             id: "broot",
             label: "Broot",
             hint: "browse it in broot",
             icon: "󰙅",
-            command: ["ghostty", "-e", "broot", "{path}"]
+            command: qreep.terminalCommand(["broot", "{path}"])
         },
         {
             id: "copy-path",

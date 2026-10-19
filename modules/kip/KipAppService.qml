@@ -143,7 +143,7 @@ Item {
             return;
 
         if (entry.runInTerminal) {
-            launchProcess.command = [kt.appTerminal, "-e"].concat(entry.command);
+            launchProcess.command = theme.terminalCommand(entry.command);
             launchProcess.startDetached();
         } else {
             entry.execute();
