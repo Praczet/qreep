@@ -50,19 +50,23 @@ Item {
         });
     }
 
-    // KipResultList shape: origin chip = reachability, file = the name.
+    // KipResultList shape: origin chip = reachability, or "prod" when kitty's
+    // ssh.conf gives the host the prod theme (reachability then goes below).
     // Unreachable hosts are dimmed but still selectable.
     function row(item) {
         const state = service.sshReachable[item.host] || "";
+        const prod = service.sshLevel(item) === "prod";
         const parts = [];
 
         if (item.detail)
             parts.push(item.detail);
         if (item.label !== item.host)
             parts.push(item.host);
+        if (prod && state === "down")
+            parts.push("unreachable");
 
         return {
-            origin: state === "up" ? "up" : state === "down" ? "down" : "ssh",
+            origin: prod ? "prod" : state === "up" ? "up" : state === "down" ? "down" : "ssh",
             folder: "",
             file: item.label,
             excerpt: parts.join(" · "),

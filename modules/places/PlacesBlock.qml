@@ -35,7 +35,9 @@ PlacesSection {
             // ssh: green when the port answered, dim when not, accent until checked.
             tagColor: modelData.kind === "ssh" ? rootPlacesBlock.sshColor(modelData.host) : rootPlacesBlock.pt.accentColor
             path: modelData.label
-            trailing: modelData.kind === "ssh" || modelData.kind === "usb" || modelData.kind === "smb" ? modelData.detail : (modelData.time ? rootPlacesBlock.service.ago(modelData.time) : "")
+            // ssh: prod hosts (kitty's ssh.conf, see sshLevel) get a red name.
+            pathColor: modelData.kind === "ssh" && rootPlacesBlock.service.sshLevel(modelData) === "prod" ? rootPlacesBlock.pt.errorColor : rootPlacesBlock.pt.primaryTextColor
+            trailing: modelData.kind === "ssh" ? (rootPlacesBlock.service.sshLevel(modelData) === "prod" ? "prod · " : "") + modelData.detail : modelData.kind === "usb" || modelData.kind === "smb" ? modelData.detail : (modelData.time ? rootPlacesBlock.service.ago(modelData.time) : "")
             selected: rootPlacesBlock.detailPane.isFileSelected(rootPlacesBlock.block.id, index)
             onSelectedChanged: {
                 if (selected)

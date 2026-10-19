@@ -766,6 +766,66 @@ Item {
         };
     }
 
+    // --- ssh danger level: kitty's ssh.conf is the one source ----------------
+    // kitten ssh paints a host with the color_scheme of the last hostname
+    // block that matches it (lines before the first hostname apply to all).
+    // A scheme with "prod" in its name makes the host "prod" here too, so the
+    // tag always matches what kitty will actually show. include is ignored.
+
+    property var kittySshBlocks: []
+
+    FileView {
+        path: rootPlacesService.wantsSshConfig || rootPlacesService.sshHosts.length > 0 ? rootPlacesService.home + "/.config/kitty/ssh.conf" : ""
+        preload: path.length > 0
+        watchChanges: true
+
+        onFileChanged: reload()
+        onLoaded: rootPlacesService.kittySshBlocks = rootPlacesService.parseKittySsh(text())
+        onLoadFailed: rootPlacesService.kittySshBlocks = []
+    }
+
+    // [{ patterns: null (global) | [glob, ...], scheme }]
+    function parseKittySsh(text) {
+        const blocks = [{
+                patterns: null,
+                scheme: ""
+            }];
+
+        for (const raw of String(text || "").split("\n")) {
+            const match = /^\s*(\S+)\s+(.+?)\s*$/.exec(raw);
+
+            if (!match || match[1].indexOf("#") === 0)
+                continue;
+            if (match[1] === "hostname")
+                blocks.push({
+                    patterns: match[2].split(/\s+/),
+                    scheme: ""
+                });
+            else if (match[1] === "color_scheme")
+                blocks[blocks.length - 1].scheme = match[2];
+        }
+        return blocks;
+    }
+
+    // kitty matches against what you type. Places types the bare alias
+    // (openSsh), so user@host patterns never match its connections.
+    function kittyHostMatches(pattern, host) {
+        if (pattern.indexOf("@") >= 0)
+            return false;
+        return new RegExp("^" + pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".") + "$").test(host);
+    }
+
+    // "prod" | "" for an ssh item.
+    function sshLevel(item) {
+        let scheme = kittySshBlocks.length > 0 ? kittySshBlocks[0].scheme : "";
+
+        for (const block of kittySshBlocks.slice(1)) {
+            if (block.patterns.some(pattern => kittyHostMatches(pattern, item.host)))
+                scheme = block.scheme;
+        }
+        return /prod/i.test(scheme) ? "prod" : "";
+    }
+
     // host -> "up" | "down"; missing = not checked yet. One TCP connect to
     // the ssh port per host (address and port from `ssh -G`), all in
     // parallel, 1.5 s each. No login, so no prompts and no host-key questions.

@@ -9,6 +9,7 @@ Rectangle {
     property string tag: ""
     property color tagColor: pt.secondaryTextColor
     property string path: ""
+    property color pathColor: pt.primaryTextColor
     property string trailing: ""
     property bool selected: false
 
@@ -50,7 +51,7 @@ Rectangle {
             verticalCenter: parent.verticalCenter
         }
         text: rootPlacesFileRow.path
-        color: rootPlacesFileRow.pt.primaryTextColor
+        color: rootPlacesFileRow.pathColor
         font.family: rootPlacesFileRow.pt.monoFontFamily
         font.pixelSize: rootPlacesFileRow.pt.fileRowTextPixelSize
         elide: Text.ElideMiddle

@@ -222,7 +222,9 @@ A tip card sits under the project list: a random tip each time Places opens,
 click it for the next. KIP's `/p eos` lists the same projects (same service)
 and opens Places on one; Shift+Enter there goes straight to the cockpit.
 `/ssh` lists the hosts of the ssh blocks (`sshHosts` on the service) and
-connects with `kitten ssh`, like Enter on an ssh card.
+connects with `kitten ssh`, like Enter on an ssh card. Hosts that
+`~/.config/kitty/ssh.conf` paints with a scheme named `*Prod*` (a `hostname`
+block, matched like kitty does) show a red name and `prod` in both.
 
 ## Files
 

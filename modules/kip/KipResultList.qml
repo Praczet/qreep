@@ -74,6 +74,7 @@ ListView {
                         color: ({
                                 logseq: rootKipResultList.kipTheme.secondaryAccentColor,
                                 legacy: rootKipResultList.kipTheme.warningColor,
+                                prod: rootKipResultList.kipTheme.errorColor,
                                 dir: rootKipResultList.kipTheme.accentColor
                             })[resultRow.modelData.origin] || rootKipResultList.kipTheme.secondaryTextColor
                         font.pixelSize: rootKipResultList.kipTheme.metaPixelSize
