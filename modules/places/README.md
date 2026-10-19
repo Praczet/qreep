@@ -165,7 +165,7 @@ until Qreep reloads.
 | `Ctrl+T` | terminal in the project folder |
 | `Ctrl+R` | re-read everything |
 | `Ctrl+/` | find anything clickable on this page (fuzzy); the card you were in ranks first; `↑↓` next match, `Enter` open, `Esc` back |
-| `Ctrl+1` … `Ctrl+9` | select a place: the Nth place in the list (Home, Work, ...); the row shows its key |
+| `Ctrl+1` … `Ctrl+9`, `Ctrl+0` | select the 1st … 10th entry in the list, places and projects alike; each row shows its key |
 | `Alt+1` … `Alt+9` | jump into a card: a project's Uncommitted, Pinned, Recently touched, Docs, then blocks; a place's blocks |
 | in a card: `↑` `↓` / `←` `→` | move between files / to the next card |
 | in a card: `Enter` | "Open with" chooser for that file |

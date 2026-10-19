@@ -105,7 +105,7 @@ PanelWindow {
         { keys: "click a file", action: "Open with: editor, Vivify, app, folder, terminal, copy path" },
         { keys: "1–9  ↑↓ Enter", action: "Pick in the Open with chooser" },
         { keys: "Alt+1 … Alt+9", action: "Jump into a card (file cards, then blocks)" },
-        { keys: "Ctrl+1 … Ctrl+9", action: "Select a place (Home, Work, ...)" },
+        { keys: "Ctrl+1 … Ctrl+0", action: "Select the 1st … 10th entry in the list" },
         { keys: "Ctrl+/", action: "Find anything on this page; ↑↓ next match" },
         { keys: "in a card: ↑↓ ← →", action: "Move between files and cards" },
         { keys: "in a card: Enter", action: "Open with … for that file" },
@@ -779,11 +779,11 @@ PanelWindow {
         if (findMode && handleFindKey(event))
             return;
 
-        // Ctrl+1..9: select the Nth place (Home, Work, ...), clearing the filter.
-        if ((event.modifiers & Qt.ControlModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_9) {
+        // Ctrl+1..9, Ctrl+0: select the 1st..10th entry, clearing the filter.
+        if ((event.modifiers & Qt.ControlModifier) && event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
             event.accepted = true;
             detail.focusedCard = "";
-            service.selectPlaceNumber(event.key - Qt.Key_0);
+            service.selectEntryNumber(event.key === Qt.Key_0 ? 10 : event.key - Qt.Key_0);
             return;
         }
 

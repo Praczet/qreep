@@ -926,19 +926,24 @@ Item {
         selectedIndex = Math.max(0, index);
     }
 
-    // Ctrl+1..9: the Nth place in list order (places only, projects skipped).
-    readonly property var placeIds: projects.filter(project => project.kind === "place").map(project => project.id)
-
-    function placeNumber(id) {
-        const number = placeIds.indexOf(id) + 1;
-        return number > 0 && number <= 9 ? number : 0;
+    // Ctrl+1..9, Ctrl+0: the 1st..10th entry in list order, places and
+    // projects alike. Past ten there is no key; filter instead.
+    function entryNumber(id) {
+        const number = projects.findIndex(project => project.id === id) + 1;
+        return number > 0 && number <= 10 ? number : 0;
     }
 
-    function selectPlaceNumber(number) {
-        const id = placeIds[number - 1];
+    // "Ctrl+3"; the 10th entry is Ctrl+0, like the number row.
+    function entryKey(id) {
+        const number = entryNumber(id);
+        return number === 0 ? "" : "Ctrl+" + (number % 10);
+    }
 
-        if (id)
-            selectProject(id);
+    function selectEntryNumber(number) {
+        const project = projects[number - 1];
+
+        if (project)
+            selectProject(project.id);
     }
 
     function setQuery(text) {

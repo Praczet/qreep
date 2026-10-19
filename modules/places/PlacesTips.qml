@@ -14,7 +14,7 @@ QtObject {
         "In an apps card, left and right walk the apps; up and down change card.",
         "\"folders\" is a list of shortcuts; \"folder\" lists what is inside one path.",
         "Blocks pair up two per row in config order; \"wide\": true takes the whole row.",
-        "Ctrl+1 … Ctrl+9 jump straight to a place: Ctrl+1 Home, Ctrl+2 Work.",
+        "Ctrl+1 … Ctrl+0 jump straight to the 1st … 10th entry; each row shows its key.",
         "A usb block shows plugged-in drives live; Eject unmounts and powers them off.",
         "smb shares mount through GVFS; the password stays in GNOME Keyring, never in places.json.",
         "An ssh block with no items lists every host in ~/.ssh/config. Enter opens kitty with ssh.",
