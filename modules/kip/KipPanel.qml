@@ -20,6 +20,7 @@ PanelWindow {
     required property QtObject calc
     required property QtObject dict
     required property QtObject windows
+    property QtObject places: null
     required property QtObject binds
     required property QtObject timerCommand
     required property QtObject runner
@@ -86,6 +87,7 @@ PanelWindow {
             files: filesCommand,
             shots: shotsCommand,
             windows: windowsCommand,
+            projects: projectsCommand,
             keys: keysCommand
         })[contentState] || null
     // The text field lives in KipInput.
@@ -263,6 +265,13 @@ PanelWindow {
         host: rootKipPanel
         windows: rootKipPanel.windows
         view: windowView
+    }
+
+    KipProjectsCommand {
+        id: projectsCommand
+
+        host: rootKipPanel
+        places: rootKipPanel.places
     }
 
     KipKeysCommand {
@@ -926,6 +935,30 @@ PanelWindow {
                 }
             }
 
+            // /p: Places' projects, group as the chip, git and quests below.
+            Text {
+                width: parent.width
+                visible: rootKipPanel.contentState === "projects"
+                text: projectsCommand.status()
+                color: rootKipPanel.kt.tertiaryAccentColor
+                font.pixelSize: rootKipPanel.kt.metaPixelSize
+                elide: Text.ElideMiddle
+            }
+
+            KipResultList {
+                width: parent.width
+                height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.75)
+                visible: projectsCommand.listVisible
+                kipTheme: rootKipPanel.kt
+                results: projectsCommand.results
+                currentIndex: projectsCommand.index
+
+                onActivated: index => {
+                    projectsCommand.index = index;
+                    projectsCommand.submit(false);
+                }
+            }
+
             // /keys: Hyprland binds, combo in the chip, description beside it.
             Text {
                 width: parent.width
@@ -1247,6 +1280,12 @@ PanelWindow {
             return;
         }
 
+        // "/p " lists Places' projects; typing narrows them.
+        if (liveKind() === "projects") {
+            projectsCommand.show();
+            return;
+        }
+
         // "/keys " lists Hyprland binds; typing narrows them.
         if (liveKind() === "keys") {
             keysCommand.show();
@@ -1359,7 +1398,7 @@ PanelWindow {
             return "shots";
         if (contentState === "service")
             return answerDone() && !resultsVisible ? "answers" : "results";
-        if (contentState === "files" || contentState === "windows" || contentState === "grep" || contentState === "keys")
+        if (contentState === "files" || contentState === "windows" || contentState === "grep" || contentState === "keys" || contentState === "projects")
             return "results";
         if (appsMode)
             return "apps";
@@ -1381,6 +1420,7 @@ PanelWindow {
         calc.reset();
         dict.reset();
         windowsCommand.reset();
+        projectsCommand.reset();
         keysCommand.reset();
         runCommand.reset();
         browseCommand.reset();
@@ -1660,6 +1700,9 @@ PanelWindow {
             return;
         case "windows":
             windowsCommand.show();
+            return;
+        case "projects":
+            projectsCommand.show();
             return;
         case "keys":
             keysCommand.show();

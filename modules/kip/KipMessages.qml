@@ -134,6 +134,22 @@ QtObject {
                 neutral: ["No window matches."],
                 dry: ["No such window. Perhaps you closed it in a moment of clarity."]
             },
+            "projects.ready": {
+                neutral: ["Pick a project. Type to narrow it down."],
+                dry: ["Your projects, each one waiting to be finished.", "Choose where to be productive. Or at least present."]
+            },
+            "projects.found": {
+                neutral: ["Enter opens it in Places, Shift+Enter the cockpit, Ctrl+Enter the editor."],
+                dry: ["There it is. The uncommitted files missed you.", "Found it. Try not to start a new one instead."]
+            },
+            "projects.empty": {
+                neutral: ["No project matches."],
+                dry: ["No such project. Plenty of others are still unfinished, though."]
+            },
+            "projects.error": {
+                neutral: ["Places is not loaded, so there are no projects to show."],
+                dry: ["Projects live in Places, and Places is not answering."]
+            },
             "timer.ready": {
                 neutral: ["Duration, clock time, up, pause, resume or stop."],
                 dry: ["Time management. Bold of you.", "How long shall we pretend you'll focus?", "Name a duration. I'll hold you to it."]

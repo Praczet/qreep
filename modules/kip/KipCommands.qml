@@ -243,6 +243,23 @@ QtObject {
             actions: "Lists windows, most recently focused first, as soon as you type the space, as a grid or list (Ctrl+L) of icons or live previews (Ctrl+P). Previews come from Expose's window matching; a window it cannot match safely shows its icon. Arrows move, Enter switches to the window's workspace and focuses it, then KIP closes."
         },
         {
+            name: "p",
+            aliases: ["proj", "project", "places"],
+            label: "Projects",
+            description: "Jump to a project from Places.",
+            helper: "Every word must match the name, id, group or path. Enter opens it in Places.",
+            eventKey: "projects.ready",
+            placeholder: "project name",
+            icon: "󰉋",
+            sourceHint: "~/.config/qreep/places.json",
+            kind: "projects",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/p [words]",
+            examples: ["/p", "/p eos", "/p coding mask"],
+            actions: "Lists the projects from Places with branch, age, changed files and quests. Enter opens Places on the project, Shift+Enter launches its cockpit, Ctrl+Enter opens it in its editor; KIP closes."
+        },
+        {
             name: "keys",
             aliases: ["binds", "k"],
             label: "Keys",

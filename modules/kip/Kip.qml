@@ -18,6 +18,8 @@ Scope {
     // Other Qreep services KIP drives directly (shell.qml passes them in).
     property QtObject timerService: null
     property QtObject exposeService: null
+    // Places controller, for /p. Null when Places is not hosted.
+    property QtObject placesController: null
     // "jarvis" or "mock"; starts from the theme, switchable over IPC for testing.
     property string backend: theme.modules.kip.backend
     readonly property QtObject service: backend === "mock" ? mockService : jarvisService
@@ -237,6 +239,7 @@ Scope {
             calc: calcService
             dict: dictService
             windows: windowService
+            places: rootKip.placesController
             binds: bindsService
             timerCommand: kipTimerCommand
             runner: runService

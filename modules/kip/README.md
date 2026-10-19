@@ -226,6 +226,7 @@ The size survives closing KIP but not a Quickshell restart.
 | `/calc 5 km to mi` (aliases `/c`, `/=`) | qalc result plus how qalc read it; live, Enter copies |
 | `/def word` (alias `/define`) | offline dictionary via sdcv; live, Enter copies |
 | `/win [words]` (aliases `/w`, `/window`) | windows by class/title/workspace; Enter switches and focuses |
+| `/p [words]` (aliases `/proj`, `/project`, `/places`) | projects from Places with branch, age, changes, quests; Enter opens Places on it, Shift+Enter its cockpit, Ctrl+Enter its editor |
 | `/keys [words]` (aliases `/binds`, `/k`) | Hyprland keybindings by description or keys; Enter copies the keys |
 | `/timer 25m Tea`, `15:03 x`, `up x`, `pause`, `resume`, `stop` (alias `/t`) | preview, then Enter does it |
 | `/run <command>` (alias `/r`) | run what you typed, in Ghostty or the background; preview first |

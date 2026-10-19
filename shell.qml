@@ -102,6 +102,7 @@ ShellRoot {
         theme: qreepTheme
         timerService: timer.service
         exposeService: expose.service
+        placesController: places
     }
 
     PlacesModule.Places {

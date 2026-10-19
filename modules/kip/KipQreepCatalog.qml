@@ -126,7 +126,7 @@ QtObject {
     // Hooks other programs call, duplicates of a curated action, and KIP itself.
     readonly property var hidden: [
         "qreep-kip.*", "osd.*", "qreep-bloom.*", "qreep-calendar.*", "qreep-monitor-profile.*",
-        "qreep-fast-password.copy",
+        "qreep-fast-password.copy", "qreep-places.showWith", "qreep-places.showProject",
         "*.showMe", "*.hideMe", "*.refresh",
         "qreep-notification.toggle", "qreep-notification.showCenter", "qreep-notification.hideCenter",
         "qreep-notification.togglePopup", "qreep-notification.showPopup", "qreep-notification.hidePopup",
