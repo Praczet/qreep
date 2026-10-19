@@ -49,10 +49,15 @@ QtObject {
             "qreep-timer": "󰔛",
             "qreep-triage": "󰏖",
             "qreep-upchecker": "󰏕",
+            "qreep-vitals": "󰓅",
             "osd": "󰍪"
         })
 
-    readonly property var pillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume", "qreeper", "tray"]
+    // Toggle lists: `toggles.stateFrom` names an IPC function that returns one
+    // line per item, either "on  id" / "off id" or "id key=true key2=false"
+    // (then `stateKey` picks the key). KIP lists the items with switches and
+    // calls the action with the item id to flip one. The item ids come from
+    // the shell, so nothing here has to be kept in sync by hand.
 
     // The curated list, in display order inside each group.
     readonly property var actions: [
@@ -90,8 +95,9 @@ QtObject {
         { key: "qreep-bar.setReserved", group: "bar", label: "Bar: reserved", icon: "󱔓" },
         { key: "qreep-bar.setOverlay", group: "bar", label: "Bar: overlay", icon: "󰧾" },
         { key: "qreep-bar.setCollapsed", group: "bar", label: "Bar: collapsed", icon: "󰞕" },
-        { key: "qreep-bar-pill.togglePill", group: "bar", label: "Show / hide a pill", icon: "󰔡", choices: pillIds },
-        { key: "qreep-bar-pill.togglePinned", group: "bar", label: "Pin / unpin a pill", icon: "󰤱", choices: pillIds },
+        { key: "qreep-bar-pill.togglePill", group: "bar", label: "Show / hide a pill", icon: "󰔡", toggles: { stateFrom: "qreep-bar-pill.listPills", stateKey: "visible" } },
+        { key: "qreep-bar-pill.togglePinned", group: "bar", label: "Pin / unpin a pill", icon: "󰤱", toggles: { stateFrom: "qreep-bar-pill.listPills", stateKey: "pinned" } },
+        { key: "qreep-vitals.toggleIndicator", group: "bar", label: "Vitals: show / hide an indicator", icon: "󰓅", toggles: { stateFrom: "qreep-vitals.listIndicators" } },
 
         // Qreeper: asleep until a session starts
         { key: "qreep-qreeper.start", group: "qreeper", label: "Start Qreeper session", icon: "󰐊" },
@@ -109,6 +115,7 @@ QtObject {
         "qreep-polkit.showLog", "qreep-polkit.demo", "qreep-polkit.registrationState", "qreep-polkit.logPath", "qreep-polkit.toggle",
         "qreep-aegis.copyText", "qreep-aegis.copyJson",
         "qreep-bar.getMode", "qreep-bar-pill.listPills", "qreep-bar-pill.state",
+        "qreep-vitals.listIndicators", "qreep-vitals.state",
         "qreep-mpris.state", "qreep-language.state", "qreep-screenshot.state",
         "qreep-qreeper.state", "qreep-qreeper.fontScale", "qreep-qreeper.setFontScale", "qreep-qreeper.resetFontScale", "qreep-qreeper.rearrange"
     ]
@@ -124,6 +131,7 @@ QtObject {
         "qreep-timer.pause", "qreep-timer.resume", "qreep-timer.startTimer", "qreep-timer.startCountdown", "qreep-timer.startCountdownUntil",
         "qreep-bar.toggleOverlay", "qreep-bar.toggleCollapsed", "qreep-bar.setMode",
         "qreep-bar-pill.enablePill", "qreep-bar-pill.disablePill", "qreep-bar-pill.expandPill", "qreep-bar-pill.collapsePill",
+        "qreep-vitals.enableIndicator", "qreep-vitals.disableIndicator", "qreep-vitals.setIndicators",
         "qreep-borg.showProgress", "qreep-borg.hideProgress",
         "qreep-triage.update",
         "qreep-qreeper.showMinimap", "qreep-qreeper.hideMinimap", "qreep-qreeper.showAtlas", "qreep-qreeper.hideAtlas"
@@ -151,7 +159,7 @@ QtObject {
         return hidden.some(pattern => pattern === target + "." + name || pattern === target + ".*" || pattern === "*." + name);
     }
 
-    // { group, label, icon, choices, rank, visible }
+    // { group, label, icon, choices, toggles, rank, visible }
     function describe(target, name) {
         const key = target + "." + name;
         const action = actionIndex[key];
@@ -163,6 +171,7 @@ QtObject {
                 label: action.label,
                 icon: action.icon || icon,
                 choices: action.choices || [],
+                toggles: action.toggles || null,
                 rank: action.rank,
                 visible: true
             };
@@ -175,6 +184,7 @@ QtObject {
             label: "",
             icon: icon,
             choices: [],
+            toggles: null,
             rank: actions.length,
             visible: groupId === "new"
         };

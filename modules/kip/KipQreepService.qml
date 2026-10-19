@@ -30,6 +30,16 @@ Item {
     property string callLabel: ""
     // Ctrl+H: debug and hidden functions too. The catalog tidies, it does not forbid.
     property bool showAll: false
+    // Toggle list: the exact entry has catalog `toggles`. Items are
+    // { id, on } read from its state function; toggleResults is that list
+    // narrowed by whatever was typed after the function name.
+    property var toggleEntry: null
+    property var toggleItems: []
+    property var toggleResults: []
+    // idle | loading | ready | error
+    property string toggleStatus: "idle"
+    property string toggleError: ""
+    property string toggleFilter: ""
 
     KipQreepCatalog {
         id: catalog
@@ -82,6 +92,45 @@ Item {
 
     Process {
         id: detachedCall
+    }
+
+    Process {
+        id: toggleStateProcess
+
+        stdout: StdioCollector {
+            id: toggleStateStdout
+
+            waitForEnd: true
+        }
+
+        stderr: StdioCollector {
+            id: toggleStateStderr
+
+            waitForEnd: true
+        }
+
+        onExited: exitCode => rootKipQreepService.finishToggleState(exitCode, toggleStateStdout.text, toggleStateStderr.text)
+    }
+
+    Process {
+        id: flipProcess
+
+        stderr: StdioCollector {
+            id: flipStderr
+
+            waitForEnd: true
+        }
+
+        // Re-read instead of trusting the flip: the switch shows what the
+        // shell says now, not what KIP hoped would happen.
+        onExited: exitCode => {
+            if (exitCode !== 0) {
+                rootKipQreepService.toggleStatus = "error";
+                rootKipQreepService.toggleError = String(flipStderr.text || "").trim() || "exited " + exitCode;
+                return;
+            }
+            rootKipQreepService.loadToggleState();
+        }
     }
 
     function ipcBase() {
@@ -145,6 +194,7 @@ Item {
                 title: shown.label.length > 0 ? shown.label : shortName + " " + fn[1],
                 icon: shown.icon,
                 choices: shown.choices,
+                toggles: shown.toggles,
                 listed: shown.visible,
                 group: group.id,
                 groupTitle: group.title,
@@ -172,6 +222,7 @@ Item {
         const words = text.length > 0 ? text.split(/\s+/) : [];
 
         exact = resolve(words);
+        updateToggleEntry();
 
         if (exact) {
             results = [exact.entry];
@@ -270,6 +321,85 @@ Item {
         eventKey = "qreep.called";
     }
 
+    function updateToggleEntry() {
+        const entry = exact && exact.entry.toggles ? exact.entry : null;
+
+        toggleFilter = entry ? exact.args.join(" ").trim().toLowerCase() : "";
+
+        if (entry !== toggleEntry) {
+            toggleEntry = entry;
+            toggleItems = [];
+            toggleStatus = "idle";
+            toggleError = "";
+            if (entry)
+                loadToggleState();
+        }
+
+        applyToggleFilter();
+    }
+
+    function applyToggleFilter() {
+        toggleResults = toggleFilter.length > 0 ? toggleItems.filter(item => item.id.toLowerCase().indexOf(toggleFilter) >= 0) : toggleItems;
+    }
+
+    function loadToggleState() {
+        if (!toggleEntry)
+            return;
+
+        const source = String(toggleEntry.toggles.stateFrom || "").split(".");
+
+        toggleStateProcess.running = false;
+        toggleStatus = "loading";
+        toggleStateProcess.command = ipcBase().concat(["call", source[0], source.slice(1).join(".")]);
+        toggleStateProcess.running = true;
+    }
+
+    function finishToggleState(exitCode, stdoutText, stderrText) {
+        if (!toggleEntry)
+            return;
+
+        if (exitCode !== 0) {
+            toggleStatus = "error";
+            toggleError = String(stderrText || "").trim().split("\n")[0] || "state call exited " + exitCode;
+            return;
+        }
+
+        toggleItems = parseToggleState(stdoutText, toggleEntry.toggles.stateKey || "");
+        toggleStatus = "ready";
+        toggleError = "";
+        applyToggleFilter();
+    }
+
+    // "on  cpu-temp" / "off disk", or "clock visible=true pinned=false" with stateKey.
+    function parseToggleState(text, stateKey) {
+        const items = [];
+
+        for (const line of String(text || "").split("\n")) {
+            const onOff = /^\s*(on|off)\s+(\S+)/.exec(line);
+
+            if (onOff) {
+                items.push({ id: onOff[2], on: onOff[1] === "on" });
+                continue;
+            }
+
+            const keyed = stateKey.length > 0 ? new RegExp("^\\s*(\\S+)\\s.*\\b" + stateKey + "=(true|false)\\b").exec(line) : null;
+
+            if (keyed)
+                items.push({ id: keyed[1], on: keyed[2] === "true" });
+        }
+
+        return items;
+    }
+
+    function flip(item) {
+        if (!toggleEntry || !item || flipProcess.running)
+            return;
+
+        callLabel = toggleEntry.label + " " + item.id;
+        flipProcess.command = ipcBase().concat(["call", toggleEntry.target, toggleEntry.name, item.id]);
+        flipProcess.running = true;
+    }
+
     function signature(entry) {
         return entry.label + (entry.params.length > 0 ? " " + entry.params.map(param => "<" + param.name + ">").join(" ") : "") + (entry.choices.length > 0 ? " · " + entry.choices.join(" · ") : "");
     }
@@ -287,6 +417,13 @@ Item {
         callOutput = "";
         callLabel = "";
         showAll = false;
+        toggleStateProcess.running = false;
+        toggleEntry = null;
+        toggleItems = [];
+        toggleResults = [];
+        toggleStatus = "idle";
+        toggleError = "";
+        toggleFilter = "";
     }
 
     function cancel() {

@@ -81,6 +81,10 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-vitals 
 
 The pill also uses the normal pill id `vitals` in `qreep-bar-pill`.
 
+KIP `/qreep` lists "Vitals: show / hide an indicator" in the Bar group. Enter
+on it shows every indicator with a switch, read from `listIndicators`.
+`listIndicators` and `state` themselves sit under Debug.
+
 ## Follow-ups
 
 * Right-click checklist popup for toggling indicators by mouse.

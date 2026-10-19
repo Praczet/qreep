@@ -11,7 +11,11 @@ Item {
 
     readonly property bool active: host.contentState === "qreep"
     property int index: 0
-    readonly property bool listVisible: active && qreep.results.length > 0
+    // A toggle action named exactly: the list becomes its items with switches.
+    readonly property bool toggleMode: active && qreep.toggleEntry !== null
+    property int toggleIndex: 0
+    readonly property var toggleHit: toggleMode && qreep.toggleResults.length > 0 ? qreep.toggleResults[Math.min(toggleIndex, qreep.toggleResults.length - 1)] : null
+    readonly property bool listVisible: active && qreep.results.length > 0 && !toggleMode
     readonly property var hit: listVisible ? qreep.results[Math.min(index, qreep.results.length - 1)] : null
     readonly property string eventKey: qreep.eventKey || "qreep.ready"
 
@@ -32,18 +36,20 @@ Item {
         qreep.callLabel = "";
         qreep.filter(host.parsed.argument);
         index = 0;
+        toggleIndex = 0;
     }
 
     // Tab on "target function partial": complete the argument from the
     // catalog's choices, cycling when the partial matches several.
     function completeChoice() {
         const exact = qreep.exact;
+        // Toggle lists complete from the live item ids instead.
+        const choices = !exact ? [] : exact.entry.toggles ? qreep.toggleItems.map(item => item.id) : exact.entry.choices;
 
-        if (!exact || exact.entry.choices.length === 0)
+        if (choices.length === 0)
             return false;
 
         const typed = exact.args.length > 0 ? exact.args[exact.args.length - 1] : "";
-        const choices = exact.entry.choices;
         const current = choices.indexOf(typed);
         const next = current >= 0 ? choices[(current + 1) % choices.length] : (choices.find(choice => choice.startsWith(typed.toLowerCase())) || choices[0]);
 
@@ -58,6 +64,14 @@ Item {
     // Exact "target function args": call when the arguments are there.
     // Otherwise the selected row: call it, or fill it in to take arguments.
     function submit() {
+        if (toggleMode) {
+            if (toggleHit !== null)
+                qreep.flip(toggleHit);
+            else if (qreep.toggleStatus === "error")
+                qreep.loadToggleState();
+            return;
+        }
+
         const exact = qreep.exact;
 
         if (exact) {
@@ -100,6 +114,28 @@ Item {
 
     // True when the key was /qreep's: Up/Down, Tab completion, Ctrl+H.
     function handleKey(event) {
+        if (toggleMode) {
+            if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
+                toggleIndex = host.clampIndex(toggleIndex + (event.key === Qt.Key_Down ? 1 : -1), qreep.toggleResults.length);
+                event.accepted = true;
+                return true;
+            }
+
+            // Space flips once the name is complete; before that it is just a space.
+            if (event.key === Qt.Key_Space && host.inputText().endsWith(" ") && toggleHit !== null) {
+                event.accepted = true;
+                qreep.flip(toggleHit);
+                return true;
+            }
+
+            // Esc leaves the toggle list for the action list, not KIP.
+            if (event.key === Qt.Key_Escape) {
+                event.accepted = true;
+                host.setInput("/" + host.parsed.token + " ");
+                return true;
+            }
+        }
+
         if ((event.key === Qt.Key_Up || event.key === Qt.Key_Down) && listVisible) {
             index = host.clampIndex(index + (event.key === Qt.Key_Down ? 1 : -1), qreep.results.length);
             event.accepted = true;
@@ -132,6 +168,17 @@ Item {
     function status() {
         if (qreep.status === "error")
             return qreep.errorText;
+        if (toggleMode) {
+            if (qreep.toggleStatus === "error")
+                return qreep.toggleEntry.label + ": " + qreep.toggleError + " · Enter retries";
+            if (qreep.toggleStatus === "loading" && qreep.toggleItems.length === 0)
+                return "reading " + qreep.toggleEntry.toggles.stateFrom;
+
+            const on = qreep.toggleItems.filter(item => item.on).length;
+
+            return qreep.toggleEntry.title + " · " + on + " of " + qreep.toggleItems.length + " on"
+                + (qreep.toggleResults.length !== qreep.toggleItems.length ? " · " + qreep.toggleResults.length + " shown" : "");
+        }
         if (qreep.status === "loading")
             return "reading quickshell ipc show";
         if (qreep.callStatus === "running")
@@ -153,12 +200,16 @@ Item {
     }
 
     function enterLabel() {
+        if (toggleMode)
+            return toggleHit !== null ? "toggle" : "";
         if (qreep.exact)
             return qreep.exact.ready ? "call" : "";
         return hit === null ? (qreep.status === "error" ? "retry" : "") : (hit.params.length > 0 ? "arguments" : "call");
     }
 
     function keyHints() {
+        if (toggleMode)
+            return "↑↓ move · Enter or Space toggle · type to filter · Tab complete · Esc back to actions";
         return "↑↓ move · Enter call (or fill in arguments) · Tab complete · Esc back · keep typing to filter";
     }
 }

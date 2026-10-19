@@ -38,6 +38,7 @@ modules/kip/
 ├── KipQreepService.qml # /qreep: quickshell ipc show/call for this process
 ├── KipQreepCatalog.qml # /qreep: labels, groups, icons, what is listed
 ├── KipQreepList.qml   # /qreep: grouped rows with icons
+├── KipQreepToggleList.qml # /qreep: switch rows for toggle actions
 ├── KipQreepCommand.qml # /qreep in the panel: Tab completion, calling, Ctrl+H
 ├── KipGrepService.qml # /rg: ripgrep --json, capped, path:line hits
 ├── KipGrepCommand.qml # /rg in the panel: debounce, flag complaints, selection
@@ -415,8 +416,18 @@ from `~/.config/quickshell/qreep`, and `--path` to the repo finds nothing.
 - Hidden is a tidy-up, not a lock: exact `target function args` still calls it.
 - Typing filters on label, target and function (`upd`, `upch tog`). Targets
   show without the `qreep-` prefix.
-- Actions with known values (pill ids, Aegis mode, timer alert style): Tab
-  cycles them, Enter takes a unique prefix and refuses anything else.
+- Actions with known values (Aegis mode, timer alert style): Tab cycles
+  them, Enter takes a unique prefix and refuses anything else.
+- Toggle actions (`toggles` in the catalog: vitals indicators, pill
+  show/hide, pill pin) list their items with switches once the function is
+  named (`/qreep vitals toggleIndicator `). Enter, Space, or a click flips the
+  selected item and KIP re-reads the state, so the switch shows what the
+  shell says rather than what KIP hoped. Typing filters items, Tab completes
+  an id, Esc goes back to the action list.
+- A new toggle needs a toggle function taking an id, a state function
+  returning one line per item (`on  id` / `off id`, or `id key=true ...` with
+  `stateKey`), and one catalog line. Item ids come from the shell, so there is
+  no hand-kept list to drift.
 - Enter on a function without parameters calls it. With parameters, Enter
   or Tab fills the input (`/qreep timer startCountdown `) and the status line
   shows the signature; the last parameter takes the rest of the line, so

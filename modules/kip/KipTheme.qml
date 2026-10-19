@@ -240,6 +240,9 @@ QtObject {
     readonly property int qreepSectionIconPixelSize: 20
     readonly property int qreepIconBoxSize: appListIconSize
     readonly property int qreepIconPixelSize: 22
+    readonly property int qreepToggleRowHeight: 38
+    readonly property int qreepSwitchWidth: 36
+    readonly property int qreepSwitchHeight: 20
 
     // /rg: ripgrep over file contents. Searching ~ is fine because rg skips
     // gitignored files; the caps keep a common word from becoming a novel.

@@ -813,6 +813,24 @@ PanelWindow {
                 }
             }
 
+            // /qreep toggle list: the items of a catalog `toggles` action.
+            KipQreepToggleList {
+                width: parent.width
+                height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.7)
+                visible: qreepCommand.toggleMode && rootKipPanel.qreep.toggleResults.length > 0
+                kipTheme: rootKipPanel.kt
+                iconFontFamily: rootKipPanel.theme.iconFontFamily
+                items: rootKipPanel.qreep.toggleResults
+                title: qreepCommand.toggleMode ? rootKipPanel.qreep.toggleEntry.title : ""
+                icon: qreepCommand.toggleMode ? rootKipPanel.qreep.toggleEntry.icon : ""
+                currentIndex: qreepCommand.toggleIndex
+
+                onActivated: index => {
+                    qreepCommand.toggleIndex = index;
+                    qreepCommand.submit();
+                }
+            }
+
             // What a returning call said, selectable for Ctrl+C.
             TextEdit {
                 width: parent.width
