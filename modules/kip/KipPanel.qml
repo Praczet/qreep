@@ -1101,6 +1101,7 @@ PanelWindow {
                     rootKipPanel.notice = "Copied code block (" + lines + (lines === 1 ? " line)." : " lines).");
                 }
                 onFocusReturned: promptInput.forceActiveFocus()
+                onCloseRequested: rootKipPanel.closeRequested()
                 onSubmitRequested: {
                     promptInput.forceActiveFocus();
                     rootKipPanel.submit();
@@ -1524,6 +1525,13 @@ PanelWindow {
     }
 
     function handleKey(event) {
+        // Ctrl+Esc closes KIP from anywhere; plain Esc steps back one level.
+        if (event.key === Qt.Key_Escape && (event.modifiers & Qt.ControlModifier)) {
+            event.accepted = true;
+            closeRequested();
+            return;
+        }
+
         // Mode keys work everywhere, menus included.
         const shifted = (event.modifiers & Qt.ShiftModifier) !== 0;
         const modeText = ({

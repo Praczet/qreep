@@ -28,6 +28,8 @@ Flickable {
     signal copyCodeRequested(string code)
     // Esc/Tab: back to the prompt without closing.
     signal focusReturned
+    // Ctrl+Esc: close KIP, same as in the prompt.
+    signal closeRequested
     // Enter: what Enter in the prompt would do.
     signal submitRequested
     // Typing while the answer has focus belongs in the prompt.
@@ -126,6 +128,12 @@ Flickable {
     // select-all stay native; typing goes back to the prompt.
     function handleKey(event) {
         const modifiers = event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier);
+
+        if (event.key === Qt.Key_Escape && modifiers === Qt.ControlModifier) {
+            event.accepted = true;
+            closeRequested();
+            return;
+        }
 
         if (modifiers !== 0)
             return;

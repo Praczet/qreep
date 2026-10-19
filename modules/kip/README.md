@@ -279,7 +279,8 @@ Keys:
 - `Tab` on results shows the original retrieved text, so SQL and code can be
   copied from the note instead of from the model's retelling.
 - `Ctrl+Shift+C` copies `<absolute path>:<line>` with `wl-copy`.
-- `Escape` steps back from results to the prompt, then closes.
+- `Escape` steps back from results to the prompt, then closes. `Ctrl+Escape` closes
+  KIP at once, from any view.
 - Editing the text after a submit cancels the running request and returns to compose.
 - Outside click closes.
 

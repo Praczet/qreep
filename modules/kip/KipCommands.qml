@@ -370,7 +370,7 @@ QtObject {
         {
             id: "everywhere",
             title: "Everywhere",
-            keys: [["F1", "app launcher"], ["F2", "/browse, starting at ~"], ["F3", "/fd"], ["Shift+F3", "/rg"], ["F4", "/win"], ["Ctrl+/", "this sheet"], ["/", "command palette"], ["Tab", "complete the highlighted command"], ["Enter", "submit, or act on the selection"], ["Esc", "back one step, then close"]]
+            keys: [["F1", "app launcher"], ["F2", "/browse, starting at ~"], ["F3", "/fd"], ["Shift+F3", "/rg"], ["F4", "/win"], ["Ctrl+/", "this sheet"], ["/", "command palette"], ["Tab", "complete the highlighted command"], ["Enter", "submit, or act on the selection"], ["Esc", "back one step, then close"], ["Ctrl+Esc", "close KIP"]]
         },
         {
             id: "apps",
