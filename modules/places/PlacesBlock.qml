@@ -15,7 +15,7 @@ PlacesSection {
 
     // Live for calendar and todos, the config list for the rest.
     readonly property var items: service.blockItems(block)
-    readonly property bool listType: block.type === "documents" || block.type === "folders" || block.type === "folder"
+    readonly property bool listType: block.type === "documents" || block.type === "folders" || block.type === "folder" || block.type === "ssh"
 
     title: block.title
     subtitle: subtitleText()
@@ -31,10 +31,10 @@ PlacesSection {
             required property int index
 
             pt: rootPlacesBlock.pt
-            tag: modelData.kind === "folder" ? "󰉋" : rootPlacesBlock.fileGlyph(modelData.path)
+            tag: modelData.kind === "folder" ? "󰉋" : modelData.kind === "ssh" ? "󰣀" : rootPlacesBlock.fileGlyph(modelData.path)
             tagColor: rootPlacesBlock.pt.accentColor
             path: modelData.label
-            trailing: modelData.time ? rootPlacesBlock.service.ago(modelData.time) : ""
+            trailing: modelData.kind === "ssh" ? modelData.detail : (modelData.time ? rootPlacesBlock.service.ago(modelData.time) : "")
             selected: rootPlacesBlock.detailPane.isFileSelected(rootPlacesBlock.block.id, index)
             onSelectedChanged: {
                 if (selected)
@@ -197,12 +197,14 @@ PlacesSection {
     }
 
     function emptyText() {
-        if (["documents", "folders", "folder", "apps", "calendar", "todos"].indexOf(block.type) < 0)
+        if (["documents", "folders", "folder", "apps", "calendar", "todos", "ssh"].indexOf(block.type) < 0)
             return "Unknown block type \"" + block.type + "\" (not built yet, or a typo).";
         if (block.type === "calendar")
             return "Nothing on the calendar for the next " + block.days + (block.days === 1 ? " day." : " days.");
         if (block.type === "todos")
             return "No open todos. Either very productive or very forgetful.";
+        if (block.type === "ssh")
+            return block.fromSshConfig ? "No hosts in ~/.ssh/config (wildcards and git-only hosts are skipped)." : "No hosts listed.";
         if (block.type === "folder")
             return block.path ? "Empty, or not there: " + service.shortPath(block.path) : "A folder block needs \"path\".";
         return "Nothing listed yet: add \"items\" in places.json.";

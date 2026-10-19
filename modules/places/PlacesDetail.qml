@@ -143,6 +143,90 @@ Flickable {
         focusedIndex = Math.max(0, Math.min(focusedItems.length - 1, focusedIndex + step));
     }
 
+    // --- Ctrl+/ find on page ------------------------------------------------
+    // Fuzzy over every clickable item on the page. Ranked: substring beats
+    // scattered letters, earlier beats later, and the card that had focus
+    // when the search started wins ties ("search where I am first").
+    property string findHomeCard: ""
+    property var findMatches: []
+    property int findPosition: 0
+
+    function startFind() {
+        findHomeCard = focusedCard;
+        findMatches = [];
+        findPosition = 0;
+    }
+
+    function itemText(item) {
+        return [item.label, item.title, item.text, item.host, item.detail, item.page, item.day, item.path ? String(item.path).replace(/^.*\//, "") : ""].filter(part => part).join(" ");
+    }
+
+    // Higher is better; 0 = no match. Subsequence match, so "dv" finds "dev".
+    function fuzzyScore(text, query) {
+        const haystack = text.toLowerCase();
+        const needle = query.toLowerCase();
+        const at = haystack.indexOf(needle);
+
+        if (at >= 0)
+            return 1000 - at + (at === 0 || /[\s\/._-]/.test(haystack[at - 1]) ? 200 : 0);
+
+        let position = 0;
+        let gaps = 0;
+
+        for (const character of needle) {
+            const next = haystack.indexOf(character, position);
+            if (next < 0)
+                return 0;
+            gaps += next - position;
+            position = next + 1;
+        }
+        return Math.max(1, 500 - gaps);
+    }
+
+    function find(query) {
+        const text = String(query || "").trim();
+        const matches = [];
+
+        if (text.length > 0) {
+            for (const card of cardOrder) {
+                const items = cardItems(card);
+
+                for (let index = 0; index < items.length; index++) {
+                    const score = fuzzyScore(itemText(items[index]), text);
+
+                    if (score > 0)
+                        matches.push({
+                            card: card,
+                            index: index,
+                            score: score + (card === findHomeCard ? 150 : 0)
+                        });
+                }
+            }
+            matches.sort((left, right) => right.score - left.score);
+        }
+
+        findMatches = matches;
+        findPosition = 0;
+        showMatch();
+    }
+
+    // Down / Up while finding: next / previous match.
+    function stepMatch(step) {
+        if (findMatches.length === 0)
+            return;
+        findPosition = (findPosition + step + findMatches.length) % findMatches.length;
+        showMatch();
+    }
+
+    function showMatch() {
+        const match = findMatches[findPosition];
+
+        if (match) {
+            focusedCard = match.card;
+            focusedIndex = match.index;
+        }
+    }
+
     // Apps blocks lay their items out in a row, not a column.
     function focusedCardIsRow() {
         const block = blocks.find(candidate => candidate.id === focusedCard);

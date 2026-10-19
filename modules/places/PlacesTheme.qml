@@ -31,6 +31,10 @@ QtObject {
     readonly property int cardRadius: 12
     readonly property int cardPadding: 14
     readonly property int rowHeight: 64
+    // File / event / todo rows: text, icons at twice its size, room for both.
+    readonly property int fileRowTextPixelSize: metaPixelSize + 1
+    readonly property int fileRowIconPixelSize: 2 * fileRowTextPixelSize
+    readonly property int fileRowHeight: fileRowIconPixelSize + 8
     readonly property int rowRadius: 10
     readonly property int listIconSize: 30
     readonly property int heroIconSize: 54

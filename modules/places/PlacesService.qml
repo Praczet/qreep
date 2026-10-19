@@ -222,6 +222,10 @@ Item {
 
             if (type === "documents" || type === "folders")
                 items = raw.map(item => blockPathItem(item, type === "documents" ? "file" : "folder", basePath)).filter(item => item.path.length > 0);
+            else if (type === "ssh")
+                items = raw.map(item => sshItem(typeof item === "string" ? {
+                        host: item
+                    } : (item || {}))).filter(item => item.host.length > 0);
             else if (type === "apps")
                 items = raw.map(item => ({
                             kind: "app",
@@ -239,6 +243,10 @@ Item {
                 path: folderPath,
                 sort: block.sort === "modified" ? "modified" : "name",
                 hidden: block.hidden === true,
+                // ssh: no items = every host in ~/.ssh/config, minus "exclude"
+                // and git forges (isGitForge: they give no shell).
+                fromSshConfig: type === "ssh" && raw.length === 0,
+                exclude: Array.isArray(block.exclude) ? block.exclude.map(String) : [],
                 items: items,
                 // "wide": true spans both columns; every block is one cell otherwise.
                 wide: block.wide === true,
@@ -261,7 +269,85 @@ Item {
             return todos.filter(todo => block.states.indexOf(todo.state) >= 0).slice(0, block.limit);
         if (block.type === "folder")
             return folderItems(block);
+        if (block.type === "ssh" && block.fromSshConfig)
+            return sshConfigHosts.filter(host => block.exclude.indexOf(host.host) < 0 && !isGitForge(host)).slice(0, block.limit);
         return block.items;
+    }
+
+    // --- ssh: ~/.ssh/config hosts, or hand-listed ones -----------------------
+
+    readonly property bool wantsSshConfig: projects.some(project => project.blocks.some(block => block.type === "ssh" && block.fromSshConfig))
+    property var sshConfigHosts: []
+
+    FileView {
+        path: rootPlacesService.wantsSshConfig ? rootPlacesService.home + "/.ssh/config" : ""
+        preload: path.length > 0
+        watchChanges: true
+
+        onFileChanged: reload()
+        onLoaded: rootPlacesService.sshConfigHosts = rootPlacesService.parseSshConfig(text())
+        onLoadFailed: rootPlacesService.sshConfigHosts = []
+    }
+
+    // "Host a b" starts a block; HostName / User / Port apply to it.
+    // Wildcard patterns (*, ?, !) are not hosts you can connect to.
+    function parseSshConfig(text) {
+        const hosts = [];
+        let current = [];
+
+        for (const raw of String(text || "").split("\n")) {
+            const line = raw.replace(/#.*$/, "").trim();
+            const match = /^(\S+)\s+(.+)$/.exec(line);
+
+            if (!match)
+                continue;
+
+            const key = match[1].toLowerCase();
+            const value = match[2].trim();
+
+            if (key === "host") {
+                current = value.split(/\s+/).filter(name => !/[*?!]/.test(name)).map(name => ({
+                            host: name,
+                            hostName: "",
+                            user: "",
+                            port: ""
+                        }));
+                hosts.push(...current);
+            } else if (key === "match") {
+                current = [];
+            } else if (key === "hostname" || key === "user" || key === "port") {
+                for (const host of current)
+                    host[key === "hostname" ? "hostName" : key] = value;
+            }
+        }
+
+        return hosts.map(host => sshItem(host));
+    }
+
+    // Git hosting: ssh there gives no shell, only "you've authenticated".
+    function isGitForge(host) {
+        return host.user === "git" || /^(github\.com|gitlab\.com|bitbucket\.org|codeberg\.org)$/i.test(host.host);
+    }
+
+    function sshItem(spec) {
+        const host = String(spec.host || "");
+        const user = String(spec.user || "");
+        const hostName = String(spec.hostName || spec.hostname || "");
+        const port = String(spec.port || "");
+        const target = (user ? user + "@" : "") + (hostName && hostName !== host ? hostName : "") + (port && port !== "22" ? ":" + port : "");
+
+        return {
+            kind: "ssh",
+            host: host,
+            user: user,
+            label: String(spec.name || host),
+            detail: target.length > 0 && target !== user + "@" ? target : user
+        };
+    }
+
+    // kitty ssh <host>: ssh reads the rest from ~/.ssh/config.
+    function openSsh(item) {
+        run(theme.terminalCommand(["ssh", item.host]), home);
     }
 
     // --- folder: a directory's contents, one find per refresh ----------------
@@ -498,7 +584,8 @@ Item {
                 folder: "Folder",
                 apps: "Apps",
                 calendar: "Calendar",
-                todos: "Todos"
+                todos: "Todos",
+                ssh: "SSH"
             })[type] || type;
     }
 
@@ -539,6 +626,21 @@ Item {
         query = "";
         const index = projects.findIndex(project => project.id === id);
         selectedIndex = Math.max(0, index);
+    }
+
+    // Ctrl+1..9: the Nth place in list order (places only, projects skipped).
+    readonly property var placeIds: projects.filter(project => project.kind === "place").map(project => project.id)
+
+    function placeNumber(id) {
+        const number = placeIds.indexOf(id) + 1;
+        return number > 0 && number <= 9 ? number : 0;
+    }
+
+    function selectPlaceNumber(number) {
+        const id = placeIds[number - 1];
+
+        if (id)
+            selectProject(id);
     }
 
     function setQuery(text) {

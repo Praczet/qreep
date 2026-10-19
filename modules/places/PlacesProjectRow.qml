@@ -110,6 +110,31 @@ Item {
             }
             spacing: 5
 
+            // Places: their Ctrl+N, as a dimmed key cap.
+            Rectangle {
+                readonly property int number: rootPlacesProjectRow.service.placeNumber(rootPlacesProjectRow.project.id)
+
+                anchors.right: parent.right
+                visible: number > 0
+                width: placeKey.implicitWidth + 12
+                height: placeKey.implicitHeight + 4
+                radius: 5
+                color: rootPlacesProjectRow.pt.withAlpha(rootPlacesProjectRow.pt.primaryTextColor, 0.06)
+                border.width: 1
+                border.color: rootPlacesProjectRow.pt.withAlpha(rootPlacesProjectRow.pt.primaryTextColor, 0.22)
+
+                Text {
+                    id: placeKey
+
+                    anchors.centerIn: parent
+                    text: "Ctrl+" + parent.number
+                    color: rootPlacesProjectRow.pt.primaryTextColor
+                    opacity: 0.68
+                    font.family: rootPlacesProjectRow.pt.monoFontFamily
+                    font.pixelSize: rootPlacesProjectRow.pt.metaPixelSize
+                }
+            }
+
             // Changed files: a dot and a count, warning-colored.
             Row {
                 anchors.right: parent.right

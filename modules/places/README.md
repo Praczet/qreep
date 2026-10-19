@@ -88,6 +88,12 @@ the file cards. Every block takes `"enabled": false` and an optional `"title"`.
 | `documents` | paths, or `{ "name", "path" }` | Open with chooser; documents and images put "default app" first |
 | `folders` | paths, or `{ "name", "path" }` | folder chooser: yazi, terminal here, broot, copy path |
 | `folder` | none; `"path"`, `"sort"` (`name` / `modified`), `"limit"`, `"hidden"` | lists the folder's contents, subfolders first; folder chooser or Open with |
+| `ssh` | none (every `~/.ssh/config` host), or host names / `{ "name", "host", "user", "port" }`; `"exclude"` | a terminal running `ssh <host>` |
+
+`ssh` without items reads `~/.ssh/config` (watched): wildcard patterns and
+git forges (`User git`, github / gitlab / bitbucket / codeberg) are skipped,
+since they give no shell. ssh itself still reads the config, so a listed
+host only needs its name.
 | `calendar` | none; `"days"` (default 2), `"limit"` (default 10) | opens the event page (Google events have one) |
 | `todos` | none; `"states"` (default NOW, DOING, TODO, LATER), `"limit"` | KIP's markdown chooser: Logseq page, nvim at the line, Vivify |
 
@@ -103,8 +109,8 @@ Paths are absolute, `~/…`, or relative to the entry's own `path`. Blocks pair
 up two per row in config order; `"wide": true` gives a block the whole row. Cards are numbered in reading
 order for `Alt+1`…`Alt+9` (a project's four file cards first, then its
 blocks), and Tab walks them after the buttons. In an apps card ←→ move
-along the row and ↑↓ change card. More block types (usb, ssh,
-smb) are on the way; an unknown type shows a card saying so.
+along the row and ↑↓ change card. More block types (usb, smb)
+are on the way; an unknown type shows a card saying so.
 
 ## What it finds on its own
 
@@ -149,6 +155,8 @@ until Qreep reloads.
 | `Ctrl+O` | file manager |
 | `Ctrl+T` | terminal in the project folder |
 | `Ctrl+R` | re-read everything |
+| `Ctrl+/` | find anything clickable on this page (fuzzy); the card you were in ranks first; `↑↓` next match, `Enter` open, `Esc` back |
+| `Ctrl+1` … `Ctrl+9` | select a place: the Nth place in the list (Home, Work, ...); the row shows its key |
 | `Alt+1` … `Alt+9` | jump into a card: a project's Uncommitted, Pinned, Recently touched, Docs, then blocks; a place's blocks |
 | in a card: `↑` `↓` / `←` `→` | move between files / to the next card |
 | in a card: `Enter` | "Open with" chooser for that file |

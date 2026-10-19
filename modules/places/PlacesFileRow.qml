@@ -15,7 +15,10 @@ Rectangle {
     signal clicked
 
     width: parent ? parent.width : 0
-    height: 24
+    // Git status letters (M, ??) stay text-sized; glyph icons get the big size.
+    readonly property bool letterTag: /^[A-Z?!]{1,2}$/.test(tag)
+
+    height: pt.fileRowHeight
     radius: 6
     color: selected ? pt.selectedRowColor : (mouse.containsMouse ? pt.hoveredRowColor : "transparent")
     border.width: selected ? 1 : 0
@@ -29,12 +32,13 @@ Rectangle {
             leftMargin: 6
             verticalCenter: parent.verticalCenter
         }
-        width: 22
+        width: rootPlacesFileRow.pt.fileRowIconPixelSize + 4
+        horizontalAlignment: Text.AlignHCenter
         text: rootPlacesFileRow.tag
         color: rootPlacesFileRow.tagColor
         font.family: rootPlacesFileRow.pt.monoFontFamily
-        font.pixelSize: rootPlacesFileRow.pt.metaPixelSize
-        font.bold: true
+        font.pixelSize: rootPlacesFileRow.letterTag ? rootPlacesFileRow.pt.metaPixelSize : rootPlacesFileRow.pt.fileRowIconPixelSize
+        font.bold: rootPlacesFileRow.letterTag
     }
 
     Text {
@@ -48,7 +52,7 @@ Rectangle {
         text: rootPlacesFileRow.path
         color: rootPlacesFileRow.pt.primaryTextColor
         font.family: rootPlacesFileRow.pt.monoFontFamily
-        font.pixelSize: rootPlacesFileRow.pt.metaPixelSize + 1
+        font.pixelSize: rootPlacesFileRow.pt.fileRowTextPixelSize
         elide: Text.ElideMiddle
     }
 

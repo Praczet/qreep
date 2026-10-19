@@ -18,6 +18,8 @@ PanelWindow {
     property bool presented: false
     // F1 sheet. Esc closes it before it clears the filter or closes Places.
     property bool shortcutsOpen: false
+    // Ctrl+/: the search box finds items on this page instead of projects.
+    property bool findMode: false
     // "Open with" for a clicked file: KIP's chooser and KIP's file actions,
     // editor first. chooserFile is relative to the selected project.
     property string chooserFile: ""
@@ -58,6 +60,8 @@ PanelWindow {
         { keys: "click a file", action: "Open with: editor, Vivify, app, folder, terminal, copy path" },
         { keys: "1–9  ↑↓ Enter", action: "Pick in the Open with chooser" },
         { keys: "Alt+1 … Alt+9", action: "Jump into a card (file cards, then blocks)" },
+        { keys: "Ctrl+1 … Ctrl+9", action: "Select a place (Home, Work, ...)" },
+        { keys: "Ctrl+/", action: "Find anything on this page; ↑↓ next match" },
         { keys: "in a card: ↑↓ ← →", action: "Move between files and cards" },
         { keys: "in a card: Enter", action: "Open with … for that file" },
         { keys: "F1", action: "This sheet" },
@@ -77,7 +81,9 @@ PanelWindow {
 
     WlrLayershell.namespace: "qreep-places"
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    // Let go of the keyboard as soon as closing starts, not after the fade:
+    // whatever Places just launched should get it. Same as KIP.
+    WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     Component.onCompleted: {
         randomTip();
@@ -96,6 +102,7 @@ PanelWindow {
         enterTimer.stop();
         presented = false;
         shortcutsOpen = false;
+        findMode = false;
         chooserFile = "";
     }
 
@@ -217,7 +224,7 @@ PanelWindow {
                         leftMargin: 10
                         verticalCenter: parent.verticalCenter
                     }
-                    text: "Places"
+                    text: rootPlacesPanel.findMode ? "Find" : "Places"
                     color: rootPlacesPanel.pt.accentColor
                     font.pixelSize: rootPlacesPanel.pt.searchPixelSize
                     font.bold: true
@@ -240,6 +247,10 @@ PanelWindow {
                     clip: true
 
                     onTextEdited: {
+                        if (rootPlacesPanel.findMode) {
+                            detail.find(text);
+                            return;
+                        }
                         // Typing means "find a project": the file cards let go of the arrows.
                         detail.focusedCard = "";
                         rootPlacesPanel.service.setQuery(text);
@@ -249,7 +260,7 @@ PanelWindow {
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: search.text.length === 0
-                        text: "type to filter projects"
+                        text: rootPlacesPanel.findMode ? "find on this page: ↑↓ next match, Enter open, Esc back" : "type to filter projects"
                         color: rootPlacesPanel.pt.secondaryTextColor
                         font.pixelSize: rootPlacesPanel.pt.searchPixelSize
                     }
@@ -545,6 +556,24 @@ PanelWindow {
         if (chooserOpen && handleChooserKey(event))
             return;
 
+        // Ctrl+/: find on this page. Ctrl+/ again or Esc leaves it.
+        if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Slash) {
+            event.accepted = true;
+            setFindMode(!findMode);
+            return;
+        }
+
+        if (findMode && handleFindKey(event))
+            return;
+
+        // Ctrl+1..9: select the Nth place (Home, Work, ...), clearing the filter.
+        if ((event.modifiers & Qt.ControlModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_9) {
+            event.accepted = true;
+            detail.focusedCard = "";
+            service.selectPlaceNumber(event.key - Qt.Key_0);
+            return;
+        }
+
         // Alt+1..9: jump into the Nth card (project file cards, then blocks).
         if ((event.modifiers & Qt.AltModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_9) {
             event.accepted = true;
@@ -611,6 +640,42 @@ PanelWindow {
         }
     }
 
+    function setFindMode(on) {
+        findMode = on;
+        // Leaving find mode re-links the box to the project filter.
+        if (on)
+            search.text = "";
+        else
+            search.text = Qt.binding(() => service.query);
+        if (on)
+            detail.startFind();
+        search.forceActiveFocus();
+    }
+
+    // While finding: arrows walk the matches, Enter opens, Esc leaves find
+    // mode with the match still selected (arrows then work in its card).
+    function handleFindKey(event) {
+        switch (event.key) {
+        case Qt.Key_Up:
+        case Qt.Key_Down:
+            detail.stepMatch(event.key === Qt.Key_Down ? 1 : -1);
+            break;
+        case Qt.Key_Return:
+        case Qt.Key_Enter:
+            if (detail.focusedItem())
+                activateItem(detail.focusedItem());
+            break;
+        case Qt.Key_Escape:
+            setFindMode(false);
+            break;
+        default:
+            return false;
+        }
+
+        event.accepted = true;
+        return true;
+    }
+
     // Arrows and Enter while a file card has focus. Returns true when used.
     function handleCardKey(event) {
         switch (event.key) {
@@ -659,6 +724,13 @@ PanelWindow {
                 service.run(["xdg-open", item.url], service.home);
                 closeRequested();
             }
+            return;
+        }
+
+        // SSH host: a terminal running ssh, straight away.
+        if (item.kind === "ssh") {
+            service.openSsh(item);
+            closeRequested();
             return;
         }
 
