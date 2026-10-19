@@ -1,4 +1,5 @@
 import Quickshell
+import "core" as Core
 import "modules/aegis" as AegisModule
 import "modules/notification" as NotificationModule
 import "modules/clipboard" as ClipboardModule
@@ -23,6 +24,11 @@ ShellRoot {
         id: qreepTheme
     }
 
+    // Shared by the bar vitals pill now; Aegis can read it later.
+    Core.SystemSensorsService {
+        id: systemSensors
+    }
+
     NotificationModule.Notification {
         id: notification
 
@@ -44,6 +50,8 @@ ShellRoot {
         timerService: timer.service
         triageController: triage
         qreeperController: qreeper
+        aegisController: aegis
+        sensorsService: systemSensors
         shellFullscreenSurfaceOpen: dashboard.open || expose.open || qreeper.atlasOpen
 
         onVolumeFeedbackRequested: (percent, muted, icon) => {

@@ -128,7 +128,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `292493f` | `2026-10-12` |
+| `AGENTS.md` | `96d2e15` | `2026-10-19` |
 | `README.md` | `cc7fda3` | `2026-07-21` |
 | `README_when_bored.md` | `292493f` | `2026-10-12` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
@@ -145,6 +145,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/bar/features/potatofast/README.md` | `855e376` | `2026-07-10` |
 | `modules/bar/features/timer/README.md` | `0176cf4` | `2026-07-13` |
 | `modules/bar/features/upchecker/README.md` | `9438e75` | `2026-07-20` |
+| `modules/bar/features/vitals/README.md` | `96d2e15` | `2026-10-19` |
 | `modules/bar/features/volume/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/workspaces/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bloom/README.md` | `1a769ca` | `2026-07-08` |
@@ -195,6 +196,7 @@ modules/bar/features/
 ├── qreeper/
 ├── timer/
 ├── upchecker/
+├── vitals/
 ├── volume/
 └── workspaces/
 ```
@@ -1025,7 +1027,7 @@ Qreep currently has:
   - `overlay`: normal bar, no exclusive zone;
   - `collapsed`: compact top strip unless a visible pinned pill needs overlay space;
 - runtime pill state in `modules/bar/BarPillStateService.qml`, exposed through IPC target `qreep-bar-pill`;
-- current runtime pill IDs: `clock`, `workspaces`, `mpris`, `timer`, `upchecker`, `monitorprofile`, `borg`, `potato-fast`, `battery`, `network`, `language`, `volume`, `qreeper`, and `tray`;
+- current runtime pill IDs: `clock`, `workspaces`, `mpris`, `timer`, `upchecker`, `monitorprofile`, `borg`, `potato-fast`, `vitals`, `battery`, `network`, `language`, `volume`, `qreeper`, and `tray`;
 - enabled unpinned pills become 15px collapsed strips in collapsed mode; expanded pinned pills stay full-size, overlay content, use no top padding, and do not reserve Hyprland space;
 - a reusable `QreepModule` wrapper with hover, left/middle/right click, overlay, and shared-tooltip request support;
 - a launcher button in the left slot that delegates to `LauncherService`;
@@ -1041,6 +1043,7 @@ Qreep currently has:
 - an MPRIS pill in the center slot with current playback state, track columns, animated notes, preview tooltip, and right-click player popup;
 - one shared popup tooltip with delayed show/hide and scale animations;
 - a Battery pill in the right slot backed by `Quickshell.Services.UPower`;
+- a Vitals pill in the right slot (before Battery) holding runtime-toggleable CPU usage/temp/fan, per-thread usage, per-core temp, battery, and disk gauges/pies, exposed through IPC target `qreep-vitals`, hidden when no indicator is on, and opening Aegis on left click; sensors come from shared `core/SystemSensorsService.qml` (hosted by `shell.qml`), which only polls for groups a consumer demands;
 - a Network pill and anchored panel for wired, Wi-Fi, and Bluetooth state/actions through Quickshell networking services plus a few boring `nmcli` details;
 - a Volume pill backed by shared `core/SoundService.qml`, with click-to-mute, scroll-to-change volume, right-click `pavucontrol`, and OSD feedback through `shell.qml`;
 - a Power feature controller in `modules/bar/features/power/Power.qml` that owns `PowerService` and lazy-loads the `qreep-popup-power` panel;

@@ -11,6 +11,7 @@ import "./features/power" as PowerFeature
 import "./features/potatofast" as PotatoFastFeature
 import "./features/tray" as TrayFeature
 import "./features/upchecker" as UpcheckerFeature
+import "./features/vitals" as VitalsFeature
 import "./features/volume" as VolumeFeature
 import "./features/workspaces" as WorkspacesFeature
 import "./features/battery/" as BatteryFeature
@@ -68,6 +69,9 @@ QtObject {
     }
     readonly property QtObject tray: TrayFeature.TrayTheme {}
     readonly property QtObject upchecker: UpcheckerFeature.UpcheckerTheme {
+        qreep: rootBarTheme.qreep
+    }
+    readonly property QtObject vitals: VitalsFeature.VitalsTheme {
         qreep: rootBarTheme.qreep
     }
     readonly property QtObject volume: VolumeFeature.VolumeTheme {

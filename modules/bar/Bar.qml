@@ -11,6 +11,7 @@ import "./features/qreeper" as QreeperFeature
 import "./features/timer" as TimerFeature
 import "./features/tray" as TrayFeature
 import "./features/upchecker" as UpcheckerFeature
+import "./features/vitals" as VitalsFeature
 import "./features/monitorprofile" as MonitorProfileFeature
 import "./features/mpris" as MprisFeature
 import "./features/network" as NetworkFeature
@@ -34,6 +35,8 @@ PanelWindow {
     property alias upcheckerService: upchecker.service
     property var triageController: null
     property var qreeperController: null
+    property var aegisController: null
+    property var sensorsService: null
     property bool shellFullscreenSurfaceOpen: false
     readonly property bool collapsed: barModeService.collapsed
     readonly property bool reservedMode: barModeService.reserved
@@ -41,10 +44,10 @@ PanelWindow {
     readonly property int activeBarHeight: rootBar.theme.modules.bar.height
     readonly property int activeTopPadding: collapsed ? 0 : rootBar.theme.modules.bar.topPadding
     readonly property int visibleFootprintHeight: collapsed ? rootBar.theme.modules.bar.collapsedHeight : rootBar.activeTopPadding + rootBar.activeBarHeight
-    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume", "qreeper", "tray"]
+    readonly property var runtimePillIds: ["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "vitals", "battery", "network", "language", "volume", "qreeper", "tray"]
     readonly property bool leftSlotActive: rootBar.pillSlotActive("workspaces")
     readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["potato-fast", "timer", "clock", "mpris"])
-    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "battery", "network", "language", "volume", "qreeper", "tray"])
+    readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "vitals", "battery", "network", "language", "volume", "qreeper", "tray"])
 
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
     signal audioMixerRequested
@@ -109,6 +112,15 @@ PanelWindow {
 
     NetworkFeature.NetworkService {
         id: networkService
+    }
+
+    VitalsFeature.Vitals {
+        id: vitals
+
+        theme: rootBar.theme
+        sensors: rootBar.sensorsService
+        batteryService: batteryService
+        active: vitalsButton.visible
     }
 
     LanguageFeature.LanguageService {
@@ -503,6 +515,24 @@ PanelWindow {
                     borgTooltip.showFor(anchorItem, borgService.tooltip, borgService.className);
                 }
                 onTooltipHideRequested: borgTooltip.hideLater()
+            }
+
+            VitalsFeature.VitalsButton {
+                id: vitalsButton
+
+                visible: rootBar.pillEnabled("vitals") && vitals.hasIndicators
+                collapsedPill: rootBar.pillCollapsed("vitals")
+                theme: rootBar.theme
+                controller: vitals
+
+                onClicked: {
+                    if (rootBar.aegisController)
+                        rootBar.aegisController.toggle();
+
+                    sharedTooltip.hideLater();
+                }
+                onTooltipShowRequested: (anchorItem, title, content, style) => sharedTooltip.showFor(anchorItem, title, content, style)
+                onTooltipHideRequested: sharedTooltip.hideLater()
             }
 
             BatteryFeature.BatteryButton {
