@@ -24,6 +24,22 @@ PanelWindow {
     // and current-wallpaper are in (either can arrive first). Moving,
     // typing or clicking first wins.
     property bool needsInitialSelection: true
+    // F1 sheet. Esc closes it before it clears the filter or closes.
+    property bool shortcutsOpen: false
+    readonly property var shortcuts: [
+        { keys: "type", action: "Filter by name" },
+        { keys: "↑ ↓ ← →", action: "Move (← → in the grid only)" },
+        { keys: "PgUp  PgDn", action: "A page at a time" },
+        { keys: "Enter", action: "Apply (Unclaimed Bloom regrows the theme)" },
+        { keys: "double click", action: "Apply" },
+        { keys: "Ctrl+P", action: "Grid ↔ list" },
+        { keys: "Ctrl+1 … Ctrl+4", action: "Tile size S / M / L / XL" },
+        { keys: "Ctrl++  Ctrl+=", action: "Bigger tiles" },
+        { keys: "Ctrl+-  Ctrl+_", action: "Smaller tiles" },
+        { keys: "F1", action: "This sheet" },
+        { keys: "Esc", action: "Close sheet, clear filter, close" },
+        { keys: "Ctrl+Esc", action: "Close" }
+    ]
 
     signal closeRequested
     signal applyRequested(var item)
@@ -58,6 +74,7 @@ PanelWindow {
         }
         enterTimer.stop();
         presented = false;
+        shortcutsOpen = false;
     }
 
     onItemsChanged: {
@@ -137,10 +154,26 @@ PanelWindow {
     function handleKey(event) {
         const ctrl = (event.modifiers & Qt.ControlModifier) !== 0;
 
+        if (event.key === Qt.Key_F1) {
+            event.accepted = true;
+            shortcutsOpen = !shortcutsOpen;
+            return;
+        }
+
+        // Ctrl+1 … Ctrl+4: S / M / L / XL, straight to the grid.
+        if (ctrl && event.key >= Qt.Key_1 && event.key < Qt.Key_1 + wt.sizeOrder.length) {
+            event.accepted = true;
+            service.setView("grid");
+            service.setSize(wt.sizeOrder[event.key - Qt.Key_1]);
+            return;
+        }
+
         switch (event.key) {
         case Qt.Key_Escape:
             event.accepted = true;
-            if (!ctrl && search.text.length > 0) {
+            if (!ctrl && shortcutsOpen) {
+                shortcutsOpen = false;
+            } else if (!ctrl && search.text.length > 0) {
                 search.text = "";
                 service.setQuery("");
                 index = 0;
@@ -175,19 +208,21 @@ PanelWindow {
             event.accepted = true;
             move((event.key === Qt.Key_PageDown ? 1 : -1) * pageRows());
             return;
-        case Qt.Key_L:
+        case Qt.Key_P:
             if (ctrl) {
                 event.accepted = true;
                 service.setView(gridView ? "list" : "grid");
             }
             return;
+        // + and = share a key, as do - and _: with or without Shift.
         case Qt.Key_Equal:
         case Qt.Key_Plus:
         case Qt.Key_Minus:
+        case Qt.Key_Underscore:
             if (ctrl) {
                 event.accepted = true;
                 service.setView("grid");
-                service.stepSize(event.key === Qt.Key_Minus ? -1 : 1);
+                service.stepSize(event.key === Qt.Key_Minus || event.key === Qt.Key_Underscore ? -1 : 1);
             }
             return;
         }
@@ -196,7 +231,7 @@ PanelWindow {
     function hints() {
         const keys = gridView ? "↑↓←→ move" : "↑↓ move";
 
-        return keys + " · Enter apply (Unclaimed Bloom) · Ctrl+L " + (gridView ? "list" : "grid") + " · Ctrl+= / Ctrl+− size · type to filter · Esc " + (search.text.length > 0 ? "clear" : "close");
+        return keys + " · Enter apply (Unclaimed Bloom) · Ctrl+P " + (gridView ? "list" : "grid") + " · Ctrl+1–4 / Ctrl+± size · F1 shortcuts · Esc " + (search.text.length > 0 ? "clear" : "close");
     }
 
     Rectangle {
@@ -710,6 +745,88 @@ PanelWindow {
                 text: rootWallpaperPanel.service.buildTotal > 0 ? "making thumbnails " + rootWallpaperPanel.service.buildDone + " / " + rootWallpaperPanel.service.buildTotal : ""
                 color: rootWallpaperPanel.wt.accentColor
                 font.pixelSize: rootWallpaperPanel.wt.metaPixelSize
+            }
+        }
+
+        // --- F1 shortcuts sheet (same look as Places) -----------------------------
+        Rectangle {
+            anchors.fill: parent
+            visible: opacity > 0.01
+            opacity: rootWallpaperPanel.shortcutsOpen ? 1 : 0
+            color: rootWallpaperPanel.wt.overlayColor
+            radius: card.radius
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 120
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: rootWallpaperPanel.shortcutsOpen = false
+            }
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: 520
+                height: sheet.implicitHeight + 2 * rootWallpaperPanel.wt.panelPadding
+                radius: rootWallpaperPanel.wt.tileRadius
+                color: rootWallpaperPanel.wt.sheetColor
+                border.width: 1
+                border.color: rootWallpaperPanel.wt.selectedBorderColor
+
+                Column {
+                    id: sheet
+
+                    anchors {
+                        fill: parent
+                        margins: rootWallpaperPanel.wt.panelPadding
+                    }
+                    spacing: 8
+
+                    Text {
+                        bottomPadding: 6
+                        text: "Shortcuts"
+                        color: rootWallpaperPanel.wt.accentColor
+                        font.pixelSize: rootWallpaperPanel.wt.metaPixelSize + 1
+                        font.bold: true
+                        font.capitalization: Font.AllUppercase
+                        font.letterSpacing: 1
+                    }
+
+                    Repeater {
+                        model: rootWallpaperPanel.shortcuts
+
+                        Row {
+                            required property var modelData
+
+                            spacing: 16
+
+                            Rectangle {
+                                width: 150
+                                height: 24
+                                radius: 6
+                                color: rootWallpaperPanel.wt.chipColor
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.keys
+                                    color: rootWallpaperPanel.wt.accentColor
+                                    font.family: rootWallpaperPanel.theme.iconFontFamily
+                                    font.pixelSize: rootWallpaperPanel.wt.metaPixelSize + 1
+                                }
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: modelData.action
+                                color: rootWallpaperPanel.wt.primaryTextColor
+                                font.pixelSize: rootWallpaperPanel.wt.bodyPixelSize
+                            }
+                        }
+                    }
+                }
             }
         }
     }

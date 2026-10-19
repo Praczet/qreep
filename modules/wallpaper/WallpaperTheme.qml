@@ -58,6 +58,8 @@ QtObject {
     // Above 0.5: Hyprland's ignore_alpha for this layer, so the card stays blurred.
     readonly property real panelOpacity: 0.75
     readonly property color overlayColor: Qt.rgba(qreep.background.r, qreep.background.g, qreep.background.b, overlayOpacity)
+    // The F1 sheet sits on the dimmed card: solid enough to read.
+    readonly property color sheetColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, 0.96)
     readonly property color panelColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, panelOpacity)
     readonly property color cardColor: withAlpha(qreep.surfaceContainer, 0.6)
     readonly property color imageBackgroundColor: withAlpha(qreep.surfaceContainerLowest, 0.6)

@@ -17,9 +17,11 @@ path opens it too, when Qreep is up.
 | `↑↓←→` | move (grid); `↑↓` in the list |
 | `PgUp` `PgDn` | a page at a time |
 | `Enter`, double click | apply: `wallset <path>`, then the picker closes |
-| `Ctrl+L` | grid ↔ list |
-| `Ctrl+=` `Ctrl+-` | tile size S / M / L / XL (switches to the grid) |
-| `Esc` | clear the filter, then close |
+| `Ctrl+P` | grid ↔ list |
+| `Ctrl+1` … `Ctrl+4` | tile size S / M / L / XL (switches to the grid) |
+| `Ctrl++` `Ctrl+=` / `Ctrl+-` `Ctrl+_` | bigger / smaller tiles |
+| `F1` | shortcuts sheet |
+| `Esc` | close the sheet, clear the filter, then close |
 | `Ctrl+Esc` | close |
 
 The chips in the search bar do the same with the mouse. The view and size

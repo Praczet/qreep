@@ -78,6 +78,13 @@ Item {
         saveState();
     }
 
+    function setSize(next) {
+        if (wt.sizeOrder.indexOf(next) < 0)
+            return;
+        size = next;
+        saveState();
+    }
+
     function stepSize(step) {
         const index = Math.max(0, Math.min(wt.sizeOrder.length - 1, wt.sizeOrder.indexOf(size) + step));
 
