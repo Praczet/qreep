@@ -40,7 +40,7 @@ Scope {
         }
 
         function refresh() {
-            placesService.refresh();
+            placesService.refresh(true);
         }
 
         // Open with the filter typed, e.g. "eos".
@@ -80,6 +80,14 @@ Scope {
     }
 
     Timer {
+        id: refreshTimer
+
+        interval: rootPlaces.theme.modules.places.animationDuration + 60
+        repeat: false
+        onTriggered: placesService.refresh(false)
+    }
+
+    Timer {
         id: closeTimer
 
         interval: rootPlaces.theme.modules.places.animationDuration + 40
@@ -92,8 +100,10 @@ Scope {
 
         closeTimer.stop();
         placesService.setQuery("");
-        placesService.refresh();
         open = true;
+        // Open on what Places already knows; refresh once the open animation
+        // is done, so git, todos, folders and ssh checks never compete with it.
+        refreshTimer.restart();
     }
 
     function showProject(id) {

@@ -16,6 +16,7 @@ Item {
     readonly property string home: Quickshell.env("HOME")
 
     property var config: ({})
+    property string lastConfigText: ""
     property string configError: ""
     property var projects: []
     property var summaries: ({})
@@ -198,8 +199,11 @@ Item {
         }
     }
 
-    function refresh() {
-        configFile.reload();
+    // reloadConfig: Ctrl+R and IPC refresh. Opening does not need it, the
+    // config FileView already watches places.json.
+    function refresh(reloadConfig) {
+        if (reloadConfig === true)
+            configFile.reload();
         refreshSummaries();
         refreshTodos();
         refreshFolders();
@@ -413,7 +417,11 @@ Item {
             waitForEnd: true
         }
 
-        onExited: rootPlacesService.usbDrives = rootPlacesService.parseUsb(usbStdout.text)
+        onExited: {
+            const next = rootPlacesService.parseUsb(usbStdout.text);
+            if (!rootPlacesService.same(rootPlacesService.usbDrives, next))
+                rootPlacesService.usbDrives = next;
+        }
     }
 
     function refreshUsb() {
@@ -571,7 +579,8 @@ Item {
                         share: decodeURIComponent(match[2])
                     });
             }
-            rootPlacesService.smbMounts = mounts;
+            if (!rootPlacesService.same(rootPlacesService.smbMounts, mounts))
+                rootPlacesService.smbMounts = mounts;
         }
     }
 
@@ -864,7 +873,8 @@ Item {
                 if (parts.length === 2)
                     next[parts[0]] = parts[1];
             }
-            rootPlacesService.sshReachable = next;
+            if (!rootPlacesService.same(rootPlacesService.sshReachable, next))
+                rootPlacesService.sshReachable = next;
         }
     }
 
@@ -914,7 +924,8 @@ Item {
             });
         }
 
-        folderListings = next;
+        if (!same(folderListings, next))
+            folderListings = next;
     }
 
     // Entries the listing has beyond "limit", for the "+ N more" line.
@@ -951,6 +962,46 @@ Item {
 
     property var calendarFiles: ({})
     readonly property var calendarEvents: Object.keys(calendarFiles).reduce((all, key) => all.concat(calendarFiles[key]), [])
+    // calendarEvents with dates parsed and sorted, once per calendar change.
+    // Date parsing is the slow part (~60 ms for ~130 events), and the
+    // calendar block asks for upcoming events several times per render.
+    readonly property var parsedEvents: parseEvents(calendarEvents)
+
+    function parseEvents(events) {
+        const seen = {};
+        const items = [];
+
+        for (const event of events) {
+            if (!event || event.status === "cancelled" || /^canceled:/i.test(String(event.title || "")))
+                continue;
+
+            const start = eventStart(event);
+            if (isNaN(start.getTime()))
+                continue;
+
+            const allDay = event.allDay === true;
+            const key = (event.id || event.title) + start.getTime();
+
+            if (seen[key])
+                continue;
+            seen[key] = true;
+
+            items.push({
+                kind: "event",
+                title: String(event.title || "(no title)"),
+                start: start,
+                end: eventEnd(event, start, allDay),
+                allDay: allDay,
+                time: allDay ? "all day" : Qt.formatTime(start, "HH:mm"),
+                location: String(event.location || ""),
+                calendar: String(event.calendar || ""),
+                url: String(event.url || event.htmlLink || "")
+            });
+        }
+
+        items.sort((left, right) => left.start - right.start || (right.allDay ? 1 : 0) - (left.allDay ? 1 : 0));
+        return items;
+    }
 
     function applyCalendarFile(key, text) {
         let events = [];
@@ -962,6 +1013,8 @@ Item {
             events = [];
         }
 
+        if (same(calendarFiles[key], events))
+            return;
         const next = Object.assign({}, calendarFiles);
         next[key] = events;
         calendarFiles = next;
@@ -988,40 +1041,10 @@ Item {
         const horizon = new Date(now);
         horizon.setHours(0, 0, 0, 0);
         horizon.setDate(horizon.getDate() + days);
-        const seen = {};
-        const items = [];
 
-        for (const event of calendarEvents) {
-            if (!event || event.status === "cancelled" || /^canceled:/i.test(String(event.title || "")))
-                continue;
-
-            const start = eventStart(event);
-            if (isNaN(start.getTime()))
-                continue;
-
-            const allDay = event.allDay === true;
-            const end = eventEnd(event, start, allDay);
-            const key = (event.id || event.title) + start.getTime();
-
-            if (end <= now || start >= horizon || seen[key])
-                continue;
-            seen[key] = true;
-
-            items.push({
-                kind: "event",
-                title: String(event.title || "(no title)"),
-                start: start,
-                allDay: allDay,
-                time: allDay ? "all day" : Qt.formatTime(start, "HH:mm"),
-                day: dayLabel(start),
-                location: String(event.location || ""),
-                calendar: String(event.calendar || ""),
-                url: String(event.url || event.htmlLink || "")
-            });
-        }
-
-        items.sort((left, right) => left.start - right.start || (right.allDay ? 1 : 0) - (left.allDay ? 1 : 0));
-        return items.slice(0, limit);
+        return parsedEvents.filter(item => item.end > now && item.start < horizon).slice(0, limit).map(item => Object.assign({
+                    day: dayLabel(item.start)
+                }, item));
     }
 
     function dayLabel(date) {
@@ -1088,7 +1111,8 @@ Item {
 
         // NOW/DOING first, then TODO, then later states; newest journal first.
         next.sort((left, right) => order[left.state] - order[right.state] || right.sortKey.localeCompare(left.sortKey) || left.line - right.line);
-        todos = next;
+        if (!same(todos, next))
+            todos = next;
     }
 
     function blockPathItem(item, kind, basePath) {
@@ -1120,7 +1144,15 @@ Item {
             })[type] || type;
     }
 
+    // Refreshes bring back the same data most of the time. Assigning it
+    // anyway re-runs every binding and re-creates every delegate on it,
+    // which is what made Places stutter; compare first.
+    function same(a, b) {
+        return JSON.stringify(a) === JSON.stringify(b);
+    }
+
     function shortPath(path) {
+        path = String(path || "");
         return path.indexOf(home) === 0 ? "~" + path.slice(home.length) : path;
     }
 
@@ -1228,12 +1260,18 @@ Item {
     function applyConfig(text) {
         let parsed;
 
+        // Same text, same projects: rebuilding them would re-create every
+        // row and card for nothing.
+        if (text === lastConfigText && configError.length === 0)
+            return;
+
         try {
             parsed = JSON.parse(text);
         } catch (error) {
             configError = "places.json: " + error.message;
             return;
         }
+        lastConfigText = text;
 
         const next = [];
         const groups = Array.isArray(parsed.groups) ? parsed.groups : [];
@@ -1371,7 +1409,8 @@ Item {
             }
         }
 
-        summaries = next;
+        if (!same(summaries, next))
+            summaries = next;
     }
 
     // `git status --porcelain=v2 --branch`: headers start with "#", entries do not.

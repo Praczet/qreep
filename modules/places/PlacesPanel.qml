@@ -1226,7 +1226,7 @@ PanelWindow {
         const project = service.selected;
 
         if (action === "refresh") {
-            service.refresh();
+            service.refresh(true);
             return;
         }
         if (!project)

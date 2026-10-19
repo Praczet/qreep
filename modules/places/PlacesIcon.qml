@@ -20,6 +20,8 @@ Item {
         sourceSize.width: width * 2
         sourceSize.height: height * 2
         fillMode: Image.PreserveAspectFit
+        // Off the UI thread: a synchronous SVG load per row was a visible stall.
+        asynchronous: true
         visible: false
     }
 
