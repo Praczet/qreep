@@ -249,8 +249,9 @@ Keys:
 - `Ctrl+/` or the header's **Help** chip: a floating keys sheet, grouped by
   where each key applies, the current group first. The groups live in
   `KipCommands.shortcutGroups`; `/help` prints the same list.
-- `F1` app launcher (empty input), `F2` `/browse ` at `~`, `F3` `/fd `, `Shift+F3` `/rg `, `F4` `/win `. They
-  rewrite the input, work from any view, and close an open action menu.
+- `F1` toggles the keys sheet (like the Help chip and `Ctrl+/`).
+- `F2` app launcher (empty input), `F3` `/fd `, `Shift+F3` `/rg `, `F4` `/browse ` at `~`, `F5` `/win `,
+  `F6` `/qreep `. They rewrite the input, work from any view, and close an open action menu.
 - `Enter` submits. Single-line on purpose.
 - `Tab` completes the highlighted command.
 - `Up`/`Down` move through the palette or results.

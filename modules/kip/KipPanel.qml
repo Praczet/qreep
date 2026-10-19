@@ -1477,7 +1477,8 @@ PanelWindow {
         return "everywhere";
     }
 
-    // F1 launcher (empty input), F2 /browse at ~, F3 /fd, F4 /win. Same as typing it.
+    // F2 launcher (empty input), F3 /fd, Shift+F3 /rg, F4 /browse at ~, F5 /win,
+    // F6 /qreep. Same as typing it.
     function switchMode(text) {
         chooserHit = null;
         shortcutsOpen = false;
@@ -1568,11 +1569,19 @@ PanelWindow {
 
         // Mode keys work everywhere, menus included.
         const shifted = (event.modifiers & Qt.ShiftModifier) !== 0;
+        // F1 is help: the keys sheet, same as the Help chip and Ctrl+/.
+        if (event.key === Qt.Key_F1) {
+            event.accepted = true;
+            shortcutsOpen = !shortcutsOpen;
+            return;
+        }
+
         const modeText = ({
-                [Qt.Key_F1]: "",
-                [Qt.Key_F2]: "/browse ",
+                [Qt.Key_F2]: "",
                 [Qt.Key_F3]: shifted ? "/rg " : "/fd ",
-                [Qt.Key_F4]: "/win "
+                [Qt.Key_F4]: "/browse ",
+                [Qt.Key_F5]: "/win ",
+                [Qt.Key_F6]: "/qreep "
             })[event.key];
 
         if (modeText !== undefined) {
