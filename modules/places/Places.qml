@@ -45,6 +45,11 @@ Scope {
             placesService.setQuery(text);
         }
 
+        // Open with one project selected, by its config id.
+        function showProject(id: string) {
+            rootPlaces.showProject(id);
+        }
+
         function state(): string {
             const selected = placesService.selected;
 
@@ -84,6 +89,11 @@ Scope {
         placesService.setQuery("");
         placesService.refresh();
         open = true;
+    }
+
+    function showProject(id) {
+        show();
+        placesService.selectProject(id);
     }
 
     function hide() {

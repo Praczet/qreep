@@ -23,6 +23,24 @@ PanelWindow {
     property var chooserOptions: []
     property int chooserIndex: 0
     readonly property bool chooserOpen: chooserFile.length > 0
+
+    // Tips: built-in plus places.json "tips": { "enabled", "items" }.
+    readonly property var tipsConfig: service.config && service.config.tips ? service.config.tips : ({})
+    readonly property var tips: tipsConfig.enabled === false ? [] : tipSource.builtIn.concat(Array.isArray(tipsConfig.items) ? tipsConfig.items.map(String) : [])
+    property int tipIndex: 0
+
+    PlacesTips {
+        id: tipSource
+    }
+
+    function nextTip() {
+        if (tips.length > 0)
+            tipIndex = (tipIndex + 1) % tips.length;
+    }
+
+    function randomTip() {
+        tipIndex = tips.length > 0 ? Math.floor(Math.random() * tips.length) : 0;
+    }
     readonly property var shortcuts: [
         { keys: "type", action: "Filter by name, id, group or path" },
         { keys: "↑ ↓  PgUp PgDn", action: "Move through projects" },
@@ -59,6 +77,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
     Component.onCompleted: {
+        randomTip();
         search.forceActiveFocus();
         if (panelOpen)
             enterTimer.restart();
@@ -66,6 +85,7 @@ PanelWindow {
 
     onPanelOpenChanged: {
         if (panelOpen) {
+            randomTip();
             search.forceActiveFocus();
             enterTimer.restart();
             return;
@@ -266,7 +286,10 @@ PanelWindow {
                     id: list
 
                     anchors {
-                        fill: parent
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
+                        bottom: tipCard.visible ? tipCard.top : parent.bottom
                         margins: 8
                     }
                     clip: true
@@ -293,6 +316,61 @@ PanelWindow {
                             search.forceActiveFocus();
                         }
                         onDoubleClicked: rootPlacesPanel.activate("editor")
+                    }
+                }
+
+                // Tip of the open, zsh style. Click for the next one.
+                Rectangle {
+                    id: tipCard
+
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        bottom: parent.bottom
+                        margins: 8
+                    }
+                    visible: rootPlacesPanel.tips.length > 0
+                    height: tipText.implicitHeight + 2 * rootPlacesPanel.pt.cardPadding - 4
+                    radius: rootPlacesPanel.pt.rowRadius
+                    color: tipMouse.containsMouse ? rootPlacesPanel.pt.hoveredRowColor : rootPlacesPanel.pt.cardColor
+                    border.width: 1
+                    border.color: rootPlacesPanel.pt.withAlpha(rootPlacesPanel.pt.borderColor, 0.6)
+
+                    Text {
+                        id: tipIcon
+
+                        x: rootPlacesPanel.pt.cardPadding - 2
+                        y: rootPlacesPanel.pt.cardPadding - 3
+                        text: "󰌵"
+                        color: rootPlacesPanel.pt.warningColor
+                        font.family: rootPlacesPanel.theme.iconFontFamily
+                        font.pixelSize: rootPlacesPanel.pt.bodyPixelSize + 2
+                    }
+
+                    Text {
+                        id: tipText
+
+                        anchors {
+                            left: tipIcon.right
+                            leftMargin: 10
+                            right: parent.right
+                            rightMargin: rootPlacesPanel.pt.cardPadding
+                        }
+                        y: rootPlacesPanel.pt.cardPadding - 2
+                        text: "<b>Tip</b>  " + (rootPlacesPanel.tips[rootPlacesPanel.tipIndex] || "")
+                        textFormat: Text.StyledText
+                        color: rootPlacesPanel.pt.secondaryTextColor
+                        font.pixelSize: rootPlacesPanel.pt.metaPixelSize + 1
+                        wrapMode: Text.Wrap
+                    }
+
+                    MouseArea {
+                        id: tipMouse
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: rootPlacesPanel.nextTip()
                     }
                 }
 

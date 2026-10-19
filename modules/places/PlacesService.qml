@@ -157,6 +157,17 @@ Item {
             detailDelay.restart();
     }
 
+    function isEnabled(entry) {
+        return entry.enabled !== false;
+    }
+
+    // Select a project by id with no filter, e.g. from KIP's /p.
+    function selectProject(id) {
+        query = "";
+        const index = projects.findIndex(project => project.id === id);
+        selectedIndex = Math.max(0, index);
+    }
+
     function setQuery(text) {
         query = String(text || "");
         selectedIndex = 0;
@@ -184,8 +195,12 @@ Item {
         const groups = Array.isArray(parsed.groups) ? parsed.groups : [];
 
         for (const group of groups) {
+            // "enabled": false parks an entry without deleting it; missing = on.
+            if (!isEnabled(group))
+                continue;
+
             for (const entry of (Array.isArray(group.projects) ? group.projects : [])) {
-                if (!entry || !entry.path)
+                if (!entry || !entry.path || !isEnabled(entry))
                     continue;
 
                 const path = expand(entry.path).replace(/\/+$/, "");
