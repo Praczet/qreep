@@ -192,7 +192,10 @@ The order is decided in three steps: an extension guess right away
 (text types such as `.conf`, `.log` or JSON: nvim first; anything else: its
 every app whose desktop entry lists the type, the default first and marked
 so, each launched with `gio launch <app.desktop> <file>`), and
-finally whatever you picked last for that file type goes on top. Those
+finally whatever you picked last for that file type goes on top. The
+chooser shows two groups: "Open with" (the apps) and "Actions" (nvim, Vivify,
+folder in yazi, terminal there, copy path). Text files list Actions first,
+everything else Open with first; a remembered choice brings its group up. Those
 choices live in `~/.local/state/qreep/places-openers.json` (extension, or
 mime type for files without one -> option id); delete a line to forget it.
 `1`–`9` or `↑↓` + `Enter` pick, `Esc` cancels. Copy path keeps Places open;

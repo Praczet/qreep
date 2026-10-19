@@ -1072,17 +1072,36 @@ PanelWindow {
         chooserFile = path;
     }
 
-    // The option you last picked for this kind of file goes first.
-    function promoteRemembered(options, path, mime) {
-        const remembered = service.openers[service.openerKey(path, mime)];
-        const chosen = options.filter(option => option.id === remembered);
+    // Two groups in the file chooser: "Open with" (apps: the default app or
+    // every app that lists the type) and "Actions" (nvim, Vivify, folder,
+    // terminal, copy path). Groups stay together; which comes first depends
+    // on the file, and a remembered choice pulls its group up with it first.
+    function isAppOption(option) {
+        return option.id === "open" || option.id.indexOf("app:") === 0;
+    }
 
-        return chosen.length > 0 ? chosen.concat(options.filter(option => option.id !== remembered)) : options;
+    function arrangeFileChooser(options, path, mime, textFirst) {
+        const remembered = service.openers[service.openerKey(path, mime)];
+        const first = list => list.filter(option => option.id === remembered).concat(list.filter(option => option.id !== remembered));
+        const apps = first(options.filter(option => isAppOption(option))).map(option => Object.assign({}, option, {
+                    section: "Open with"
+                }));
+        const actions = first(options.filter(option => !isAppOption(option))).map(option => Object.assign({}, option, {
+                    section: "Actions"
+                }));
+        const actionsFirst = remembered ? actions.some(option => option.id === remembered) : textFirst;
+
+        return actionsFirst ? actions.concat(apps) : apps.concat(actions);
+    }
+
+    // The quick, extension-based list before xdg-mime answers.
+    function promoteRemembered(options, path, mime) {
+        return arrangeFileChooser(options, path, mime, options.length > 0 && !isAppOption(options[0]));
     }
 
     // xdg-mime answered: one option per app that can open the type (the
-    // default first) instead of a single "Open"; text goes to the editor
-    // first, the rest to its apps. A remembered choice still wins.
+    // default first) instead of a single "Open"; text puts Actions (nvim)
+    // first, everything else its apps.
     function refineFileChooser(path, mime, appName, apps) {
         const appOptions = (apps || []).map(app => ({
                     id: "app:" + app.id,
@@ -1094,12 +1113,11 @@ PanelWindow {
         const named = appOptions.length > 0 ? chooserOptions.filter(option => option.id !== "open").concat(appOptions) : chooserOptions.map(option => option.id === "open" && appName ? Object.assign({}, option, {
                     hint: "in " + appName
                 }) : option);
+        // Inside Actions the editor leads: nvim, Vivify, then the rest.
         const editor = named.filter(option => option.id === "default" || option.id === "vivify");
-        const open = named.filter(option => option.id === "open" || option.id.indexOf("app:") === 0);
-        const rest = named.filter(option => ["default", "vivify", "open"].indexOf(option.id) < 0 && option.id.indexOf("app:") !== 0);
-        const ordered = mime.length === 0 ? named : service.isTextMime(mime) ? editor.concat(open, rest) : open.concat(editor, rest);
+        const others = named.filter(option => option.id !== "default" && option.id !== "vivify");
 
-        chooserOptions = promoteRemembered(ordered, path, mime);
+        chooserOptions = arrangeFileChooser(editor.concat(others), path, mime, mime.length > 0 && service.isTextMime(mime));
         chooserIndex = 0;
     }
 

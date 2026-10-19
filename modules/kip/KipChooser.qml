@@ -63,57 +63,83 @@ Rectangle {
         Repeater {
             model: rootKipChooser.options
 
-            Rectangle {
-                id: openerRow
+            // Options may carry a "section"; the first option of each section
+            // gets a small header above it. Without sections (KIP), rows are
+            // exactly as before.
+            Column {
+                id: openerItem
 
                 required property var modelData
                 required property int index
-
-                readonly property bool selected: index === rootKipChooser.selectedIndex
+                readonly property bool newSection: modelData.section !== undefined && (index === 0 || rootKipChooser.options[index - 1].section !== modelData.section)
 
                 width: parent.width
-                height: rootKipChooser.kipTheme.commandRowHeight - 6
-                radius: rootKipChooser.kipTheme.rowRadius
-                color: selected ? rootKipChooser.kipTheme.selectedRowColor : (openerMouse.containsMouse ? rootKipChooser.kipTheme.hoveredRowColor : "transparent")
 
-                Row {
-                    anchors.verticalCenter: parent.verticalCenter
-                    x: 8
-                    spacing: 10
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 22
-                        text: openerRow.modelData.icon
-                        color: rootKipChooser.kipTheme.accentColor
-                        font.family: rootKipChooser.iconFontFamily
-                        font.pixelSize: rootKipChooser.kipTheme.iconPixelSize - 2
-                    }
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: rootKipChooser.labelWidth
-                        text: (openerRow.index + 1) + "  " + openerRow.modelData.label
-                        color: rootKipChooser.kipTheme.primaryTextColor
-                        font.pixelSize: rootKipChooser.kipTheme.bodyPixelSize
-                        font.bold: openerRow.selected
-                    }
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: openerRow.modelData.hint
-                        color: rootKipChooser.kipTheme.secondaryTextColor
-                        font.pixelSize: rootKipChooser.kipTheme.metaPixelSize + 1
-                    }
+                Text {
+                    visible: openerItem.newSection
+                    leftPadding: 8
+                    topPadding: openerItem.index === 0 ? 0 : 6
+                    bottomPadding: 2
+                    text: openerItem.modelData.section || ""
+                    color: rootKipChooser.kipTheme.tertiaryAccentColor
+                    font.pixelSize: rootKipChooser.kipTheme.metaPixelSize
+                    font.bold: true
+                    font.capitalization: Font.AllUppercase
+                    font.letterSpacing: 1
                 }
 
-                MouseArea {
-                    id: openerMouse
+                Rectangle {
+                    id: openerRow
 
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: {
-                        rootKipChooser.picked(openerRow.index);
+                    readonly property var modelData: openerItem.modelData
+                    readonly property int index: openerItem.index
+
+                    readonly property bool selected: index === rootKipChooser.selectedIndex
+
+                    width: openerItem.width
+                    height: rootKipChooser.kipTheme.commandRowHeight - 6
+                    radius: rootKipChooser.kipTheme.rowRadius
+                    color: selected ? rootKipChooser.kipTheme.selectedRowColor : (openerMouse.containsMouse ? rootKipChooser.kipTheme.hoveredRowColor : "transparent")
+
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        x: 8
+                        spacing: 10
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 22
+                            text: openerRow.modelData.icon
+                            color: rootKipChooser.kipTheme.accentColor
+                            font.family: rootKipChooser.iconFontFamily
+                            font.pixelSize: rootKipChooser.kipTheme.iconPixelSize - 2
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: rootKipChooser.labelWidth
+                            text: (openerRow.index + 1) + "  " + openerRow.modelData.label
+                            color: rootKipChooser.kipTheme.primaryTextColor
+                            font.pixelSize: rootKipChooser.kipTheme.bodyPixelSize
+                            font.bold: openerRow.selected
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: openerRow.modelData.hint
+                            color: rootKipChooser.kipTheme.secondaryTextColor
+                            font.pixelSize: rootKipChooser.kipTheme.metaPixelSize + 1
+                        }
+                    }
+
+                    MouseArea {
+                        id: openerMouse
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            rootKipChooser.picked(openerRow.index);
+                        }
                     }
                 }
             }
