@@ -315,7 +315,7 @@ QtObject {
 
     function normalizeEntry(id, preview, listIndex) {
         const type = detectType(preview);
-        const color = type === "color" ? preview.trim() : "";
+        const color = type === "color" ? qmlColorFor(preview.trim()) : "";
         const imageMimeType = type === "image" ? imageMimeTypeFromPreview(preview) : "";
         const imageDimensions = type === "image" ? imageDimensionsFromPreview(preview) : "";
         const imagePath = type === "image" ? imagePreviewPath(id, imageMimeType) : "";
@@ -628,13 +628,31 @@ QtObject {
     function classifyClipboardText(text) {
         const trimmed = text.trim();
 
-        if (isQmlRenderableColor(trimmed))
+        if (qmlColorFor(trimmed).length > 0)
             return "color";
 
         if (isLikelyCssColor(trimmed))
             return "color-text"; // recognized as color-ish, but maybe cannot preview directly
 
         return "text";
+    }
+
+    // Text -> something a Rectangle can draw, or "". Qt reads 8-digit hex as
+    // #aarrggbb, so CSS #rrggbbaa and Hyprland rgba(rrggbbaa) / 0xaarrggbb
+    // are rewritten into that order.
+    function qmlColorFor(value) {
+        const trimmed = value.trim();
+        let match = /^rgba?\(([0-9a-f]{6}|[0-9a-f]{8})\)$/i.exec(trimmed);
+
+        if (match)
+            return match[1].length === 8 ? "#" + match[1].slice(6) + match[1].slice(0, 6) : "#" + match[1];
+        match = /^0x([0-9a-f]{8})$/i.exec(trimmed);
+        if (match)
+            return "#" + match[1];
+        match = /^#([0-9a-f]{8})$/i.exec(trimmed);
+        if (match)
+            return "#" + match[1].slice(6) + match[1].slice(0, 6);
+        return isQmlRenderableColor(trimmed) ? trimmed : "";
     }
 
     function isQmlRenderableColor(value) {

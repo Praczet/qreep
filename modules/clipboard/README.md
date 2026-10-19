@@ -63,7 +63,7 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboa
 - pins filter shows starred entries only;
 - type filters narrow results to image, text, code, and color entries;
 - pinned entries sort first;
-- text, code, color, and image cards;
+- text, code, color, and image cards; colour cards also read Hyprland's `rgba(rrggbbaa)`, `rgb(rrggbb)` and `0xaarrggbb`, and `#rrggbbaa` is drawn in the right channel order (Qt itself reads 8-digit hex as `#aarrggbb`);
 - image cards show runtime previews plus dimensions/mime metadata;
 - Escape closes;
 - outside click closes;
