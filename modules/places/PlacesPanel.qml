@@ -1,4 +1,6 @@
 import QtQuick
+import QtQuick.Effects
+import "../kip" as Kip
 import Quickshell
 import Quickshell.Wayland
 
@@ -15,18 +17,28 @@ PanelWindow {
     property bool presented: false
     // F1 sheet. Esc closes it before it clears the filter or closes Places.
     property bool shortcutsOpen: false
+    // "Open with" for a clicked file: KIP's chooser and KIP's file actions,
+    // editor first. chooserFile is relative to the selected project.
+    property string chooserFile: ""
+    property var chooserOptions: []
+    property int chooserIndex: 0
+    readonly property bool chooserOpen: chooserFile.length > 0
     readonly property var shortcuts: [
         { keys: "type", action: "Filter by name, id, group or path" },
         { keys: "↑ ↓  PgUp PgDn", action: "Move through projects" },
         { keys: "Enter", action: "Run the highlighted button (editor by default)" },
-        { keys: "Tab  Shift+Tab", action: "Move through the buttons" },
+        { keys: "Tab  Shift+Tab", action: "Buttons, then file cards, around again" },
         { keys: "Shift+Enter", action: "Cockpit (dev workspace)" },
         { keys: "Ctrl+E", action: "Open in the other editor" },
         { keys: "Ctrl+O", action: "File manager" },
         { keys: "Ctrl+T", action: "Terminal in the project folder" },
         { keys: "Ctrl+R", action: "Re-read config, git and stats" },
         { keys: "double click", action: "Open in the editor" },
-        { keys: "click a file", action: "Open that file in the editor" },
+        { keys: "click a file", action: "Open with: editor, Vivify, app, folder, terminal, copy path" },
+        { keys: "1–9  ↑↓ Enter", action: "Pick in the Open with chooser" },
+        { keys: "Alt+1 … Alt+4", action: "Uncommitted, Pinned, Recent, Docs" },
+        { keys: "in a card: ↑↓ ← →", action: "Move between files and cards" },
+        { keys: "in a card: Enter", action: "Open with … for that file" },
         { keys: "F1", action: "This sheet" },
         { keys: "Esc", action: "Close sheet, clear filter, close" }
     ]
@@ -61,6 +73,7 @@ PanelWindow {
         enterTimer.stop();
         presented = false;
         shortcutsOpen = false;
+        chooserFile = "";
     }
 
     Timer {
@@ -129,187 +142,236 @@ PanelWindow {
             anchors.fill: parent
         }
 
-        // --- search ----------------------------------------------------------
-        Rectangle {
-            id: searchBox
+        // Everything under the overlays. Blurred while the chooser or the F1
+        // sheet is open: Hyprland only blurs what is behind the whole window,
+        // so blur inside the card has to happen here.
+        Item {
+            id: cardContent
 
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
-                margins: rootPlacesPanel.pt.panelPadding
+            anchors.fill: parent
+            layer.enabled: rootPlacesPanel.chooserOpen || rootPlacesPanel.shortcutsOpen
+            layer.effect: MultiEffect {
+                blurEnabled: true
+                blur: 1.0
+                blurMax: rootPlacesPanel.pt.overlayBlurMax
             }
-            height: rootPlacesPanel.pt.searchHeight
-            radius: height / 2
-            color: rootPlacesPanel.pt.searchColor
-            border.width: search.activeFocus ? 1 : 0
-            border.color: rootPlacesPanel.pt.selectedBorderColor
 
-            Text {
-                id: searchIcon
+            // --- search ----------------------------------------------------------
+            Rectangle {
+                id: searchBox
 
                 anchors {
                     left: parent.left
-                    leftMargin: 18
-                    verticalCenter: parent.verticalCenter
+                    right: parent.right
+                    top: parent.top
+                    margins: rootPlacesPanel.pt.panelPadding
                 }
-                text: "󰉋"
-                color: rootPlacesPanel.pt.accentColor
-                font.family: rootPlacesPanel.theme.iconFontFamily
-                font.pixelSize: 20
-            }
-
-            Text {
-                id: searchLabel
-
-                anchors {
-                    left: searchIcon.right
-                    leftMargin: 10
-                    verticalCenter: parent.verticalCenter
-                }
-                text: "Places"
-                color: rootPlacesPanel.pt.accentColor
-                font.pixelSize: rootPlacesPanel.pt.searchPixelSize
-                font.bold: true
-            }
-
-            TextInput {
-                id: search
-
-                anchors {
-                    left: searchLabel.right
-                    leftMargin: 14
-                    right: countText.left
-                    rightMargin: 12
-                    verticalCenter: parent.verticalCenter
-                }
-                color: rootPlacesPanel.pt.primaryTextColor
-                selectionColor: rootPlacesPanel.pt.selectedRowColor
-                font.pixelSize: rootPlacesPanel.pt.searchPixelSize
-                text: rootPlacesPanel.service.query
-                clip: true
-
-                onTextEdited: rootPlacesPanel.service.setQuery(text)
-                Keys.onPressed: event => rootPlacesPanel.handleKey(event)
+                height: rootPlacesPanel.pt.searchHeight
+                radius: height / 2
+                color: rootPlacesPanel.pt.searchColor
+                border.width: search.activeFocus ? 1 : 0
+                border.color: rootPlacesPanel.pt.selectedBorderColor
 
                 Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: search.text.length === 0
-                    text: "type to filter projects"
-                    color: rootPlacesPanel.pt.secondaryTextColor
-                    font.pixelSize: rootPlacesPanel.pt.searchPixelSize
-                }
-            }
+                    id: searchIcon
 
-            Text {
-                id: countText
-
-                anchors {
-                    right: parent.right
-                    rightMargin: 18
-                    verticalCenter: parent.verticalCenter
-                }
-                text: rootPlacesPanel.service.configError.length > 0 ? rootPlacesPanel.service.configError : rootPlacesPanel.service.filtered.length + " of " + rootPlacesPanel.service.projects.length
-                color: rootPlacesPanel.service.configError.length > 0 ? rootPlacesPanel.pt.errorColor : rootPlacesPanel.pt.secondaryTextColor
-                font.pixelSize: rootPlacesPanel.pt.metaPixelSize + 1
-            }
-        }
-
-        // --- project list -------------------------------------------------------
-        Rectangle {
-            id: listPane
-
-            anchors {
-                left: parent.left
-                top: searchBox.bottom
-                bottom: footer.top
-                leftMargin: rootPlacesPanel.pt.panelPadding
-                topMargin: rootPlacesPanel.pt.sectionGap
-                bottomMargin: 8
-            }
-            width: rootPlacesPanel.pt.listWidthFor(card.width)
-            radius: rootPlacesPanel.pt.cardRadius
-            color: rootPlacesPanel.pt.listColor
-
-            ListView {
-                id: list
-
-                anchors {
-                    fill: parent
-                    margins: 8
-                }
-                clip: true
-                spacing: 2
-                boundsBehavior: Flickable.StopAtBounds
-                model: rootPlacesPanel.service.filtered
-                currentIndex: rootPlacesPanel.service.selectedIndex
-
-                onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-
-                delegate: PlacesProjectRow {
-                    required property var modelData
-                    required property int index
-
-                    width: ListView.view.width
-                    theme: rootPlacesPanel.theme
-                    service: rootPlacesPanel.service
-                    project: modelData
-                    selected: index === rootPlacesPanel.service.selectedIndex
-                    firstOfGroup: index === 0 || rootPlacesPanel.service.filtered[index - 1].group !== modelData.group
-
-                    onClicked: {
-                        rootPlacesPanel.service.selectedIndex = index;
-                        search.forceActiveFocus();
+                    anchors {
+                        left: parent.left
+                        leftMargin: 18
+                        verticalCenter: parent.verticalCenter
                     }
-                    onDoubleClicked: rootPlacesPanel.activate("editor")
+                    text: "󰉋"
+                    color: rootPlacesPanel.pt.accentColor
+                    font.family: rootPlacesPanel.theme.iconFontFamily
+                    font.pixelSize: 20
+                }
+
+                Text {
+                    id: searchLabel
+
+                    anchors {
+                        left: searchIcon.right
+                        leftMargin: 10
+                        verticalCenter: parent.verticalCenter
+                    }
+                    text: "Places"
+                    color: rootPlacesPanel.pt.accentColor
+                    font.pixelSize: rootPlacesPanel.pt.searchPixelSize
+                    font.bold: true
+                }
+
+                TextInput {
+                    id: search
+
+                    anchors {
+                        left: searchLabel.right
+                        leftMargin: 14
+                        right: countText.left
+                        rightMargin: 12
+                        verticalCenter: parent.verticalCenter
+                    }
+                    color: rootPlacesPanel.pt.primaryTextColor
+                    selectionColor: rootPlacesPanel.pt.selectedRowColor
+                    font.pixelSize: rootPlacesPanel.pt.searchPixelSize
+                    text: rootPlacesPanel.service.query
+                    clip: true
+
+                    onTextEdited: {
+                        // Typing means "find a project": the file cards let go of the arrows.
+                        detail.focusedCard = "";
+                        rootPlacesPanel.service.setQuery(text);
+                    }
+                    Keys.onPressed: event => rootPlacesPanel.handleKey(event)
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: search.text.length === 0
+                        text: "type to filter projects"
+                        color: rootPlacesPanel.pt.secondaryTextColor
+                        font.pixelSize: rootPlacesPanel.pt.searchPixelSize
+                    }
+                }
+
+                Text {
+                    id: countText
+
+                    anchors {
+                        right: parent.right
+                        rightMargin: 18
+                        verticalCenter: parent.verticalCenter
+                    }
+                    text: rootPlacesPanel.service.configError.length > 0 ? rootPlacesPanel.service.configError : rootPlacesPanel.service.filtered.length + " of " + rootPlacesPanel.service.projects.length
+                    color: rootPlacesPanel.service.configError.length > 0 ? rootPlacesPanel.pt.errorColor : rootPlacesPanel.pt.secondaryTextColor
+                    font.pixelSize: rootPlacesPanel.pt.metaPixelSize + 1
                 }
             }
 
+            // --- project list -------------------------------------------------------
+            Rectangle {
+                id: listPane
+
+                anchors {
+                    left: parent.left
+                    top: searchBox.bottom
+                    bottom: footer.top
+                    leftMargin: rootPlacesPanel.pt.panelPadding
+                    topMargin: rootPlacesPanel.pt.sectionGap
+                    bottomMargin: 8
+                }
+                width: rootPlacesPanel.pt.listWidthFor(card.width)
+                radius: rootPlacesPanel.pt.cardRadius
+                color: rootPlacesPanel.pt.listColor
+
+                ListView {
+                    id: list
+
+                    anchors {
+                        fill: parent
+                        margins: 8
+                    }
+                    clip: true
+                    spacing: 2
+                    boundsBehavior: Flickable.StopAtBounds
+                    model: rootPlacesPanel.service.filtered
+                    currentIndex: rootPlacesPanel.service.selectedIndex
+
+                    onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+
+                    delegate: PlacesProjectRow {
+                        required property var modelData
+                        required property int index
+
+                        width: ListView.view.width
+                        theme: rootPlacesPanel.theme
+                        service: rootPlacesPanel.service
+                        project: modelData
+                        selected: index === rootPlacesPanel.service.selectedIndex
+                        firstOfGroup: index === 0 || rootPlacesPanel.service.filtered[index - 1].group !== modelData.group
+
+                        onClicked: {
+                            rootPlacesPanel.service.selectedIndex = index;
+                            search.forceActiveFocus();
+                        }
+                        onDoubleClicked: rootPlacesPanel.activate("editor")
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: rootPlacesPanel.service.filtered.length === 0
+                    text: rootPlacesPanel.service.projects.length === 0 ? "No projects yet.\nAdd some to ~/.config/qreep/places.json" : "Nothing matches."
+                    horizontalAlignment: Text.AlignHCenter
+                    color: rootPlacesPanel.pt.secondaryTextColor
+                    font.pixelSize: rootPlacesPanel.pt.bodyPixelSize
+                }
+            }
+
+            // --- detail -------------------------------------------------------------
+            PlacesDetail {
+                id: detail
+
+                anchors {
+                    left: listPane.right
+                    right: parent.right
+                    top: searchBox.bottom
+                    bottom: footer.top
+                    leftMargin: rootPlacesPanel.pt.sectionGap + 4
+                    rightMargin: rootPlacesPanel.pt.panelPadding
+                    topMargin: rootPlacesPanel.pt.sectionGap
+                    bottomMargin: 8
+                }
+                theme: rootPlacesPanel.theme
+                service: rootPlacesPanel.service
+
+                onFileChosen: path => rootPlacesPanel.openChooser(path)
+            }
+
+            // --- key hints ------------------------------------------------------------
             Text {
-                anchors.centerIn: parent
-                visible: rootPlacesPanel.service.filtered.length === 0
-                text: rootPlacesPanel.service.projects.length === 0 ? "No projects yet.\nAdd some to ~/.config/qreep/places.json" : "Nothing matches."
-                horizontalAlignment: Text.AlignHCenter
+                id: footer
+
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                    leftMargin: rootPlacesPanel.pt.panelPadding + 6
+                    rightMargin: rootPlacesPanel.pt.panelPadding
+                }
+                height: rootPlacesPanel.pt.footerHeight
+                verticalAlignment: Text.AlignVCenter
+                text: "↑↓ move · ⇥ buttons · ↵ run · Alt+1–4 files · ⇧↵ cockpit · ^E other editor · ^O folder · ^T terminal · ^R refresh · F1 shortcuts · Esc clear / close"
                 color: rootPlacesPanel.pt.secondaryTextColor
-                font.pixelSize: rootPlacesPanel.pt.bodyPixelSize
+                font.pixelSize: rootPlacesPanel.pt.metaPixelSize
+                elide: Text.ElideRight
             }
         }
 
-        // --- detail -------------------------------------------------------------
-        PlacesDetail {
-            id: detail
+        // --- "Open with" chooser for a file -------------------------------------------
+        Rectangle {
+            anchors.fill: parent
+            visible: rootPlacesPanel.chooserOpen
+            color: rootPlacesPanel.pt.overlayColor
+            radius: card.radius
 
-            anchors {
-                left: listPane.right
-                right: parent.right
-                top: searchBox.bottom
-                bottom: footer.top
-                leftMargin: rootPlacesPanel.pt.sectionGap + 4
-                rightMargin: rootPlacesPanel.pt.panelPadding
-                topMargin: rootPlacesPanel.pt.sectionGap
-                bottomMargin: 8
+            MouseArea {
+                anchors.fill: parent
+                onClicked: rootPlacesPanel.chooserFile = ""
             }
-            theme: rootPlacesPanel.theme
-            service: rootPlacesPanel.service
-        }
 
-        // --- key hints ------------------------------------------------------------
-        Text {
-            id: footer
+            Kip.KipChooser {
+                anchors.centerIn: parent
+                width: Math.min(560, parent.width - 80)
+                kipTheme: rootPlacesPanel.theme.modules.kip
+                iconFontFamily: rootPlacesPanel.theme.iconFontFamily
+                title: rootPlacesPanel.chooserFile
+                options: rootPlacesPanel.chooserOptions
+                selectedIndex: rootPlacesPanel.chooserIndex
 
-            anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-                leftMargin: rootPlacesPanel.pt.panelPadding + 6
-                rightMargin: rootPlacesPanel.pt.panelPadding
+                onPicked: index => {
+                    rootPlacesPanel.chooserIndex = index;
+                    rootPlacesPanel.confirmChooser();
+                }
             }
-            height: rootPlacesPanel.pt.footerHeight
-            verticalAlignment: Text.AlignVCenter
-            text: "↑↓ move · ⇥ buttons · ↵ run · ⇧↵ cockpit · ^E other editor · ^O folder · ^T terminal · ^R refresh · F1 shortcuts · Esc clear / close"
-            color: rootPlacesPanel.pt.secondaryTextColor
-            font.pixelSize: rootPlacesPanel.pt.metaPixelSize
-            elide: Text.ElideRight
         }
 
         // --- F1 shortcuts sheet ----------------------------------------------------
@@ -399,6 +461,19 @@ PanelWindow {
         const ctrl = (event.modifiers & Qt.ControlModifier) !== 0;
         const shift = (event.modifiers & Qt.ShiftModifier) !== 0;
 
+        if (chooserOpen && handleChooserKey(event))
+            return;
+
+        // Alt+1..4: jump into a file card (Uncommitted, Pinned, Recent, Docs).
+        if ((event.modifiers & Qt.AltModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_4) {
+            event.accepted = true;
+            detail.focusCardNumber(event.key - Qt.Key_0);
+            return;
+        }
+
+        if (detail.focusedCard.length > 0 && handleCardKey(event))
+            return;
+
         if (event.key === Qt.Key_F1) {
             event.accepted = true;
             shortcutsOpen = !shortcutsOpen;
@@ -428,7 +503,8 @@ PanelWindow {
         case Qt.Key_Tab:
         case Qt.Key_Backtab:
             event.accepted = true;
-            detail.cycleAction(event.key === Qt.Key_Backtab || shift ? -1 : 1);
+            // Buttons, then the file cards, then around again.
+            detail.cycleFocus(event.key === Qt.Key_Backtab || shift ? -1 : 1);
             return;
         case Qt.Key_Return:
         case Qt.Key_Enter:
@@ -452,6 +528,99 @@ PanelWindow {
             event.accepted = true;
             activate(action);
         }
+    }
+
+    // Arrows and Enter while a file card has focus. Returns true when used.
+    function handleCardKey(event) {
+        switch (event.key) {
+        case Qt.Key_Up:
+        case Qt.Key_Down:
+            detail.moveFile(event.key === Qt.Key_Down ? 1 : -1);
+            break;
+        case Qt.Key_Left:
+        case Qt.Key_Right:
+            detail.stepCard(event.key === Qt.Key_Right ? 1 : -1);
+            break;
+        case Qt.Key_Return:
+        case Qt.Key_Enter:
+            if (detail.focusedFile().length > 0)
+                openChooser(detail.focusedFile());
+            break;
+        case Qt.Key_Escape:
+            detail.focusedCard = "";
+            break;
+        default:
+            return false;
+        }
+
+        event.accepted = true;
+        return true;
+    }
+
+    // Same options as KIP's file chooser (KipTheme.fileActions), with the
+    // editor first and Vivify after it for markdown.
+    function openChooser(path) {
+        const kt = theme.modules.kip;
+        const editor = kt.fileActions.filter(action => action.id === "default");
+        const rest = kt.fileActions.filter(action => action.id !== "default");
+        const vivify = /\.md$/i.test(path) ? kt.markdownOpeners.filter(opener => opener.id === "vivify") : [];
+
+        chooserOptions = editor.concat(vivify, rest);
+        chooserIndex = 0;
+        chooserFile = path;
+    }
+
+    function handleChooserKey(event) {
+        const count = chooserOptions.length;
+
+        switch (event.key) {
+        case Qt.Key_Escape:
+            chooserFile = "";
+            break;
+        case Qt.Key_Up:
+        case Qt.Key_Down:
+            chooserIndex = Math.max(0, Math.min(count - 1, chooserIndex + (event.key === Qt.Key_Down ? 1 : -1)));
+            break;
+        case Qt.Key_Return:
+        case Qt.Key_Enter:
+            confirmChooser();
+            break;
+        default:
+            {
+                const number = event.key - Qt.Key_1;
+
+                if (number < 0 || number >= count)
+                    return false;
+                chooserIndex = number;
+                confirmChooser();
+            }
+        }
+
+        event.accepted = true;
+        return true;
+    }
+
+    // Fills KIP's placeholders the way Kip.fill() does: {path}, {line}, {dir}.
+    function confirmChooser() {
+        const project = service.selected;
+        const option = chooserOptions[chooserIndex];
+        const path = project ? project.path + "/" + chooserFile : "";
+
+        chooserFile = "";
+        if (!project || !option)
+            return;
+
+        const values = {
+            path: path,
+            line: "1",
+            dir: path.replace(/\/[^\/]*$/, "") || "/"
+        };
+        const command = option.command.map(part => String(part).replace(/\{(\w+)\}/g, (match, key) => values[key] !== undefined ? values[key] : match));
+
+        service.run(command, project.path);
+        // Copying a path is not a launch; Places stays for the next click.
+        if (option.id !== "copy-path")
+            closeRequested();
     }
 
     // Everything that launches something closes Places; refresh stays.

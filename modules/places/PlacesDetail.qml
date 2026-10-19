@@ -15,9 +15,107 @@ Flickable {
     readonly property var stats: project ? (service.languages[project.id] || null) : null
     readonly property bool hasGit: summary !== null && summary.git
     readonly property int halfWidth: (width - pt.sectionGap) / 2
+    // Rows per list: more when the pane is tall, never fewer than minListRows.
+    readonly property int listRows: Math.max(pt.minListRows, Math.min(pt.maxListRows, Math.floor(height / 80)))
     // Editor first so a plain Enter still opens the editor.
     readonly property var actions: buildActions()
     property int actionIndex: 0
+
+    // A file row was clicked; the panel shows the "Open with" chooser.
+    signal fileChosen(string path)
+
+    // Keyboard focus inside the file cards. Alt+1..4 pick a card in reading
+    // order; "" means the project list has the arrows.
+    readonly property var cardOrder: ["uncommitted", "pinned", "recent", "docs"]
+    property string focusedCard: ""
+    property int focusedIndex: 0
+    readonly property var focusedFiles: cardFiles(focusedCard)
+
+    function cardFiles(card) {
+        if (card === "uncommitted")
+            return detail.changes.slice(0, listRows).map(change => change.path.replace(/^.* -> /, ""));
+        if (card === "pinned")
+            return service.pinnedFiles();
+        if (card === "recent")
+            return detail.recent.slice(0, listRows).map(file => file.path);
+        if (card === "docs")
+            return detail.docs.slice(0, listRows).map(file => file.path);
+        return [];
+    }
+
+    // Alt+number: 1-based position in cardOrder. Empty cards are skipped silently.
+    function focusCardNumber(number) {
+        const card = cardOrder[number - 1];
+
+        if (card && cardFiles(card).length > 0) {
+            focusedCard = card;
+            focusedIndex = 0;
+        }
+    }
+
+    // Left/Right: the next card in cardOrder that has files, wrapping.
+    function stepCard(step) {
+        const start = Math.max(0, cardOrder.indexOf(focusedCard));
+
+        for (let offset = 1; offset <= cardOrder.length; offset++) {
+            const card = cardOrder[(start + step * offset + cardOrder.length * 4) % cardOrder.length];
+
+            if (cardFiles(card).length > 0) {
+                focusedCard = card;
+                focusedIndex = Math.min(focusedIndex, cardFiles(card).length - 1);
+                return;
+            }
+        }
+    }
+
+    // Tab / Shift+Tab: one ring of stops, the action buttons first, then every
+    // file card that has files, then back to the first button.
+    function cycleFocus(step) {
+        const stops = actions.map((action, index) => ({
+                    card: "",
+                    index: index
+                })).concat(cardOrder.filter(card => cardFiles(card).length > 0).map(card => ({
+                        card: card,
+                        index: 0
+                    })));
+
+        if (stops.length === 0)
+            return;
+
+        const current = focusedCard.length > 0 ? stops.findIndex(stop => stop.card === focusedCard) : actionIndex;
+        const next = stops[(Math.max(0, current) + step + stops.length) % stops.length];
+
+        focusedCard = next.card;
+        if (next.card.length > 0)
+            focusedIndex = 0;
+        else
+            actionIndex = next.index;
+    }
+
+    function moveFile(step) {
+        focusedIndex = Math.max(0, Math.min(focusedFiles.length - 1, focusedIndex + step));
+    }
+
+    function focusedFile() {
+        return focusedFiles[focusedIndex] || "";
+    }
+
+    function isFileSelected(card, index) {
+        return focusedCard === card && focusedIndex === index;
+    }
+
+    // Keep the selected row on screen inside the Flickable.
+    function ensureVisible(item) {
+        const top = item.mapToItem(column, 0, 0).y;
+        const bottom = top + item.height;
+
+        // Near the top (the buttons under the header): go all the way up so
+        // the project name and description come back too.
+        if (top < contentY)
+            contentY = top < height / 2 ? 0 : Math.max(0, top - 12);
+        else if (bottom > contentY + height)
+            contentY = Math.min(contentHeight - height, bottom - height + 12);
+    }
 
     contentWidth: width
     contentHeight: column.implicitHeight
@@ -28,11 +126,7 @@ Flickable {
     onProjectChanged: {
         contentY = 0;
         actionIndex = 0;
-    }
-
-    function cycleAction(step) {
-        if (actions.length > 0)
-            actionIndex = (actionIndex + step + actions.length) % actions.length;
+        focusedCard = "";
     }
 
     function runAction(action) {
@@ -163,7 +257,7 @@ Flickable {
                     visible: text.length > 0
                     width: parent.width
                     topPadding: 4
-                    text: rootPlacesDetail.service.readmeSummary
+                    text: rootPlacesDetail.service.description()
                     color: rootPlacesDetail.pt.primaryTextColor
                     opacity: 0.86
                     font.pixelSize: rootPlacesDetail.pt.bodyPixelSize
@@ -197,20 +291,27 @@ Flickable {
         // the panel owns the keys, this owns the list.
         Flow {
             width: parent.width
-            spacing: 8
+            spacing: 10
 
             Repeater {
                 model: rootPlacesDetail.actions
 
-                PlacesChip {
+                PlacesActionButton {
                     required property var modelData
                     required property int index
 
                     pt: rootPlacesDetail.pt
-                    text: modelData.icon + "  " + modelData.label
+                    icon: modelData.icon
+                    label: modelData.label
                     hint: modelData.hint
-                    accent: index === rootPlacesDetail.actionIndex
-                    fontFamily: rootPlacesDetail.theme.iconFontFamily
+                    selected: rootPlacesDetail.focusedCard.length === 0 && index === rootPlacesDetail.actionIndex
+                    iconFontFamily: rootPlacesDetail.theme.iconFontFamily
+                    // Tab wrapping from the last file card lands here while the
+                    // pane is scrolled down; bring the button back into view.
+                    onSelectedChanged: {
+                        if (selected)
+                            rootPlacesDetail.ensureVisible(this);
+                    }
                     onClicked: rootPlacesDetail.runAction(modelData)
                 }
             }
@@ -224,7 +325,16 @@ Flickable {
             service: rootPlacesDetail.service
         }
 
-        // --- files: changes/recent | pinned/commits -----------------------------
+        // --- a year of commits ---------------------------------------------------
+        PlacesActivity {
+            visible: rootPlacesDetail.hasGit
+            width: parent.width
+            pt: rootPlacesDetail.pt
+            service: rootPlacesDetail.service
+            times: rootPlacesDetail.detail.activityTimes
+        }
+
+        // --- files: changes/recent/docs | pinned/commits ------------------------
         Row {
             width: parent.width
             spacing: rootPlacesDetail.pt.sectionGap
@@ -238,19 +348,27 @@ Flickable {
                     width: parent.width
                     pt: rootPlacesDetail.pt
                     title: "Uncommitted"
+                    shortcut: "Alt+1"
+                    focused: rootPlacesDetail.focusedCard === "uncommitted"
                     subtitle: rootPlacesDetail.detail.changes.length + " file" + (rootPlacesDetail.detail.changes.length === 1 ? "" : "s")
 
                     Repeater {
-                        model: rootPlacesDetail.detail.changes.slice(0, 8)
+                        model: rootPlacesDetail.detail.changes.slice(0, rootPlacesDetail.listRows)
 
                         PlacesFileRow {
                             required property var modelData
+                            required property int index
 
                             pt: rootPlacesDetail.pt
+                            selected: rootPlacesDetail.isFileSelected("uncommitted", index)
+                            onSelectedChanged: {
+                                if (selected)
+                                    rootPlacesDetail.ensureVisible(this);
+                            }
                             tag: modelData.status
                             tagColor: rootPlacesDetail.changeColor(modelData.status)
                             path: modelData.path
-                            onClicked: rootPlacesDetail.service.openInEditor(rootPlacesDetail.project, modelData.path.replace(/^.* -> /, ""))
+                            onClicked: rootPlacesDetail.fileChosen(modelData.path.replace(/^.* -> /, ""))
                         }
                     }
                 }
@@ -260,20 +378,60 @@ Flickable {
                     width: parent.width
                     pt: rootPlacesDetail.pt
                     title: "Recently touched"
+                    shortcut: "Alt+3"
+                    focused: rootPlacesDetail.focusedCard === "recent"
                     subtitle: "last " + rootPlacesDetail.pt.recentFileDays + " days"
 
                     Repeater {
-                        model: rootPlacesDetail.detail.recent
+                        model: rootPlacesDetail.detail.recent.slice(0, rootPlacesDetail.listRows)
 
                         PlacesFileRow {
                             required property var modelData
+                            required property int index
 
                             pt: rootPlacesDetail.pt
+                            selected: rootPlacesDetail.isFileSelected("recent", index)
+                            onSelectedChanged: {
+                                if (selected)
+                                    rootPlacesDetail.ensureVisible(this);
+                            }
                             tag: "•"
                             tagColor: rootPlacesDetail.pt.accentColor
                             path: modelData.path
                             trailing: rootPlacesDetail.service.ago(modelData.time)
-                            onClicked: rootPlacesDetail.service.openInEditor(rootPlacesDetail.project, modelData.path)
+                            onClicked: rootPlacesDetail.fileChosen(modelData.path)
+                        }
+                    }
+                }
+
+                // docs/, two levels, newest first. Click opens in the editor.
+                PlacesSection {
+                    visible: rootPlacesDetail.detail.docs.length > 0
+                    width: parent.width
+                    pt: rootPlacesDetail.pt
+                    title: "Docs"
+                    shortcut: "Alt+4"
+                    focused: rootPlacesDetail.focusedCard === "docs"
+                    subtitle: rootPlacesDetail.detail.docs.length + (rootPlacesDetail.detail.docs.length >= rootPlacesDetail.pt.docLimit ? "+" : "") + " in docs/"
+
+                    Repeater {
+                        model: rootPlacesDetail.detail.docs.slice(0, rootPlacesDetail.listRows)
+
+                        PlacesFileRow {
+                            required property var modelData
+                            required property int index
+
+                            pt: rootPlacesDetail.pt
+                            selected: rootPlacesDetail.isFileSelected("docs", index)
+                            onSelectedChanged: {
+                                if (selected)
+                                    rootPlacesDetail.ensureVisible(this);
+                            }
+                            tag: "󰈙"
+                            tagColor: rootPlacesDetail.pt.accentColor
+                            path: modelData.path.replace(/^docs\//, "")
+                            trailing: rootPlacesDetail.service.ago(modelData.time)
+                            onClicked: rootPlacesDetail.fileChosen(modelData.path)
                         }
                     }
                 }
@@ -292,18 +450,26 @@ Flickable {
                     width: parent.width
                     pt: rootPlacesDetail.pt
                     title: "Pinned"
+                    shortcut: "Alt+2"
+                    focused: rootPlacesDetail.focusedCard === "pinned"
 
                     Repeater {
                         model: pinnedSection.files
 
                         PlacesFileRow {
                             required property var modelData
+                            required property int index
 
                             pt: rootPlacesDetail.pt
+                            selected: rootPlacesDetail.isFileSelected("pinned", index)
+                            onSelectedChanged: {
+                                if (selected)
+                                    rootPlacesDetail.ensureVisible(this);
+                            }
                             tag: "󰐃"
                             tagColor: rootPlacesDetail.pt.accentColor
                             path: modelData
-                            onClicked: rootPlacesDetail.service.openInEditor(rootPlacesDetail.project, modelData)
+                            onClicked: rootPlacesDetail.fileChosen(modelData)
                         }
                     }
                 }
@@ -316,7 +482,7 @@ Flickable {
                     subtitle: rootPlacesDetail.detail.commitCount > 0 ? rootPlacesDetail.service.formatCount(rootPlacesDetail.detail.commitCount) + " total" : ""
 
                     Repeater {
-                        model: rootPlacesDetail.detail.commits
+                        model: rootPlacesDetail.detail.commits.slice(0, rootPlacesDetail.listRows)
 
                         Item {
                             required property var modelData
@@ -373,7 +539,6 @@ Flickable {
             service: rootPlacesDetail.service
             detail: rootPlacesDetail.detail
             stats: rootPlacesDetail.stats
-            hasGit: rootPlacesDetail.hasGit
         }
     }
 

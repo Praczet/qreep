@@ -1,7 +1,7 @@
 import QtQuick
 
 // A clickable file line: short tag (git status, age, ...) and the path.
-// Click opens it in the editor.
+// Click (or Enter while `selected`) opens the "Open with" chooser.
 Rectangle {
     id: rootPlacesFileRow
 
@@ -10,13 +10,16 @@ Rectangle {
     property color tagColor: pt.secondaryTextColor
     property string path: ""
     property string trailing: ""
+    property bool selected: false
 
     signal clicked
 
     width: parent ? parent.width : 0
     height: 24
     radius: 6
-    color: mouse.containsMouse ? pt.hoveredRowColor : "transparent"
+    color: selected ? pt.selectedRowColor : (mouse.containsMouse ? pt.hoveredRowColor : "transparent")
+    border.width: selected ? 1 : 0
+    border.color: pt.selectedBorderColor
 
     Text {
         id: tagText

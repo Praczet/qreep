@@ -32,6 +32,8 @@ Item {
     property var languages: ({})
     property var questlog: null
     property string questlogError: ""
+    // First paragraph of README.md, else of AGENTS.md. A config
+    // `description` wins over both (see description()).
     property string readmeSummary: ""
 
     // Both read summaries[selected.id] directly, not selectedSummary: going
@@ -201,7 +203,8 @@ Item {
                                 name: String(link.name || link.path),
                                 path: expand(link.path || "")
                             })),
-                    pinned: Array.isArray(entry.pinned) ? entry.pinned.map(String) : []
+                    pinned: Array.isArray(entry.pinned) ? entry.pinned.map(String) : [],
+                    description: String(entry.description || "")
                 });
             }
         }
@@ -231,6 +234,7 @@ Item {
             + "printf '@@GIT\\n'; git -C \"$p\" status --porcelain=v2 --branch 2>/dev/null; "
             + "printf '@@LOG\\n'; git -C \"$p\" log -1 --format='%ct%x09%s' 2>/dev/null; fi; "
             + "[ -f \"$p/README.md\" ] && printf '@@README\\n'; "
+            + "[ -f \"$p/AGENTS.md\" ] && printf '@@AGENTS\\n'; "
             + "for f in docs/ai/QUESTLOG.json questlog.json QUESTLOG.json; do "
             + "if [ -f \"$p/$f\" ]; then printf '@@QL %s\\n' \"$f\"; "
             + "jq -c '[.quests[]? | {s: .status, b: ([.steps[]? | select(.status == \"blocked\")] | length)}]' \"$p/$f\" 2>/dev/null; break; fi; done; "
@@ -259,6 +263,8 @@ Item {
                     current.git = true;
                 } else if (current && section === "README") {
                     current.readme = true;
+                } else if (current && section === "AGENTS") {
+                    current.agents = true;
                 } else if (current && section === "QL") {
                     current.questlogFile = marker[2];
                 }
@@ -316,6 +322,7 @@ Item {
             lastCommitTime: 0,
             lastCommitSubject: "",
             readme: false,
+            agents: false,
             questlogFile: "",
             quests: null
         };
@@ -332,7 +339,7 @@ Item {
         detailFor = project.id;
         detailProcess.running = false;
         detailProcess.projectId = project.id;
-        detailProcess.command = ["sh", "-c", detailScript(), "places", project.path, String(pt.recentFileDays), String(pt.recentFileLimit), String(pt.commitLimit), String(pt.activityWeeks)];
+        detailProcess.command = ["sh", "-c", detailScript(), "places", project.path, String(pt.recentFileDays), String(pt.recentFileLimit), String(pt.commitLimit), String(pt.activityWeeks), String(pt.docLimit)];
         detailProcess.running = true;
 
         if (languages[project.id] === undefined) {
@@ -345,7 +352,7 @@ Item {
     }
 
     function detailScript() {
-        // $1 path, $2 recent days, $3 recent limit, $4 commit limit, $5 activity weeks
+        // $1 path, $2 recent days, $3 recent limit, $4 commit limit, $5 activity weeks, $6 doc limit
         return "cd \"$1\" 2>/dev/null || exit 0; "
             + "if git rev-parse --git-dir >/dev/null 2>&1; then "
             + "printf '@@STATUS\\n'; git status --porcelain=v1 2>/dev/null | head -n 40; "
@@ -355,7 +362,9 @@ Item {
             // fd honours .gitignore, so build output and vendor trees stay out.
             + "printf '@@RECENT\\n'; fd --type f --changed-within \"$2\"d --exclude .git --exec-batch stat -c '%Y\t%n' 2>/dev/null | sort -rn | head -n \"$3\"; "
             + "printf '@@PINNED\\n'; for f in README.md AGENTS.md CLAUDE.md docs/ai/CURRENT.md; do [ -f \"$f\" ] && printf '%s\\n' \"$f\"; done; "
-            + "printf '@@FILES\\n'; fd --type f 2>/dev/null | wc -l";
+            + "printf '@@FILES\\n'; fd --type f 2>/dev/null | wc -l; "
+            // docs/: what someone wrote down, newest first. Two levels deep.
+            + "if [ -d docs ]; then printf '@@DOCS\\n'; fd --type f --max-depth 2 -e md -e txt -e pdf -e html . docs --exec-batch stat -c '%Y\t%n' 2>/dev/null | sort -rn | head -n \"$6\"; fi";
     }
 
     function applyDetail(projectId, text) {
@@ -402,9 +411,15 @@ Item {
                 next.autoPinned.push(line);
             else if (section === "FILES")
                 next.fileCount = Number(line.trim()) || 0;
+            else if (section === "DOCS") {
+                const tab = line.indexOf("\t");
+                next.docs.push({
+                    time: Number(line.slice(0, tab)) || 0,
+                    path: line.slice(tab + 1).replace(/^\.\//, "")
+                });
+            }
         }
 
-        next.activity = weeklyBuckets(next.activityTimes, pt.activityWeeks);
         detail = next;
     }
 
@@ -432,10 +447,10 @@ Item {
             changes: [],
             commits: [],
             activityTimes: [],
-            activity: [],
             commitCount: 0,
             recent: [],
             autoPinned: [],
+            docs: [],
             fileCount: 0
         };
     }
@@ -452,19 +467,6 @@ Item {
                 files.push(file);
         }
         return files;
-    }
-
-    function weeklyBuckets(times, weeks) {
-        const buckets = new Array(weeks).fill(0);
-        const now = Date.now() / 1000;
-        const week = 7 * 24 * 3600;
-
-        for (const time of times) {
-            const age = Math.floor((now - time) / week);
-            if (age >= 0 && age < weeks)
-                buckets[weeks - 1 - age]++;
-        }
-        return buckets;
     }
 
     // --- questlog / README ------------------------------------------------
@@ -604,9 +606,18 @@ Item {
         return summary && summary.questlogFile ? project.path + "/" + summary.questlogFile : "";
     }
 
+    // README.md first, AGENTS.md when there is no README; none when the
+    // config already has a description.
     function readmePathFor(project, all) {
         const summary = project ? all[project.id] : null;
-        return summary && summary.readme ? project.path + "/README.md" : "";
+
+        if (!summary || project.description)
+            return "";
+        return summary.readme ? project.path + "/README.md" : summary.agents ? project.path + "/AGENTS.md" : "";
+    }
+
+    function description() {
+        return selected && selected.description ? selected.description : readmeSummary;
     }
 
     function filterProjects(list, text) {

@@ -35,6 +35,12 @@ QtObject {
     readonly property int listIconSize: 30
     readonly property int heroIconSize: 54
     readonly property int searchHeight: 44
+    // Main action buttons: bigger than chips, they are what Enter runs.
+    readonly property int actionHeight: 40
+    readonly property int actionRadius: 12
+    readonly property int actionPadding: 16
+    readonly property int actionPixelSize: 14
+    readonly property int actionIconPixelSize: 17
     readonly property int footerHeight: 30
 
     readonly property int titlePixelSize: 24
@@ -44,12 +50,21 @@ QtObject {
     readonly property int searchPixelSize: 17
     readonly property string monoFontFamily: "FiraCode Nerd Font"
 
-    readonly property int recentFileLimit: 10
+    // Lists fetch this many; the detail pane shows as many as fit (rowsFor()).
+    readonly property int recentFileLimit: 20
     readonly property int recentFileDays: 14
-    readonly property int commitLimit: 6
-    readonly property int activityWeeks: 13
-    readonly property int languageLimit: 5
+    readonly property int commitLimit: 20
+    readonly property int docLimit: 30
+    readonly property int minListRows: 6
+    readonly property int maxListRows: 18
+    // Year grid: 53 columns so the current partial week fits after 52 full ones.
+    readonly property int activityWeeks: 53
+    readonly property int activityCellGap: 3
+    readonly property int activityMaxCell: 16
+    readonly property int languageLimit: 8
     readonly property int animationDuration: 180
+    // Blur radius for the panel content under the chooser and the F1 sheet.
+    readonly property int overlayBlurMax: 24
 
     readonly property real overlayOpacity: 0.32
     readonly property real panelOpacity: 0.93

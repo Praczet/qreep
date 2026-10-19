@@ -51,6 +51,7 @@ next look without restarting Qreep. Minimum per project: a name and a path.
 | `iconName` | Icon theme name. Looked up in the Qt icon theme, then in `~/.local/share/icons/ADArtWork/scalable/apps/` (`PlacesTheme.iconFallbackDir`). |
 | `icon` | Nerd-font glyph when there is no icon file. Otherwise the first letter. |
 | `editor` | Per-project editor key from `editors`; else `defaultEditor`. |
+| `description` | One line for the header. Without it: first paragraph of `README.md`, else of `AGENTS.md`, else nothing. |
 | `pinned` | Extra files, relative to the project. |
 | `links` | Related folders, opened in the file manager. |
 | `cockpit` | Command for Shift+Enter, run in the project folder. |
@@ -61,15 +62,23 @@ run in Qreep's terminal (`QreepTheme.terminal`, kitty) in the project folder.
 ## What it finds on its own
 
 * **git**: branch, ahead/behind, changed count, last commit (all projects, on open).
-* **README.md**: the first real paragraph, with headings, badges and HTML skipped.
+* **Description**: the first real paragraph of `README.md` (or `AGENTS.md`
+  when there is no README), headings, badges and HTML skipped. A config
+  `description` wins.
 * **Questlog**: `docs/ai/QUESTLOG.json`, `questlog.json` or `QUESTLOG.json`.
   Open quests first, step dots (filled = done/active/blocked, hollow = todo),
   blocked steps spelled out with who they wait on. Watched, so an agent's
   update shows up live.
 * **Pinned**: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/ai/CURRENT.md` when present.
 * **Recently touched**: `fd --changed-within 14d`, which honours `.gitignore`.
+* **Docs**: `docs/`, two levels deep (`.md`, `.txt`, `.pdf`, `.html`), newest first.
+* **Activity**: a year of commits as a GitHub-style grid, one column per
+  week, one row per weekday, darker = busier day.
 * **Stats**: file count (`fd`), lines of code and top languages (`tokei`),
-  commit count and commits per week for 13 weeks.
+  total commits, doc count.
+
+Lists (uncommitted, recent, docs, commits) show as many rows as the pane has
+room for: between `minListRows` and `maxListRows` in `PlacesTheme.qml`.
 
 ## Cost
 
@@ -85,7 +94,7 @@ until Qreep reloads.
 | --- | --- |
 | type | filter by name, id, group, path |
 | `↑` `↓` `PgUp` `PgDn` | move |
-| `Tab` / `Shift+Tab` | move the highlight through the buttons |
+| `Tab` / `Shift+Tab` | move through the buttons, then the file cards that have files, then around again |
 | `Enter` | run the highlighted button (the editor, unless you tabbed) |
 | double click | open in the project's editor |
 | `Shift+Enter` | cockpit (falls back to the editor) |
@@ -93,11 +102,19 @@ until Qreep reloads.
 | `Ctrl+O` | file manager |
 | `Ctrl+T` | terminal in the project folder |
 | `Ctrl+R` | re-read everything |
+| `Alt+1` … `Alt+4` | jump into a file card: Uncommitted, Pinned, Recently touched, Docs |
+| in a card: `↑` `↓` / `←` `→` | move between files / to the next card |
+| in a card: `Enter` | "Open with" chooser for that file |
+| in a card: `Esc` | back to the project list (typing does that too) |
 | `F1` | shortcuts sheet |
 | `Esc` | close the sheet, clear the filter, then close |
 
-Clicking a file row (uncommitted, recent, pinned) opens that file in the
-editor. Chips do what they say.
+Clicking a file row (uncommitted, recent, docs, pinned) opens KIP's "Open
+with" chooser with KIP's file actions (`KipTheme.fileActions`): nvim first,
+Vivify for markdown, then the default app, its folder in yazi, a terminal in
+its folder, and copy path. The panel behind the chooser is blurred.
+`1`–`9` or `↑↓` + `Enter` pick, `Esc` cancels. Copy path keeps Places open;
+everything else closes it.
 
 ## IPC
 

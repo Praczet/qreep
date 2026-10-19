@@ -7,13 +7,44 @@ Rectangle {
     required property QtObject pt
     property string title: ""
     property string subtitle: ""
+    // Keyboard: the Alt+number that jumps here, and whether it has focus.
+    property string shortcut: ""
+    property bool focused: false
     default property alias content: body.data
 
     implicitHeight: body.y + body.implicitHeight + pt.cardPadding
     radius: pt.cardRadius
     color: pt.cardColor
     border.width: 1
-    border.color: Qt.rgba(pt.borderColor.r, pt.borderColor.g, pt.borderColor.b, 0.6)
+    border.color: focused ? pt.selectedBorderColor : Qt.rgba(pt.borderColor.r, pt.borderColor.g, pt.borderColor.b, 0.6)
+
+    // Key cap in the top-right corner, dimmed like the action button hints.
+    Rectangle {
+        visible: rootPlacesSection.shortcut.length > 0
+        anchors {
+            right: parent.right
+            top: parent.top
+            rightMargin: rootPlacesSection.pt.cardPadding - 2
+            topMargin: rootPlacesSection.pt.cardPadding - 4
+        }
+        width: shortcutText.implicitWidth + 12
+        height: shortcutText.implicitHeight + 4
+        radius: 5
+        color: rootPlacesSection.focused ? rootPlacesSection.pt.selectedRowColor : rootPlacesSection.pt.withAlpha(rootPlacesSection.pt.primaryTextColor, 0.06)
+        border.width: 1
+        border.color: rootPlacesSection.focused ? rootPlacesSection.pt.selectedBorderColor : rootPlacesSection.pt.withAlpha(rootPlacesSection.pt.primaryTextColor, 0.22)
+
+        Text {
+            id: shortcutText
+
+            anchors.centerIn: parent
+            text: rootPlacesSection.shortcut
+            color: rootPlacesSection.focused ? rootPlacesSection.pt.accentColor : rootPlacesSection.pt.primaryTextColor
+            opacity: rootPlacesSection.focused ? 1 : 0.68
+            font.family: rootPlacesSection.pt.monoFontFamily
+            font.pixelSize: rootPlacesSection.pt.metaPixelSize
+        }
+    }
 
     Text {
         id: titleText
@@ -33,7 +64,8 @@ Rectangle {
             left: titleText.right
             leftMargin: 10
             right: parent.right
-            rightMargin: rootPlacesSection.pt.cardPadding
+            // Leave room for the key cap.
+            rightMargin: rootPlacesSection.pt.cardPadding + (rootPlacesSection.shortcut.length > 0 ? 64 : 0)
             baseline: titleText.baseline
         }
         text: rootPlacesSection.subtitle
