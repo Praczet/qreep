@@ -131,7 +131,7 @@ QtObject {
     // "target.*" hides a whole target, "*.name" a function everywhere.
     // Hooks other programs call, duplicates of a curated action, and KIP itself.
     readonly property var hidden: [
-        "qreep-kip.*", "osd.*", "qreep-prism.showSection", "qreep-prism.newPalette", "qreep-bloom.*", "qreep-calendar.*", "qreep-monitor-profile.*",
+        "qreep-kip.*", "osd.*", "qreep-prism.showSection", "qreep-prism.addCombo", "qreep-bloom.*", "qreep-calendar.*", "qreep-monitor-profile.*",
         "qreep-fast-password.copy", "qreep-places.showWith", "qreep-places.showProject",
         "*.showMe", "*.hideMe", "*.refresh",
         "qreep-notification.toggle", "qreep-notification.showCenter", "qreep-notification.hideCenter",

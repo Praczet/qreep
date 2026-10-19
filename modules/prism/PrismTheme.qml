@@ -32,6 +32,9 @@ QtObject {
     readonly property int swatchLabelHeight: 40
     readonly property int swatchGap: 12
     readonly property int swatchRadius: 12
+    // Combo posters in a palette grid (portrait, like a phone post).
+    readonly property int comboWidth: 240
+    readonly property int comboHeight: 300
     // Palette posters: one band per colour, never thinner than this.
     readonly property int bandMinHeight: 120
     readonly property int bandTitlePixelSize: 54

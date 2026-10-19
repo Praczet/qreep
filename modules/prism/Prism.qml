@@ -51,19 +51,23 @@ Scope {
             rootPrism.show();
         }
 
-        // A palette from the shell: colours space separated, each "#hex" or
-        // "#hex=Name" (e.g. "#d6ccd0=Timberwolf #763948=American Brown" —
-        // names with spaces work, the next "#" ends them).
-        function newPalette(name: string, colors: string): string {
-            const id = prismService.createPalette(name);
+        // A combo from the shell, into a palette (made if missing). Colours
+        // space separated, each "#hex" or "#hex=Name"; names may contain
+        // spaces, the next "#" ends them.
+        //   addCombo "Color combos" "#d6ccd0=Timberwolf #763948=American Brown"
+        function addCombo(palette: string, colors: string): string {
+            const found = prismService.palettes.find(item => item.name.toLowerCase() === palette.toLowerCase());
+            const paletteId = found ? found.id : prismService.createPalette(palette);
+            const comboId = prismService.createCombo(paletteId, "");
 
             for (const part of colors.split(/\s+(?=#)/)) {
                 const pieces = part.split("=");
                 const hex = prismService.parseColor(pieces[0]);
                 if (hex)
-                    prismService.addToPalette(id, hex, (pieces[1] || "").trim());
+                    prismService.addToCombo(paletteId, comboId, hex, (pieces[1] || "").trim());
             }
-            return "palette " + name + ": " + (prismService.paletteById(id) || { colors: [] }).colors.length + " colours";
+            const combo = prismService.comboById(paletteId, comboId);
+            return palette + " / " + combo.name + ": " + combo.colors.length + " colours";
         }
 
         function state(): string {
@@ -71,7 +75,7 @@ Scope {
                 + " loaded=" + prismService.loaded
                 + " history=" + prismService.history.length
                 + " favorites=" + prismService.favorites.length
-                + " palettes=" + prismService.palettes.map(palette => palette.name + ":" + palette.colors.length).join(",")
+                + " palettes=" + prismService.palettes.map(palette => palette.name + ":" + palette.combos.map(combo => combo.colors.length).join("+")).join(",")
                 + " latest=" + (prismService.history.length > 0 ? prismService.history[0].hex + " " + prismService.history[0].name : "-")
                 + " error=" + (prismService.lastError || "-");
         }

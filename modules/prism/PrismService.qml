@@ -18,7 +18,9 @@ Item {
     property var history: []
     // [hex]
     property var favorites: []
-    // [{ id, name, colors: [{ hex, name }] }]
+    // [{ id, name, combos: [{ id, name, colors: [{ hex, name }] }] }]
+    // A palette is a set of combos; a combo is one or more colours that go
+    // together (the poster: Timberwolf on American Brown).
     property var palettes: []
     property bool loaded: false
     property string lastError: ""
@@ -101,14 +103,14 @@ Item {
         return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
     }
 
-    // Text on a band: the palette colour that reads best on it (the poster
+    // Text on a band: the combo colour that reads best on it (the poster
     // look: Timberwolf in American Brown), or near-black / near-white when
-    // nothing in the palette clears 3:1.
-    function textOn(hex, palette) {
+    // nothing in the combo clears 3:1. colors: [{ hex }] or null.
+    function textOn(hex, colors) {
         let best = "";
         let bestRatio = 0;
 
-        for (const color of palette ? palette.colors : []) {
+        for (const color of colors || []) {
             const ratio = contrast(hex, color.hex);
             if (ratio > bestRatio) {
                 bestRatio = ratio;
@@ -166,17 +168,26 @@ Item {
         });
     }
 
-    // --- palettes ----------------------------------------------------------------
+    // --- palettes and combos -----------------------------------------------------
+
+    function newId(prefix) {
+        return prefix + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+    }
 
     function paletteById(id) {
         return palettes.find(palette => palette.id === id) || null;
     }
 
+    function comboById(paletteId, comboId) {
+        const palette = paletteById(paletteId);
+        return palette ? palette.combos.find(combo => combo.id === comboId) || null : null;
+    }
+
     function createPalette(name) {
         const palette = {
-            id: "p" + Date.now().toString(36),
+            id: newId("p"),
             name: String(name || "").trim() || "Untitled",
-            colors: []
+            combos: []
         };
 
         palettes = palettes.concat([palette]);
@@ -184,6 +195,7 @@ Item {
         return palette.id;
     }
 
+    // Deep enough copy of one palette, handed to change(), then saved.
     function updatePalette(id, change) {
         palettes = palettes.map(palette => {
             if (palette.id !== id)
@@ -191,12 +203,24 @@ Item {
             const copy = {
                 id: palette.id,
                 name: palette.name,
-                colors: palette.colors.slice()
+                combos: palette.combos.map(combo => ({
+                            id: combo.id,
+                            name: combo.name,
+                            colors: combo.colors.slice()
+                        }))
             };
             change(copy);
             return copy;
         });
         save();
+    }
+
+    function updateCombo(paletteId, comboId, change) {
+        updatePalette(paletteId, palette => {
+            const combo = palette.combos.find(item => item.id === comboId);
+            if (combo)
+                change(combo, palette);
+        });
     }
 
     function renamePalette(id, name) {
@@ -208,35 +232,76 @@ Item {
         save();
     }
 
-    function addToPalette(id, hex, name) {
-        updatePalette(id, palette => palette.colors.push({
+    function createCombo(paletteId, name) {
+        const id = newId("c");
+
+        updatePalette(paletteId, palette => palette.combos.push({
+                id: id,
+                name: String(name || "").trim() || "Combo " + (palette.combos.length + 1),
+                colors: []
+            }));
+        return id;
+    }
+
+    function renameCombo(paletteId, comboId, name) {
+        updateCombo(paletteId, comboId, combo => combo.name = String(name || "").trim() || combo.name);
+    }
+
+    function deleteCombo(paletteId, comboId) {
+        updatePalette(paletteId, palette => palette.combos = palette.combos.filter(combo => combo.id !== comboId));
+    }
+
+    function moveCombo(paletteId, index, step) {
+        updatePalette(paletteId, palette => moveIn(palette.combos, index, step));
+    }
+
+    function addToCombo(paletteId, comboId, hex, name) {
+        updateCombo(paletteId, comboId, combo => combo.colors.push({
                 hex: hex,
                 name: name || nameOf(hex)
             }));
     }
 
-    function removeFromPalette(id, index) {
-        updatePalette(id, palette => palette.colors.splice(index, 1));
+    function removeFromCombo(paletteId, comboId, index) {
+        updateCombo(paletteId, comboId, combo => combo.colors.splice(index, 1));
     }
 
-    function renameColor(id, index, name) {
-        updatePalette(id, palette => {
-            if (palette.colors[index])
-                palette.colors[index] = {
-                    hex: palette.colors[index].hex,
-                    name: String(name || "").trim() || palette.colors[index].name
+    function renameColor(paletteId, comboId, index, name) {
+        updateCombo(paletteId, comboId, combo => {
+            if (combo.colors[index])
+                combo.colors[index] = {
+                    hex: combo.colors[index].hex,
+                    name: String(name || "").trim() || combo.colors[index].name
                 };
         });
     }
 
-    function moveColor(id, index, step) {
-        updatePalette(id, palette => {
-            const target = index + step;
-            if (target < 0 || target >= palette.colors.length)
-                return;
-            const color = palette.colors.splice(index, 1)[0];
-            palette.colors.splice(target, 0, color);
-        });
+    function moveColor(paletteId, comboId, index, step) {
+        updateCombo(paletteId, comboId, combo => moveIn(combo.colors, index, step));
+    }
+
+    function moveIn(list, index, step) {
+        const target = index + step;
+
+        if (target < 0 || target >= list.length)
+            return;
+        list.splice(target, 0, list.splice(index, 1)[0]);
+    }
+
+    // Palettes saved before combos had a flat colour list: that list
+    // becomes the palette's one combo.
+    function upgradePalette(palette) {
+        if (Array.isArray(palette.combos))
+            return palette;
+        return {
+            id: palette.id,
+            name: palette.name,
+            combos: [{
+                    id: newId("c"),
+                    name: "Combo 1",
+                    colors: Array.isArray(palette.colors) ? palette.colors : []
+                }]
+        };
     }
 
     // --- actions -------------------------------------------------------------------
@@ -329,7 +394,7 @@ Item {
                             name: rootPrismService.nameOf(item.hex)
                         }));
                 rootPrismService.favorites = Array.isArray(data.favorites) ? data.favorites : [];
-                rootPrismService.palettes = Array.isArray(data.palettes) ? data.palettes : [];
+                rootPrismService.palettes = (Array.isArray(data.palettes) ? data.palettes : []).map(palette => rootPrismService.upgradePalette(palette));
                 rootPrismService.lastError = "";
             } catch (error) {
                 rootPrismService.lastError = "prism.json is not valid JSON; not overwriting it.";

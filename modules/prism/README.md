@@ -5,9 +5,13 @@ Colours you picked or copied, the ones you keep, and the sets they belong in.
 Every colour that passes through gets remembered: `SUPER+P` picks one with
 hyprpicker (still copied to the clipboard, as before), and anything copied as
 `#hex`, `rgb()` or `hsl()` is caught by a `wl-paste --watch`. Both land in
-History. Favourites are the ones you pin. Palettes are named sets, shown as
-posters: one band per colour, lettered in another colour of the same palette,
-the way design accounts show colour combos (Timberwolf on American Brown).
+History. Favourites are the ones you pin.
+
+Palettes are named sets of **combos**, and a combo is one or more colours
+that belong together. A palette ("Color combos") shows its combos as small
+posters; Enter opens one full size: one band per colour, lettered in the
+combo colour that reads best on it, the way design accounts post colour
+combos (Timberwolf on American Brown).
 
 Step 2, not built yet: the editor. Wheels, sliders, complementary / triadic /
 analogous harmonies.
@@ -19,20 +23,21 @@ analogous harmonies.
 | Key | Does |
 | --- | --- |
 | type | filter by name or hex |
-| `↑↓←→` | move (`↑↓` on a palette) |
-| `Enter`, double click | copy the hex and close |
+| `↑↓←→` | move (`↑↓` in an open combo) |
+| `Enter`, double click | copy the hex and close; on a palette, open the combo |
 | `Shift+Enter` | copy, stay open |
 | `Ctrl+S` | favourite / unfavourite |
-| `Ctrl+P` | add to a palette (or a new one) |
-| `Shift+Delete` | remove from this section (history, favourites, palette) |
+| `Ctrl+P` | add the colour to a combo (the last one used comes first), a new combo, or a new palette |
+| `Shift+Delete` | remove from this section; a combo goes on the second press |
 | `Ctrl+1` `Ctrl+2` `Ctrl+3` | Favourites, History, first palette |
 | `Ctrl+↑` `Ctrl+↓` | previous / next section |
-| `Ctrl+N` | new palette |
-| `F2` / `Shift+F2` | rename the colour (in a palette) / the palette |
-| `Alt+↑` `Alt+↓` | move the colour within its palette |
+| `Ctrl+N` | in a palette: new combo (opens it); elsewhere: new palette |
+| `Ctrl+Shift+N` | new palette |
+| `F2` / `Shift+F2` | rename the colour or combo / the palette |
+| `Alt+arrows` | move the colour within its combo, or the combo within its palette |
 | `Ctrl+Shift+Delete` | delete the palette (press twice) |
 | `F1` | shortcuts sheet |
-| `Esc` | back out: menu, prompt, sheet, filter, then close |
+| `Esc` | back out: menu, prompt, sheet, open combo, filter, then close |
 
 Names: a new colour gets the nearest CSS colour name ("Saddle Brown"), so
 the list is readable before you name anything. Rename it in a palette when
@@ -47,12 +52,19 @@ you know better.
   "version": 1,
   "history": [{ "hex": "#763948", "name": "Saddle Brown", "time": 0, "source": "clipboard" }],
   "favorites": ["#763948"],
-  "palettes": [{ "id": "p…", "name": "Logo Idea Book", "colors": [{ "hex": "#d6ccd0", "name": "Timberwolf" }] }]
+  "palettes": [{
+    "id": "p…", "name": "Color combos",
+    "combos": [{ "id": "c…", "name": "Combo 1", "colors": [
+      { "hex": "#d6ccd0", "name": "Timberwolf" },
+      { "hex": "#763948", "name": "American Brown" }
+    ] }]
+  }]
 }
 ```
 
 History keeps one entry per colour (a repeat moves to the top), 500 at most.
 Qreep is the only writer; edit the file with Qreep stopped, or not at all.
+Palettes saved before combos (a flat `colors` list) load as one combo.
 
 ## IPC
 
@@ -61,7 +73,7 @@ quickshell ipc -c qreep call qreep-prism toggle
 quickshell ipc -c qreep call qreep-prism pick
 quickshell ipc -c qreep call qreep-prism showSection history
 quickshell ipc -c qreep call qreep-prism showSection "Logo Idea Book"
-quickshell ipc -c qreep call qreep-prism newPalette "Logo Idea Book" "#d6ccd0=Timberwolf #763948=American Brown"
+quickshell ipc -c qreep call qreep-prism addCombo "Color combos" "#d6ccd0=Timberwolf #763948=American Brown"
 quickshell ipc -c qreep call qreep-prism state
 ```
 
@@ -69,6 +81,8 @@ quickshell ipc -c qreep call qreep-prism state
 
 * `Prism.qml` - controller: IPC, open state, lazy panel on the focused monitor.
 * `PrismService.qml` - store, picker, clipboard watcher, colour parsing and contrast.
-* `PrismPanel.qml` - overlay: sidebar, swatch grid, palette posters, prompts, keys.
+* `PrismPanel.qml` - overlay: sidebar, swatch grid, combo grid, combo poster, prompts, keys.
+* `PrismPoster.qml` - a combo as a small poster (palette grid).
+* `PrismBand.qml` - one colour band: name, hex box, lettered in the combo's ink.
 * `PrismNames.qml` - nearest CSS colour name for new colours.
 * `PrismTheme.qml` - paths, sizes, colours.
