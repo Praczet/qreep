@@ -21,6 +21,7 @@ Scope {
         id: placesService
 
         theme: rootPlaces.theme
+        panelActive: rootPlaces.open
     }
 
     readonly property IpcHandler ipc: IpcHandler {

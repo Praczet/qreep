@@ -88,6 +88,7 @@ the file cards. Every block takes `"enabled": false` and an optional `"title"`.
 | `documents` | paths, or `{ "name", "path" }` | Open with chooser; documents and images put "default app" first |
 | `folders` | paths, or `{ "name", "path" }` | folder chooser: yazi, terminal here, broot, copy path |
 | `folder` | none; `"path"`, `"sort"` (`name` / `modified`), `"limit"`, `"hidden"` | lists the folder's contents, subfolders first; folder chooser or Open with |
+| `usb` | none | Open (mounts if needed, yazi), Terminal, Mount / Unmount, Eject (unmount + power off) |
 | `ssh` | none (every `~/.ssh/config` host), or host names / `{ "name", "host", "user", "port" }`; `"exclude"` | a terminal running `ssh <host>` |
 
 `ssh` without items reads `~/.ssh/config` (watched): wildcard patterns and
@@ -109,8 +110,7 @@ Paths are absolute, `~/…`, or relative to the entry's own `path`. Blocks pair
 up two per row in config order; `"wide": true` gives a block the whole row. Cards are numbered in reading
 order for `Alt+1`…`Alt+9` (a project's four file cards first, then its
 blocks), and Tab walks them after the buttons. In an apps card ←→ move
-along the row and ↑↓ change card. More block types (usb, smb)
-are on the way; an unknown type shows a card saying so.
+along the row and ↑↓ change card. The `smb` block is next; an unknown type shows a card saying so.
 
 ## What it finds on its own
 

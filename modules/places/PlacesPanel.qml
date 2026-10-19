@@ -25,6 +25,8 @@ PanelWindow {
     property string chooserFile: ""
     // Set for a Logseq todo: the chooser then runs through Kip.runAction.
     property var chooserTodo: null
+    // Set for a USB drive: the chooser's options are udisksctl actions.
+    property var chooserUsb: null
     property var chooserOptions: []
     property int chooserIndex: 0
     readonly property bool chooserOpen: chooserFile.length > 0
@@ -727,6 +729,25 @@ PanelWindow {
             return;
         }
 
+        // USB drive: open / terminal / mount / unmount / eject.
+        if (item.kind === "usb") {
+            const mounted = item.mountpoint.length > 0;
+
+            chooserTodo = null;
+            chooserUsb = item;
+            chooserOptions = [{ id: "open", label: "Open", icon: "󰉋", hint: mounted ? "in yazi" : "mount, then yazi" }].concat(mounted ? [
+                    { id: "terminal", label: "Terminal", icon: "󰆍", hint: theme.terminal + " in it" },
+                    { id: "unmount", label: "Unmount", icon: "󰕔", hint: "keep it plugged in" }
+                ] : [
+                    { id: "mount", label: "Mount", icon: "󰕓", hint: "no window" }
+                ], [
+                    { id: "eject", label: "Eject", icon: "󱊞", hint: "unmount and power off: safe to pull" }
+                ]);
+            chooserIndex = 0;
+            chooserFile = item.label + "  (" + item.device + ")";
+            return;
+        }
+
         // SSH host: a terminal running ssh, straight away.
         if (item.kind === "ssh") {
             service.openSsh(item);
@@ -764,6 +785,7 @@ PanelWindow {
         const kt = theme.modules.kip;
 
         chooserTodo = null;
+        chooserUsb = null;
 
         if (isFolder) {
             chooserOptions = kt.folderActions;
@@ -819,9 +841,20 @@ PanelWindow {
         const path = chooserFile.indexOf("/") === 0 ? chooserFile : (project ? project.path + "/" + chooserFile : "");
         const cwd = project && project.path ? project.path : service.home;
         const todo = chooserTodo;
+        const usb = chooserUsb;
 
         chooserFile = "";
         chooserTodo = null;
+        chooserUsb = null;
+
+        // USB: udisksctl through the service. Only opening leaves Places.
+        if (usb && option) {
+            service.usbAction(usb, option.id);
+            if (option.id === "open" || option.id === "terminal")
+                closeRequested();
+            return;
+        }
+
         if (!option || path.length === 0)
             return;
 

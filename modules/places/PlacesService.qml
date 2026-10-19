@@ -269,9 +269,125 @@ Item {
             return todos.filter(todo => block.states.indexOf(todo.state) >= 0).slice(0, block.limit);
         if (block.type === "folder")
             return folderItems(block);
+        if (block.type === "usb")
+            return usbDrives;
         if (block.type === "ssh" && block.fromSshConfig)
             return sshConfigHosts.filter(host => block.exclude.indexOf(host.host) < 0 && !isGitForge(host)).slice(0, block.limit);
         return block.items;
+    }
+
+    // --- usb: removable partitions via lsblk, actions via udisksctl ----------
+
+    // Places.qml binds this to its open state: USB is polled only while visible.
+    property bool panelActive: false
+    readonly property bool wantsUsb: projects.some(project => project.blocks.some(block => block.type === "usb"))
+    property var usbDrives: []
+
+    Timer {
+        interval: 3000
+        repeat: true
+        running: rootPlacesService.panelActive && rootPlacesService.wantsUsb
+        triggeredOnStart: true
+        onTriggered: rootPlacesService.refreshUsb()
+    }
+
+    Process {
+        id: usbProcess
+
+        command: ["lsblk", "-J", "-o", "NAME,PATH,RM,HOTPLUG,TRAN,TYPE,LABEL,MODEL,SIZE,FSTYPE,MOUNTPOINT"]
+        stdout: StdioCollector {
+            id: usbStdout
+
+            waitForEnd: true
+        }
+
+        onExited: rootPlacesService.usbDrives = rootPlacesService.parseUsb(usbStdout.text)
+    }
+
+    function refreshUsb() {
+        if (!usbProcess.running)
+            usbProcess.running = true;
+    }
+
+    // Partitions with a filesystem on USB / removable / hotplug disks; a
+    // disk formatted without partitions counts as its own partition.
+    function parseUsb(text) {
+        let devices = [];
+
+        try {
+            devices = JSON.parse(text).blockdevices || [];
+        } catch (error) {
+            return [];
+        }
+
+        const drives = [];
+
+        for (const disk of devices) {
+            if (disk.type !== "disk" || !(disk.tran === "usb" || disk.rm || disk.hotplug))
+                continue;
+
+            const parts = (disk.children || []).concat(disk.fstype ? [disk] : []).filter(part => part.fstype);
+
+            for (const part of parts)
+                drives.push({
+                    kind: "usb",
+                    device: part.path,
+                    disk: disk.path,
+                    label: String(part.label || disk.model || part.name).trim(),
+                    size: String(part.size || ""),
+                    mountpoint: String(part.mountpoint || ""),
+                    detail: part.size + (part.mountpoint ? " · " + shortPath(part.mountpoint) : " · not mounted")
+                });
+        }
+        return drives;
+    }
+
+    // open: mount if needed, then yazi there. terminal: kitty in it.
+    // mount / unmount / eject (unmount + power off the whole disk).
+    function usbAction(drive, action) {
+        if (action === "terminal" && drive.mountpoint) {
+            run(theme.terminalCommand([], { cwd: drive.mountpoint }), drive.mountpoint);
+            return;
+        }
+        if (action === "open" && drive.mountpoint) {
+            run(theme.terminalCommand(["yazi", drive.mountpoint]), drive.mountpoint);
+            return;
+        }
+
+        const scripts = {
+            // udisksctl prints "Mounted /dev/sdb1 at /run/media/adam/STICK"; keep the path.
+            open: "out=$(udisksctl mount -b \"$1\" 2>&1) || { notify-send 'USB' \"$out\"; exit 1; }; printf '%s' \"$out\" | sed -n 's/^Mounted .* at \\(.*\\)$/\\1/p' | sed 's/\\.$//'",
+            mount: "out=$(udisksctl mount -b \"$1\" 2>&1) || notify-send 'USB' \"$out\"",
+            unmount: "out=$(udisksctl unmount -b \"$1\" 2>&1) || notify-send 'USB' \"$out\"",
+            eject: "out=$(udisksctl unmount -b \"$1\" 2>&1 && udisksctl power-off -b \"$2\" 2>&1) && notify-send 'USB' 'Safe to remove.' || notify-send 'USB' \"$out\""
+        };
+
+        if (!scripts[action] || usbActionProcess.running)
+            return;
+
+        usbActionProcess.openAfter = action === "open";
+        usbActionProcess.command = ["sh", "-c", scripts[action], "places", drive.device, drive.disk];
+        usbActionProcess.running = true;
+    }
+
+    Process {
+        id: usbActionProcess
+
+        property bool openAfter: false
+
+        stdout: StdioCollector {
+            id: usbActionStdout
+
+            waitForEnd: true
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            const path = usbActionStdout.text.trim();
+
+            if (usbActionProcess.openAfter && exitCode === 0 && path.length > 0)
+                rootPlacesService.run(rootPlacesService.theme.terminalCommand(["yazi", path]), path);
+            rootPlacesService.refreshUsb();
+        }
     }
 
     // --- ssh: ~/.ssh/config hosts, or hand-listed ones -----------------------
@@ -585,7 +701,8 @@ Item {
                 apps: "Apps",
                 calendar: "Calendar",
                 todos: "Todos",
-                ssh: "SSH"
+                ssh: "SSH",
+                usb: "USB drives"
             })[type] || type;
     }
 
