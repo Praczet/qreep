@@ -198,7 +198,7 @@ QtObject {
             aliases: ["c", "="],
             label: "Calculate",
             description: "Maths and units with qalc, offline. Shows how qalc read your input.",
-            helper: "Live as you type. Enter copies the result.",
+            helper: "Live as you type. Enter copies the result and saves it to history.",
             eventKey: "calc.ready",
             placeholder: "expression, e.g. 5 km to mi",
             icon: "󰃬",
@@ -207,7 +207,7 @@ QtObject {
             takesArgument: true,
             syntax: "/calc <expression>",
             examples: ["/calc 2^10 * 3", "/calc 5 km to mi", "/calc 90 min to h", "/calc sqrt(2)"],
-            actions: "Live as you type. Enter copies the result. qalc's own reading of the input is shown, because it will happily interpret nonsense as units. Currency is off: no exchange-rate downloads."
+            actions: "Live as you type. Enter copies the result and saves it to history, listed newest first under the input and narrowed by what you type; ↓ picks an entry, Enter copies its saved result, Shift+Enter recalculates it first (↻ marks results that depend on today/now), Tab puts its expression back to edit. qalc's own reading of the input is shown, because it will happily interpret nonsense as units. Currency is off: no exchange-rate downloads."
         },
         {
             name: "def",

@@ -223,7 +223,7 @@ The size survives closing KIP but not a Quickshell restart.
 | `/qreep [target] [function] [args]` (alias `/q`) | call any Qreep IPC function; list from `ipc show` |
 | `/browse [path]` (aliases `/b`, `/ls`) | walk folders; the input is the path, text after the last `/` filters |
 | `/tldr tar`, `/tldr git commit` (alias `/tl`) | real tldr page from the local cache; live |
-| `/calc 5 km to mi` (aliases `/c`, `/=`) | qalc result plus how qalc read it; live, Enter copies |
+| `/calc 5 km to mi` (aliases `/c`, `/=`) | qalc result plus how qalc read it; live, Enter copies and saves to history (↓ picks, Shift+Enter recalculates, Tab edits) |
 | `/def word` (alias `/define`) | offline dictionary via sdcv; live, Enter copies |
 | `/win [words]` (aliases `/w`, `/window`) | windows by class/title/workspace; Enter switches and focuses |
 | `/p [words]` (aliases `/proj`, `/project`, `/places`) | projects from Places with branch, age, changes, quests; Enter opens Places on it, Shift+Enter its cockpit, Ctrl+Enter its editor |
@@ -500,7 +500,17 @@ None of these talk to the model or the network.
   result with qalc's own reading of the input, because qalc will turn almost
   anything into units (`foo bar` is `femtobyte*byte*bar`). Results qalc
   cannot reduce (`1/0`) say so, with qalc's warning. Currencies are off, so no
-  exchange-rate downloads; `100 EUR to USD` stays `EUR 100`.
+  exchange-rate downloads; `100 EUR to USD` stays `EUR 100`. Enter also saves
+  the calculation to `~/.local/state/qreep/kip/calc-history.json` (newest
+  first, one entry per expression, 200 max). The history lists under the
+  input, narrowed by the typed words; `↓`/`↑` select (up past the first row
+  returns to the live result), Enter copies the selected entry's saved result
+  and moves it to the top, Shift+Enter runs qalc on it again first, copies the
+  fresh result and updates the entry (the notice shows old → new), Tab puts
+  its expression back in the input. Saved results never recalculate on their
+  own; entries with `now`, `today`, `yesterday` or `tomorrow` get a `↻` chip
+  because theirs go stale. Super+Shift+C opens
+  KIP on `/calc`.
 - **`/def`** runs `sdcv -n -j -e -- <word>` (exact matches only; fuzzy hits for
   half-typed words are noise). Entries are parsed, not dumped: WordNet
   (`n 1:`, `adj :`, quoted examples, `[syn: {…}]`) and Wiktionary dumps

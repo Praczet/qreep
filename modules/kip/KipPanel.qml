@@ -199,12 +199,20 @@ PanelWindow {
     }
 
     onPanelOpenChanged: {
+        calcHistoryIndex = -1;
         if (panelOpen)
             promptInput.forceActiveFocus();
         animateTo(panelOpen ? 1 : 0);
     }
 
     onMessageKeyChanged: refreshMessage()
+
+    // /calc history under the result: -1 = the live result, 0.. = a row.
+    property int calcHistoryIndex: -1
+    readonly property bool calcActive: parsed.mode === "ready" && parsed.command !== null && parsed.command.kind === "calc" && (contentState === "compose" || (contentState === "doc" && docKind === "calc"))
+    readonly property var calcHistoryItems: calcActive ? calc.filterHistory(parsed.argument) : []
+    readonly property bool calcHistoryVisible: calcHistoryItems.length > 0
+    readonly property var calcHistorySelected: calcHistoryIndex >= 0 ? calcHistoryItems[calcHistoryIndex] || null : null
 
     // /calc and /def run their tool after a pause in typing.
     Timer {
@@ -1112,6 +1120,30 @@ PanelWindow {
                 }
             }
 
+            // /calc: history, newest first, narrowed by what is typed.
+            KipResultList {
+                width: parent.width
+                height: Math.min(contentHeight, rootKipPanel.maxBodyHeight * 0.45)
+                visible: rootKipPanel.calcHistoryVisible
+                compact: true
+                kipTheme: rootKipPanel.kt
+                // ↻ marks results that depend on the clock (today, now, ...).
+                results: rootKipPanel.calcHistoryItems.map(item => ({
+                            origin: (rootKipPanel.calc.timeDependent(item) ? "↻ " : "") + rootKipPanel.calc.ago(item.time),
+                            originColor: rootKipPanel.calc.timeDependent(item) ? rootKipPanel.kt.warningColor : undefined,
+                            folder: item.expression + "  =  ",
+                            file: item.result,
+                            excerpt: ""
+                        }))
+                currentIndex: Math.max(0, rootKipPanel.calcHistoryIndex)
+                selectedIndex: rootKipPanel.calcHistoryIndex
+
+                onActivated: index => {
+                    rootKipPanel.calcHistoryIndex = index;
+                    rootKipPanel.submit(false);
+                }
+            }
+
             Text {
                 id: noticeText
 
@@ -1265,6 +1297,7 @@ PanelWindow {
         chooserHit = null;
         // New query, new ranking: the best match is first.
         appIndex = 0;
+        calcHistoryIndex = -1;
 
         if (paletteIndex >= paletteItems.length)
             paletteIndex = 0;
@@ -1453,6 +1486,7 @@ PanelWindow {
 
     function backToCompose() {
         chooserHit = null;
+        calcHistoryIndex = -1;
         service.reset();
         shotsCommand.reset();
         filesCommand.reset();
@@ -1589,7 +1623,11 @@ PanelWindow {
             {
                 const step = event.key === Qt.Key_Down ? 1 : -1;
 
-                if (appsVisible) {
+                // /calc: Up from the first row goes back to the live result.
+                if (calcHistoryVisible) {
+                    calcHistoryIndex = Math.max(-1, Math.min(calcHistoryIndex + step, calcHistoryItems.length - 1));
+                    event.accepted = true;
+                } else if (appsVisible) {
                     appIndex = appView.neighbor(appIndex, 0, step);
                     event.accepted = true;
                 } else if (resultsVisible) {
@@ -1603,7 +1641,10 @@ PanelWindow {
             }
         case Qt.Key_Tab:
             event.accepted = true;
-            if (resultsVisible)
+            // /calc: the selected history expression back into the input.
+            if (calcHistorySelected !== null)
+                setInput("/" + parsed.token + " " + calcHistorySelected.expression);
+            else if (resultsVisible)
                 showSnippet = !showSnippet;
             else if (paletteItems.length > 0)
                 complete(paletteItems[paletteIndex]);
@@ -1637,6 +1678,31 @@ PanelWindow {
     }
 
     function submit(shifted) {
+        // /calc history row: Enter copies the saved result, Shift+Enter runs
+        // qalc again first (today, now, ... change). Either way it moves up.
+        if (calcHistorySelected !== null) {
+            const entry = calcHistorySelected;
+
+            calcHistoryIndex = -1;
+            if (!shifted) {
+                copyRequested(entry.result);
+                calc.remember(entry);
+                notice = "Copied " + entry.result + " (saved " + calc.ago(entry.time) + " ago).";
+                return;
+            }
+
+            notice = "Recalculating " + entry.expression + "…";
+            calc.recalculate(entry, fresh => {
+                if (fresh === null) {
+                    notice = "qalc could not recalculate " + entry.expression + "; nothing copied.";
+                    return;
+                }
+                copyRequested(fresh.result);
+                notice = fresh.result === entry.result ? "Recalculated: still " + fresh.result + ". Copied." : "Recalculated: " + entry.result + " → " + fresh.result + ". Copied.";
+            });
+            return;
+        }
+
         if (activeCommand !== null) {
             activeCommand.submit(shifted === true);
             return;
@@ -1648,6 +1714,7 @@ PanelWindow {
                 notice = "Copied the tldr page for " + tldr.name + ".";
             } else if (docKind === "calc" && calc.status === "done") {
                 copyRequested(calc.result);
+                calc.remember(calc);
                 notice = "Copied " + calc.result + ".";
             } else if (docKind === "def" && dict.status === "done") {
                 copyRequested(dict.plainText());
@@ -1977,6 +2044,8 @@ PanelWindow {
     function enterLabel() {
         if (chooserHit !== null)
             return "pick";
+        if (calcHistorySelected !== null)
+            return "copy · ⇧ recalc";
         if (activeCommand !== null)
             return activeCommand.enterLabel();
         if (appsMode)
@@ -1985,7 +2054,7 @@ PanelWindow {
             if (docKind === "tldr")
                 return tldr.status === "done" ? "copy page" : "";
             if (docKind === "calc")
-                return calc.status === "done" ? "copy" : "";
+                return calcHistorySelected !== null || calc.status === "done" ? "copy" : "";
             if (docKind === "def")
                 return dict.status === "done" ? "copy" : "";
             if (docKind === "timer")
@@ -2038,6 +2107,8 @@ PanelWindow {
             return "↑↓ or 1–" + chooserOptions.length + " choose · Enter do it · Esc cancel";
         if (activeCommand !== null)
             return activeCommand.keyHints();
+        if (calcActive && calcHistoryVisible)
+            return (calcHistorySelected !== null ? "Enter copies " + calcHistorySelected.result + " (saved " + calc.ago(calcHistorySelected.time) + " ago) · Shift+Enter recalculates now · Tab edits" : (calc.status === "done" && contentState === "doc" ? "Enter copies and saves · " : "") + "↓ history") + " · Esc back";
         if (contentState === "doc" && (docKind === "calc" || docKind === "def")) {
             // Only promise a copy when there is something to copy.
             const ready = docKind === "calc" ? calc.status === "done" : dict.status === "done";

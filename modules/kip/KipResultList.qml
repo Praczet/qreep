@@ -8,6 +8,9 @@ ListView {
     required property QtObject kipTheme
     required property var results
     property bool compact: false
+    // The highlighted row. ListView moves currentIndex off -1 by itself, so a
+    // list that can have nothing selected (/calc history) sets this instead.
+    property int selectedIndex: currentIndex
 
     signal activated(int index)
 
@@ -29,7 +32,7 @@ ListView {
         required property var modelData
         required property int index
 
-        readonly property bool selected: index === rootKipResultList.currentIndex
+        readonly property bool selected: index === rootKipResultList.selectedIndex
 
         width: ListView.view.width
         height: rootKipResultList.compact ? rootKipResultList.kipTheme.commandRowHeight : rootKipResultList.kipTheme.rowHeight
@@ -76,7 +79,7 @@ ListView {
                                 legacy: rootKipResultList.kipTheme.warningColor,
                                 prod: rootKipResultList.kipTheme.errorColor,
                                 dir: rootKipResultList.kipTheme.accentColor
-                            })[resultRow.modelData.origin] || rootKipResultList.kipTheme.secondaryTextColor
+                            })[resultRow.modelData.origin] || resultRow.modelData.originColor || rootKipResultList.kipTheme.secondaryTextColor
                         font.pixelSize: rootKipResultList.kipTheme.metaPixelSize
                     }
                 }
