@@ -433,8 +433,8 @@ PanelWindow {
                             rightMargin: rootPlacesPanel.pt.cardPadding
                         }
                         y: rootPlacesPanel.pt.cardPadding - 2
-                        text: "<b>Tip</b>  " + (rootPlacesPanel.tips[rootPlacesPanel.tipIndex] || "")
-                        textFormat: Text.StyledText
+                        text: "**Tip** " + (rootPlacesPanel.tips[rootPlacesPanel.tipIndex] || "")
+                        textFormat: Text.MarkdownText
                         color: rootPlacesPanel.pt.secondaryTextColor
                         font.pixelSize: rootPlacesPanel.pt.metaPixelSize + 1
                         wrapMode: Text.Wrap

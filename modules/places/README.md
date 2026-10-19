@@ -59,7 +59,7 @@ next look without restarting Qreep. Minimum per project: a name and a path.
 
 Top-level `"tips": { "enabled": true, "items": ["..."] }` adds your own tips
 to the built-in ones (`PlacesTips.qml`), or turns the tip card off with
-`"enabled": false`.
+`"enabled": false`. Tips are Markdown (`**bold**`, `` `code` ``).
 
 `{path}` is the file or folder being opened. Commands with `"terminal": true`
 run in Qreep's terminal (`QreepTheme.terminal`, kitty) in the project folder.
