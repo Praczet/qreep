@@ -10,6 +10,7 @@ import "fastpassword" as FastPasswordModule
 import "kip" as KipModule
 import "notification" as NotificationModule
 import "osd" as OsdModule
+import "places" as PlacesModule
 import "polkit" as PolkitModule
 import "qreeper" as QreeperModule
 import "screenshot" as ScreenshotModule
@@ -58,6 +59,10 @@ QtObject {
     }
 
     readonly property QtObject osd: OsdModule.OsdTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject places: PlacesModule.PlacesTheme {
         qreep: rootModulesTheme.qreep
     }
 

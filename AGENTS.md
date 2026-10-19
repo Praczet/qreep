@@ -24,6 +24,7 @@ qreep/
 │   ├── kip/
 │   ├── notification/
 │   ├── osd/
+│   ├── places/
 │   ├── polkit/
 │   ├── qreeper/
 │   ├── timer/
@@ -161,6 +162,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `tools/jarvis/README.md` | `4481015` | `2026-10-15` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/places/README.md` | `76a1a69` | `2026-10-19` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
 | `modules/qreeper/README.md` | `292493f` | `2026-10-12` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
@@ -215,6 +217,7 @@ modules/
 ├── kip/
 ├── notification/
 ├── osd/
+├── places/
 ├── polkit/
 ├── qreeper/
 ├── timer/
@@ -1063,6 +1066,7 @@ Qreep currently has:
 - notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;
 - notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
+- a top-level Places module in `modules/places/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-places` (bound to `SUPER+SHIFT+P`), replacing the old `places-rofi` project picker: a centered overlay with a filterable, grouped project list and a detail pane showing README summary, git state, questlog (`docs/ai/QUESTLOG.json` or `questlog.json`), uncommitted and recently touched files, pinned docs, commits, and tokei/commit-activity stats; projects come from `~/.config/qreep/places.json` (watched), and actions open the project in the configured editor, the cockpit script, yazi, or a terminal. Places only reads; it writes nothing but the processes it launches;
 - a top-level Polkit module in `modules/polkit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-polkit`, using `Quickshell.Services.Polkit.PolkitAgent` when it can register as the session agent, and keeping demo IPC for visual work while `hyprpolkitagent` still owns authentication;
 - a top-level Qreeper module in `modules/qreeper/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-qreeper`, reading the read-only Qreeper map snapshot at `~/.local/state/qreeper/map.json` (override with `QREEP_QREEPER_MAP_PATH`), with a movable Top-layer minimap, a full-screen Atlas, and a bar compass pill (`qreeper`) where left click toggles the minimap and right click toggles the Atlas. Qreeper is on demand: asleep (no watch, no polling, no pill) until `start` or opening the minimap/Atlas, back asleep on `stop`. QREEP never reads the Qreeper SQLite database or parses MUD text; the producer is the Qreeper Blightmud plugin's `publisher/` (atomic writes, 60 s heartbeat). Test without Blightmud using `scripts/qreep-qreeper-fixture_v0.0.1` and `fixtures/qreeper/`;
 - a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;

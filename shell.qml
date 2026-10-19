@@ -8,6 +8,7 @@ import "modules/expose" as ExposeModule
 import "modules/fastpassword" as FastPasswordModule
 import "modules/kip" as KipModule
 import "modules/osd" as OsdModule
+import "modules/places" as PlacesModule
 import "modules/polkit" as PolkitModule
 import "modules/qreeper" as QreeperModule
 import "modules/screenshot" as ScreenshotModule
@@ -101,6 +102,12 @@ ShellRoot {
         theme: qreepTheme
         timerService: timer.service
         exposeService: expose.service
+    }
+
+    PlacesModule.Places {
+        id: places
+
+        theme: qreepTheme
     }
 
     BloomModule.Bloom {

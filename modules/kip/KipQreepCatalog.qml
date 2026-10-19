@@ -41,6 +41,7 @@ QtObject {
             "qreep-monitor-profile": "󰍹",
             "qreep-mpris": "󰝚",
             "qreep-notification": "󰂚",
+            "qreep-places": "󰉋",
             "qreep-polkit": "󰯄",
             "qreep-potato-fast": "󰉁",
             "qreep-power": "󰐥",
@@ -66,6 +67,7 @@ QtObject {
         { key: "qreep-aegis.toggle", group: "surfaces", label: "Aegis", icon: "󰞀" },
         { key: "qreep-aegis.setMode", group: "surfaces", label: "Aegis mode", icon: "󰞀", choices: ["minimal", "summary", "full"] },
         { key: "qreep-expose.toggle", group: "surfaces", label: "Expose", icon: "󰕰" },
+        { key: "qreep-places.toggle", group: "surfaces", label: "Places: projects", icon: "󰉋" },
         { key: "qreep-clipboard.toggle", group: "surfaces", label: "Clipboard history", icon: "󱉫" },
         { key: "qreep-screenshot.toggle", group: "surfaces", label: "Screenshot", icon: "󰹑" },
         { key: "qreep-fast-password.toggle", group: "surfaces", label: "Fast Password", icon: "󰌋" },
@@ -115,7 +117,7 @@ QtObject {
         "qreep-polkit.showLog", "qreep-polkit.demo", "qreep-polkit.registrationState", "qreep-polkit.logPath", "qreep-polkit.toggle",
         "qreep-aegis.copyText", "qreep-aegis.copyJson",
         "qreep-bar.getMode", "qreep-bar-pill.listPills", "qreep-bar-pill.state",
-        "qreep-vitals.listIndicators", "qreep-vitals.state",
+        "qreep-vitals.listIndicators", "qreep-vitals.state", "qreep-places.state",
         "qreep-mpris.state", "qreep-language.state", "qreep-screenshot.state",
         "qreep-qreeper.state", "qreep-qreeper.fontScale", "qreep-qreeper.setFontScale", "qreep-qreeper.resetFontScale", "qreep-qreeper.rearrange"
     ]
