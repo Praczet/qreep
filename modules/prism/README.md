@@ -4,7 +4,8 @@ Colours you picked or copied, the ones you keep, and the sets they belong in.
 
 Every colour that passes through gets remembered: `SUPER+P` picks one with
 hyprpicker (still copied to the clipboard, as before), and anything copied as
-`#hex`, `rgb()` or `hsl()` is caught by a `wl-paste --watch`. Both land in
+`#hex`, `rgb()`, `hsl()` or in Hyprland's notation (`rgba(97a8d1ff)`,
+`rgb(2e3440)`, `0xaarrggbb`) is caught by a `wl-paste --watch`. Both land in
 History. Favourites are the ones you pin.
 
 Palettes are named sets of **combos**, and a combo is one or more colours
@@ -25,12 +26,15 @@ analogous harmonies.
 | type | filter by name or hex |
 | `↑↓←→` | move (`↑↓` in an open combo) |
 | `Enter`, double click | copy the hex and close; on a palette, open the combo |
+| click, `Ctrl+Enter` | actions: copy and close, copy, copy as `rgb()` / `hsl()` / `Qt.rgba()` / Hyprland `rgba(rrggbbaa)`, favourite, add to a combo, open the universe (step 2); `1`–`9` pick |
 | `Shift+Enter` | copy, stay open |
 | `Ctrl+S` | favourite / unfavourite |
 | `Ctrl+P` | add the colour to a combo (the last one used comes first), a new combo, or a new palette |
 | `Shift+Delete` | remove from this section; a combo goes on the second press |
+| drag a swatch | onto a sidebar combo: add it; onto a palette: a new combo with it; onto Favourites: favourite |
 | `Ctrl+1` `Ctrl+2` `Ctrl+3` | Favourites, History, first palette |
-| `Ctrl+↑` `Ctrl+↓` | previous / next section |
+| `Ctrl+↑` `Ctrl+↓` | previous / next in the sidebar, combos of unfolded palettes included |
+| `Ctrl+→` `Ctrl+←` | unfold / fold the current palette in the sidebar |
 | `Ctrl+N` | in a palette: new combo (opens it); elsewhere: new palette |
 | `Ctrl+Shift+N` | new palette |
 | `F2` / `Shift+F2` | rename the colour or combo / the palette |
@@ -38,6 +42,9 @@ analogous harmonies.
 | `Ctrl+Shift+Delete` | delete the palette (press twice) |
 | `F1` | shortcuts sheet |
 | `Esc` | back out: menu, prompt, sheet, open combo, filter, then close |
+
+The sidebar is a tree: a palette unfolds (▸ / ▾, or when you open it) to its
+combos; click a combo to open it, double click to rename it.
 
 Names: a new colour gets the nearest CSS colour name ("Saddle Brown"), so
 the list is readable before you name anything. Rename it in a palette when

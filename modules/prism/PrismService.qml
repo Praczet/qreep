@@ -35,10 +35,20 @@ Item {
 
     // "#rrggbb" (or "#rrggbbaa" when not opaque), lowercase; "" if text is
     // not a colour. Named colours are left out on purpose: copying the word
-    // "red" is not picking a colour.
+    // "red" is not picking a colour. Hyprland's own forms count:
+    // rgba(rrggbbaa), rgb(rrggbb) and the legacy 0xaarrggbb.
     function parseColor(text) {
         const value = String(text || "").trim().toLowerCase();
-        let match = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/.exec(value);
+        let match = /^rgba?\(([0-9a-f]{6}|[0-9a-f]{8})\)$/.exec(value);
+
+        if (match)
+            return normalizeHex("#" + match[1]);
+
+        match = /^0x([0-9a-f]{8})$/.exec(value);
+        if (match)
+            return normalizeHex("#" + match[1].slice(2) + match[1].slice(0, 2));
+
+        match = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/.exec(value);
 
         if (match) {
             let digits = match[1];
@@ -60,6 +70,16 @@ Item {
         }
 
         return "";
+    }
+
+    // Qt reads 8-digit hex as #aarrggbb; Prism stores #rrggbbaa (CSS).
+    function display(hex) {
+        return hex && hex.length === 9 ? "#" + hex.slice(7, 9) + hex.slice(1, 7) : hex;
+    }
+
+    // Hyprland's notation: rgba(rrggbbaa).
+    function hyprColor(hex) {
+        return "rgba(" + hex.slice(1, 7) + (hex.length === 9 ? hex.slice(7, 9) : "ff") + ")";
     }
 
     function alphaOf(part) {
@@ -122,6 +142,46 @@ Item {
         return luminance(hex) > 0.35 ? "#1a1a1a" : "#f5f5f5";
     }
 
+    // The same colour written for CSS, QML, ... (alpha kept when present).
+    function formatColor(hex, format) {
+        const rgb = rgbOf(hex);
+        const alpha = hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1;
+        const a = Math.round(alpha * 100) / 100;
+
+        if (format === "rgb")
+            return alpha < 1 ? "rgba(" + rgb.join(", ") + ", " + a + ")" : "rgb(" + rgb.join(", ") + ")";
+        if (format === "hsl") {
+            const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+            const body = hsl[0] + ", " + hsl[1] + "%, " + hsl[2] + "%";
+            return alpha < 1 ? "hsla(" + body + ", " + a + ")" : "hsl(" + body + ")";
+        }
+        if (format === "hypr")
+            return hyprColor(hex);
+        if (format === "qt")
+            return "Qt.rgba(" + rgb.map(value => Math.round(value / 255 * 1000) / 1000).join(", ") + ", " + a + ")";
+        return hex;
+    }
+
+    // [h 0-360, s 0-100, l 0-100], rounded.
+    function rgbToHsl(r, g, b) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const l = (max + min) / 2;
+        let h = 0;
+        let s = 0;
+
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+            h *= 60;
+        }
+        return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+    }
+
     function nameOf(hex) {
         return names.nearest(rgbOf(hex));
     }
@@ -172,6 +232,19 @@ Item {
 
     function newId(prefix) {
         return prefix + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+    }
+
+    // Sidebar tree: which palettes show their combos. Kept while Qreep runs.
+    property var expandedPalettes: ({})
+
+    function isExpanded(id) {
+        return expandedPalettes[id] === true;
+    }
+
+    function setExpanded(id, value) {
+        const next = Object.assign({}, expandedPalettes);
+        next[id] = value;
+        expandedPalettes = next;
     }
 
     function paletteById(id) {

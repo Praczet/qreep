@@ -21,7 +21,7 @@ QtObject {
     readonly property int screenMargin: 48
     readonly property int panelPadding: 18
     readonly property int panelRadius: 20
-    readonly property int sidebarWidth: 270
+    readonly property int sidebarWidth: 310
     readonly property int sectionGap: 16
     readonly property int searchHeight: 44
     readonly property int footerHeight: 30

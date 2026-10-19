@@ -35,6 +35,9 @@ PanelWindow {
     // Ctrl+P: where the selected colour goes. lastTarget is the default.
     property bool chooserOpen: false
     property int chooserIndex: 0
+    // The chooser shows "actions" (click on a colour, Ctrl+Enter) or "add"
+    // (which combo gets the colour, Ctrl+P).
+    property string chooserMode: "add"
     property string lastTarget: ""
     // Things deleted on the second press: "palette:<id>" or "combo:<id>".
     property string confirmDelete: ""
@@ -52,14 +55,51 @@ PanelWindow {
     readonly property var sections: [
         { key: "favorites", label: "Favourites", icon: "󰓎", count: service.favorites.length },
         { key: "history", label: "History", icon: "󰋚", count: service.history.length }
-    ].concat(service.palettes.map(item => ({
-        key: "palette:" + item.id,
-        label: item.name,
-        icon: "󰏘",
-        count: item.combos.length,
-        colors: item.combos.reduce((all, entry) => all.concat(entry.colors), [])
-    })))
-    readonly property var chooserOptions: {
+    ].concat(service.palettes.reduce((rows, item) => {
+        const expanded = service.isExpanded(item.id);
+
+        rows.push({
+            key: "palette:" + item.id,
+            kind: "palette",
+            paletteId: item.id,
+            expanded: expanded,
+            label: item.name,
+            icon: "󰏘",
+            count: item.combos.length,
+            colors: item.combos.reduce((all, entry) => all.concat(entry.colors), [])
+        });
+        // Expanded: the palette's combos as rows under it.
+        if (expanded) {
+            for (const entry of item.combos)
+                rows.push({
+                    key: "combo:" + item.id + ":" + entry.id,
+                    kind: "combo",
+                    paletteId: item.id,
+                    comboId: entry.id,
+                    label: entry.name,
+                    icon: "",
+                    count: entry.colors.length,
+                    colors: entry.colors
+                });
+        }
+        return rows;
+    }, []))
+    // The sidebar row that is "here": a combo row when a combo is open.
+    readonly property string currentKey: combo ? "combo:" + palette.id + ":" + combo.id : section
+    readonly property var chooserOptions: chooserMode === "actions" ? actionOptions : addOptions
+    readonly property var actionOptions: selectedColor ? [
+        { kind: "action", action: "copyClose", label: "Copy " + selectedColor.hex + " and close", hint: "Enter", colors: [] },
+        { kind: "action", action: "copy", label: "Copy, stay open", hint: "Shift+Enter", colors: [] },
+        { kind: "action", action: "rgb", label: "Copy as " + service.formatColor(selectedColor.hex, "rgb"), hint: "", colors: [] },
+        { kind: "action", action: "hsl", label: "Copy as " + service.formatColor(selectedColor.hex, "hsl"), hint: "", colors: [] },
+        { kind: "action", action: "qt", label: "Copy as " + service.formatColor(selectedColor.hex, "qt"), hint: "", colors: [] },
+        { kind: "action", action: "hypr", label: "Copy as " + service.formatColor(selectedColor.hex, "hypr") + "  (Hyprland)", hint: "", colors: [] },
+        { kind: "action", action: "favorite", label: service.isFavorite(selectedColor.hex) ? "󰓎  Unfavourite" : "󰓒  Favourite", hint: "Ctrl+S", colors: [] },
+        { kind: "action", action: "add", label: "Add to a combo…", hint: "Ctrl+P", colors: [] },
+        // Step 2: wheels, sliders, harmonies.
+        { kind: "action", action: "universe", label: "Open the universe", hint: "next", disabled: true, colors: [] }
+    ] : []
+    readonly property var addOptions: {
         const options = [];
 
         for (const item of service.palettes) {
@@ -76,12 +116,15 @@ PanelWindow {
         { keys: "↑ ↓ ← →", action: "Move" },
         { keys: "Enter", action: "Copy the hex and close (a palette: open the combo)" },
         { keys: "Shift+Enter", action: "Copy, stay open" },
+        { keys: "Ctrl+Enter, click", action: "Actions: copy as rgb / hsl / Qt.rgba, favourite, add…" },
         { keys: "Ctrl+S", action: "Favourite / unfavourite" },
         { keys: "Ctrl+P", action: "Add the colour to a combo" },
+        { keys: "drag a swatch", action: "Onto a combo: add · palette: new combo · Favourites" },
         { keys: "Shift+Delete", action: "Remove (a combo: press twice)" },
         { keys: "Ctrl+1  Ctrl+2", action: "Favourites, History" },
         { keys: "Ctrl+3", action: "First palette" },
-        { keys: "Ctrl+↑ Ctrl+↓", action: "Previous / next section" },
+        { keys: "Ctrl+↑ Ctrl+↓", action: "Previous / next in the sidebar (combos too)" },
+        { keys: "Ctrl+→ Ctrl+←", action: "Unfold / fold the palette" },
         { keys: "Ctrl+N", action: "New combo (in a palette), else new palette" },
         { keys: "Ctrl+Shift+N", action: "New palette" },
         { keys: "F2", action: "Rename the colour / the combo" },
@@ -121,15 +164,23 @@ PanelWindow {
         cancelPrompt();
     }
 
+    // Moving somewhere else closes the menu: it belongs to the colour that
+    // was selected, and a palette view has no colour selected at all.
     onSectionChanged: {
         comboId = "";
         index = 0;
         confirmDelete = "";
+        chooserOpen = false;
+    }
+    onComboIdChanged: chooserOpen = false
+    onSelectedColorChanged: {
+        if (!selectedColor)
+            chooserOpen = false;
     }
 
     function opened() {
         if (requestedSection.length > 0)
-            section = requestedSection;
+            selectKey(requestedSection);
         query = "";
         search.text = "";
         index = 0;
@@ -167,9 +218,59 @@ PanelWindow {
 
     function stepSection(step) {
         const keys = sections.map(item => item.key);
-        const at = Math.max(0, keys.indexOf(section));
+        const at = Math.max(0, keys.indexOf(currentKey));
 
-        section = keys[Math.max(0, Math.min(keys.length - 1, at + step))];
+        selectKey(keys[Math.max(0, Math.min(keys.length - 1, at + step))]);
+    }
+
+    // A sidebar row: a section, or "combo:<palette>:<combo>" (opens it).
+    // Choosing a palette unfolds it.
+    function selectKey(key) {
+        if (key.indexOf("combo:") === 0) {
+            const parts = key.split(":");
+            section = "palette:" + parts[1];
+            comboId = parts[2];
+            index = 0;
+            return;
+        }
+        if (section === key)
+            comboId = "";
+        section = key;
+        if (key.indexOf("palette:") === 0)
+            service.setExpanded(key.slice(8), true);
+    }
+
+    // A colour dropped on a sidebar row: a combo gets it, a palette gets a
+    // new combo with it, Favourites makes it a favourite.
+    function dropColor(row, hex, name) {
+        if (row.kind === "combo") {
+            service.addToCombo(row.paletteId, row.comboId, hex, name);
+            lastTarget = row.paletteId + "/" + row.comboId;
+            notice = "Added " + name + " to " + row.label + ".";
+        } else if (row.kind === "palette") {
+            const id = service.createCombo(row.paletteId, "");
+            service.addToCombo(row.paletteId, id, hex, name);
+            service.setExpanded(row.paletteId, true);
+            lastTarget = row.paletteId + "/" + id;
+            notice = "New combo in " + row.label + " with " + name + ".";
+        } else if (row.key === "favorites") {
+            if (!service.isFavorite(hex))
+                service.toggleFavorite(hex);
+            notice = name + " is a favourite.";
+        }
+    }
+
+    // Double click on a combo in the sidebar: rename it from the combo grid.
+    function renameComboFromTree(paletteId, id) {
+        section = "palette:" + paletteId;
+        comboId = "";
+        const at = palette ? palette.combos.findIndex(item => item.id === id) : -1;
+        if (at < 0)
+            return;
+        query = "";
+        search.text = "";
+        index = at;
+        startPrompt("renameCombo", palette.combos[at].name);
     }
 
     function openCombo() {
@@ -286,14 +387,50 @@ PanelWindow {
         notice = "New combo. Ctrl+P on colours in History or Favourites fills it.";
     }
 
+    function openActions() {
+        if (!selectedColor)
+            return;
+        chooserMode = "actions";
+        chooserIndex = 0;
+        chooserOpen = true;
+    }
+
+    function runAction(action) {
+        const color = selectedColor;
+
+        chooserOpen = false;
+        if (!color)
+            return;
+        if (action === "copyClose") {
+            copySelected(false);
+        } else if (action === "copy") {
+            copySelected(true);
+        } else if (action === "rgb" || action === "hsl" || action === "qt" || action === "hypr") {
+            const text = service.formatColor(color.hex, action);
+            service.copy(text);
+            notice = "Copied " + text + ".";
+        } else if (action === "favorite") {
+            service.toggleFavorite(color.hex);
+            notice = service.isFavorite(color.hex) ? color.name + " is a favourite." : color.name + " is no longer a favourite.";
+        } else if (action === "add") {
+            openChooser();
+        }
+    }
+
     function openChooser() {
-        const at = chooserOptions.findIndex(option => option.kind === "combo" && option.paletteId + "/" + option.comboId === lastTarget);
+        chooserMode = "add";
+        const at = addOptions.findIndex(option => option.kind === "combo" && option.paletteId + "/" + option.comboId === lastTarget);
 
         chooserIndex = Math.max(0, at);
         chooserOpen = true;
     }
 
     function pickChooser(option) {
+        if (option && option.kind === "action") {
+            if (!option.disabled)
+                runAction(option.action);
+            return;
+        }
         chooserOpen = false;
         if (!selectedColor || !option)
             return;
@@ -330,6 +467,8 @@ PanelWindow {
                 chooserIndex = Math.max(0, Math.min(chooserOptions.length - 1, chooserIndex + (event.key === Qt.Key_Down ? 1 : -1)));
             else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
                 pickChooser(chooserOptions[chooserIndex]);
+            else if (event.key >= Qt.Key_1 && event.key <= Qt.Key_9 && event.key - Qt.Key_1 < chooserOptions.length)
+                pickChooser(chooserOptions[event.key - Qt.Key_1]);
             return;
         }
 
@@ -367,7 +506,9 @@ PanelWindow {
         case Qt.Key_Return:
         case Qt.Key_Enter:
             event.accepted = true;
-            if (view === "combos")
+            if (ctrl && view !== "combos")
+                openActions();
+            else if (view === "combos")
                 openCombo();
             else
                 copySelected(shift);
@@ -383,6 +524,10 @@ PanelWindow {
                 if (ctrl && vertical) {
                     event.accepted = true;
                     stepSection(step);
+                } else if (ctrl && palette) {
+                    // Ctrl+→ unfolds the palette in the sidebar, Ctrl+← folds it.
+                    event.accepted = true;
+                    service.setExpanded(palette.id, step > 0);
                 } else if (alt && selected && view === "poster") {
                     event.accepted = true;
                     service.moveColor(palette.id, combo.id, selected.sourceIndex, step);
@@ -458,7 +603,7 @@ PanelWindow {
         if (promptMode.length > 0)
             return "Enter save · Esc cancel";
         if (chooserOpen)
-            return "↑↓ choose · Enter add · Esc cancel";
+            return "↑↓ or 1–9 choose · Enter " + (chooserMode === "actions" ? "do it" : "add") + " · Esc cancel";
         if (view === "combos")
             return "Enter open combo · Ctrl+N new combo · F2 rename · Alt+arrows move · Shift+Del delete combo · F1 shortcuts";
         if (view === "poster")
@@ -534,8 +679,10 @@ PanelWindow {
             }
         }
 
+        // Swallow clicks so only the backdrop closes Prism; an open menu closes.
         MouseArea {
             anchors.fill: parent
+            onClicked: rootPrismPanel.chooserOpen = false
         }
 
         // --- search / prompt -------------------------------------------------------
@@ -654,10 +801,11 @@ PanelWindow {
                     required property int index
 
                     readonly property bool hasHeading: index === 2
-                    readonly property bool active: rootPrismPanel.section === modelData.key
+                    readonly property bool isCombo: modelData.kind === "combo"
+                    readonly property bool active: rootPrismPanel.currentKey === modelData.key
 
                     width: sidebar.width
-                    height: rootPrismPanel.pt.rowHeight + (hasHeading ? 28 : 0)
+                    height: (isCombo ? rootPrismPanel.pt.rowHeight - 8 : rootPrismPanel.pt.rowHeight) + (hasHeading ? 28 : 0)
 
                     Text {
                         visible: sectionItem.hasHeading
@@ -672,19 +820,60 @@ PanelWindow {
 
                     Rectangle {
                         anchors.bottom: parent.bottom
-                        width: sidebar.width
-                        height: rootPrismPanel.pt.rowHeight
+                        anchors.right: parent.right
+                        width: sectionItem.isCombo ? sidebar.width - 22 : sidebar.width
+                        height: sectionItem.isCombo ? rootPrismPanel.pt.rowHeight - 8 : rootPrismPanel.pt.rowHeight
                         radius: rootPrismPanel.pt.rowRadius
-                        color: sectionItem.active ? rootPrismPanel.pt.selectedColor : (rowMouse.containsMouse ? rootPrismPanel.pt.hoveredColor : "transparent")
-                        border.width: sectionItem.active ? 1 : 0
-                        border.color: rootPrismPanel.pt.selectedBorderColor
+                        readonly property bool dropTarget: rowDrop.containsDrag && sectionItem.modelData.key !== "history"
+
+                        color: dropTarget ? rootPrismPanel.pt.selectedColor : sectionItem.active ? rootPrismPanel.pt.selectedColor : (rowMouse.containsMouse ? rootPrismPanel.pt.hoveredColor : "transparent")
+                        border.width: dropTarget ? 2 : sectionItem.active ? 1 : 0
+                        border.color: dropTarget ? rootPrismPanel.pt.favoriteColor : rootPrismPanel.pt.selectedBorderColor
+
+                        DropArea {
+                            id: rowDrop
+
+                            anchors.fill: parent
+                            keys: ["prism-color"]
+                            enabled: sectionItem.modelData.key !== "history"
+                            onDropped: drop => {
+                                rootPrismPanel.dropColor(sectionItem.modelData, drop.source.hex, drop.source.name);
+                                drop.accept();
+                            }
+                        }
+
+                        // Palettes fold: the chevron toggles without opening the palette.
+                        Text {
+                            id: chevron
+
+                            anchors {
+                                left: parent.left
+                                leftMargin: 8
+                                verticalCenter: parent.verticalCenter
+                            }
+                            width: sectionItem.modelData.kind === "palette" ? 14 : 0
+                            visible: sectionItem.modelData.kind === "palette"
+                            // Above the row's own MouseArea (declared later), or the
+                            // row would take the click and only ever unfold.
+                            z: 1
+                            text: sectionItem.modelData.expanded ? "▾" : "▸"
+                            color: rootPrismPanel.pt.secondaryTextColor
+                            font.pixelSize: rootPrismPanel.pt.bodyPixelSize
+
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -6
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: rootPrismPanel.service.setExpanded(sectionItem.modelData.paletteId, !sectionItem.modelData.expanded)
+                            }
+                        }
 
                         Text {
                             id: rowIcon
 
                             anchors {
-                                left: parent.left
-                                leftMargin: 12
+                                left: chevron.right
+                                leftMargin: sectionItem.modelData.kind === "palette" ? 4 : 4
                                 verticalCenter: parent.verticalCenter
                             }
                             text: sectionItem.modelData.icon
@@ -701,9 +890,9 @@ PanelWindow {
                                 rightMargin: 8
                                 verticalCenter: parent.verticalCenter
                             }
-                            text: sectionItem.modelData.label + (sectionItem.modelData.colors ? "  ·  " + sectionItem.modelData.count : "")
-                            color: rootPrismPanel.pt.primaryTextColor
-                            font.pixelSize: rootPrismPanel.pt.bodyPixelSize
+                            text: sectionItem.modelData.label + (sectionItem.modelData.kind === "palette" ? "  ·  " + sectionItem.modelData.count : "")
+                            color: sectionItem.isCombo && !sectionItem.active ? rootPrismPanel.pt.secondaryTextColor : rootPrismPanel.pt.primaryTextColor
+                            font.pixelSize: sectionItem.isCombo ? rootPrismPanel.pt.bodyPixelSize - 1 : rootPrismPanel.pt.bodyPixelSize
                             font.bold: sectionItem.active
                             elide: Text.ElideRight
                         }
@@ -728,7 +917,7 @@ PanelWindow {
                                     width: 14
                                     height: 14
                                     radius: 7
-                                    color: modelData.hex
+                                    color: rootPrismPanel.service.display(modelData.hex)
                                     border.width: 1
                                     border.color: rootPrismPanel.pt.borderColor
                                 }
@@ -748,10 +937,10 @@ PanelWindow {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (rootPrismPanel.section === sectionItem.modelData.key)
-                                    rootPrismPanel.comboId = "";
-                                rootPrismPanel.section = sectionItem.modelData.key;
+                            onClicked: rootPrismPanel.selectKey(sectionItem.modelData.key)
+                            onDoubleClicked: {
+                                if (sectionItem.isCombo)
+                                    rootPrismPanel.renameComboFromTree(sectionItem.modelData.paletteId, sectionItem.modelData.comboId);
                             }
                         }
                     }
@@ -873,7 +1062,7 @@ PanelWindow {
                             }
                             height: rootPrismPanel.pt.swatchHeight - 10
                             radius: rootPrismPanel.pt.swatchRadius - 3
-                            color: swatch.modelData.hex
+                            color: rootPrismPanel.service.display(swatch.modelData.hex)
                             border.width: 1
                             border.color: Qt.rgba(1, 1, 1, 0.12)
 
@@ -925,8 +1114,43 @@ PanelWindow {
 
                             anchors.fill: parent
                             hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: rootPrismPanel.index = swatch.index
+                            cursorShape: dragGhost.Drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+                            // Dragging moves the ghost swatch; drop it on a sidebar row.
+                            drag.target: dragGhost
+                            drag.threshold: 10
+                            // The grid flicks on drag too; the swatch drag wins.
+                            preventStealing: true
+
+                            onPressed: mouse => {
+                                const at = mapToItem(dragGhost.parent, mouse.x, mouse.y);
+                                dragGhost.wasDragged = false;
+                                dragGhost.hex = swatch.modelData.hex;
+                                dragGhost.name = swatch.modelData.name;
+                                dragGhost.x = at.x - dragGhost.width / 2;
+                                dragGhost.y = at.y - dragGhost.height / 2;
+                            }
+                            onPositionChanged: {
+                                if (drag.active && !dragGhost.Drag.active) {
+                                    rootPrismPanel.chooserOpen = false;
+                                    dragGhost.Drag.active = true;
+                                }
+                            }
+                            onReleased: {
+                                if (dragGhost.Drag.active) {
+                                    dragGhost.Drag.drop();
+                                    dragGhost.Drag.active = false;
+                                    dragGhost.wasDragged = true;
+                                }
+                            }
+                            // One click: the actions menu; double click: copy and close.
+                            onClicked: {
+                                if (dragGhost.wasDragged) {
+                                    dragGhost.wasDragged = false;
+                                    return;
+                                }
+                                rootPrismPanel.index = swatch.index;
+                                rootPrismPanel.openActions();
+                            }
                             onDoubleClicked: {
                                 rootPrismPanel.index = swatch.index;
                                 rootPrismPanel.copySelected(false);
@@ -960,6 +1184,7 @@ PanelWindow {
                         width: comboGrid.cellWidth - rootPrismPanel.pt.swatchGap
                         height: comboGrid.cellHeight - rootPrismPanel.pt.swatchGap
 
+                        // Inset, so the selection outline around it stays inside the cell.
                         PrismPoster {
                             id: miniPoster
 
@@ -967,8 +1192,9 @@ PanelWindow {
                                 left: parent.left
                                 right: parent.right
                                 top: parent.top
+                                margins: 4
                             }
-                            height: rootPrismPanel.pt.comboHeight
+                            height: rootPrismPanel.pt.comboHeight - 8
                             pt: rootPrismPanel.pt
                             service: rootPrismPanel.service
                             colors: comboCard.modelData.colors
@@ -981,7 +1207,7 @@ PanelWindow {
                             anchors.margins: -4
                             visible: comboCard.isSelected || cardMouse.containsMouse
                             color: "transparent"
-                            radius: rootPrismPanel.pt.swatchRadius + 3
+                            radius: rootPrismPanel.pt.swatchRadius + 4
                             border.width: comboCard.isSelected ? 2 : 1
                             border.color: comboCard.isSelected ? rootPrismPanel.pt.selectedBorderColor : rootPrismPanel.pt.borderColor
                         }
@@ -1041,9 +1267,16 @@ PanelWindow {
                         selected: index === rootPrismPanel.index
                         favorite: rootPrismPanel.service.isFavorite(modelData.hex)
                         iconFont: rootPrismPanel.theme.iconFontFamily
-                        radius: index === 0 || index === rootPrismPanel.items.length - 1 ? rootPrismPanel.pt.swatchRadius : 0
+                        // Round only the poster's outer corners, not where bands meet.
+                        topLeftRadius: index === 0 ? rootPrismPanel.pt.swatchRadius : 0
+                        topRightRadius: index === 0 ? rootPrismPanel.pt.swatchRadius : 0
+                        bottomLeftRadius: index === rootPrismPanel.items.length - 1 ? rootPrismPanel.pt.swatchRadius : 0
+                        bottomRightRadius: index === rootPrismPanel.items.length - 1 ? rootPrismPanel.pt.swatchRadius : 0
 
-                        onClicked: rootPrismPanel.index = index
+                        onClicked: {
+                            rootPrismPanel.index = index;
+                            rootPrismPanel.openActions();
+                        }
                         onDoubleClicked: {
                             rootPrismPanel.index = index;
                             rootPrismPanel.copySelected(false);
@@ -1109,12 +1342,33 @@ PanelWindow {
             }
         }
 
+        // --- drag ghost: the swatch being dragged to a combo -------------------------
+        Rectangle {
+            id: dragGhost
+
+            property string hex: "#000000"
+            property string name: ""
+            property bool wasDragged: false
+
+            width: 56
+            height: 56
+            radius: 12
+            visible: Drag.active
+            color: rootPrismPanel.service.display(hex)
+            border.width: 2
+            border.color: rootPrismPanel.pt.selectedBorderColor
+            z: 100
+            Drag.keys: ["prism-color"]
+            Drag.hotSpot.x: width / 2
+            Drag.hotSpot.y: height / 2
+        }
+
         // --- Ctrl+P: which combo gets the colour -------------------------------------
         Rectangle {
             anchors.centerIn: parent
             width: 460
             height: Math.min(card.height - 80, chooserColumn.implicitHeight + 28)
-            visible: rootPrismPanel.chooserOpen
+            visible: rootPrismPanel.chooserOpen && rootPrismPanel.selectedColor !== null
             radius: rootPrismPanel.pt.swatchRadius
             color: rootPrismPanel.pt.sheetColor
             border.width: 1
@@ -1130,12 +1384,57 @@ PanelWindow {
                 }
                 spacing: 4
 
-                Text {
-                    bottomPadding: 6
-                    text: "Add " + (rootPrismPanel.selectedColor ? rootPrismPanel.selectedColor.name : "") + " to"
-                    color: rootPrismPanel.pt.sectionColor
-                    font.pixelSize: rootPrismPanel.pt.bodyPixelSize
-                    font.bold: true
+                // Header: the colour, its name, and whether it is a favourite.
+                Item {
+                    width: chooserColumn.width
+                    height: 30
+
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 8
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 18
+                            height: 18
+                            radius: 5
+                            color: rootPrismPanel.selectedColor ? rootPrismPanel.service.display(rootPrismPanel.selectedColor.hex) : "transparent"
+                            border.width: 1
+                            border.color: rootPrismPanel.pt.borderColor
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: (rootPrismPanel.selectedColor ? rootPrismPanel.selectedColor.name : "") + (rootPrismPanel.chooserMode === "actions" ? "" : ": add to")
+                            color: rootPrismPanel.pt.sectionColor
+                            font.pixelSize: rootPrismPanel.pt.bodyPixelSize
+                            font.bold: true
+                        }
+                    }
+
+                    Rectangle {
+                        anchors {
+                            right: parent.right
+                            verticalCenter: parent.verticalCenter
+                        }
+                        visible: rootPrismPanel.selectedColor !== null && rootPrismPanel.service.isFavorite(rootPrismPanel.selectedColor.hex)
+                        width: favoriteTag.implicitWidth + 16
+                        height: 22
+                        radius: 11
+                        color: rootPrismPanel.pt.chipColor
+                        border.width: 1
+                        border.color: rootPrismPanel.pt.favoriteColor
+
+                        Text {
+                            id: favoriteTag
+
+                            anchors.centerIn: parent
+                            text: "󰓎  favourite"
+                            color: rootPrismPanel.pt.favoriteColor
+                            font.family: rootPrismPanel.theme.iconFontFamily
+                            font.pixelSize: rootPrismPanel.pt.metaPixelSize
+                        }
+                    }
                 }
 
                 Repeater {
@@ -1160,8 +1459,11 @@ PanelWindow {
                                 rightMargin: 8
                                 verticalCenter: parent.verticalCenter
                             }
-                            text: optionRow.modelData.label
-                            color: optionRow.modelData.kind === "combo" ? rootPrismPanel.pt.primaryTextColor : rootPrismPanel.pt.secondaryTextColor
+                            text: (optionRow.index < 9 ? (optionRow.index + 1) + "   " : "    ") + optionRow.modelData.label
+                            color: optionRow.modelData.disabled ? rootPrismPanel.pt.secondaryTextColor : optionRow.modelData.kind === "combo" || optionRow.modelData.kind === "action" ? rootPrismPanel.pt.primaryTextColor : rootPrismPanel.pt.secondaryTextColor
+                            opacity: optionRow.modelData.disabled ? 0.55 : 1
+                            // The nerd-font star needs the icon font; other rows keep the UI font.
+                            font.family: optionRow.modelData.action === "favorite" ? rootPrismPanel.theme.iconFontFamily : Qt.application.font.family
                             font.pixelSize: rootPrismPanel.pt.bodyPixelSize
                             elide: Text.ElideRight
                         }
@@ -1176,6 +1478,13 @@ PanelWindow {
                             }
                             spacing: -4
 
+                            Text {
+                                visible: (optionRow.modelData.hint || "").length > 0
+                                text: optionRow.modelData.hint || ""
+                                color: rootPrismPanel.pt.secondaryTextColor
+                                font.pixelSize: rootPrismPanel.pt.metaPixelSize
+                            }
+
                             Repeater {
                                 model: optionRow.modelData.colors.slice(0, 6)
 
@@ -1185,7 +1494,7 @@ PanelWindow {
                                     width: 14
                                     height: 14
                                     radius: 7
-                                    color: modelData.hex
+                                    color: rootPrismPanel.service.display(modelData.hex)
                                     border.width: 1
                                     border.color: rootPrismPanel.pt.borderColor
                                 }

@@ -18,7 +18,8 @@ Rectangle {
     signal clicked
     signal doubleClicked
 
-    color: hex
+    // Qt reads 8-digit hex as #aarrggbb; hex is #rrggbbaa.
+    color: hex.length === 9 ? "#" + hex.slice(7, 9) + hex.slice(1, 7) : hex
 
     Column {
         anchors.centerIn: parent
