@@ -195,7 +195,10 @@ so, each launched with `gio launch <app.desktop> <file>`), and
 finally whatever you picked last for that file type goes on top. The
 chooser shows two groups: "Open with" (the apps) and "Actions" (nvim, Vivify,
 folder in yazi, terminal there, copy path). Text files list Actions first,
-everything else Open with first; a remembered choice brings its group up. Those
+everything else Open with first; a remembered choice brings its group up.
+Only the default app (and a remembered one) gets a number key; the other
+"can open it" apps are reached with the arrows, so nvim and the actions keep
+low numbers. Those
 choices live in `~/.local/state/qreep/places-openers.json` (extension, or
 mime type for files without one -> option id); delete a line to forget it.
 `1`–`9` or `↑↓` + `Enter` pick, `Esc` cancels. Copy path keeps Places open;

@@ -16,6 +16,20 @@ Rectangle {
 
     signal picked(int index)
 
+    // Options marked "unnumbered" get no number key; the rest count 1, 2, ...
+    // in display order, skipping them. Callers map keys with indexForNumber.
+    function numberLabel(index) {
+        if (options[index] && options[index].unnumbered)
+            return "    ";
+
+        let number = 0;
+        for (let position = 0; position <= index; position++) {
+            if (!options[position].unnumbered)
+                number++;
+        }
+        return number + "  ";
+    }
+
     // Label column fits the longest label in bold, so hints never overlap.
     // FontMetrics.advanceWidth(text) measures without setting a property;
     // writing TextMetrics.text inside this binding was a binding loop.
@@ -23,7 +37,7 @@ Rectangle {
         let widest = 0;
 
         for (let index = 0; index < options.length; index++)
-            widest = Math.max(widest, labelMetrics.advanceWidth((index + 1) + "  " + options[index].label));
+            widest = Math.max(widest, labelMetrics.advanceWidth(numberLabel(index) + options[index].label));
         return Math.ceil(widest) + 12;
     }
 
@@ -118,7 +132,7 @@ Rectangle {
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             width: rootKipChooser.labelWidth
-                            text: (openerRow.index + 1) + "  " + openerRow.modelData.label
+                            text: rootKipChooser.numberLabel(openerRow.index) + openerRow.modelData.label
                             color: rootKipChooser.kipTheme.primaryTextColor
                             font.pixelSize: rootKipChooser.kipTheme.bodyPixelSize
                             font.bold: openerRow.selected

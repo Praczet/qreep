@@ -1083,8 +1083,10 @@ PanelWindow {
     function arrangeFileChooser(options, path, mime, textFirst) {
         const remembered = service.openers[service.openerKey(path, mime)];
         const first = list => list.filter(option => option.id === remembered).concat(list.filter(option => option.id !== remembered));
+        // The remembered app keeps a number key even when it is not the default.
         const apps = first(options.filter(option => isAppOption(option))).map(option => Object.assign({}, option, {
-                    section: "Open with"
+                    section: "Open with",
+                    unnumbered: option.unnumbered === true && option.id !== remembered
                 }));
         const actions = first(options.filter(option => !isAppOption(option))).map(option => Object.assign({}, option, {
                     section: "Actions"
@@ -1107,6 +1109,9 @@ PanelWindow {
                     id: "app:" + app.id,
                     label: app.name,
                     hint: app.isDefault ? "default app" : "can open it",
+                    // Only the default app gets a number key; the rest are
+                    // there for the arrows, so the actions keep low numbers.
+                    unnumbered: !app.isDefault,
                     icon: "󰏌",
                     command: ["gio", "launch", app.desktopFile, "{path}"]
                 }));
@@ -1138,11 +1143,14 @@ PanelWindow {
             break;
         default:
             {
-                const number = event.key - Qt.Key_1;
+                // Keys count numbered options only (KipChooser.numberLabel).
+                const wanted = event.key - Qt.Key_0;
+                let seen = 0;
+                const index = chooserOptions.findIndex(option => !option.unnumbered && ++seen === wanted);
 
-                if (number < 0 || number >= count)
+                if (wanted < 1 || wanted > 9 || index < 0)
                     return false;
-                chooserIndex = number;
+                chooserIndex = index;
                 confirmChooser();
             }
         }
