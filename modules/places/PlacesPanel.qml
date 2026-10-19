@@ -35,11 +35,11 @@ PanelWindow {
     Connections {
         target: rootPlacesPanel.service
 
-        function onFileTypeKnown(path, mime, appName) {
+        function onFileTypeKnown(path, mime, appName, apps) {
             if (!rootPlacesPanel.chooserIsFile || rootPlacesPanel.chooserFile !== path)
                 return;
             rootPlacesPanel.chooserMime = mime;
-            rootPlacesPanel.refineFileChooser(path, mime, appName);
+            rootPlacesPanel.refineFileChooser(path, mime, appName, apps);
         }
     }
     // Set for an SMB share: the chooser's options are mount actions.
@@ -1080,15 +1080,23 @@ PanelWindow {
         return chosen.length > 0 ? chosen.concat(options.filter(option => option.id !== remembered)) : options;
     }
 
-    // xdg-mime answered: text goes to the editor, the rest to its app, now
-    // named in the hint. A remembered choice still wins.
-    function refineFileChooser(path, mime, appName) {
-        const named = chooserOptions.map(option => option.id === "open" && appName ? Object.assign({}, option, {
-                hint: "in " + appName
-            }) : option);
+    // xdg-mime answered: one option per app that can open the type (the
+    // default first) instead of a single "Open"; text goes to the editor
+    // first, the rest to its apps. A remembered choice still wins.
+    function refineFileChooser(path, mime, appName, apps) {
+        const appOptions = (apps || []).map(app => ({
+                    id: "app:" + app.id,
+                    label: app.name,
+                    hint: app.isDefault ? "default app" : "can open it",
+                    icon: "󰏌",
+                    command: ["gio", "launch", app.desktopFile, "{path}"]
+                }));
+        const named = appOptions.length > 0 ? chooserOptions.filter(option => option.id !== "open").concat(appOptions) : chooserOptions.map(option => option.id === "open" && appName ? Object.assign({}, option, {
+                    hint: "in " + appName
+                }) : option);
         const editor = named.filter(option => option.id === "default" || option.id === "vivify");
-        const open = named.filter(option => option.id === "open");
-        const rest = named.filter(option => ["default", "vivify", "open"].indexOf(option.id) < 0);
+        const open = named.filter(option => option.id === "open" || option.id.indexOf("app:") === 0);
+        const rest = named.filter(option => ["default", "vivify", "open"].indexOf(option.id) < 0 && option.id.indexOf("app:") !== 0);
         const ordered = mime.length === 0 ? named : service.isTextMime(mime) ? editor.concat(open, rest) : open.concat(editor, rest);
 
         chooserOptions = promoteRemembered(ordered, path, mime);

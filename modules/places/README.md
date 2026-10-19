@@ -190,7 +190,8 @@ its folder, and copy path. The panel behind the chooser is blurred.
 The order is decided in three steps: an extension guess right away
 (documents and images: their app first), then `xdg-mime` a moment later
 (text types such as `.conf`, `.log` or JSON: nvim first; anything else: its
-default app first, named in the hint, e.g. "in LibreOffice Writer"), and
+every app whose desktop entry lists the type, the default first and marked
+so, each launched with `gio launch <app.desktop> <file>`), and
 finally whatever you picked last for that file type goes on top. Those
 choices live in `~/.local/state/qreep/places-openers.json` (extension, or
 mime type for files without one -> option id); delete a line to forget it.

@@ -9,7 +9,7 @@ QtObject {
         "Places are pages of blocks: apps, documents, folders. Add one under \"places\" in places.json.",
         "Blocks take \"enabled\": false too, so a card can rest without being deleted.",
         "Open with remembers: pick code for .sql once and it moves to the top for .sql files.",
-        "The Open option names the app it will use, straight from xdg-mime.",
+        "Open with lists every app that can open the file, the default first.",
         "A calendar block shows the bar clock's events: { \"type\": \"calendar\", \"days\": 3 }.",
         "A todos block lists Logseq TODO/NOW/LATER lines; Enter opens the page in Logseq.",
         "In an apps card, left and right walk the apps; up and down change card.",

@@ -294,7 +294,9 @@ Item {
     property var openers: ({})
 
     // The chooser asked what a file is; answered once xdg-mime has spoken.
-    signal fileTypeKnown(string path, string mime, string appName)
+    // apps: [{ id, name, desktopFile, isDefault }], every visible desktop
+    // entry whose MimeType lists this type, the default first.
+    signal fileTypeKnown(string path, string mime, string appName, var apps)
 
     FileView {
         id: openersFile
@@ -337,7 +339,12 @@ Item {
     function inspectFile(path) {
         fileTypeProcess.running = false;
         fileTypeProcess.path = path;
-        fileTypeProcess.command = ["sh", "-c", "m=$(xdg-mime query filetype \"$1\" 2>/dev/null); printf '%s\\n%s\\n' \"$m\" \"$(xdg-mime query default \"$m\" 2>/dev/null)\"", "places", path];
+        // Line 1 mime, line 2 default desktop id, then every .desktop file
+        // that lists the type and is not NoDisplay=true.
+        fileTypeProcess.command = ["sh", "-c", "m=$(xdg-mime query filetype \"$1\" 2>/dev/null); printf '%s\\n%s\\n' \"$m\" \"$(xdg-mime query default \"$m\" 2>/dev/null)\"; "
+            + "[ -n \"$m\" ] || exit 0; e=$(printf '%s' \"$m\" | sed 's/[.+]/\\\\&/g'); "
+            + "for d in \"${XDG_DATA_HOME:-$HOME/.local/share}/applications\" /usr/local/share/applications /usr/share/applications /var/lib/flatpak/exports/share/applications \"$HOME/.local/share/flatpak/exports/share/applications\"; do "
+            + "[ -d \"$d\" ] && grep -lE \"^MimeType=(.*;)?$e(;|$)\" \"$d\"/*.desktop 2>/dev/null | while read -r f; do grep -q '^NoDisplay=true' \"$f\" || printf '%s\\n' \"$f\"; done; done", "places", path];
         fileTypeProcess.running = true;
     }
 
@@ -357,8 +364,27 @@ Item {
             const mime = (lines[0] || "").trim();
             const desktopId = (lines[1] || "").trim().replace(/\.desktop$/, "");
             const entry = desktopId ? DesktopEntries.byId(desktopId) : null;
+            const seen = {};
+            const apps = [];
 
-            rootPlacesService.fileTypeKnown(fileTypeProcess.path, mime, entry ? entry.name : desktopId);
+            // The first file per id wins: user dirs come before system ones.
+            for (const file of lines.slice(2).map(line => line.trim()).filter(line => line.length > 0)) {
+                const id = file.replace(/^.*\//, "").replace(/\.desktop$/, "");
+                const app = DesktopEntries.byId(id);
+
+                if (seen[id])
+                    continue;
+                seen[id] = true;
+                apps.push({
+                    id: id,
+                    name: app ? app.name : id,
+                    desktopFile: file,
+                    isDefault: id === desktopId
+                });
+            }
+            apps.sort((left, right) => (right.isDefault ? 1 : 0) - (left.isDefault ? 1 : 0) || left.name.localeCompare(right.name));
+
+            rootPlacesService.fileTypeKnown(fileTypeProcess.path, mime, entry ? entry.name : desktopId, apps);
         }
     }
 
