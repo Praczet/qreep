@@ -16,6 +16,7 @@ import "modules/timer" as TimerModule
 import "modules/triage" as TriageModule
 import "modules/bloom" as BloomModule
 import "modules/wallpaper" as WallpaperModule
+import "modules/prism" as PrismModule
 import "modules/bar" as BarModule
 import "theme" as Theme
 
@@ -121,6 +122,12 @@ ShellRoot {
 
     WallpaperModule.Wallpaper {
         id: wallpaper
+
+        theme: qreepTheme
+    }
+
+    PrismModule.Prism {
+        id: prism
 
         theme: qreepTheme
     }

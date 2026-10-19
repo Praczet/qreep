@@ -12,6 +12,7 @@ import "notification" as NotificationModule
 import "osd" as OsdModule
 import "places" as PlacesModule
 import "polkit" as PolkitModule
+import "prism" as PrismModule
 import "qreeper" as QreeperModule
 import "screenshot" as ScreenshotModule
 import "timer" as TimerModule
@@ -68,6 +69,10 @@ QtObject {
     }
 
     readonly property QtObject polkit: PolkitModule.PolkitTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject prism: PrismModule.PrismTheme {
         qreep: rootModulesTheme.qreep
     }
 

@@ -31,6 +31,7 @@ QtObject {
             "qreep-bar-pill": "󰔡",
             "qreep-bloom": "󰉁",
             "qreep-wallpaper": "󰸉",
+            "qreep-prism": "󰏘",
             "qreep-borg": "󰀼",
             "qreep-calendar": "󰃭",
             "qreep-clipboard": "󱉫",
@@ -71,6 +72,8 @@ QtObject {
         { key: "qreep-places.toggle", group: "surfaces", label: "Places: projects", icon: "󰉋" },
         { key: "qreep-wallpaper.toggle", group: "surfaces", label: "Wallpaper picker", icon: "󰸉" },
         { key: "qreep-bloom.toggle", group: "surfaces", label: "Unclaimed Bloom progress", icon: "󰉁" },
+        { key: "qreep-prism.toggle", group: "surfaces", label: "Prism: colours and palettes", icon: "󰏘" },
+        { key: "qreep-prism.pick", group: "surfaces", label: "Pick a colour", icon: "󰈊" },
         { key: "qreep-clipboard.toggle", group: "surfaces", label: "Clipboard history", icon: "󱉫" },
         { key: "qreep-screenshot.toggle", group: "surfaces", label: "Screenshot", icon: "󰹑" },
         { key: "qreep-fast-password.toggle", group: "surfaces", label: "Fast Password", icon: "󰌋" },
@@ -128,7 +131,7 @@ QtObject {
     // "target.*" hides a whole target, "*.name" a function everywhere.
     // Hooks other programs call, duplicates of a curated action, and KIP itself.
     readonly property var hidden: [
-        "qreep-kip.*", "osd.*", "qreep-bloom.*", "qreep-calendar.*", "qreep-monitor-profile.*",
+        "qreep-kip.*", "osd.*", "qreep-prism.showSection", "qreep-prism.newPalette", "qreep-bloom.*", "qreep-calendar.*", "qreep-monitor-profile.*",
         "qreep-fast-password.copy", "qreep-places.showWith", "qreep-places.showProject",
         "*.showMe", "*.hideMe", "*.refresh",
         "qreep-notification.toggle", "qreep-notification.showCenter", "qreep-notification.hideCenter",

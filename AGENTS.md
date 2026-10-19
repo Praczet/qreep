@@ -129,7 +129,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `b5b9bda` | `2026-10-19` |
+| `AGENTS.md` | `fcd38ff` | `2026-10-19` |
 | `README.md` | `cc7fda3` | `2026-07-21` |
 | `README_when_bored.md` | `292493f` | `2026-10-12` |
 | `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
@@ -164,6 +164,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/places/README.md` | `b5b9bda` | `2026-10-19` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
+| `modules/prism/README.md` | `fcd38ff` | `2026-10-19` |
 | `modules/qreeper/README.md` | `292493f` | `2026-10-12` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
 | `modules/triage/README.md` | `9438e75` | `2026-07-20` |
@@ -1069,6 +1070,7 @@ Qreep currently has:
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - a top-level Places module in `modules/places/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-places` (bound to `SUPER+SHIFT+P`), replacing the old `places-rofi` project picker: a centered overlay with a filterable, grouped project list and a detail pane showing README summary, git state, questlog (`docs/ai/QUESTLOG.json` or `questlog.json`), uncommitted and recently touched files, pinned docs, commits, and tokei/commit-activity stats; projects and non-project places (pages of `apps` / `documents` / `folders` / `folder` (live listing of one path) / `ssh` (~/.ssh/config hosts, Enter = kitty ssh) / `usb` (lsblk while open, udisksctl mount/unmount/eject) / `smb` (gio mount; password only in GNOME Keyring under service=qreep-places-smb, passed on stdin, dialog when missing) / `calendar` (bar clock event files) / `todos` (Logseq TODO lines via `rg`, opened through `Kip.runAction`) blocks; projects take blocks too, every entry and block honours `"enabled": false`) come from `~/.config/qreep/places.json` (watched), and actions open the project in the configured editor, the cockpit script, yazi, or a terminal. Places only reads; it writes nothing but the processes it launches;
 - a top-level Polkit module in `modules/polkit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-polkit`, using `Quickshell.Services.Polkit.PolkitAgent` when it can register as the session agent, and keeping demo IPC for visual work while `hyprpolkitagent` still owns authentication;
+- a top-level Prism module in `modules/prism/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-prism` (`SUPER+P` runs `pick`, hyprpicker with copy; `SUPER+SHIFT+P` toggles the overlay): colour History fed by picks and by a `wl-paste --watch` that keeps any copied `#hex` / `rgb()` / `hsl()`, Favourites, and named Palettes shown as posters (one band per colour, lettered in the palette colour with the best contrast), stored in `~/.local/share/qreep/prism.json`; new colours get the nearest CSS name. Step 2 (editor with wheels and harmonies) is planned;
 - a top-level Qreeper module in `modules/qreeper/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-qreeper`, reading the read-only Qreeper map snapshot at `~/.local/state/qreeper/map.json` (override with `QREEP_QREEPER_MAP_PATH`), with a movable Top-layer minimap, a full-screen Atlas, and a bar compass pill (`qreeper`) where left click toggles the minimap and right click toggles the Atlas. Qreeper is on demand: asleep (no watch, no polling, no pill) until `start` or opening the minimap/Atlas, back asleep on `stop`. QREEP never reads the Qreeper SQLite database or parses MUD text; the producer is the Qreeper Blightmud plugin's `publisher/` (atomic writes, 60 s heartbeat). Test without Blightmud using `scripts/qreep-qreeper-fixture_v0.0.1` and `fixtures/qreeper/`;
 - a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;
 - a top-level Triage module in `modules/triage/`; its Rust helper lives in `tools/triagectl/`, installs as `triagectl`, stores local state in SQLite, is read-only against system package state in v1, and shares package-update context with Upchecker;

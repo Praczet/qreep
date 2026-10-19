@@ -182,6 +182,7 @@ Module theme files live with their owning module:
 * `modules/polkit/PolkitTheme.qml`
 * `modules/qreeper/QreeperTheme.qml`
 * `modules/timer/TimerTheme.qml`
+* `modules/prism/PrismTheme.qml`
 * `modules/wallpaper/WallpaperTheme.qml`
 
 `QreepTheme.qml` exposes global semantic colors and the aggregated module theme:

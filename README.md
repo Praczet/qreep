@@ -269,6 +269,7 @@ modules/fastpassword/      Polkit-gated password picker
 modules/notification/      notification server, popups, and centre
 modules/osd/               on-screen display
 modules/polkit/            Polkit auth prompt and demo surface
+modules/prism/             colour history, favourites, palettes
 modules/timer/             timer and countdown panel
 modules/wallpaper/         wallpaper picker for Unclaimed Bloom
 
