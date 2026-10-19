@@ -397,7 +397,7 @@ panel shows the top 50 (`fdShownResults`).
 | --- | --- |
 | folder | Open (file manager) / Terminal here / Broot / Copy path |
 | `.md` file | `markdownOpeners` (Logseq only inside `logseqGraphDir`) |
-| other file | Open (default app) / nvim / containing Folder / Copy path |
+| other file | Open (default app) / nvim / containing Folder / Terminal in its folder / Copy path |
 
 ## Qreep IPC
 

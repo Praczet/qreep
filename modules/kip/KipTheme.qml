@@ -322,6 +322,13 @@ QtObject {
             command: fileManagerCommand.concat(["{path}"])
         },
         {
+            id: "terminal",
+            label: "Terminal",
+            hint: qreep.terminal + " in its folder",
+            icon: "󰆍",
+            command: qreep.terminalCommand([], { cwd: "{dir}" })
+        },
+        {
             id: "copy-path",
             label: "Copy path",
             hint: "the file path as text",
