@@ -71,10 +71,11 @@ QtObject {
     readonly property int overlayBlurMax: 24
 
     readonly property real overlayOpacity: 0.32
-    readonly property real panelOpacity: 0.93
+    // Above 0.5: Hyprland's ignore_alpha for this layer, so the card stays blurred.
+    readonly property real panelOpacity: 0.75
     readonly property color overlayColor: Qt.rgba(qreep.background.r, qreep.background.g, qreep.background.b, overlayOpacity)
     readonly property color panelColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, panelOpacity)
-    readonly property color cardColor: withAlpha(qreep.surfaceContainer, 0.82)
+    readonly property color cardColor: withAlpha(qreep.surfaceContainer, 0.6)
     readonly property color listColor: withAlpha(qreep.surfaceContainerLowest, 0.45)
     readonly property color searchColor: withAlpha(qreep.surfaceContainerHighest, 0.8)
     readonly property color borderColor: qreep.outline
