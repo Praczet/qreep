@@ -157,6 +157,86 @@ Item {
             detailDelay.restart();
     }
 
+    // Blocks: { type, title?, enabled?, items }. Items become
+    // { kind: "file" | "folder" | "app", path | id, label }. Paths may be
+    // absolute, ~/..., or relative to the entry's folder.
+    function parseBlocks(blocks, basePath) {
+        if (!Array.isArray(blocks))
+            return [];
+
+        return blocks.filter(block => block && isEnabled(block)).map((block, index) => {
+            const type = String(block.type || "");
+            const raw = Array.isArray(block.items) ? block.items : [];
+            let items = [];
+
+            if (type === "documents" || type === "folders")
+                items = raw.map(item => blockPathItem(item, type === "documents" ? "file" : "folder", basePath)).filter(item => item.path.length > 0);
+            else if (type === "apps")
+                items = raw.map(item => ({
+                            kind: "app",
+                            id: String(item).replace(/\.desktop$/, ""),
+                            label: String(item).replace(/\.desktop$/, "")
+                        }));
+
+            return {
+                id: "block:" + index,
+                type: type,
+                title: String(block.title || defaultBlockTitle(type)),
+                items: items
+            };
+        });
+    }
+
+    function blockPathItem(item, kind, basePath) {
+        const spec = typeof item === "string" ? {
+            path: item
+        } : (item || {});
+        const raw = String(spec.path || "");
+        const path = raw.indexOf("/") === 0 || raw.indexOf("~") === 0 ? expand(raw) : (basePath ? basePath + "/" + raw : expand(raw));
+
+        return {
+            kind: kind,
+            path: path.replace(/\/+$/, ""),
+            label: String(spec.name || shortPath(path))
+        };
+    }
+
+    function defaultBlockTitle(type) {
+        return ({
+                documents: "Documents",
+                folders: "Folders",
+                apps: "Apps"
+            })[type] || type;
+    }
+
+    function shortPath(path) {
+        return path.indexOf(home) === 0 ? "~" + path.slice(home.length) : path;
+    }
+
+    // Desktop entry for an apps block item: exact id first, then Quickshell's guess.
+    function appEntry(id) {
+        return DesktopEntries.byId(id) || DesktopEntries.heuristicLookup(id) || null;
+    }
+
+    function appIcon(id) {
+        const entry = appEntry(id);
+        const icon = String(entry && entry.icon || "");
+
+        return icon.indexOf("/") === 0 ? "file://" + icon : Quickshell.iconPath(icon || id, "application-x-executable");
+    }
+
+    function launchApp(id) {
+        const entry = appEntry(id);
+
+        if (!entry)
+            return false;
+        if (entry.runInTerminal)
+            run(theme.terminalCommand(entry.command), home);
+        else
+            entry.execute();
+        return true;
+    }
+
     function isEnabled(entry) {
         return entry.enabled !== false;
     }
@@ -199,17 +279,31 @@ Item {
             if (!isEnabled(group))
                 continue;
 
-            for (const entry of (Array.isArray(group.projects) ? group.projects : [])) {
-                if (!entry || !entry.path || !isEnabled(entry))
+            // "projects" are git-aware folders; "places" are pages of blocks
+            // and may have no folder at all. Both can carry blocks.
+            const entries = (Array.isArray(group.projects) ? group.projects.map(entry => ({
+                            kind: "project",
+                            entry: entry
+                        })) : []).concat(Array.isArray(group.places) ? group.places.map(entry => ({
+                            kind: "place",
+                            entry: entry
+                        })) : []);
+
+            for (const item of entries) {
+                const entry = item.entry;
+
+                if (!entry || !isEnabled(entry) || (item.kind === "project" && !entry.path))
                     continue;
 
-                const path = expand(entry.path).replace(/\/+$/, "");
+                const path = entry.path ? expand(entry.path).replace(/\/+$/, "") : "";
                 next.push({
+                    kind: item.kind,
                     id: String(entry.id || entry.name || path),
                     name: String(entry.name || path.replace(/^.*\//, "")),
                     group: String(group.name || ""),
                     path: path,
                     displayPath: path.indexOf(home) === 0 ? "~" + path.slice(home.length) : path,
+                    blocks: parseBlocks(entry.blocks, path),
                     iconName: String(entry.iconName || ""),
                     icon: String(entry.icon || ""),
                     editor: String(entry.editor || ""),
@@ -244,6 +338,8 @@ Item {
     function summaryScript() {
         return "i=0; for p in \"$@\"; do "
             + "printf '@@P %s\\n' \"$i\"; i=$((i+1)); "
+            // Places without a folder: nothing to look at.
+            + "[ -n \"$p\" ] || continue; "
             + "[ -d \"$p\" ] || { printf '@@MISSING\\n'; continue; }; "
             + "if git -C \"$p\" rev-parse --git-dir >/dev/null 2>&1; then "
             + "printf '@@GIT\\n'; git -C \"$p\" status --porcelain=v2 --branch 2>/dev/null; "
@@ -352,6 +448,10 @@ Item {
             return;
 
         detailFor = project.id;
+        if (!project.path) {
+            detail = emptyDetail();
+            return;
+        }
         detailProcess.running = false;
         detailProcess.projectId = project.id;
         detailProcess.command = ["sh", "-c", detailScript(), "places", project.path, String(pt.recentFileDays), String(pt.recentFileLimit), String(pt.commitLimit), String(pt.activityWeeks), String(pt.docLimit)];

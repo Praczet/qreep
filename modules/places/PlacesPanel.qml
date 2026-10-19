@@ -54,7 +54,7 @@ PanelWindow {
         { keys: "double click", action: "Open in the editor" },
         { keys: "click a file", action: "Open with: editor, Vivify, app, folder, terminal, copy path" },
         { keys: "1–9  ↑↓ Enter", action: "Pick in the Open with chooser" },
-        { keys: "Alt+1 … Alt+4", action: "Uncommitted, Pinned, Recent, Docs" },
+        { keys: "Alt+1 … Alt+9", action: "Jump into a card (file cards, then blocks)" },
         { keys: "in a card: ↑↓ ← →", action: "Move between files and cards" },
         { keys: "in a card: Enter", action: "Open with … for that file" },
         { keys: "F1", action: "This sheet" },
@@ -401,7 +401,7 @@ PanelWindow {
                 theme: rootPlacesPanel.theme
                 service: rootPlacesPanel.service
 
-                onFileChosen: path => rootPlacesPanel.openChooser(path)
+                onItemChosen: item => rootPlacesPanel.activateItem(item)
             }
 
             // --- key hints ------------------------------------------------------------
@@ -417,7 +417,7 @@ PanelWindow {
                 }
                 height: rootPlacesPanel.pt.footerHeight
                 verticalAlignment: Text.AlignVCenter
-                text: "↑↓ move · ⇥ buttons · ↵ run · Alt+1–4 files · ⇧↵ cockpit · ^E other editor · ^O folder · ^T terminal · ^R refresh · F1 shortcuts · Esc clear / close"
+                text: "↑↓ move · ⇥ buttons · ↵ run · Alt+1–9 cards · ⇧↵ cockpit · ^E other editor · ^O folder · ^T terminal · ^R refresh · F1 shortcuts · Esc clear / close"
                 color: rootPlacesPanel.pt.secondaryTextColor
                 font.pixelSize: rootPlacesPanel.pt.metaPixelSize
                 elide: Text.ElideRight
@@ -441,7 +441,7 @@ PanelWindow {
                 width: Math.min(560, parent.width - 80)
                 kipTheme: rootPlacesPanel.theme.modules.kip
                 iconFontFamily: rootPlacesPanel.theme.iconFontFamily
-                title: rootPlacesPanel.chooserFile
+                title: rootPlacesPanel.service.shortPath(rootPlacesPanel.chooserFile)
                 options: rootPlacesPanel.chooserOptions
                 selectedIndex: rootPlacesPanel.chooserIndex
 
@@ -542,8 +542,8 @@ PanelWindow {
         if (chooserOpen && handleChooserKey(event))
             return;
 
-        // Alt+1..4: jump into a file card (Uncommitted, Pinned, Recent, Docs).
-        if ((event.modifiers & Qt.AltModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_4) {
+        // Alt+1..9: jump into the Nth card (project file cards, then blocks).
+        if ((event.modifiers & Qt.AltModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_9) {
             event.accepted = true;
             detail.focusCardNumber(event.key - Qt.Key_0);
             return;
@@ -621,8 +621,8 @@ PanelWindow {
             break;
         case Qt.Key_Return:
         case Qt.Key_Enter:
-            if (detail.focusedFile().length > 0)
-                openChooser(detail.focusedFile());
+            if (detail.focusedItem())
+                activateItem(detail.focusedItem());
             break;
         case Qt.Key_Escape:
             detail.focusedCard = "";
@@ -637,13 +637,41 @@ PanelWindow {
 
     // Same options as KIP's file chooser (KipTheme.fileActions), with the
     // editor first and Vivify after it for markdown.
-    function openChooser(path) {
-        const kt = theme.modules.kip;
-        const editor = kt.fileActions.filter(action => action.id === "default");
-        const rest = kt.fileActions.filter(action => action.id !== "default");
-        const vivify = /\.md$/i.test(path) ? kt.markdownOpeners.filter(opener => opener.id === "vivify") : [];
+    // Card item picked: Open with for files and folders, launch for apps.
+    function activateItem(item) {
+        if (!item)
+            return;
 
-        chooserOptions = editor.concat(vivify, rest);
+        if (item.kind === "app") {
+            if (service.launchApp(item.id))
+                closeRequested();
+            return;
+        }
+
+        openChooser(item.path, item.kind === "folder");
+    }
+
+    // Documents and images open in their app; nvim is for text.
+    readonly property var appFirstExtensions: ["pdf", "doc", "docx", "odt", "rtf", "xls", "xlsx", "ods", "ppt", "pptx", "odp", "png", "jpg", "jpeg", "gif", "webp", "svg", "mp4", "mkv", "mp3", "zip"]
+
+    // KIP's actions (KipTheme.fileActions / folderActions). Files: editor
+    // first, Vivify after it for markdown, except documents and images,
+    // which put "Open with the default app" first.
+    function openChooser(path, isFolder) {
+        const kt = theme.modules.kip;
+
+        if (isFolder) {
+            chooserOptions = kt.folderActions;
+        } else {
+            const extension = String(path).replace(/^.*\./, "").toLowerCase();
+            const appFirst = appFirstExtensions.indexOf(extension) >= 0;
+            const open = kt.fileActions.filter(action => action.id === "open");
+            const editor = kt.fileActions.filter(action => action.id === "default");
+            const rest = kt.fileActions.filter(action => action.id !== "default" && action.id !== "open");
+            const vivify = /\.md$/i.test(path) ? kt.markdownOpeners.filter(opener => opener.id === "vivify") : [];
+
+            chooserOptions = appFirst ? open.concat(editor, rest) : editor.concat(vivify, open, rest);
+        }
         chooserIndex = 0;
         chooserFile = path;
     }
@@ -682,10 +710,12 @@ PanelWindow {
     function confirmChooser() {
         const project = service.selected;
         const option = chooserOptions[chooserIndex];
-        const path = project ? project.path + "/" + chooserFile : "";
+        // Blocks hand over absolute paths; project cards relative ones.
+        const path = chooserFile.indexOf("/") === 0 ? chooserFile : (project ? project.path + "/" + chooserFile : "");
+        const cwd = project && project.path ? project.path : service.home;
 
         chooserFile = "";
-        if (!project || !option)
+        if (!option || path.length === 0)
             return;
 
         const values = {
@@ -695,7 +725,7 @@ PanelWindow {
         };
         const command = option.command.map(part => String(part).replace(/\{(\w+)\}/g, (match, key) => values[key] !== undefined ? values[key] : match));
 
-        service.run(command, project.path);
+        service.run(command, cwd);
         // Copying a path is not a launch; Places stays for the next click.
         if (option.id !== "copy-path")
             closeRequested();
@@ -712,9 +742,15 @@ PanelWindow {
         if (!project)
             return;
 
-        if (action === "selected")
+        // A place has no editor or cockpit, and no folder actions without a folder.
+        if (project.kind === "place" && (action === "editor" || action === "cockpit" || action === "other-editor" || !project.path) && action !== "selected")
+            return;
+
+        if (action === "selected") {
+            if (detail.actions.length === 0)
+                return;
             detail.runAction(detail.actions[detail.actionIndex]);
-        else if (action === "editor")
+        } else if (action === "editor")
             service.openInEditor(project, "");
         else if (action === "cockpit")
             service.openCockpit(project);

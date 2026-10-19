@@ -44,9 +44,9 @@ Item {
 
         return {
             origin: project.group,
-            folder: project.displayPath.replace(/[^\/]+$/, ""),
+            folder: project.displayPath ? project.displayPath.replace(/[^\/]+$/, "") : "",
             file: project.name,
-            excerpt: describe(summary)
+            excerpt: project.kind === "place" ? project.blocks.map(block => block.title).join(" · ") : describe(summary)
         };
     }
 

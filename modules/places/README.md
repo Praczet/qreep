@@ -64,6 +64,36 @@ to the built-in ones (`PlacesTips.qml`), or turns the tip card off with
 `{path}` is the file or folder being opened. Commands with `"terminal": true`
 run in Qreep's terminal (`QreepTheme.terminal`, kitty) in the project folder.
 
+## Places and blocks
+
+A group can hold `"places"` next to (or instead of) `"projects"`. A place is a
+page made of blocks and needs no folder; give it a `path` and it also gets
+Folder / Terminal buttons. Projects take `"blocks"` too: they show up after
+the file cards. Every block takes `"enabled": false` and an optional `"title"`.
+
+```json
+{ "name": "Places", "places": [ {
+    "id": "home", "name": "Home", "icon": "󰋜",
+    "description": "Admin, notes, and the apps I actually open.",
+    "blocks": [
+      { "type": "apps", "items": ["zen", "slack", "kitty"] },
+      { "type": "documents", "title": "Admin papers", "items": ["~/Documents/Admin/tax.pdf"] },
+      { "type": "folders", "items": [{ "name": "Notes", "path": "~/Notes" }, "~/Downloads"] }
+    ] } ] }
+```
+
+| Block | Items | Enter / click |
+| --- | --- | --- |
+| `apps` | desktop entry ids (`zen`, `org.gnome.Calculator`, `.desktop` optional) | launch (Terminal=true apps run in kitty) |
+| `documents` | paths, or `{ "name", "path" }` | Open with chooser; documents and images put "default app" first |
+| `folders` | paths, or `{ "name", "path" }` | folder chooser: yazi, terminal here, broot, copy path |
+
+Paths are absolute, `~/…`, or relative to the entry's own `path`. Apps get a
+full row; other blocks pair up two per row. Cards are numbered in reading
+order for `Alt+1`…`Alt+9` (a project's four file cards first, then its
+blocks), and Tab walks them after the buttons. More block types (calendar,
+todos, usb, ssh, smb) are on the way; an unknown type shows a card saying so.
+
 ## What it finds on its own
 
 * **git**: branch, ahead/behind, changed count, last commit (all projects, on open).
@@ -107,7 +137,7 @@ until Qreep reloads.
 | `Ctrl+O` | file manager |
 | `Ctrl+T` | terminal in the project folder |
 | `Ctrl+R` | re-read everything |
-| `Alt+1` … `Alt+4` | jump into a file card: Uncommitted, Pinned, Recently touched, Docs |
+| `Alt+1` … `Alt+9` | jump into a card: a project's Uncommitted, Pinned, Recently touched, Docs, then blocks; a place's blocks |
 | in a card: `↑` `↓` / `←` `→` | move between files / to the next card |
 | in a card: `Enter` | "Open with" chooser for that file |
 | in a card: `Esc` | back to the project list (typing does that too) |

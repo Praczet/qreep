@@ -21,48 +21,94 @@ Flickable {
     readonly property var actions: buildActions()
     property int actionIndex: 0
 
-    // A file row was clicked; the panel shows the "Open with" chooser.
-    signal fileChosen(string path)
+    readonly property bool isPlace: project !== null && project.kind === "place"
+    readonly property var blocks: project ? project.blocks : []
+    // Blocks laid out in rows: apps get a full row, the rest pair up.
+    readonly property var blockRows: {
+        const rows = [];
+        let pending = null;
 
-    // Keyboard focus inside the file cards. Alt+1..4 pick a card in reading
+        for (const block of blocks) {
+            if (block.type === "apps") {
+                if (pending)
+                    rows.push([pending]);
+                pending = null;
+                rows.push([block]);
+            } else if (pending) {
+                rows.push([pending, block]);
+                pending = null;
+            } else {
+                pending = block;
+            }
+        }
+        if (pending)
+            rows.push([pending]);
+        return rows;
+    }
+
+    // Something in a card was picked (click, or Enter while selected). item is
+    // { kind: "file" | "folder" | "app", path | id }; the panel decides what
+    // happens: Open with for files and folders, launch for apps.
+    signal itemChosen(var item)
+
+    // Keyboard focus inside cards. A project has its four file cards first,
+    // then its blocks; a place has only blocks. Alt+N is the Nth card in this
     // order; "" means the project list has the arrows.
-    readonly property var cardOrder: ["uncommitted", "pinned", "recent", "docs"]
+    readonly property var cardOrder: project ? (isPlace ? [] : ["uncommitted", "pinned", "recent", "docs"]).concat(blocks.map(block => block.id)) : []
     property string focusedCard: ""
     property int focusedIndex: 0
-    readonly property var focusedFiles: cardFiles(focusedCard)
+    readonly property var focusedItems: cardItems(focusedCard)
 
-    function cardFiles(card) {
+    function fileItems(paths) {
+        return paths.map(path => ({
+                    kind: "file",
+                    path: path
+                }));
+    }
+
+    function cardItems(card) {
         if (card === "uncommitted")
-            return detail.changes.slice(0, listRows).map(change => change.path.replace(/^.* -> /, ""));
+            return fileItems(detail.changes.slice(0, listRows).map(change => change.path.replace(/^.* -> /, "")));
         if (card === "pinned")
-            return service.pinnedFiles();
+            return fileItems(service.pinnedFiles());
         if (card === "recent")
-            return detail.recent.slice(0, listRows).map(file => file.path);
+            return fileItems(detail.recent.slice(0, listRows).map(file => file.path));
         if (card === "docs")
-            return detail.docs.slice(0, listRows).map(file => file.path);
-        return [];
+            return fileItems(detail.docs.slice(0, listRows).map(file => file.path));
+
+        const block = blocks.find(candidate => candidate.id === card);
+        return block ? block.items : [];
+    }
+
+    // "Alt+3" for the third card, nothing past 9.
+    function shortcutFor(card) {
+        const number = cardOrder.indexOf(card) + 1;
+        return number > 0 && number <= 9 ? "Alt+" + number : "";
     }
 
     // Alt+number: 1-based position in cardOrder. Empty cards are skipped silently.
     function focusCardNumber(number) {
         const card = cardOrder[number - 1];
 
-        if (card && cardFiles(card).length > 0) {
+        if (card && cardItems(card).length > 0) {
             focusedCard = card;
             focusedIndex = 0;
         }
     }
 
-    // Left/Right: the next card in cardOrder that has files, wrapping.
+    // Left/Right: the next card in cardOrder that has items, wrapping.
     function stepCard(step) {
+        if (cardOrder.length === 0)
+            return;
+
         const start = Math.max(0, cardOrder.indexOf(focusedCard));
 
         for (let offset = 1; offset <= cardOrder.length; offset++) {
             const card = cardOrder[(start + step * offset + cardOrder.length * 4) % cardOrder.length];
 
-            if (cardFiles(card).length > 0) {
+            if (cardItems(card).length > 0) {
                 focusedCard = card;
-                focusedIndex = Math.min(focusedIndex, cardFiles(card).length - 1);
+                focusedIndex = Math.min(focusedIndex, cardItems(card).length - 1);
                 return;
             }
         }
@@ -74,7 +120,7 @@ Flickable {
         const stops = actions.map((action, index) => ({
                     card: "",
                     index: index
-                })).concat(cardOrder.filter(card => cardFiles(card).length > 0).map(card => ({
+                })).concat(cardOrder.filter(card => cardItems(card).length > 0).map(card => ({
                         card: card,
                         index: 0
                     })));
@@ -93,11 +139,11 @@ Flickable {
     }
 
     function moveFile(step) {
-        focusedIndex = Math.max(0, Math.min(focusedFiles.length - 1, focusedIndex + step));
+        focusedIndex = Math.max(0, Math.min(focusedItems.length - 1, focusedIndex + step));
     }
 
-    function focusedFile() {
-        return focusedFiles[focusedIndex] || "";
+    function focusedItem() {
+        return focusedItems[focusedIndex] || null;
     }
 
     function isFileSelected(card, index) {
@@ -148,6 +194,29 @@ Flickable {
     function buildActions() {
         if (!project)
             return [];
+
+        // A place has no editor or cockpit: its folder (if any) and links.
+        if (isPlace) {
+            const placeActions = project.path ? [{
+                    kind: "folder",
+                    icon: "󰉋",
+                    label: "Folder",
+                    hint: "^O"
+                }, {
+                    kind: "terminal",
+                    icon: "󰆍",
+                    label: "Terminal",
+                    hint: "^T"
+                }] : [];
+
+            return placeActions.concat(project.links.map(link => ({
+                        kind: "link",
+                        link: link,
+                        icon: "󰌷",
+                        label: link.name,
+                        hint: ""
+                    })));
+        }
 
         const current = editorName();
         const list = [{
@@ -270,6 +339,7 @@ Flickable {
 
         // --- git line + actions ---------------------------------------------
         Flow {
+            visible: !rootPlacesDetail.isPlace
             width: parent.width
             spacing: 8
 
@@ -348,7 +418,7 @@ Flickable {
                     width: parent.width
                     pt: rootPlacesDetail.pt
                     title: "Uncommitted"
-                    shortcut: "Alt+1"
+                    shortcut: rootPlacesDetail.shortcutFor("uncommitted")
                     focused: rootPlacesDetail.focusedCard === "uncommitted"
                     subtitle: rootPlacesDetail.detail.changes.length + " file" + (rootPlacesDetail.detail.changes.length === 1 ? "" : "s")
 
@@ -368,7 +438,7 @@ Flickable {
                             tag: modelData.status
                             tagColor: rootPlacesDetail.changeColor(modelData.status)
                             path: modelData.path
-                            onClicked: rootPlacesDetail.fileChosen(modelData.path.replace(/^.* -> /, ""))
+                            onClicked: rootPlacesDetail.itemChosen({ kind: "file", path: modelData.path.replace(/^.* -> /, "") })
                         }
                     }
                 }
@@ -378,7 +448,7 @@ Flickable {
                     width: parent.width
                     pt: rootPlacesDetail.pt
                     title: "Recently touched"
-                    shortcut: "Alt+3"
+                    shortcut: rootPlacesDetail.shortcutFor("recent")
                     focused: rootPlacesDetail.focusedCard === "recent"
                     subtitle: "last " + rootPlacesDetail.pt.recentFileDays + " days"
 
@@ -399,7 +469,7 @@ Flickable {
                             tagColor: rootPlacesDetail.pt.accentColor
                             path: modelData.path
                             trailing: rootPlacesDetail.service.ago(modelData.time)
-                            onClicked: rootPlacesDetail.fileChosen(modelData.path)
+                            onClicked: rootPlacesDetail.itemChosen({ kind: "file", path: modelData.path })
                         }
                     }
                 }
@@ -410,7 +480,7 @@ Flickable {
                     width: parent.width
                     pt: rootPlacesDetail.pt
                     title: "Docs"
-                    shortcut: "Alt+4"
+                    shortcut: rootPlacesDetail.shortcutFor("docs")
                     focused: rootPlacesDetail.focusedCard === "docs"
                     subtitle: rootPlacesDetail.detail.docs.length + (rootPlacesDetail.detail.docs.length >= rootPlacesDetail.pt.docLimit ? "+" : "") + " in docs/"
 
@@ -431,7 +501,7 @@ Flickable {
                             tagColor: rootPlacesDetail.pt.accentColor
                             path: modelData.path.replace(/^docs\//, "")
                             trailing: rootPlacesDetail.service.ago(modelData.time)
-                            onClicked: rootPlacesDetail.fileChosen(modelData.path)
+                            onClicked: rootPlacesDetail.itemChosen({ kind: "file", path: modelData.path })
                         }
                     }
                 }
@@ -450,7 +520,7 @@ Flickable {
                     width: parent.width
                     pt: rootPlacesDetail.pt
                     title: "Pinned"
-                    shortcut: "Alt+2"
+                    shortcut: rootPlacesDetail.shortcutFor("pinned")
                     focused: rootPlacesDetail.focusedCard === "pinned"
 
                     Repeater {
@@ -469,7 +539,7 @@ Flickable {
                             tag: "󰐃"
                             tagColor: rootPlacesDetail.pt.accentColor
                             path: modelData
-                            onClicked: rootPlacesDetail.fileChosen(modelData)
+                            onClicked: rootPlacesDetail.itemChosen({ kind: "file", path: modelData })
                         }
                     }
                 }
@@ -532,8 +602,39 @@ Flickable {
             }
         }
 
+        // --- configured blocks: apps get a row, the rest pair up --------------------
+        Repeater {
+            model: rootPlacesDetail.blockRows
+
+            Row {
+                id: blockRow
+
+                required property var modelData
+
+                width: parent.width
+                spacing: rootPlacesDetail.pt.sectionGap
+
+                Repeater {
+                    model: blockRow.modelData
+
+                    PlacesBlock {
+                        required property var modelData
+
+                        width: blockRow.modelData.length === 1 ? blockRow.width : rootPlacesDetail.halfWidth
+                        pt: rootPlacesDetail.pt
+                        service: rootPlacesDetail.service
+                        detailPane: rootPlacesDetail
+                        block: modelData
+                        iconFontFamily: rootPlacesDetail.theme.iconFontFamily
+                        onActivated: item => rootPlacesDetail.itemChosen(item)
+                    }
+                }
+            }
+        }
+
         // --- stats ------------------------------------------------------------
         PlacesStats {
+            visible: !rootPlacesDetail.isPlace
             width: parent.width
             pt: rootPlacesDetail.pt
             service: rootPlacesDetail.service

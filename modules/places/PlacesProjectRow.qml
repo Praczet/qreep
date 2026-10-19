@@ -169,6 +169,11 @@ Item {
 
     function metaText() {
         const summary = rootPlacesProjectRow.summary;
+        const project = rootPlacesProjectRow.project;
+
+        // Places: their folder (if any) and what is on the page.
+        if (project.kind === "place")
+            return (project.displayPath ? project.displayPath + " · " : "") + project.blocks.length + (project.blocks.length === 1 ? " block" : " blocks");
 
         if (!summary)
             return rootPlacesProjectRow.project.displayPath;

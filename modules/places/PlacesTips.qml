@@ -5,7 +5,10 @@ import QtQuick
 // places.json: "tips": { "enabled": true, "items": ["..."] }.
 QtObject {
     readonly property var builtIn: [
-        "Alt+1 … Alt+4 jump into Uncommitted, Pinned, Recently touched and Docs.",
+        "Alt+1 … Alt+9 jump into cards: a project's file cards first, then its blocks.",
+        "Places are pages of blocks: apps, documents, folders. Add one under \"places\" in places.json.",
+        "Blocks take \"enabled\": false too, so a card can rest without being deleted.",
+        "Documents and images open in their app first; text and code in nvim first.",
         "Tab walks the buttons, then the file cards, then around again.",
         "Click a file, or Enter on it in a card, for Open with: nvim, Vivify, app, folder, terminal, copy path.",
         "Shift+Enter launches the cockpit: terminal and browser on the dev workspace.",
