@@ -63,6 +63,8 @@ Scope {
                 + " building=" + (wallpaperService.building ? wallpaperService.buildDone + "/" + wallpaperService.buildTotal : "no")
                 + " selected=" + (wallpaperService.selectedName || "-")
                 + " current=" + (wallpaperService.current || "-")
+                + " profile=" + (wallpaperService.chosenProfile || "-") + "/" + (wallpaperService.currentProfile || "-")
+                + " profiles=" + wallpaperService.profiles.length
                 + " error=" + (wallpaperService.errorText || "-");
         }
     }

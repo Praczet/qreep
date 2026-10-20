@@ -14,6 +14,10 @@ QtObject {
     readonly property string currentWallpaperFile: (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/unclaimed-bloom/current-wallpaper"
     readonly property string applyCommand: Quickshell.env("HOME") + "/.local/bin/wallset"
     readonly property string statePath: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/qreep/wallpaper.json"
+    // Unclaimed Bloom profiles: the picker lists the compositions (whole-desktop
+    // setups) and, on apply, switches with `spore profile use` before wallset.
+    readonly property string sporeCommand: Quickshell.env("HOME") + "/.local/bin/spore"
+    readonly property string currentProfileFile: (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/unclaimed-bloom/current-profile"
 
     // Grid tile sizes (image box). S-L use the 400x300 thumbnails, XL the
     // 800x600 ones, so a small grid never decodes big files.
@@ -47,6 +51,8 @@ QtObject {
     readonly property int listThumbWidth: 96
     readonly property int footerHeight: 30
     readonly property int chipHeight: 26
+    readonly property int profileMenuWidth: 320
+    readonly property int profileRowHeight: 32
 
     readonly property int titlePixelSize: 20
     readonly property int bodyPixelSize: 13

@@ -17,6 +17,7 @@ path opens it too, when Qreep is up.
 | `↑↓←→` | move (grid); `↑↓` in the list |
 | `PgUp` `PgDn` | a page at a time |
 | `Enter`, double click | apply: `wallset <path>`, then the picker closes |
+| `Ctrl+B` / `Ctrl+Shift+B` | next / previous Unclaimed Bloom profile (used on apply) |
 | `Ctrl+P` | grid ↔ list |
 | `Ctrl+1` … `Ctrl+4` | tile size S / M / L / XL (switches to the grid) |
 | `Ctrl++` `Ctrl+=` / `Ctrl+-` `Ctrl+_` | bigger / smaller tiles |
@@ -24,7 +25,21 @@ path opens it too, when Qreep is up.
 | `Esc` | close the sheet, clear the filter, then close |
 | `Ctrl+Esc` | close |
 
-The chips in the search bar do the same with the mouse. The view and size
+The chips in the search bar do the same with the mouse.
+
+## Bloom profile
+
+The chip left of the filter picks the Unclaimed Bloom **composition** the
+wallpaper is applied with (`desktop-graphite-tweak`, `desktop-graphite-blooming`,
+…). Only compositions are listed: they theme the whole desktop, GTK included;
+a plain profile like `daily-gtk` would plant one target and look broken.
+
+Choosing does nothing on its own. `Enter` runs `spore profile use <profile>`
+and then `wallset <path>`, so the switch and the regrow happen together; `Esc`
+leaves the active profile alone. The chip lights up while the choice differs
+from the active profile, the preview says which profile Enter will use, and
+every open starts from the active one again (`~/.cache/unclaimed-bloom/current-profile`).
+`Enter` on the current wallpaper re-themes it with the chosen profile. The view and size
 are remembered in `~/.local/state/qreep/wallpaper.json`. The picker opens on
 the current wallpaper (`~/.cache/unclaimed-bloom/current-wallpaper`).
 

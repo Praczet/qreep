@@ -26,11 +26,15 @@ PanelWindow {
     property bool needsInitialSelection: true
     // F1 sheet. Esc closes it before it clears the filter or closes.
     property bool shortcutsOpen: false
+    // Bloom profile dropdown under the profile chip. Esc closes it first.
+    property bool profileMenuOpen: false
+    readonly property bool profileChanged: service.chosenProfile.length > 0 && service.chosenProfile !== service.currentProfile
     readonly property var shortcuts: [
         { keys: "type", action: "Filter by name" },
         { keys: "↑ ↓ ← →", action: "Move (← → in the grid only)" },
         { keys: "PgUp  PgDn", action: "A page at a time" },
         { keys: "Enter", action: "Apply (Unclaimed Bloom regrows the theme)" },
+        { keys: "Ctrl+B  Ctrl+⇧B", action: "Next / previous Bloom profile (used on apply)" },
         { keys: "double click", action: "Apply" },
         { keys: "Ctrl+P", action: "Grid ↔ list" },
         { keys: "Ctrl+1 … Ctrl+4", action: "Tile size S / M / L / XL" },
@@ -75,6 +79,7 @@ PanelWindow {
         enterTimer.stop();
         presented = false;
         shortcutsOpen = false;
+        profileMenuOpen = false;
     }
 
     onItemsChanged: {
@@ -171,7 +176,9 @@ PanelWindow {
         switch (event.key) {
         case Qt.Key_Escape:
             event.accepted = true;
-            if (!ctrl && shortcutsOpen) {
+            if (!ctrl && profileMenuOpen) {
+                profileMenuOpen = false;
+            } else if (!ctrl && shortcutsOpen) {
                 shortcutsOpen = false;
             } else if (!ctrl && search.text.length > 0) {
                 search.text = "";
@@ -214,6 +221,12 @@ PanelWindow {
                 service.setView(gridView ? "list" : "grid");
             }
             return;
+        case Qt.Key_B:
+            if (ctrl) {
+                event.accepted = true;
+                service.stepProfile((event.modifiers & Qt.ShiftModifier) !== 0 ? -1 : 1);
+            }
+            return;
         // + and = share a key, as do - and _: with or without Shift.
         case Qt.Key_Equal:
         case Qt.Key_Plus:
@@ -231,7 +244,16 @@ PanelWindow {
     function hints() {
         const keys = gridView ? "↑↓←→ move" : "↑↓ move";
 
-        return keys + " · Enter apply (Unclaimed Bloom) · Ctrl+P " + (gridView ? "list" : "grid") + " · Ctrl+1–4 / Ctrl+± size · F1 shortcuts · Esc " + (search.text.length > 0 ? "clear" : "close");
+        return keys + " · Enter apply (Unclaimed Bloom) · Ctrl+B profile · Ctrl+P " + (gridView ? "list" : "grid") + " · Ctrl+1–4 / Ctrl+± size · F1 shortcuts · Esc " + (search.text.length > 0 ? "clear" : "close");
+    }
+
+    // Under the preview: what Enter will do with the chosen profile.
+    function previewNote() {
+        const current = service.isCurrent(selected);
+
+        if (profileChanged)
+            return (current ? "● current wallpaper · " : "") + "Enter applies it with " + service.chosenProfile + ".";
+        return current ? "● current wallpaper" : "Enter applies it: Unclaimed Bloom regrows the theme around it.";
     }
 
     Rectangle {
@@ -336,11 +358,28 @@ PanelWindow {
                 font.bold: true
             }
 
+            // Bloom profile used on apply. Highlighted while it differs from
+            // the active one, so a pending switch is hard to miss.
+            WallpaperChip {
+                id: profileChip
+
+                anchors {
+                    left: searchLabel.right
+                    leftMargin: 12
+                    verticalCenter: parent.verticalCenter
+                }
+                wt: rootWallpaperPanel.wt
+                iconFont: rootWallpaperPanel.theme.iconFontFamily
+                label: "󰉼 " + (rootWallpaperPanel.service.chosenProfile || "no profile") + "  ▾"
+                active: rootWallpaperPanel.profileChanged || rootWallpaperPanel.profileMenuOpen
+                onClicked: rootWallpaperPanel.profileMenuOpen = !rootWallpaperPanel.profileMenuOpen
+            }
+
             TextInput {
                 id: search
 
                 anchors {
-                    left: searchLabel.right
+                    left: profileChip.right
                     leftMargin: 14
                     right: switches.left
                     rightMargin: 12
@@ -699,8 +738,8 @@ PanelWindow {
 
                     Text {
                         width: parent.width
-                        text: rootWallpaperPanel.service.isCurrent(rootWallpaperPanel.selected) ? "● current wallpaper" : "Enter applies it: Unclaimed Bloom regrows the theme around it."
-                        color: rootWallpaperPanel.service.isCurrent(rootWallpaperPanel.selected) ? rootWallpaperPanel.wt.currentColor : rootWallpaperPanel.wt.secondaryTextColor
+                        text: rootWallpaperPanel.previewNote()
+                        color: rootWallpaperPanel.profileChanged ? rootWallpaperPanel.wt.accentColor : (rootWallpaperPanel.service.isCurrent(rootWallpaperPanel.selected) ? rootWallpaperPanel.wt.currentColor : rootWallpaperPanel.wt.secondaryTextColor)
                         font.pixelSize: rootWallpaperPanel.wt.metaPixelSize + 1
                         wrapMode: Text.Wrap
                     }
@@ -745,6 +784,99 @@ PanelWindow {
                 text: rootWallpaperPanel.service.buildTotal > 0 ? "making thumbnails " + rootWallpaperPanel.service.buildDone + " / " + rootWallpaperPanel.service.buildTotal : ""
                 color: rootWallpaperPanel.wt.accentColor
                 font.pixelSize: rootWallpaperPanel.wt.metaPixelSize
+            }
+        }
+
+        // --- Bloom profile dropdown --------------------------------------------
+        // Under the profile chip, above the browser. Picking only chooses;
+        // nothing changes until a wallpaper is applied.
+        Rectangle {
+            id: profileMenu
+
+            x: searchBox.x + profileChip.x
+            y: searchBox.y + searchBox.height + 6
+            width: rootWallpaperPanel.wt.profileMenuWidth
+            height: profileColumn.implicitHeight + 12
+            visible: rootWallpaperPanel.profileMenuOpen
+            radius: rootWallpaperPanel.wt.tileRadius
+            color: rootWallpaperPanel.wt.sheetColor
+            border.width: 1
+            border.color: rootWallpaperPanel.wt.selectedBorderColor
+
+            Column {
+                id: profileColumn
+
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: parent.top
+                    margins: 6
+                }
+
+                Text {
+                    visible: rootWallpaperPanel.service.profiles.length === 0
+                    leftPadding: 10
+                    topPadding: 6
+                    bottomPadding: 6
+                    text: "No Unclaimed Bloom compositions found."
+                    color: rootWallpaperPanel.wt.secondaryTextColor
+                    font.pixelSize: rootWallpaperPanel.wt.bodyPixelSize
+                }
+
+                Repeater {
+                    model: rootWallpaperPanel.service.profiles
+
+                    Rectangle {
+                        required property string modelData
+
+                        width: profileColumn.width
+                        height: rootWallpaperPanel.wt.profileRowHeight
+                        radius: 6
+                        color: modelData === rootWallpaperPanel.service.chosenProfile ? rootWallpaperPanel.wt.selectedColor : (profileRowMouse.containsMouse ? rootWallpaperPanel.wt.hoveredColor : "transparent")
+
+                        Text {
+                            anchors {
+                                left: parent.left
+                                leftMargin: 10
+                                right: activeTag.left
+                                rightMargin: 8
+                                verticalCenter: parent.verticalCenter
+                            }
+                            text: modelData
+                            color: rootWallpaperPanel.wt.primaryTextColor
+                            font.pixelSize: rootWallpaperPanel.wt.bodyPixelSize
+                            font.bold: modelData === rootWallpaperPanel.service.chosenProfile
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            id: activeTag
+
+                            anchors {
+                                right: parent.right
+                                rightMargin: 10
+                                verticalCenter: parent.verticalCenter
+                            }
+                            visible: modelData === rootWallpaperPanel.service.currentProfile
+                            text: "● active"
+                            color: rootWallpaperPanel.wt.currentColor
+                            font.pixelSize: rootWallpaperPanel.wt.metaPixelSize
+                        }
+
+                        MouseArea {
+                            id: profileRowMouse
+
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                rootWallpaperPanel.service.chooseProfile(modelData);
+                                rootWallpaperPanel.profileMenuOpen = false;
+                                search.forceActiveFocus();
+                            }
+                        }
+                    }
+                }
             }
         }
 

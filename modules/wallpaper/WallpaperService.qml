@@ -34,9 +34,19 @@ Item {
     property string view: "grid"
     property string size: "m"
 
+    // Unclaimed Bloom compositions (names), the active one (current-profile
+    // file), and the one chosen in the panel. Choosing changes nothing until
+    // apply; every open starts again from the active one.
+    property var profiles: []
+    property string currentProfile: ""
+    property string chosenProfile: ""
+
     function refresh() {
         listProcess.running = false;
         listProcess.running = true;
+        chosenProfile = currentProfile;
+        profileProcess.running = false;
+        profileProcess.running = true;
         if (!building) {
             buildProcess.running = true;
             building = true;
@@ -69,8 +79,28 @@ Item {
     function apply(item) {
         if (!item)
             return;
-        applier.command = [wt.applyCommand, item.path];
+        // A different profile is switched first, so wallset (which plants the
+        // active profile) grows the new one. sh -c with positional arguments:
+        // names and paths are never pasted into the script text.
+        if (chosenProfile.length > 0 && chosenProfile !== currentProfile)
+            applier.command = ["sh", "-c", "\"$0\" profile use \"$1\" && exec \"$2\" \"$3\"", wt.sporeCommand, chosenProfile, wt.applyCommand, item.path];
+        else
+            applier.command = [wt.applyCommand, item.path];
         applier.startDetached();
+    }
+
+    function chooseProfile(name) {
+        if (profiles.indexOf(name) >= 0)
+            chosenProfile = name;
+    }
+
+    // Ctrl+B / Ctrl+Shift+B: next / previous, wrapping.
+    function stepProfile(step) {
+        if (profiles.length === 0)
+            return;
+        const index = profiles.indexOf(chosenProfile);
+
+        chosenProfile = index < 0 ? profiles[0] : profiles[(index + step + profiles.length) % profiles.length];
     }
 
     function setView(next) {
@@ -186,6 +216,50 @@ Item {
 
     Process {
         id: applier
+    }
+
+    // Only compositions: they theme the whole desktop (GTK included). A plain
+    // profile such as daily-gtk would plant a single target.
+    Process {
+        id: profileProcess
+
+        command: [rootWallpaperService.wt.sporeCommand, "profile", "list", "--json"]
+
+        stdout: StdioCollector {
+            id: profileStdout
+
+            waitForEnd: true
+        }
+
+        onExited: exitCode => {
+            if (exitCode !== 0)
+                return;
+            try {
+                const listed = JSON.parse(profileStdout.text).profiles || [];
+
+                rootWallpaperService.profiles = listed.filter(profile => profile.type === "composition").map(profile => profile.name);
+            } catch (error) {
+                rootWallpaperService.profiles = [];
+            }
+        }
+    }
+
+    FileView {
+        path: rootWallpaperService.wt.currentProfileFile
+        preload: true
+        watchChanges: true
+        printErrors: false
+
+        onFileChanged: reload()
+        onLoaded: {
+            const active = text().trim();
+            const following = rootWallpaperService.chosenProfile === rootWallpaperService.currentProfile;
+
+            rootWallpaperService.currentProfile = active;
+            // Keep a pending choice; otherwise follow the active profile.
+            if (following || rootWallpaperService.chosenProfile.length === 0)
+                rootWallpaperService.chosenProfile = active;
+        }
     }
 
     FileView {
