@@ -101,5 +101,5 @@ Enable later:
 State files:
   ~/.cache/qreep/calendar/state.json
   ~/.cache/qreep/calendar/final.json
-  ~/.local/share/qreep/triage/triage.db
+  ~/Data/sqlite/qreep/triage/triage.db
 EOF

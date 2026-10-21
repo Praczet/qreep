@@ -171,8 +171,8 @@ to `~/.local/bin/triagectl`.
 Use Qreep-owned paths:
 
 ```text
-~/.local/share/qreep/triage/triage.db
-~/.local/share/qreep/triage/exports/
+~/Data/sqlite/qreep/triage/triage.db
+~/Data/sqlite/qreep/triage/exports/
 ~/.config/qreep/triage/note-presets.json
 ```
 
@@ -329,7 +329,7 @@ Until duplication hurts, keep the boundary simple.
 ### Slice 2: Helper
 
 - Add `tools/triagectl` as a Rust helper.
-- Store triage state in SQLite at `~/.local/share/qreep/triage/triage.db`.
+- Store triage state in SQLite at `~/Data/sqlite/qreep/triage/triage.db`.
 - Implement JSON commands: `summary`, `orphans`, `queue-orphans`, `why`,
   `decisions`, `decide`, `export-json`, and `export-md`.
 - Add install wiring in `scripts/install`.

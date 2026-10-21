@@ -581,7 +581,7 @@ read system package state, write only Qreep triage state, remove nothing
 
 The helper command is `triagectl`, not `qreep-triage`. Keep `qreep-triage` for
 the eventual Quickshell IPC target. The helper lives in `tools/triagectl/`, is a
-small Rust CLI, stores state in SQLite at `~/.local/share/qreep/triage/triage.db`,
+small Rust CLI, stores state in SQLite at `~/Data/sqlite/qreep/triage/triage.db`,
 and prints JSON for QML-facing commands. QML must not open the SQLite database
 directly.
 

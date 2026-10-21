@@ -286,7 +286,7 @@ fn data_dir() -> Result<PathBuf> {
     }
 
     let home = env::var("HOME")?;
-    Ok(PathBuf::from(home).join(".local/share/qreep/triage"))
+    Ok(PathBuf::from(home).join("Data/sqlite/qreep/triage"))
 }
 
 fn open_db() -> Result<Connection> {
