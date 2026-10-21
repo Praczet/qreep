@@ -196,6 +196,7 @@ fn run() -> Result<()> {
         }
         "orphans" => print_json(&orphans(&conn, "manual")?)?,
         "queue-orphans" => print_json(&queue_orphans(&conn)?)?,
+        "queue-explicit" => print_json(&queue_explicit(&conn)?)?,
         "why" => {
             let package = required_arg(&args, "why requires a package name")?;
             print_json(&why(&conn, package)?)?;
@@ -238,6 +239,7 @@ Usage:
   triagectl packages <updates|orphans|dependencies|explicit|total> [--json]
   triagectl orphans [--json]
   triagectl queue-orphans [--json]
+  triagectl queue-explicit [--json]
   triagectl why <package> [--json]
   triagectl decisions [--json]
   triagectl events [--limit N] [--json]
@@ -673,25 +675,43 @@ mod tests {
 
 fn queue_orphans(conn: &Connection) -> Result<QueueResponse> {
     let scan = orphans(conn, "queue-orphans")?;
+    queue_packages(conn, "orphans", scan.packages, scan.ts, scan.event)
+}
+
+fn queue_explicit(conn: &Connection) -> Result<QueueResponse> {
+    let scan = package_list(conn, "explicit", "queue-explicit")?;
+    let packages = scan.packages.into_iter().map(|item| item.name).collect();
+    queue_packages(conn, "explicit", packages, scan.ts, scan.event)
+}
+
+// Already-queued packages keep their original source and decisions.
+fn queue_packages(
+    conn: &Connection,
+    source: &str,
+    packages: Vec<String>,
+    ts: u64,
+    source_event: CommandEvent,
+) -> Result<QueueResponse> {
     let mut added = 0usize;
 
-    for package in &scan.packages {
+    for package in &packages {
         let changed = conn.execute(
             "\
             INSERT OR IGNORE INTO review_items (package, created_ts, source)
-            VALUES (?1, ?2, 'orphans')
+            VALUES (?1, ?2, ?3)
             ",
-            params![package, scan.ts as i64],
+            params![package, ts as i64, source],
         )?;
         added += changed;
     }
 
+    let trigger = format!("queue-{source}");
     let internal_event = record_internal_event(
         conn,
-        "internal.queue_orphans",
-        vec!["queue-orphans".to_string(), format!("added={added}")],
-        scan.ts,
-        "queue-orphans",
+        &format!("internal.queue_{source}"),
+        vec![trigger.clone(), format!("added={added}")],
+        ts,
+        &trigger,
     )?;
 
     let total_queued = conn.query_row("SELECT COUNT(*) FROM review_items", [], |row| {
@@ -700,11 +720,11 @@ fn queue_orphans(conn: &Connection) -> Result<QueueResponse> {
 
     Ok(QueueResponse {
         schema_version: 1,
-        ts: scan.ts,
+        ts,
         added,
         total_queued,
-        packages: scan.packages,
-        source_event: scan.event,
+        packages,
+        source_event,
         internal_event,
     })
 }
