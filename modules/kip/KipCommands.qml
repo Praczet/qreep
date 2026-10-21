@@ -27,7 +27,7 @@ QtObject {
             argumentOptional: true,
             syntax: "/app [name]",
             examples: ["/app", "/app firefox", "logseq"],
-            actions: "Most used and Recent come first, from KIP's own launch log in ~/.local/share/qreep/kip/apps.db. Then category, name or A–Z groups (Ctrl+G), as a grid or list (Ctrl+L). Typing ranks every app by name, then generic name, keywords and id. Enter launches and closes KIP."
+            actions: "Most used and Recent come first, from KIP's own launch log in ~/Data/sqlite/qreep/kip/apps.db. Then category, name or A–Z groups (Ctrl+G), as a grid or list (Ctrl+L). Typing ranks every app by name, then generic name, keywords and id. Enter launches and closes KIP."
         },
         {
             name: "ask",

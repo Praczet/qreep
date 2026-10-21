@@ -333,14 +333,14 @@ at random among those that apply (`apps.nudge.*` in `KipMessages.qml`):
 **recent** (last launch within `appNudgeRecentWindow`, default 3 h). An app
 needs `appNudgeMinLaunches` (3) launches before KIP gets smug about it.
 
-Launch log: `~/.local/share/qreep/kip/apps.db`, one table,
+Launch log: `~/Data/sqlite/qreep/kip/apps.db`, one table,
 `launches(app_id, launched_at)`, written through the `sqlite3` CLI (path and
 SQL passed as arguments, ids quote-escaped). It records desktop entry id and
 time of launches *from KIP*, nothing else. Deleting the file resets Most used
 and Recent; KIP recreates it.
 
 ```bash
-sqlite3 ~/.local/share/qreep/kip/apps.db \
+sqlite3 ~/Data/sqlite/qreep/kip/apps.db \
   "SELECT app_id, COUNT(*) FROM launches GROUP BY app_id ORDER BY 2 DESC LIMIT 10;"
 ```
 

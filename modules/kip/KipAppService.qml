@@ -12,7 +12,7 @@ Item {
     required property QtObject theme
 
     readonly property QtObject kt: theme.modules.kip
-    readonly property string dbPath: Quickshell.env("HOME") + "/.local/share/qreep/kip/apps.db"
+    readonly property string dbPath: Quickshell.env("HOME") + "/Data/sqlite/qreep/kip/apps.db"
 
     // Runtime choices, kept here because the panel is destroyed on close.
     // category | name | letter
