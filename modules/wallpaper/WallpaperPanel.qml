@@ -248,6 +248,14 @@ PanelWindow {
     }
 
     // Under the preview: what Enter will do with the chosen profile.
+    // Swatch click: search for that colour, like typing it.
+    function searchColor(hex) {
+        needsInitialSelection = false;
+        search.text = hex;
+        service.setQuery(hex);
+        index = 0;
+    }
+
     function previewNote() {
         const current = service.isCurrent(selected);
 
@@ -718,6 +726,17 @@ PanelWindow {
                         thumbSize: 800
                         iconFont: rootWallpaperPanel.theme.iconFontFamily
                         showCurrentBadge: false
+                        showPalette: false
+                    }
+
+                    // Click a colour to find wallpapers that share it.
+                    WallpaperPalette {
+                        width: parent.width
+                        height: 18
+                        clickable: true
+                        swatchRadius: 3
+                        colors: rootWallpaperPanel.selected ? (rootWallpaperPanel.selected.colors || []) : []
+                        onColorClicked: hex => rootWallpaperPanel.searchColor(hex)
                     }
 
                     Text {

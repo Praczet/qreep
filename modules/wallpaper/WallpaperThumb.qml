@@ -12,6 +12,8 @@ Rectangle {
     required property int thumbSize
     property string iconFont: ""
     property bool showCurrentBadge: true
+    // A thin strip of the dominant colours along the bottom edge.
+    property bool showPalette: true
 
     radius: 6
     color: wt.imageBackgroundColor
@@ -38,6 +40,17 @@ Rectangle {
         opacity: 0.5
         font.family: rootWallpaperThumb.iconFont
         font.pixelSize: Math.max(14, Math.min(48, rootWallpaperThumb.height / 4))
+    }
+
+    WallpaperPalette {
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+        height: 4
+        visible: rootWallpaperThumb.showPalette && image.status === Image.Ready && rootWallpaperThumb.item !== null && rootWallpaperThumb.item !== undefined && (rootWallpaperThumb.item.colors || []).length > 0
+        colors: rootWallpaperThumb.item ? (rootWallpaperThumb.item.colors || []) : []
     }
 
     Rectangle {

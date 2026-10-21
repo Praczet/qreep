@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "WallpaperColorNames.js" as ColorNames
 
 // Wallpapers: the folder listing, thumbnails, the current one, view state,
 // and applying. wallpaper-thumbs (next to this file) does the file work:
@@ -14,7 +15,9 @@ Item {
     readonly property QtObject wt: theme.modules.wallpaper
     readonly property string worker: Quickshell.shellDir + "/modules/wallpaper/wallpaper-thumbs"
 
-    // [{ name, path, bytes, width, height, thumbed }], by name.
+    // [{ name, path, bytes, width, height, thumbed, colors }], by name.
+    // colors: the worker's palette, biggest share first, each as
+    // { hex, share, l, a, b, c, h } in OKLab/OKLCH (see oklab()).
     property var wallpapers: []
     property string query: ""
     readonly property var filtered: filter(wallpapers, query)
@@ -57,12 +60,173 @@ Item {
         query = String(text || "");
     }
 
+    // Every word must match. A colour word ("teal", "dark", "#7aa2f7", ...)
+    // matches the palette or the name; any other word matches the name.
+    // A half-typed hex ("#7a") is ignored until it is complete. With a hex
+    // in the query, the closest palettes come first.
     function filter(list, text) {
-        const words = String(text || "").toLowerCase().split(/\s+/).filter(word => word.length > 0);
+        const words = String(text || "").toLowerCase().split(/\s+/).filter(word => word.length > 0 && !/^#[0-9a-f]{0,5}$/.test(word) || /^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(word));
 
         if (words.length === 0)
             return list;
-        return list.filter(item => words.every(word => item.name.toLowerCase().indexOf(word) >= 0));
+
+        const terms = words.map(word => ({
+                    word: word,
+                    color: colorTerm(word)
+                }));
+        const kept = list.filter(item => terms.every(term => item.name.toLowerCase().indexOf(term.word) >= 0 || (term.color !== null && (item.colors || []).length > 0 && term.color.test(item.colors))));
+        const ranked = terms.filter(term => term.color !== null && term.color.distance !== undefined);
+
+        if (ranked.length === 0)
+            return kept;
+
+        const score = item => ranked.reduce((sum, term) => sum + term.color.distance(item.colors || []), 0);
+
+        return kept.slice().sort((left, right) => score(left) - score(right));
+    }
+
+    // --- colour search ------------------------------------------------------
+
+    // OKLCH hue centre and half-width in degrees; a palette colour needs
+    // some chroma (c >= 0.04) to count as having a hue at all.
+    readonly property var hueWords: ({
+            red: [27, 20],
+            orange: [58, 18],
+            yellow: [100, 22],
+            green: [142, 34],
+            teal: [182, 16],
+            cyan: [210, 18],
+            blue: [258, 24],
+            violet: [292, 16],
+            purple: [305, 20],
+            magenta: [330, 14],
+            pink: [352, 18]
+        })
+
+    // "#rrggbb" -> OKLab (l, a, b) plus OKLCH chroma c and hue h.
+    function oklab(hex) {
+        const linear = value => {
+            const v = value / 255;
+
+            return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        };
+        const r = linear(parseInt(hex.slice(1, 3), 16));
+        const g = linear(parseInt(hex.slice(3, 5), 16));
+        const b = linear(parseInt(hex.slice(5, 7), 16));
+        const lc = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+        const mc = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+        const sc = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+        const okA = 1.9779984951 * lc - 2.4285922050 * mc + 0.4505937099 * sc;
+        const okB = 0.0259040371 * lc + 0.7827717662 * mc - 0.8086757660 * sc;
+        const hue = Math.atan2(okB, okA) * 180 / Math.PI;
+
+        return {
+            l: 0.2104542553 * lc + 0.7936177850 * mc - 0.0040720468 * sc,
+            a: okA,
+            b: okB,
+            c: Math.sqrt(okA * okA + okB * okB),
+            h: hue < 0 ? hue + 360 : hue
+        };
+    }
+
+    // "#2b3a55 0.41 #c8a46e 0.18 ..." -> [{ hex, share, l, a, b, c, h }]
+    function parsePalette(text) {
+        const parts = String(text || "").trim().split(/\s+/);
+        const palette = [];
+
+        for (let i = 0; i + 1 < parts.length; i += 2) {
+            if (/^#[0-9a-f]{6}$/i.test(parts[i]))
+                palette.push(Object.assign({
+                    hex: parts[i].toLowerCase(),
+                    share: Number(parts[i + 1]) || 0
+                }, oklab(parts[i])));
+        }
+        return palette;
+    }
+
+    function hueGap(left, right) {
+        const gap = Math.abs(left - right) % 360;
+
+        return gap > 180 ? 360 - gap : gap;
+    }
+
+    function shareOf(palette, test) {
+        return palette.reduce((sum, color) => sum + (test(color) ? color.share : 0), 0);
+    }
+
+    function weighted(palette, key) {
+        return palette.reduce((sum, color) => sum + color[key] * color.share, 0);
+    }
+
+    // OKLab distance from a target to the nearest palette colour that covers
+    // at least 5% of the image.
+    function distanceTo(palette, target) {
+        let best = 9;
+
+        for (const color of palette) {
+            if (color.share >= 0.05)
+                best = Math.min(best, Math.hypot(color.l - target.l, color.a - target.a, color.b - target.b));
+        }
+        return best;
+    }
+
+    // A single colour: palettes with a dominant colour near it, closest first.
+    function nearTerm(hex) {
+        const target = oklab(hex);
+
+        return {
+            test: palette => distanceTo(palette, target) < 0.1,
+            distance: palette => distanceTo(palette, target)
+        };
+    }
+
+    // null when the word is not about colour; otherwise { test(palette) }
+    // and, for single colours, distance(palette) for ranking. Order matters:
+    // a hex, then the broad hue families ("blue" means any blue, not CSS
+    // #0000ff), then the descriptive words, then the CSS names
+    // ("steelblue" means near #4682b4).
+    function colorTerm(word) {
+        if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(word))
+            return nearTerm(word.length === 4 ? "#" + word.slice(1).split("").map(digit => digit + digit).join("") : word);
+        if (hueWords[word] !== undefined) {
+            const centre = hueWords[word][0];
+            const width = hueWords[word][1];
+
+            return {
+                test: palette => shareOf(palette, color => color.c >= 0.04 && hueGap(color.h, centre) <= width) >= 0.1
+            };
+        }
+
+        const warmth = palette => shareOf(palette, color => color.c >= 0.04 && (color.h < 110 || color.h > 330));
+        const coolness = palette => shareOf(palette, color => color.c >= 0.04 && color.h >= 150 && color.h <= 300);
+
+        switch (word) {
+        case "dark":
+            return { test: palette => weighted(palette, "l") < 0.4 };
+        case "light":
+        case "bright":
+            return { test: palette => weighted(palette, "l") > 0.65 };
+        case "muted":
+            return { test: palette => weighted(palette, "c") < 0.05 };
+        case "vivid":
+        case "colorful":
+        case "colourful":
+            return { test: palette => weighted(palette, "c") > 0.1 };
+        case "grey":
+        case "gray":
+            return { test: palette => weighted(palette, "c") < 0.03 };
+        case "black":
+            return { test: palette => shareOf(palette, color => color.l < 0.2) >= 0.5 };
+        case "white":
+            return { test: palette => shareOf(palette, color => color.l > 0.9 && color.c < 0.04) >= 0.3 };
+        case "warm":
+            return { test: palette => warmth(palette) >= 0.25 && warmth(palette) > coolness(palette) };
+        case "cool":
+            return { test: palette => coolness(palette) >= 0.25 && coolness(palette) > warmth(palette) };
+        }
+        if (ColorNames.names.hasOwnProperty(word))
+            return nearTerm(ColorNames.names[word]);
+        return null;
     }
 
     // file:// URL of a thumbnail (400 or 800), or "" when it is not made yet.
@@ -177,7 +341,8 @@ Item {
                     bytes: Number(parts[1]) || 0,
                     width: Number(parts[2]) || 0,
                     height: Number(parts[3]) || 0,
-                    thumbed: parts[4] === "1"
+                    thumbed: parts[4] === "1",
+                    colors: rootWallpaperService.parsePalette(parts[5])
                 };
             });
         }
