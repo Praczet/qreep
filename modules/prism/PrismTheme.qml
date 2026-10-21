@@ -7,7 +7,7 @@ QtObject {
     required property QtObject qreep
 
     // One JSON file: history, favourites, palettes.
-    readonly property string storePath: Quickshell.env("HOME") + "/.local/share/qreep/prism.json"
+    readonly property string storePath: Quickshell.env("HOME") + "/Data/qreep/prism/prism.json"
     // Same flags the old SUPER+P bind used: copy, notify, lowercase hex.
     readonly property var pickCommand: ["hyprpicker", "-a", "-n", "-l"]
     readonly property int historyLimit: 500

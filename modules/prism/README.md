@@ -61,7 +61,7 @@ you know better.
 
 ## Storage
 
-`~/.local/share/qreep/prism.json`:
+`~/Data/qreep/prism/prism.json`:
 
 ```json
 {
