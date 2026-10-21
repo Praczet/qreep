@@ -8,7 +8,7 @@ QtObject {
 
     property QtObject log
     readonly property Core.Log fallbackLog: Core.Log {}
-    readonly property var launcherCommand: ["launcher"]
+    readonly property var launcherCommand: ["quickshell", "-c", "qreep", "ipc", "call", "qreep-kip", "toggle"]
     readonly property Process commandRunner: Process {
         id: commandRunner
 
