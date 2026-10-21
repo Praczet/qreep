@@ -53,6 +53,6 @@ events (`response.start`, `response.sources`, `response.delta`,
 
 ## Files it touches
 
-- `~/.local/share/jarvis/notes.sqlite`: the notes index (`jarvis -index-notes`).
+- `~/Data/sqlite/jarvis/notes.sqlite`: the notes index (`jarvis -index-notes`).
 - `~/.local/share/jarvis/memory.md`: only via `jarvis -remember`.
 - `~/.local/share/jarvis/drafts/`: only via `jarvis -note-save`.

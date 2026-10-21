@@ -42,7 +42,7 @@ import urllib.request
 HOME = Path.home()
 NOTES = Path(os.getenv('JARVIS_NOTES_DIR', str(HOME / 'Notes'))).expanduser()
 MEMORY = Path(os.getenv('JARVIS_MEMORY', str(HOME / '.local/share/jarvis/memory.md'))).expanduser()
-INDEX = Path(os.getenv('JARVIS_INDEX', str(HOME / '.local/share/jarvis/notes.sqlite'))).expanduser()
+INDEX = Path(os.getenv('JARVIS_INDEX', str(HOME / 'Data/sqlite/jarvis/notes.sqlite'))).expanduser()
 URL = os.getenv('JARVIS_OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')
 EMBED = os.getenv('JARVIS_EMBED_MODEL', 'nomic-embed-text-v2-moe')
 PROFILES = {'fast': 'adam-jarvis-tiny', 'default': 'adam-jarvis-fast',
