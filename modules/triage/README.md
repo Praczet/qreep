@@ -145,6 +145,7 @@ triagectl packages explicit
 triagectl packages total
 triagectl orphans
 triagectl queue-orphans
+triagectl queue-explicit
 triagectl why bash
 triagectl decisions
 triagectl events --limit 80
