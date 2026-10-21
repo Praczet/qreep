@@ -2,14 +2,19 @@
 # wallpaper-thumbs: the Wallpaper module's worker.
 #
 #   wallpaper-thumbs list  <dir> <cache>   one TSV line per image, by name:
-#                                          name, bytes, width, height, thumbed (0/1)
-#   wallpaper-thumbs build <dir> <cache>   make missing or stale thumbnails:
+#                                          name, bytes, width, height, thumbed (0/1),
+#                                          palette ("#rrggbb share ..." or empty)
+#   wallpaper-thumbs build <dir> <cache>   make missing or stale thumbnails and palettes:
 #                                          "todo <n>", then "made <name>" per image
 #
 # Thumbnails: <cache>/800/<name>.jpg (fits 800x600, never upscaled) and
 # <cache>/400/<name>.jpg (fits 400x300, made from the 800 one). The source
 # size goes to <cache>/800/<name>.dim once, so listing never decodes images.
 # A thumbnail older than its image is remade; ones without an image are removed.
+#
+# Palette: the 6 dominant colours of the 400 thumbnail with their pixel share,
+# biggest first, in <cache>/400/<name>.colors ("#2b3a55 0.41 #c8a46e 0.18 ...").
+# Colour search reads it; a palette older than its thumbnail is remade.
 
 set -uo pipefail
 
@@ -36,6 +41,24 @@ stale() {
     [[ ! -f $big || ! -f "$cache/400/$name.jpg" || ! -f "$cache/800/$name.dim" || "$dir/$name" -nt $big ]]
 }
 
+palette_stale() {
+    local name=$1
+    [[ ! -f "$cache/400/$name.colors" || "$cache/400/$name.jpg" -nt "$cache/400/$name.colors" ]]
+}
+
+# Quantize a tiny copy of the thumbnail, then turn pixel counts into shares.
+palette() {
+    local name=$1
+
+    magick "$cache/400/$name.jpg" -scale '100x75' +dither -colors 6 -format '%c' histogram:info:- 2>/dev/null \
+        | awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^#[0-9A-Fa-f]{6}/) { n++; count[n] = $1 + 0; hex[n] = tolower(substr($i, 1, 7)); total += $1 } }
+               END { for (i = 1; i <= n; i++) printf "%d %s\n", count[i], hex[i] }' \
+        | sort -rn \
+        | awk -v total=0 '{ c[NR] = $1; h[NR] = $2; total += $1 }
+                          END { for (i = 1; i <= NR; i++) printf "%s%s %.3f", (i > 1 ? " " : ""), h[i], c[i] / total }' \
+        > "$cache/400/$name.colors"
+}
+
 thumb() {
     local name=$1
     local src="$dir/$name"
@@ -43,8 +66,15 @@ thumb() {
 
     magick identify -ping -format '%w %h' "$src[0]" > "$cache/800/$name.dim" 2>/dev/null || echo "0 0" > "$cache/800/$name.dim"
     magick "$src[0]" -auto-orient -thumbnail '800x600>' -quality 85 "$big" 2>/dev/null \
-        && magick "$big" -thumbnail '400x300>' -quality 85 "$cache/400/$name.jpg" 2>/dev/null
+        && magick "$big" -thumbnail '400x300>' -quality 85 "$cache/400/$name.jpg" 2>/dev/null \
+        && palette "$name"
     echo "made $name"
+}
+
+# Thumbnails are fine, only the palette is missing or older.
+recolor() {
+    palette "$1"
+    echo "made $1"
 }
 
 case $mode in
@@ -55,7 +85,9 @@ list)
         # .dim has no trailing newline: read reports EOF but still fills both.
         [[ -f "$cache/800/$name.dim" ]] && read -r width height < "$cache/800/$name.dim"
         if stale "$name"; then thumbed=0; else thumbed=1; fi
-        printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$bytes" "${width:-0}" "${height:-0}" "$thumbed"
+        colors=""
+        [[ -f "$cache/400/$name.colors" ]] && colors=$(< "$cache/400/$name.colors")
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$bytes" "${width:-0}" "${height:-0}" "$thumbed" "$colors"
     done < <(images)
     ;;
 build)
@@ -65,20 +97,26 @@ build)
     for file in "$cache"/800/*.jpg; do
         [[ -e $file ]] || continue
         name=$(basename "$file" .jpg)
-        [[ -f "$dir/$name" ]] || rm -f "$file" "$cache/400/$name.jpg" "$cache/800/$name.dim"
+        [[ -f "$dir/$name" ]] || rm -f "$file" "$cache/400/$name.jpg" "$cache/400/$name.colors" "$cache/800/$name.dim"
     done
 
     todo=()
+    recolor=()
     while IFS= read -r name; do
-        stale "$name" && todo+=("$name")
+        if stale "$name"; then
+            todo+=("$name")
+        elif palette_stale "$name"; then
+            recolor+=("$name")
+        fi
     done < <(images)
 
-    echo "todo ${#todo[@]}"
-    (( ${#todo[@]} == 0 )) && exit 0
+    echo "todo $(( ${#todo[@]} + ${#recolor[@]} ))"
+    (( ${#todo[@]} + ${#recolor[@]} == 0 )) && exit 0
 
     export dir cache
-    export -f thumb
-    printf '%s\0' "${todo[@]}" | xargs -0 -P "$(nproc)" -I{} bash -c 'thumb "$1"' _ {}
+    export -f thumb palette recolor
+    (( ${#todo[@]} > 0 )) && printf '%s\0' "${todo[@]}" | xargs -0 -P "$(nproc)" -I{} bash -c 'thumb "$1"' _ {}
+    (( ${#recolor[@]} > 0 )) && printf '%s\0' "${recolor[@]}" | xargs -0 -P "$(nproc)" -I{} bash -c 'recolor "$1"' _ {}
     ;;
 *)
     echo "unknown mode: $mode" >&2
