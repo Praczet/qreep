@@ -26,9 +26,13 @@ qreep/
 │   ├── osd/
 │   ├── places/
 │   ├── polkit/
+│   ├── prism/
 │   ├── qreeper/
+│   ├── screenshot/
 │   ├── timer/
-│   └── triage/
+│   ├── triage/
+│   └── wallpaper/
+├── docs/
 ├── fixtures/
 ├── scripts/
 ├── theme/
@@ -129,28 +133,30 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 
 | File | Synced against | Sync date |
 | --- | --- | --- |
-| `AGENTS.md` | `fcd38ff` | `2026-10-19` |
-| `README.md` | `cc7fda3` | `2026-07-21` |
-| `README_when_bored.md` | `292493f` | `2026-10-12` |
-| `docs/bar-ownership-map.md` | `ca1ce6e` | `2026-07-13` |
+| `AGENTS.md` | `865c8af` | `2026-10-23` |
+| `README.md` | `865c8af` | `2026-10-23` |
+| `README_when_bored.md` | `865c8af` | `2026-10-23` |
+| `docs/archive/README.md` | `865c8af` | `2026-10-23` |
+| `docs/bar-ownership-map.md` | `865c8af` | `2026-10-23` |
 | `modules/aegis/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/battery/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/borg/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/bar/features/clock/README.md` | `1098e22` | `2026-07-12` |
-| `modules/bar/features/launcher/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bar/features/clock/README.md` | `865c8af` | `2026-10-23` |
 | `modules/bar/features/language/README.md` | `ca1ce6e` | `2026-07-13` |
+| `modules/bar/features/launcher/README.md` | `865c8af` | `2026-10-23` |
 | `modules/bar/features/monitorprofile/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/mpris/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/network/README.md` | `3f15272` | `2026-10-08` |
-| `modules/bar/features/power/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/potatofast/README.md` | `855e376` | `2026-07-10` |
+| `modules/bar/features/power/README.md` | `865c8af` | `2026-10-23` |
 | `modules/bar/features/timer/README.md` | `0176cf4` | `2026-07-13` |
+| `modules/bar/features/tray/README.md` | `865c8af` | `2026-10-23` |
 | `modules/bar/features/upchecker/README.md` | `9438e75` | `2026-07-20` |
 | `modules/bar/features/vitals/README.md` | `96d2e15` | `2026-10-19` |
 | `modules/bar/features/volume/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/bar/features/workspaces/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/bloom/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/clipboard/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/bloom/README.md` | `865c8af` | `2026-10-23` |
+| `modules/clipboard/README.md` | `865c8af` | `2026-10-23` |
 | `modules/dashboard/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/clock/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/dashboard/features/image/README.md` | `1a769ca` | `2026-07-08` |
@@ -159,16 +165,17 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/expose/README.md` | `e976b0d` | `2026-07-21` |
 | `modules/fastpassword/README.md` | `1af57ac` | `2026-07-17` |
 | `modules/kip/README.md` | `b5b9bda` | `2026-10-19` |
-| `tools/jarvis/README.md` | `4481015` | `2026-10-15` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
-| `modules/places/README.md` | `b5b9bda` | `2026-10-19` |
+| `modules/places/README.md` | `865c8af` | `2026-10-23` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
 | `modules/prism/README.md` | `fcd38ff` | `2026-10-19` |
 | `modules/qreeper/README.md` | `292493f` | `2026-10-12` |
+| `modules/screenshot/README.md` | `865c8af` | `2026-10-23` |
 | `modules/timer/README.md` | `0176cf4` | `2026-07-13` |
 | `modules/triage/README.md` | `9438e75` | `2026-07-20` |
 | `modules/wallpaper/README.md` | `b5b9bda` | `2026-10-19` |
+| `tools/jarvis/README.md` | `4481015` | `2026-10-15` |
 
 ## Quickshell / QML rules
 
@@ -199,6 +206,7 @@ modules/bar/features/
 ├── potatofast/
 ├── qreeper/
 ├── timer/
+├── tray/
 ├── upchecker/
 ├── vitals/
 ├── volume/
@@ -221,9 +229,12 @@ modules/
 ├── osd/
 ├── places/
 ├── polkit/
+├── prism/
 ├── qreeper/
+├── screenshot/
 ├── timer/
-└── triage/
+├── triage/
+└── wallpaper/
 ```
 
 Feature folders may contain their own QML UI, popup/panel pieces, state/service objects, and local theme section files. Keep shared wrappers and shared surfaces out of feature folders unless the ownership is obvious. The goal is fewer scavenger hunts, not a tiny bureaucracy with imports.
@@ -411,16 +422,9 @@ Purpose:
 - apply wallpaper/theme actions;
 - eventually cooperate with Unclaimed Bloom / Matugen without pretending a wallpaper grid is a small tooltip.
 
-Possible structure:
-
-```text
-modules/wallpaper/
-├── Wallpaper.qml
-├── WallpaperButton.qml
-├── WallpaperPanel.qml
-├── WallpaperService.qml
-└── WallpaperTheme.qml
-```
+Built: `modules/wallpaper/` exists, has no bar button, and is described in
+`modules/wallpaper/README.md` and under Current state. The plan below stayed
+true, which is rarer than it should be.
 
 This is a strong `Scope + LazyLoader` candidate. Image grids, thumbnails, filesystem watchers, and previews should not be created at bar startup unless future Adam has been bad and needs consequences.
 
@@ -435,7 +439,7 @@ qreep-clipboard
 Goal: a Pano-like clipboard manager, but Qreep-shaped instead of “let us invent GNOME Shell in a trench coat”.
 
 This is a top-level shell module, not a bar feature. It is opened by IPC
-and a Hyprland binding such as `CTRL+SUPER+V`; do not add a bar button unless
+and the Hyprland binding `SUPER+SHIFT+V`; do not add a bar button unless
 Adam explicitly asks. The clipboard is a work surface, not another tiny object
 trying to live in the right slot.
 
@@ -1069,13 +1073,15 @@ Qreep currently has:
 - notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;
 - notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
-- a top-level Places module in `modules/places/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-places` (bound to `SUPER+SHIFT+P`), replacing the old `places-rofi` project picker: a centered overlay with a filterable, grouped project list and a detail pane showing README summary, git state, questlog (`docs/ai/QUESTLOG.json` or `questlog.json`), uncommitted and recently touched files, pinned docs, commits, and tokei/commit-activity stats; projects and non-project places (pages of `apps` / `documents` / `folders` / `folder` (live listing of one path) / `ssh` (~/.ssh/config hosts, Enter = kitty ssh) / `usb` (lsblk while open, udisksctl mount/unmount/eject) / `smb` (gio mount; password only in GNOME Keyring under service=qreep-places-smb, passed on stdin, dialog when missing) / `calendar` (bar clock event files) / `todos` (Logseq TODO lines via `rg`, opened through `Kip.runAction`) blocks; projects take blocks too, every entry and block honours `"enabled": false`) come from `~/.config/qreep/places.json` (watched), and actions open the project in the configured editor, the cockpit script, superfile, or a terminal. Places only reads; it writes nothing but the processes it launches;
+- a top-level Places module in `modules/places/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-places` (bound to `SUPER+grave`), replacing the old `places-rofi` project picker: a centered overlay with a filterable, grouped project list and a detail pane showing README summary, git state, questlog (`docs/ai/QUESTLOG.json` or `questlog.json`), uncommitted and recently touched files, pinned docs, commits, and tokei/commit-activity stats; projects and non-project places (pages of `apps` / `documents` / `folders` / `folder` (live listing of one path) / `ssh` (~/.ssh/config hosts, Enter = kitty ssh) / `usb` (lsblk while open, udisksctl mount/unmount/eject) / `smb` (gio mount; password only in GNOME Keyring under service=qreep-places-smb, passed on stdin, dialog when missing) / `calendar` (bar clock event files) / `todos` (Logseq TODO lines via `rg`, opened through `Kip.runAction`) blocks; projects take blocks too, every entry and block honours `"enabled": false`) come from `~/.config/qreep/places.json` (watched), and actions open the project in the configured editor, the cockpit script, superfile, or a terminal. Places only reads; it writes nothing but the processes it launches;
 - a top-level Polkit module in `modules/polkit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-polkit`, using `Quickshell.Services.Polkit.PolkitAgent` when it can register as the session agent, and keeping demo IPC for visual work while `hyprpolkitagent` still owns authentication;
 - a top-level Prism module in `modules/prism/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-prism` (`SUPER+P` runs `pick`, hyprpicker with copy; `SUPER+SHIFT+P` toggles the overlay): colour History fed by picks and by a `wl-paste --watch` that keeps any copied `#hex` / `rgb()` / `hsl()`, Favourites, and named Palettes of combos (each combo one or more colours, shown as a poster: one band per colour, lettered in the combo colour with the best contrast), stored in `~/Data/qreep/prism/prism.json`; new colours get the nearest CSS name. Step 2 (the universe: hue ring, sliders, harmonies, save a harmony as a combo) is built;
+- a top-level Screenshot module in `modules/screenshot/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-screenshot` (bound to `Ctrl+Print`): a small keyboard-first panel that picks a delay and backend, closes, runs `slurp`, waits, then captures the remembered region;
+- a system tray pill in `modules/bar/features/tray/` (runtime pill `tray`) hosting StatusNotifier items, hidden while none are registered;
 - a top-level Qreeper module in `modules/qreeper/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-qreeper`, reading the read-only Qreeper map snapshot at `~/.local/state/qreeper/map.json` (override with `QREEP_QREEPER_MAP_PATH`), with a movable Top-layer minimap, a full-screen Atlas, and a bar compass pill (`qreeper`) where left click toggles the minimap and right click toggles the Atlas. Qreeper is on demand: asleep (no watch, no polling, no pill) until `start` or opening the minimap/Atlas, back asleep on `stop`. QREEP never reads the Qreeper SQLite database or parses MUD text; the producer is the Qreeper Blightmud plugin's `publisher/` (atomic writes, 60 s heartbeat). Test without Blightmud using `scripts/qreep-qreeper-fixture_v0.0.1` and `fixtures/qreeper/`;
 - a top-level Timer module in `modules/timer/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-timer`, with count-up/countdown modes, duration and finish-at starts, presets, labels, pause/resume, stop, selectable completion feedback through notify-send or Qreep OSD, OSD completion using bottom-center placement for 10 seconds with a 128px alarm icon, persisted state at `~/.cache/qreep/timer/state.json`, and a bar pill fed by the same service;
 - a top-level Triage module in `modules/triage/`; its Rust helper lives in `tools/triagectl/`, installs as `triagectl`, stores local state in SQLite, is read-only against system package state in v1, and shares package-update context with Upchecker;
-- a top-level Wallpaper module in `modules/wallpaper/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-wallpaper` (bound to `SUPER+T`; Unclaimed Bloom's `wallset` without a path opens it), replacing wallset's rofi picker: a centered overlay with a grid (S/M/L/XL tiles) or list of `~/.config/backgrounds`, a preview pane for list/S/M, filter by name, view and size remembered in `~/.local/state/qreep/wallpaper.json`; Enter runs `wallset <path>` (sow, grow, awww, plant). Thumbnails (800x600 and 400x300, letterboxed) are made by the `wallpaper-thumbs` worker into `~/.cache/qreep/wallpapers/`, in parallel, only for new or changed images;
+- a top-level Wallpaper module in `modules/wallpaper/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-wallpaper` (bound to `SUPER+T`; Unclaimed Bloom's `wallset` without a path opens it), replacing wallset's rofi picker: a centered overlay with a grid (S/M/L/XL tiles) or list of `~/.config/backgrounds`, a preview pane for list/S/M, filter by name, hex, or CSS colour name (palettes extracted by `wallpaper-thumbs`), view and size remembered in `~/.local/state/qreep/wallpaper.json`; Enter runs `wallset <path>` (sow, grow, awww, plant). Thumbnails (800x600 and 400x300, letterboxed) are made by the `wallpaper-thumbs` worker into `~/.cache/qreep/wallpapers/`, in parallel, only for new or changed images;
 - feature-local theme sections exposed through `theme/QreepTheme.qml`;
 - an Unclaimed Bloom palette contract consisting of `theme/colors/template.qml` and `theme/colors/UnclaimedBloomColors.qml`;
 - watched local/generated calendar sources loaded through `modules/bar/features/clock/EventStore.qml`: repo `events.json`, `~/.cache/qreep/calendar/events.json`, and `~/.cache/qreep/calendar/microsoft-events.json`;
@@ -1200,64 +1206,26 @@ Current pickup point:
 - The Notification v1 shell module is implemented and documented in `modules/notification/README.md`: popups, notification center, grouping, per-group dismissal, app-specific cards for Color Picker and Hyprshot, action buttons, popup animations, and a test batch script.
 - The Aegis v1 shell module replaces the old AGS Aegis package for the common path: standalone `qreep-aegis` overlay, sysinfo service, dashboard-style enter/leave motion, and independent `modules/dashboard/configs/aegis_dashboard.json` layout. Aegis uses normal dashboard `blocks`, not legacy AGS `widgets`. Keep the main dashboard and Aegis configs separate.
 - Do not continue expanding Clipboard unless Adam asks. The remaining clipboard items are follow-ups, not the next default project direction.
-- The next default project direction is the bar/runtime stabilization pass described below. This supersedes the older MPRIS-first suggestion unless Adam explicitly asks for MPRIS.
 - Do not rush persistence. Runtime state first, persisted layout second. Past Adam does not need a config file that explains a bug with confidence.
 
 ## Next-session priority
 
-If a new session starts and Adam asks “what’s next?”, answer with this:
+The bar/runtime stabilization pass is done (`e8c4c28 fix(bar): clean up current
+bar wiring`, 2026-07-09), and so is the deliberate fullscreen Power layout
+(`1456bf4 feat(power): improve fullscreen layout`). There is no default next
+project. If Adam asks "what's next?", say so and offer the open items below
+instead of inventing a roadmap with confidence.
 
-```text
-The next best step is a small stabilization pass on the bar/runtime surface.
-```
+Known open items, each its own unit:
 
-Do **not** default to splitting MPRIS or building another module. The repo now has enough shell-level surfaces that the daily visible bar deserves a sanity pass before more furniture arrives.
+1. Decide whether `launcher` and `power` should join runtime pill state. Both are easy; both are escape hatches, so hiding them should be a deliberate choice, not a side effect with icons.
+2. Give `qreep-screenshot`, `qreep-qreeper-minimap`, and `qreep-qreeper-atlas` Hyprland layer rules if they need blur or animation; they have none today.
+3. Fill the README screenshot placeholders for KIP, Places, Wallpaper, and Prism (`<!-- TODO screenshot -->` comments in `README.md`).
+4. Revisit MPRIS only if its panel/tooltip/service wiring keeps expanding.
+5. Leave Clipboard alone unless a real issue appears. The follow-ups live in `modules/clipboard/README.md`.
 
-Recommended unit:
-
-```text
-fix(bar): clean up current bar wiring
-```
-
-Scope:
-
-1. Inspect `modules/bar/Bar.qml` for duplicated bindings, stale `Connections`, and feature wiring drift. Known example from the 2026-07-08 source pass: `LauncherButton` had duplicate `visible: !rootBar.collapsed` bindings.
-2. Verify every runtime pill ID matches `BarPillStateService.knownPills` and the registered pill wiring in `Bar.qml`.
-3. Check that hiding runtime pills consistently closes related popups, panels, and tooltips.
-4. Keep behavior unchanged unless a bug is found. This is stabilization, not a costume change.
-5. Run focused validation:
-
-```bash
-qmllint modules/bar/Bar.qml
-qmllint modules/bar/features/*/*.qml
-git diff --check
-```
-
-If the live session allows it, also run:
-
-```bash
-quickshell -c qreep --no-duplicate
-```
-
-Avoid during this pass:
-
-- splitting MPRIS;
-- adding new modules;
-- adding persistence/config machinery;
-- visual restyling;
-- “while here” cleanup outside bar runtime wiring.
-
-After this pass, the next larger improvement can be making Power fullscreen feel like a deliberate full-screen layout instead of the same small card on a full-screen layer.
-
-## Suggested next five steps
-
-1. **Run the bar/runtime stabilization pass first.** This is the default answer to “what’s next?” in the next session.
-2. **Preserve current visible behavior during that pass.** The expected output is boring wiring cleanup, not a redesigned bar.
-3. **Decide whether `launcher` and `power` should join runtime pill state only after the sanity pass.** Both are technically easy. Launcher and Power are also useful escape hatches, so hiding them should be a deliberate choice, not a side effect with icons.
-4. **Keep the ownership map current if the stabilization pass changes ownership boundaries.** The map is only useful if it tells the truth, which is apparently a demanding requirement.
-5. **Leave Clipboard alone unless a real issue appears.** The follow-ups live in `modules/clipboard/README.md`; they are not an invitation to build a tiny paste empire today.
-
-Keep these steps independent and reviewable. Qreep has enough moving pieces now that “one tiny cleanup while here” can reproduce when left unattended.
+Keep the ownership map current when ownership changes. It is only useful if it
+tells the truth, which is apparently a demanding requirement.
 
 ## Communication with Adam
 
