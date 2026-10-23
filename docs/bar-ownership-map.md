@@ -48,9 +48,10 @@ popups, or panels:
 | `Power` | `PowerButton`, `PowerPanel` | Feature controller owns the service and lazy standalone layer panel. |
 | `MonitorProfileService` | `MonitorProfileButton` | Small button/service pair. Leave alone until it grows teeth. |
 | `MprisService` | `MprisButton`, `MprisTooltip`, `MprisPanel` | Larger anchored feature with button, tooltip, and panel. Watch it. |
-| `LauncherService` | `LauncherButton` | Small command launcher button. Fine where it is. |
+| `LauncherService` | `LauncherButton` | Small command runner; the command is now `qreep-kip toggle`. Fine where it is. |
 | `BatteryService` | `BatteryButton` | Small status pill. Fine where it is. |
-| `NetworkService` | `NetworkButton`, `NetworkPanel` | Anchored button plus panel. Not as urgent as the full layer panels. |
+| `NetworkService` | `NetworkButton`, `NetworkPanel`, `WifiManagerPanel` | Anchored button plus panel. Not as urgent as the full layer panels. |
+| `Vitals` | `VitalsButton` | Indicator controller over shell-hosted `core/SystemSensorsService`; only active while the pill is visible. |
 | `LanguageService` | `LanguageButton` | Small Hyprland keyboard-layout pill. Fine where it is. |
 | `Core.SoundService` | `VolumeButton`, OSD signal bridge | Shared audio service plus bar button and OSD signal. Keep the shell bridge explicit. |
 | `WorkspaceService` | `Workspaces`, `WorkspaceClients` | Bar-owned workspace pill plus anchored client popup. |
@@ -65,7 +66,7 @@ as bar-owned objects:
 
 | Slot | Object | Behavior |
 | --- | --- | --- |
-| Left | `LauncherButton` | Click launches the configured launcher. |
+| Left | `LauncherButton` | Click opens KIP through `qreep-kip toggle`. |
 | Left | `Workspaces` | Runtime pill visibility/pinning; shows workspace client popup. |
 | Center | `PotatoFastButton` | Click refreshes POTATO health state. |
 | Center | `TimerButton` | Click opens the shell-level timer panel; middle toggles running; right stops. |
@@ -74,11 +75,13 @@ as bar-owned objects:
 | Right | `UpcheckerButton` | Click asks the `Upchecker` controller to toggle the update panel. |
 | Right | `MonitorProfileButton` | Shows monitor profile state. Apply-next is intentionally commented out. |
 | Right | `Borg` | Click refreshes, right-click runs backup. |
+| Right | `VitalsButton` | Runtime-toggleable gauges; hidden when no indicator is on. Click toggles Aegis through `aegisController`. |
 | Right | `BatteryButton` | Shows battery state. |
 | Right | `NetworkButton` | Click toggles network panel. |
 | Right | `LanguageButton` | Shows the active keyboard layout; click switches to the next configured layout. |
 | Right | `VolumeButton` | Click toggles mute, right-click opens `pavucontrol`, scroll adjusts volume. |
 | Right | `QreeperButton` | Click asks the shell-hosted `Qreeper` controller to toggle the minimap; right-click toggles the Atlas. The bar owns no Qreeper state. |
+| Right | `Tray` | StatusNotifier items in one pill; hidden while no item is registered. |
 | Right | `PowerButton` | Click toggles power panel. Hidden in collapsed mode. |
 
 Small controls can stay in `Bar.qml` until they need their own controller. The
@@ -111,7 +114,7 @@ then the state model starts wearing a false mustache.
 `BarPillStateService`:
 
 ```qml
-["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "battery", "network", "language", "volume", "qreeper", "tray"]
+["clock", "workspaces", "mpris", "timer", "upchecker", "monitorprofile", "borg", "potato-fast", "vitals", "battery", "network", "language", "volume", "qreeper", "tray"]
 ```
 
 Unknown pill IDs return an error. `listPills` returns the current state for all
@@ -130,9 +133,10 @@ The bar directly hosts these anchored or lightweight surfaces:
 | `WorkspaceClients` | `Workspaces` | Anchored client list popup. |
 | `CalendarPopup` | `Clock` | Anchored calendar popup. |
 | `CalendarPullConfirmPopup` | `Clock` | Anchored confirmation before manual calendar pull. |
-| `ClockEventIndicators` | `Clock` | Popup-based event dots, suppressed while fullscreen shell surfaces are open. |
+| `ClockEventIndicators` | `Clock` | Popup-based event dots, suppressed while Dashboard, Expose, the Qreeper Atlas, or fullscreen Power is open (`shellFullscreenSurfaceOpen` comes from `shell.qml`). |
 | `MprisPanel` | `MprisButton` | Anchored player panel. Larger than a tooltip, but still button-owned for now. |
 | `NetworkPanel` | `NetworkButton` | Anchored network panel. |
+| `WifiManagerPanel` | `NetworkButton` | Wi-Fi network manager opened from the network panel. |
 
 These can remain visible-toggled for now. Destroying and recreating them would
 mostly add ceremony and bugs, a classic two-for-one.
@@ -164,6 +168,19 @@ These are hosted by `shell.qml`, not `Bar.qml`:
 | `modules/expose/Expose.qml` | Top-level window overview with IPC and a fullscreen panel. |
 | `modules/bloom/Bloom.qml` | Shell-level Bloom panel/status surface. |
 | `modules/osd/Osd.qml` | Shell-level OSD surface and IPC service. |
+| `modules/kip/Kip.qml` | Launcher and slash-command surface; the launcher button only calls its IPC. |
+| `modules/places/Places.qml` | Project cockpit overlay. |
+| `modules/wallpaper/Wallpaper.qml` | Wallpaper picker overlay. |
+| `modules/prism/Prism.qml` | Colour history and palette overlay plus a clipboard watcher. |
+| `modules/fastpassword/FastPassword.qml` | Polkit-gated password chooser. |
+| `modules/polkit/Polkit.qml` | Session Polkit agent and prompt. |
+| `modules/screenshot/Screenshot.qml` | Delayed region screenshot panel. |
+| `modules/triage/Triage.qml` | Package triage surface; the bar's Upchecker gets `triageController` to open it. |
+| `modules/qreeper/Qreeper.qml` | Minimap and Atlas; the bar gets `qreeperController` for the compass pill and owns no Qreeper state. |
+
+The bar also receives `timerController`/`timerService`, `aegisController`, and
+`sensorsService` from `shell.qml`. Controllers go in; the bar does not create
+them.
 
 This is the right direction for surfaces that are not naturally bar-owned.
 
