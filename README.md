@@ -85,10 +85,10 @@ The bar tooltip gives the quick answer:
 
 The larger surface handles the less quick answer:
 
-![Qreep update checker](docs/assets/screenshots/qreep-upchecker-v2.png)
+![Qreep update checker with Triage decisions](docs/assets/screenshots/qreep-upchecker-v3.png)
 
-It also shows Triage decisions when they exist and can open the package triage
-surface for the selected update.
+It also shows Triage decisions when they exist, and **Show in Triage** opens
+the package triage window on the selected update.
 
 ### Larger shell surfaces
 
@@ -152,6 +152,15 @@ in a history, with the nearest CSS name. Favourites and palettes of colour
 combos sit next to it, plus a hue ring for building harmonies.
 
 ![Qreep Prism colour history](docs/assets/screenshots/qreep-prism.png)
+
+#### Triage
+
+Arch package state before anything destructive: updates, orphans, deps, and
+explicit installs, with each package's dependencies, what requires it, and a
+decision (`keep`, `investigate`, `plan-remove`, `skip`) plus a note. It reads
+the system and writes only its own notes; it removes nothing.
+
+![Qreep Triage](docs/assets/screenshots/qreep-triage.png)
 
 #### Expose
 
