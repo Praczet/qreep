@@ -754,6 +754,31 @@ FloatingWindow {
         onTriggered: rootPrismPanel.presented = true
     }
 
+    onCurrentKeyChanged: Qt.callLater(revealSection)
+    onChooserIndexChanged: Qt.callLater(() => reveal(chooserFlick, chooserRepeater.itemAt(chooserIndex)))
+
+    // Scroll a Flickable just enough to show one of its rows.
+    function reveal(flick, row) {
+        if (!row)
+            return;
+        const top = row.mapToItem(flick.contentItem, 0, 0).y;
+
+        if (top < flick.contentY)
+            flick.contentY = top;
+        else if (top + row.height > flick.contentY + flick.height)
+            flick.contentY = Math.min(flick.contentHeight - flick.height, top + row.height - flick.height);
+    }
+
+    function revealSection() {
+        for (let i = 0; i < sectionRepeater.count; i++) {
+            const row = sectionRepeater.itemAt(i);
+            if (row && row.modelData.key === currentKey) {
+                reveal(sidebarFlick, row);
+                return;
+            }
+        }
+    }
+
     onIndexChanged: {
         if (view === "poster")
             bands.positionViewAtIndex(index, ListView.Contain);
@@ -894,8 +919,9 @@ FloatingWindow {
         }
 
         // --- sidebar ---------------------------------------------------------------
-        Column {
-            id: sidebar
+        // Flickable so a long palette list scrolls on a short window.
+        Flickable {
+            id: sidebarFlick
 
             anchors {
                 left: parent.left
@@ -904,195 +930,206 @@ FloatingWindow {
                 margins: rootPrismPanel.pt.panelPadding
             }
             width: rootPrismPanel.pt.sidebarWidth
-            spacing: 4
+            contentHeight: sidebar.implicitHeight
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
 
-            Repeater {
-                model: rootPrismPanel.sections
+            Column {
+                id: sidebar
 
-                // Palettes start after a small heading, in the first palette's row.
-                Item {
-                    id: sectionItem
+                width: sidebarFlick.width
+                spacing: 4
 
-                    required property var modelData
-                    required property int index
+                Repeater {
+                    id: sectionRepeater
 
-                    readonly property bool hasHeading: index === 2
-                    readonly property bool isCombo: modelData.kind === "combo"
-                    readonly property bool active: rootPrismPanel.currentKey === modelData.key
+                    model: rootPrismPanel.sections
 
-                    width: sidebar.width
-                    height: (isCombo ? rootPrismPanel.pt.rowHeight - 8 : rootPrismPanel.pt.rowHeight) + (hasHeading ? 28 : 0)
+                    // Palettes start after a small heading, in the first palette's row.
+                    Item {
+                        id: sectionItem
 
-                    Text {
-                        visible: sectionItem.hasHeading
-                        x: 12
-                        y: 8
-                        text: "PALETTES"
-                        color: rootPrismPanel.pt.sectionColor
-                        font.pixelSize: rootPrismPanel.pt.metaPixelSize
-                        font.bold: true
-                        font.letterSpacing: 1
-                    }
+                        required property var modelData
+                        required property int index
 
-                    Rectangle {
-                        anchors.bottom: parent.bottom
-                        anchors.right: parent.right
-                        width: sectionItem.isCombo ? sidebar.width - 22 : sidebar.width
-                        height: sectionItem.isCombo ? rootPrismPanel.pt.rowHeight - 8 : rootPrismPanel.pt.rowHeight
-                        radius: rootPrismPanel.pt.rowRadius
-                        readonly property bool dropTarget: rowDrop.containsDrag && sectionItem.modelData.key !== "history"
+                        readonly property bool hasHeading: index === 2
+                        readonly property bool isCombo: modelData.kind === "combo"
+                        readonly property bool active: rootPrismPanel.currentKey === modelData.key
 
-                        color: dropTarget ? rootPrismPanel.pt.selectedColor : sectionItem.active ? rootPrismPanel.pt.selectedColor : (rowMouse.containsMouse ? rootPrismPanel.pt.hoveredColor : "transparent")
-                        border.width: dropTarget ? 2 : sectionItem.active ? 1 : 0
-                        border.color: dropTarget ? rootPrismPanel.pt.favoriteColor : rootPrismPanel.pt.selectedBorderColor
+                        width: sidebar.width
+                        height: (isCombo ? rootPrismPanel.pt.rowHeight - 8 : rootPrismPanel.pt.rowHeight) + (hasHeading ? 28 : 0)
 
-                        DropArea {
-                            id: rowDrop
-
-                            anchors.fill: parent
-                            keys: ["prism-color"]
-                            enabled: sectionItem.modelData.key !== "history"
-                            onDropped: drop => {
-                                rootPrismPanel.dropColor(sectionItem.modelData, drop.source.hex, drop.source.name);
-                                drop.accept();
-                            }
+                        Text {
+                            visible: sectionItem.hasHeading
+                            x: 12
+                            y: 8
+                            text: "PALETTES"
+                            color: rootPrismPanel.pt.sectionColor
+                            font.pixelSize: rootPrismPanel.pt.metaPixelSize
+                            font.bold: true
+                            font.letterSpacing: 1
                         }
 
-                        // Palettes fold: the chevron toggles without opening the palette.
-                        Text {
-                            id: chevron
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            anchors.right: parent.right
+                            width: sectionItem.isCombo ? sidebar.width - 22 : sidebar.width
+                            height: sectionItem.isCombo ? rootPrismPanel.pt.rowHeight - 8 : rootPrismPanel.pt.rowHeight
+                            radius: rootPrismPanel.pt.rowRadius
+                            readonly property bool dropTarget: rowDrop.containsDrag && sectionItem.modelData.key !== "history"
 
-                            anchors {
-                                left: parent.left
-                                leftMargin: 8
-                                verticalCenter: parent.verticalCenter
-                            }
-                            width: sectionItem.modelData.kind === "palette" ? 14 : 0
-                            visible: sectionItem.modelData.kind === "palette"
-                            // Above the row's own MouseArea (declared later), or the
-                            // row would take the click and only ever unfold.
-                            z: 1
-                            text: sectionItem.modelData.expanded ? "▾" : "▸"
-                            color: rootPrismPanel.pt.secondaryTextColor
-                            font.pixelSize: rootPrismPanel.pt.bodyPixelSize
+                            color: dropTarget ? rootPrismPanel.pt.selectedColor : sectionItem.active ? rootPrismPanel.pt.selectedColor : (rowMouse.containsMouse ? rootPrismPanel.pt.hoveredColor : "transparent")
+                            border.width: dropTarget ? 2 : sectionItem.active ? 1 : 0
+                            border.color: dropTarget ? rootPrismPanel.pt.favoriteColor : rootPrismPanel.pt.selectedBorderColor
 
-                            MouseArea {
+                            DropArea {
+                                id: rowDrop
+
                                 anchors.fill: parent
-                                anchors.margins: -6
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: rootPrismPanel.service.setExpanded(sectionItem.modelData.paletteId, !sectionItem.modelData.expanded)
+                                keys: ["prism-color"]
+                                enabled: sectionItem.modelData.key !== "history"
+                                onDropped: drop => {
+                                    rootPrismPanel.dropColor(sectionItem.modelData, drop.source.hex, drop.source.name);
+                                    drop.accept();
+                                }
                             }
-                        }
 
-                        Text {
-                            id: rowIcon
+                            // Palettes fold: the chevron toggles without opening the palette.
+                            Text {
+                                id: chevron
 
-                            anchors {
-                                left: chevron.right
-                                leftMargin: sectionItem.modelData.kind === "palette" ? 4 : 4
-                                verticalCenter: parent.verticalCenter
-                            }
-                            text: sectionItem.modelData.icon
-                            color: sectionItem.modelData.key === "favorites" ? rootPrismPanel.pt.favoriteColor : rootPrismPanel.pt.accentColor
-                            font.family: rootPrismPanel.theme.iconFontFamily
-                            font.pixelSize: 16
-                        }
+                                anchors {
+                                    left: parent.left
+                                    leftMargin: 8
+                                    verticalCenter: parent.verticalCenter
+                                }
+                                width: sectionItem.modelData.kind === "palette" ? 14 : 0
+                                visible: sectionItem.modelData.kind === "palette"
+                                // Above the row's own MouseArea (declared later), or the
+                                // row would take the click and only ever unfold.
+                                z: 1
+                                text: sectionItem.modelData.expanded ? "▾" : "▸"
+                                color: rootPrismPanel.pt.secondaryTextColor
+                                font.pixelSize: rootPrismPanel.pt.bodyPixelSize
 
-                        Text {
-                            anchors {
-                                left: rowIcon.right
-                                leftMargin: 10
-                                right: dots.left
-                                rightMargin: 8
-                                verticalCenter: parent.verticalCenter
-                            }
-                            text: sectionItem.modelData.label + (sectionItem.modelData.kind === "palette" ? "  ·  " + sectionItem.modelData.count : "")
-                            color: sectionItem.isCombo && !sectionItem.active ? rootPrismPanel.pt.secondaryTextColor : rootPrismPanel.pt.primaryTextColor
-                            font.pixelSize: sectionItem.isCombo ? rootPrismPanel.pt.bodyPixelSize - 1 : rootPrismPanel.pt.bodyPixelSize
-                            font.bold: sectionItem.active
-                            elide: Text.ElideRight
-                        }
-
-                        // A palette's first colours as dots; a count otherwise.
-                        Row {
-                            id: dots
-
-                            anchors {
-                                right: parent.right
-                                rightMargin: 12
-                                verticalCenter: parent.verticalCenter
-                            }
-                            spacing: -4
-
-                            Repeater {
-                                model: (sectionItem.modelData.colors || []).slice(0, 6)
-
-                                Rectangle {
-                                    required property var modelData
-
-                                    width: 14
-                                    height: 14
-                                    radius: 7
-                                    color: rootPrismPanel.service.display(modelData.hex)
-                                    border.width: 1
-                                    border.color: rootPrismPanel.pt.borderColor
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -6
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: rootPrismPanel.service.setExpanded(sectionItem.modelData.paletteId, !sectionItem.modelData.expanded)
                                 }
                             }
 
                             Text {
-                                visible: !sectionItem.modelData.colors
-                                text: sectionItem.modelData.count
-                                color: rootPrismPanel.pt.secondaryTextColor
-                                font.pixelSize: rootPrismPanel.pt.metaPixelSize
+                                id: rowIcon
+
+                                anchors {
+                                    left: chevron.right
+                                    leftMargin: sectionItem.modelData.kind === "palette" ? 4 : 4
+                                    verticalCenter: parent.verticalCenter
+                                }
+                                text: sectionItem.modelData.icon
+                                color: sectionItem.modelData.key === "favorites" ? rootPrismPanel.pt.favoriteColor : rootPrismPanel.pt.accentColor
+                                font.family: rootPrismPanel.theme.iconFontFamily
+                                font.pixelSize: 16
                             }
-                        }
 
-                        MouseArea {
-                            id: rowMouse
+                            Text {
+                                anchors {
+                                    left: rowIcon.right
+                                    leftMargin: 10
+                                    right: dots.left
+                                    rightMargin: 8
+                                    verticalCenter: parent.verticalCenter
+                                }
+                                text: sectionItem.modelData.label + (sectionItem.modelData.kind === "palette" ? "  ·  " + sectionItem.modelData.count : "")
+                                color: sectionItem.isCombo && !sectionItem.active ? rootPrismPanel.pt.secondaryTextColor : rootPrismPanel.pt.primaryTextColor
+                                font.pixelSize: sectionItem.isCombo ? rootPrismPanel.pt.bodyPixelSize - 1 : rootPrismPanel.pt.bodyPixelSize
+                                font.bold: sectionItem.active
+                                elide: Text.ElideRight
+                            }
 
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: rootPrismPanel.selectKey(sectionItem.modelData.key)
-                            onDoubleClicked: {
-                                if (sectionItem.isCombo)
-                                    rootPrismPanel.renameComboFromTree(sectionItem.modelData.paletteId, sectionItem.modelData.comboId);
+                            // A palette's first colours as dots; a count otherwise.
+                            Row {
+                                id: dots
+
+                                anchors {
+                                    right: parent.right
+                                    rightMargin: 12
+                                    verticalCenter: parent.verticalCenter
+                                }
+                                spacing: -4
+
+                                Repeater {
+                                    model: (sectionItem.modelData.colors || []).slice(0, 6)
+
+                                    Rectangle {
+                                        required property var modelData
+
+                                        width: 14
+                                        height: 14
+                                        radius: 7
+                                        color: rootPrismPanel.service.display(modelData.hex)
+                                        border.width: 1
+                                        border.color: rootPrismPanel.pt.borderColor
+                                    }
+                                }
+
+                                Text {
+                                    visible: !sectionItem.modelData.colors
+                                    text: sectionItem.modelData.count
+                                    color: rootPrismPanel.pt.secondaryTextColor
+                                    font.pixelSize: rootPrismPanel.pt.metaPixelSize
+                                }
+                            }
+
+                            MouseArea {
+                                id: rowMouse
+
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: rootPrismPanel.selectKey(sectionItem.modelData.key)
+                                onDoubleClicked: {
+                                    if (sectionItem.isCombo)
+                                        rootPrismPanel.renameComboFromTree(sectionItem.modelData.paletteId, sectionItem.modelData.comboId);
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Item {
-                width: 1
-                height: 6
-            }
-
-            Rectangle {
-                width: sidebar.width
-                height: rootPrismPanel.pt.rowHeight
-                radius: rootPrismPanel.pt.rowRadius
-                color: newMouse.containsMouse ? rootPrismPanel.pt.hoveredColor : "transparent"
-
-                Text {
-                    anchors {
-                        left: parent.left
-                        leftMargin: 12
-                        verticalCenter: parent.verticalCenter
-                    }
-                    text: "󰐕  New palette  (Ctrl+Shift+N)"
-                    color: rootPrismPanel.pt.secondaryTextColor
-                    font.family: rootPrismPanel.theme.iconFontFamily
-                    font.pixelSize: rootPrismPanel.pt.bodyPixelSize
+                Item {
+                    width: 1
+                    height: 6
                 }
 
-                MouseArea {
-                    id: newMouse
+                Rectangle {
+                    width: sidebar.width
+                    height: rootPrismPanel.pt.rowHeight
+                    radius: rootPrismPanel.pt.rowRadius
+                    color: newMouse.containsMouse ? rootPrismPanel.pt.hoveredColor : "transparent"
 
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: rootPrismPanel.startPrompt("newPalette", "")
+                    Text {
+                        anchors {
+                            left: parent.left
+                            leftMargin: 12
+                            verticalCenter: parent.verticalCenter
+                        }
+                        text: "󰐕  New palette  (Ctrl+Shift+N)"
+                        color: rootPrismPanel.pt.secondaryTextColor
+                        font.family: rootPrismPanel.theme.iconFontFamily
+                        font.pixelSize: rootPrismPanel.pt.bodyPixelSize
+                    }
+
+                    MouseArea {
+                        id: newMouse
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: rootPrismPanel.startPrompt("newPalette", "")
+                    }
                 }
             }
         }
@@ -1102,7 +1139,7 @@ FloatingWindow {
             id: main
 
             anchors {
-                left: sidebar.right
+                left: sidebarFlick.right
                 right: parent.right
                 top: searchBox.bottom
                 bottom: footer.top
@@ -1139,22 +1176,34 @@ FloatingWindow {
                     bottom: parent.bottom
                 }
 
-                PrismUniverse {
-                    id: universe
+                // The universe sizes its wheel from the visible height; the
+                // harmonies below it scroll when the window is short.
+                Flickable {
+                    id: universeFlick
 
                     anchors.fill: parent
                     visible: rootPrismPanel.universeOpen
-                    pt: rootPrismPanel.pt
-                    service: rootPrismPanel.service
-                    iconFont: rootPrismPanel.theme.iconFontFamily
-                    dragGhost: dragGhost
-                    dragHost: rootPrismPanel
+                    contentHeight: Math.max(height, universe.contentHeight)
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
 
-                    onCopyRequested: text => {
-                        rootPrismPanel.service.copy(text);
-                        rootPrismPanel.notice = "Copied " + text + ".";
+                    PrismUniverse {
+                        id: universe
+
+                        width: universeFlick.width
+                        height: universeFlick.height
+                        pt: rootPrismPanel.pt
+                        service: rootPrismPanel.service
+                        iconFont: rootPrismPanel.theme.iconFontFamily
+                        dragGhost: dragGhost
+                        dragHost: rootPrismPanel
+
+                        onCopyRequested: text => {
+                            rootPrismPanel.service.copy(text);
+                            rootPrismPanel.notice = "Copied " + text + ".";
+                        }
+                        onSaveHarmony: (colors, label) => rootPrismPanel.saveHarmony(colors, label)
                     }
-                    onSaveHarmony: (colors, label) => rootPrismPanel.saveHarmony(colors, label)
                 }
 
                 // Favourites / History: colour swatches.
@@ -1492,138 +1541,149 @@ FloatingWindow {
             border.color: rootPrismPanel.pt.selectedBorderColor
             clip: true
 
-            Column {
-                id: chooserColumn
+            Flickable {
+                id: chooserFlick
 
                 anchors {
                     fill: parent
                     margins: 14
                 }
-                spacing: 4
+                contentHeight: chooserColumn.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
 
-                // Header: the colour, its name, and whether it is a favourite.
-                Item {
-                    width: chooserColumn.width
-                    height: 30
+                Column {
+                    id: chooserColumn
 
-                    Row {
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 8
+                    width: chooserFlick.width
+                    spacing: 4
 
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 18
-                            height: 18
-                            radius: 5
-                            color: rootPrismPanel.selectedColor ? rootPrismPanel.service.display(rootPrismPanel.selectedColor.hex) : "transparent"
-                            border.width: 1
-                            border.color: rootPrismPanel.pt.borderColor
-                        }
-
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: (rootPrismPanel.selectedColor ? rootPrismPanel.selectedColor.name : "") + (rootPrismPanel.chooserMode === "actions" ? "" : ": add to")
-                            color: rootPrismPanel.pt.sectionColor
-                            font.pixelSize: rootPrismPanel.pt.bodyPixelSize
-                            font.bold: true
-                        }
-                    }
-
-                    Rectangle {
-                        anchors {
-                            right: parent.right
-                            verticalCenter: parent.verticalCenter
-                        }
-                        visible: rootPrismPanel.selectedColor !== null && rootPrismPanel.service.isFavorite(rootPrismPanel.selectedColor.hex)
-                        width: favoriteTag.implicitWidth + 16
-                        height: 22
-                        radius: 11
-                        color: rootPrismPanel.pt.chipColor
-                        border.width: 1
-                        border.color: rootPrismPanel.pt.favoriteColor
-
-                        Text {
-                            id: favoriteTag
-
-                            anchors.centerIn: parent
-                            text: "󰓎  favourite"
-                            color: rootPrismPanel.pt.favoriteColor
-                            font.family: rootPrismPanel.theme.iconFontFamily
-                            font.pixelSize: rootPrismPanel.pt.metaPixelSize
-                        }
-                    }
-                }
-
-                Repeater {
-                    model: rootPrismPanel.chooserOptions
-
-                    Rectangle {
-                        id: optionRow
-
-                        required property var modelData
-                        required property int index
-
+                    // Header: the colour, its name, and whether it is a favourite.
+                    Item {
                         width: chooserColumn.width
-                        height: 32
-                        radius: 8
-                        color: index === rootPrismPanel.chooserIndex ? rootPrismPanel.pt.selectedColor : (optionMouse.containsMouse ? rootPrismPanel.pt.hoveredColor : "transparent")
-
-                        Text {
-                            anchors {
-                                left: parent.left
-                                leftMargin: 10
-                                right: optionDots.left
-                                rightMargin: 8
-                                verticalCenter: parent.verticalCenter
-                            }
-                            text: (optionRow.index < 9 ? (optionRow.index + 1) + "   " : "    ") + optionRow.modelData.label
-                            color: optionRow.modelData.disabled ? rootPrismPanel.pt.secondaryTextColor : optionRow.modelData.kind === "combo" || optionRow.modelData.kind === "action" ? rootPrismPanel.pt.primaryTextColor : rootPrismPanel.pt.secondaryTextColor
-                            opacity: optionRow.modelData.disabled ? 0.55 : 1
-                            // The nerd-font star needs the icon font; other rows keep the UI font.
-                            font.family: optionRow.modelData.action === "favorite" ? rootPrismPanel.theme.iconFontFamily : Qt.application.font.family
-                            font.pixelSize: rootPrismPanel.pt.bodyPixelSize
-                            elide: Text.ElideRight
-                        }
+                        height: 30
 
                         Row {
-                            id: optionDots
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 8
 
-                            anchors {
-                                right: parent.right
-                                rightMargin: 10
-                                verticalCenter: parent.verticalCenter
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 18
+                                height: 18
+                                radius: 5
+                                color: rootPrismPanel.selectedColor ? rootPrismPanel.service.display(rootPrismPanel.selectedColor.hex) : "transparent"
+                                border.width: 1
+                                border.color: rootPrismPanel.pt.borderColor
                             }
-                            spacing: -4
 
                             Text {
-                                visible: (optionRow.modelData.hint || "").length > 0
-                                text: optionRow.modelData.hint || ""
-                                color: rootPrismPanel.pt.secondaryTextColor
-                                font.pixelSize: rootPrismPanel.pt.metaPixelSize
-                            }
-
-                            Repeater {
-                                model: optionRow.modelData.colors.slice(0, 6)
-
-                                Rectangle {
-                                    required property var modelData
-
-                                    width: 14
-                                    height: 14
-                                    radius: 7
-                                    color: rootPrismPanel.service.display(modelData.hex)
-                                    border.width: 1
-                                    border.color: rootPrismPanel.pt.borderColor
-                                }
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: (rootPrismPanel.selectedColor ? rootPrismPanel.selectedColor.name : "") + (rootPrismPanel.chooserMode === "actions" ? "" : ": add to")
+                                color: rootPrismPanel.pt.sectionColor
+                                font.pixelSize: rootPrismPanel.pt.bodyPixelSize
+                                font.bold: true
                             }
                         }
 
-                        MouseArea {
-                            id: optionMouse
+                        Rectangle {
+                            anchors {
+                                right: parent.right
+                                verticalCenter: parent.verticalCenter
+                            }
+                            visible: rootPrismPanel.selectedColor !== null && rootPrismPanel.service.isFavorite(rootPrismPanel.selectedColor.hex)
+                            width: favoriteTag.implicitWidth + 16
+                            height: 22
+                            radius: 11
+                            color: rootPrismPanel.pt.chipColor
+                            border.width: 1
+                            border.color: rootPrismPanel.pt.favoriteColor
 
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            onClicked: rootPrismPanel.pickChooser(optionRow.modelData)
+                            Text {
+                                id: favoriteTag
+
+                                anchors.centerIn: parent
+                                text: "󰓎  favourite"
+                                color: rootPrismPanel.pt.favoriteColor
+                                font.family: rootPrismPanel.theme.iconFontFamily
+                                font.pixelSize: rootPrismPanel.pt.metaPixelSize
+                            }
+                        }
+                    }
+
+                    Repeater {
+                        id: chooserRepeater
+
+                        model: rootPrismPanel.chooserOptions
+
+                        Rectangle {
+                            id: optionRow
+
+                            required property var modelData
+                            required property int index
+
+                            width: chooserColumn.width
+                            height: 32
+                            radius: 8
+                            color: index === rootPrismPanel.chooserIndex ? rootPrismPanel.pt.selectedColor : (optionMouse.containsMouse ? rootPrismPanel.pt.hoveredColor : "transparent")
+
+                            Text {
+                                anchors {
+                                    left: parent.left
+                                    leftMargin: 10
+                                    right: optionDots.left
+                                    rightMargin: 8
+                                    verticalCenter: parent.verticalCenter
+                                }
+                                text: (optionRow.index < 9 ? (optionRow.index + 1) + "   " : "    ") + optionRow.modelData.label
+                                color: optionRow.modelData.disabled ? rootPrismPanel.pt.secondaryTextColor : optionRow.modelData.kind === "combo" || optionRow.modelData.kind === "action" ? rootPrismPanel.pt.primaryTextColor : rootPrismPanel.pt.secondaryTextColor
+                                opacity: optionRow.modelData.disabled ? 0.55 : 1
+                                // The nerd-font star needs the icon font; other rows keep the UI font.
+                                font.family: optionRow.modelData.action === "favorite" ? rootPrismPanel.theme.iconFontFamily : Qt.application.font.family
+                                font.pixelSize: rootPrismPanel.pt.bodyPixelSize
+                                elide: Text.ElideRight
+                            }
+
+                            Row {
+                                id: optionDots
+
+                                anchors {
+                                    right: parent.right
+                                    rightMargin: 10
+                                    verticalCenter: parent.verticalCenter
+                                }
+                                spacing: -4
+
+                                Text {
+                                    visible: (optionRow.modelData.hint || "").length > 0
+                                    text: optionRow.modelData.hint || ""
+                                    color: rootPrismPanel.pt.secondaryTextColor
+                                    font.pixelSize: rootPrismPanel.pt.metaPixelSize
+                                }
+
+                                Repeater {
+                                    model: optionRow.modelData.colors.slice(0, 6)
+
+                                    Rectangle {
+                                        required property var modelData
+
+                                        width: 14
+                                        height: 14
+                                        radius: 7
+                                        color: rootPrismPanel.service.display(modelData.hex)
+                                        border.width: 1
+                                        border.color: rootPrismPanel.pt.borderColor
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                id: optionMouse
+
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: rootPrismPanel.pickChooser(optionRow.modelData)
+                            }
                         }
                     }
                 }
@@ -1652,59 +1712,68 @@ FloatingWindow {
             Rectangle {
                 anchors.centerIn: parent
                 width: 600
-                height: sheet.implicitHeight + 2 * rootPrismPanel.pt.panelPadding
+                height: Math.min(card.height - 2 * rootPrismPanel.pt.panelPadding, sheet.implicitHeight + 2 * rootPrismPanel.pt.panelPadding)
                 radius: rootPrismPanel.pt.swatchRadius
                 color: rootPrismPanel.pt.sheetColor
                 border.width: 1
                 border.color: rootPrismPanel.pt.selectedBorderColor
 
-                Column {
-                    id: sheet
+                Flickable {
+                    id: sheetFlick
 
                     anchors {
                         fill: parent
                         margins: rootPrismPanel.pt.panelPadding
                     }
-                    spacing: 7
+                    contentHeight: sheet.implicitHeight
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
 
-                    Text {
-                        bottomPadding: 6
-                        text: "Shortcuts"
-                        color: rootPrismPanel.pt.sectionColor
-                        font.pixelSize: rootPrismPanel.pt.metaPixelSize + 1
-                        font.bold: true
-                        font.capitalization: Font.AllUppercase
-                        font.letterSpacing: 1
-                    }
+                    Column {
+                        id: sheet
 
-                    Repeater {
-                        model: rootPrismPanel.shortcuts
+                        width: sheetFlick.width
+                        spacing: 7
 
-                        Row {
-                            required property var modelData
+                        Text {
+                            bottomPadding: 6
+                            text: "Shortcuts"
+                            color: rootPrismPanel.pt.sectionColor
+                            font.pixelSize: rootPrismPanel.pt.metaPixelSize + 1
+                            font.bold: true
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 1
+                        }
 
-                            spacing: 16
+                        Repeater {
+                            model: rootPrismPanel.shortcuts
 
-                            Rectangle {
-                                width: 170
-                                height: 24
-                                radius: 6
-                                color: rootPrismPanel.pt.chipColor
+                            Row {
+                                required property var modelData
+
+                                spacing: 16
+
+                                Rectangle {
+                                    width: 170
+                                    height: 24
+                                    radius: 6
+                                    color: rootPrismPanel.pt.chipColor
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: modelData.keys
+                                        color: rootPrismPanel.pt.accentColor
+                                        font.family: rootPrismPanel.theme.iconFontFamily
+                                        font.pixelSize: rootPrismPanel.pt.metaPixelSize + 1
+                                    }
+                                }
 
                                 Text {
-                                    anchors.centerIn: parent
-                                    text: modelData.keys
-                                    color: rootPrismPanel.pt.accentColor
-                                    font.family: rootPrismPanel.theme.iconFontFamily
-                                    font.pixelSize: rootPrismPanel.pt.metaPixelSize + 1
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: modelData.action
+                                    color: rootPrismPanel.pt.primaryTextColor
+                                    font.pixelSize: rootPrismPanel.pt.bodyPixelSize
                                 }
-                            }
-
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: modelData.action
-                                color: rootPrismPanel.pt.primaryTextColor
-                                font.pixelSize: rootPrismPanel.pt.bodyPixelSize
                             }
                         }
                     }

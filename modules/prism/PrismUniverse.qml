@@ -49,6 +49,8 @@ Item {
     }
 
     readonly property real wheelSize: Math.min(height * 0.55, width * 0.36)
+    // How tall it really is: the harmonies can run past `height`.
+    readonly property real contentHeight: Math.max(controls.y + controls.height, harmonyList.y + harmonyList.height)
 
     // --- wheel -------------------------------------------------------------------
     Item {
@@ -358,6 +360,8 @@ Item {
 
     // --- harmonies -------------------------------------------------------------------
     Column {
+        id: harmonyList
+
         anchors {
             left: parent.left
             right: parent.right
