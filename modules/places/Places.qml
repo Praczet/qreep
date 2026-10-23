@@ -43,7 +43,7 @@ Scope {
             placesService.refresh(true);
         }
 
-        // Open with the filter typed, e.g. "eos".
+        // Open with the filter typed, e.g. "qreep".
         function showWith(text: string) {
             rootPlaces.show();
             placesService.setQuery(text);

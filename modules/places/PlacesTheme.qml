@@ -7,7 +7,7 @@ QtObject {
     required property QtObject qreep
 
     readonly property string configPath: Quickshell.env("HOME") + "/.config/qreep/places.json"
-    // Project icons (coma-symbolic, eos-symbolic, ...) live here, outside the
+    // Custom project icons (<name>-symbolic) live here, outside the
     // active Qt icon theme, so the theme lookup alone misses them.
     readonly property string iconFallbackDir: Quickshell.env("HOME") + "/.local/share/icons/ADArtWork/scalable/apps"
 

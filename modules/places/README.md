@@ -28,14 +28,14 @@ next look without restarting Qreep. Minimum per project: a name and a path.
       "name": "Work",
       "projects": [
         {
-          "id": "eos",
-          "name": "EOS",
-          "path": "~/Development/work/projects/eos",
-          "iconName": "eos-symbolic",
+          "id": "acme",
+          "name": "Acme API",
+          "path": "~/Development/work/acme-api",
+          "iconName": "folder-code-symbolic",
           "editor": "nvim",
-          "pinned": ["docs/ai/STAFF-CHANGES-DESIGN.md"],
-          "links": [{ "name": "Documentation", "path": "~/Documents/Projects/eos" }],
-          "cockpit": ["~/.config/hypr/scripts/launch-dev-project.sh", "eos"]
+          "pinned": ["docs/DESIGN.md"],
+          "links": [{ "name": "Documentation", "path": "~/Documents/Projects/acme" }],
+          "cockpit": ["~/.config/hypr/scripts/launch-dev-project.sh", "acme"]
         },
         { "name": "Scratch", "path": "~/Development/scratch" }
       ]
@@ -211,15 +211,15 @@ quickshell -c qreep ipc call qreep-places toggle
 quickshell -c qreep ipc call qreep-places showMe
 quickshell -c qreep ipc call qreep-places hideMe
 quickshell -c qreep ipc call qreep-places refresh
-quickshell -c qreep ipc call qreep-places showWith eos   # open with the filter typed
-quickshell -c qreep ipc call qreep-places showProject eos   # open with that project selected
+quickshell -c qreep ipc call qreep-places showWith acme   # open with the filter typed
+quickshell -c qreep ipc call qreep-places showProject acme   # open with that project selected
 quickshell -c qreep ipc call qreep-places state
 ```
 
 ## Tips and KIP
 
 A tip card sits under the project list: a random tip each time Places opens,
-click it for the next. KIP's `/p eos` lists the same projects (same service)
+click it for the next. KIP's `/p acme` lists the same projects (same service)
 and opens Places on one; Shift+Enter there goes straight to the cockpit.
 `/ssh` lists the hosts of the ssh blocks (`sshHosts` on the service) and
 connects with `kitten ssh`, like Enter on an ssh card. Hosts that

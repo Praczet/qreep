@@ -256,7 +256,7 @@ QtObject {
             takesArgument: true,
             argumentOptional: true,
             syntax: "/p [words]",
-            examples: ["/p", "/p eos", "/p coding mask"],
+            examples: ["/p", "/p qreep", "/p dotfiles"],
             actions: "Lists the projects from Places with branch, age, changed files and quests. Enter opens Places on the project, Shift+Enter launches its cockpit, Ctrl+Enter opens it in its editor; KIP closes."
         },
         {
