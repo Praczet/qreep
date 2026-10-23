@@ -61,7 +61,7 @@ QtObject {
     readonly property int animationDuration: 180
 
     readonly property real overlayOpacity: 0.32
-    // Above 0.5: Hyprland's ignore_alpha for this layer, so the card stays blurred.
+    // A normal window now: Hyprland's window blur sits behind the whole card.
     readonly property real panelOpacity: 0.75
     readonly property color overlayColor: Qt.rgba(qreep.background.r, qreep.background.g, qreep.background.b, overlayOpacity)
     // The F1 sheet sits on the dimmed card: solid enough to read.

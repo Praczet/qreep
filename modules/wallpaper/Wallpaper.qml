@@ -3,8 +3,8 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 
-// Wallpaper controller: IPC, open state, the service, and a lazy overlay
-// panel on whichever monitor has focus when it opens. Replaces wallset's
+// Wallpaper controller: IPC, open state, the service, and a lazy window
+// sized for whichever monitor has focus when it opens. Replaces wallset's
 // rofi picker; applying still goes through wallset (Unclaimed Bloom).
 Scope {
     id: rootWallpaper
@@ -73,7 +73,7 @@ Scope {
         active: rootWallpaper.panelLoaded
 
         WallpaperPanel {
-            screen: rootWallpaper.targetScreen
+            targetScreen: rootWallpaper.targetScreen
             theme: rootWallpaper.theme
             service: wallpaperService
             panelOpen: rootWallpaper.open

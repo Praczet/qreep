@@ -1,11 +1,11 @@
 import QtQuick
 import Quickshell
-import Quickshell.Wayland
 
-// Wallpaper overlay: dimmed backdrop, one centered card with search and the
-// view switches on top, the wallpapers as a grid (S/M/L/XL) or a list, and a
-// preview pane where the tiles are too small to judge (list, S, M).
-PanelWindow {
+// Wallpaper window: a normal Hyprland window (move, resize, float), one card
+// with search and the view switches on top, the wallpapers as a grid
+// (S/M/L/XL) or a list, and a preview pane where the tiles are too small to
+// judge (list, S, M).
+FloatingWindow {
     id: rootWallpaperPanel
 
     required property QtObject theme
@@ -48,18 +48,18 @@ PanelWindow {
     signal closeRequested
     signal applyRequested(var item)
 
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
-    color: "transparent"
-    exclusionMode: ExclusionMode.Ignore
+    // The monitor that had focus on open. Only the first size comes from it;
+    // after that Hyprland owns size and position, like Triage.
+    property var targetScreen: null
 
-    WlrLayershell.namespace: "qreep-wallpaper"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    title: "Qreep Wallpaper"
+    implicitWidth: rootWallpaperPanel.wt.panelWidthFor(targetScreen ? targetScreen.width : 1920, targetScreen ? targetScreen.height : 1080)
+    implicitHeight: rootWallpaperPanel.wt.panelHeightFor(targetScreen ? targetScreen.width : 1920, targetScreen ? targetScreen.height : 1080)
+
+    color: "transparent"
+    surfaceFormat.opaque: false
+
+    onClosed: rootWallpaperPanel.closeRequested()
 
     Component.onCompleted: {
         search.forceActiveFocus();
@@ -265,29 +265,9 @@ PanelWindow {
     }
 
     Rectangle {
-        anchors.fill: parent
-        color: rootWallpaperPanel.wt.overlayColor
-        opacity: rootWallpaperPanel.presented ? 1 : 0
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: rootWallpaperPanel.wt.animationDuration
-            }
-        }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        onClicked: rootWallpaperPanel.closeRequested()
-    }
-
-    Rectangle {
         id: card
 
-        anchors.centerIn: parent
-        anchors.verticalCenterOffset: rootWallpaperPanel.presented ? 0 : 24
-        width: rootWallpaperPanel.wt.panelWidthFor(parent.width, parent.height)
-        height: rootWallpaperPanel.wt.panelHeightFor(parent.width, parent.height)
+        anchors.fill: parent
         radius: rootWallpaperPanel.wt.panelRadius
         color: rootWallpaperPanel.wt.panelColor
         border.width: 1
@@ -303,13 +283,6 @@ PanelWindow {
             }
         }
 
-        Behavior on anchors.verticalCenterOffset {
-            NumberAnimation {
-                duration: rootWallpaperPanel.wt.animationDuration
-                easing.type: Easing.OutCubic
-            }
-        }
-
         Behavior on scale {
             NumberAnimation {
                 duration: rootWallpaperPanel.wt.animationDuration
@@ -317,7 +290,7 @@ PanelWindow {
             }
         }
 
-        // Swallow clicks so only the backdrop closes.
+        // Swallow clicks so they do not reach whatever is under the card.
         MouseArea {
             anchors.fill: parent
         }
