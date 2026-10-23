@@ -1,14 +1,18 @@
 # Qreep
 
-Qreep is Adam's Quickshell learning bar. It started as a Waybar-shaped
-experiment and is now exactly the sort of thing that needs documentation before
-future Adam starts guessing. Guessing is how tiny panels become archaeology.
+Qreep is Adam's Quickshell shell. It started as a Waybar-shaped experiment and
+is now exactly the sort of thing that needs documentation before future Adam
+starts guessing. Guessing is how tiny panels become archaeology.
+
+This file is the map. The details live in each module's README, because a
+detail copied into two places ages at two different speeds.
 
 ## Run
 
-From the Quickshell config install location:
+Qreep is installed by symlinking the repo into Quickshell's config directory:
 
 ```bash
+ln -s ~/Development/Hyprland/quickshell/Qreep ~/.config/quickshell/qreep
 quickshell -c qreep
 ```
 
@@ -21,59 +25,80 @@ quickshell -c qreep --no-duplicate
 That second command refuses to spawn another copy if one is already running.
 Useful if you do not want a bar colony.
 
+IPC examples below use the short `quickshell ipc call ...` form. Module READMEs
+often spell it `quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc
+call ...`; both reach the same instance. Some Quickshell versions vary slightly
+in CLI syntax. If this bites, check `quickshell ipc --help`.
+
 ## Layout
 
 ```text
-shell.qml
-core/
-components/
-modules/
-theme/
+shell.qml        hosts the bar and every top-level module
+core/            shared services (sound, system sensors)
+components/      reusable UI pieces
+modules/         top-level modules, one folder each
+modules/bar/features/   bar-owned pills, panels, services, and popups
+theme/           public theme entry point and generated colours
+scripts/         helper scripts, systemd units, Polkit policy, install
+tools/           jarvis (KIP backend) and triagectl (Triage helper)
+fixtures/        test data, currently for Qreeper
+docs/            bar ownership map, mot-du-jour pipeline, archive
 ```
 
-Top-level Qreep modules live under `modules/`. The bar module lives at
-`modules/bar/` and bar-owned pills, panels, services, and popups live under
-`modules/bar/features/`. Reusable wrappers remain in `components/`. Theme
-entry points remain in `theme/`.
+Reusable wrappers stay in `components/`. Theme entry points stay in `theme/`.
+Old agent briefs live in [`docs/archive/`](docs/archive/README.md) and describe
+plans, not the current code.
 
-Current top-level module folders:
+## Module index
 
-```text
-modules/
-├── aegis/
-├── bar/
-├── bloom/
-├── clipboard/
-├── dashboard/
-├── expose/
-├── fastpassword/
-├── notification/
-├── osd/
-├── polkit/
-├── qreeper/
-└── timer/
-```
+Top-level modules, all hosted directly by `shell.qml`. Keybinds are the ones in
+Adam's Hyprland `binds.lua`, not something Qreep sets.
 
-Current bar-owned feature folders:
+| Module | What it is | IPC target | Keybind | Docs |
+| --- | --- | --- | --- | --- |
+| Aegis | system information overlay on the dashboard renderer | `qreep-aegis` | `SUPER+SHIFT+Escape` | [README](modules/aegis/README.md) |
+| Bloom | Unclaimed Bloom progress card | `qreep-bloom` | — | [README](modules/bloom/README.md) |
+| Clipboard | clipvault history with search, pins, image previews | `qreep-clipboard` | `SUPER+SHIFT+V` | [README](modules/clipboard/README.md) |
+| Dashboard | main dashboard of JSON-configured blocks | `qreep-dashboard` | `SUPER+Escape` | [README](modules/dashboard/README.md) |
+| Expose | window overview with live previews and search | `qreep-expose` | `SUPER+Tab` | [README](modules/expose/README.md) |
+| Fast Password | Polkit-gated, allowlisted KeePass entry copier | `qreep-fast-password` | `SUPER+SHIFT+L` | [README](modules/fastpassword/README.md) |
+| KIP | launcher, slash commands, local-AI prompt | `qreep-kip` | `SUPER+Space`, `SUPER+/`, `SUPER+F1`, `SUPER+F2`, `SUPER+SHIFT+C` | [README](modules/kip/README.md) |
+| Notification | notification server, popups, centre | `qreep-notification` | `SUPER+N`, `SUPER+SHIFT+N` | [README](modules/notification/README.md) |
+| OSD | on-screen messages, progress, volume, brightness | `osd` | — | [README](modules/osd/README.md) |
+| Places | project cockpit plus folders, drives, shares, hosts | `qreep-places` | `SUPER+grave` | [README](modules/places/README.md) |
+| Polkit | session auth agent, with a demo mode | `qreep-polkit` | — | [README](modules/polkit/README.md) |
+| Prism | colour history, favourites, palettes, harmonies | `qreep-prism` | `SUPER+P` (pick), `SUPER+SHIFT+P` | [README](modules/prism/README.md) |
+| Qreeper | Qreeper map minimap and Atlas, on demand | `qreep-qreeper` | — | [README](modules/qreeper/README.md) |
+| Screenshot | delayed region screenshot panel | `qreep-screenshot` | `Ctrl+Print` | [README](modules/screenshot/README.md) |
+| Timer | count-up and countdown panel | `qreep-timer` | `SUPER+Q` | [README](modules/timer/README.md) |
+| Triage | Arch package triage, read-only against the system | `qreep-triage` | — | [README](modules/triage/README.md) |
+| Wallpaper | wallpaper picker that hands off to `wallset` | `qreep-wallpaper` | `SUPER+T` | [README](modules/wallpaper/README.md) |
 
-```text
-modules/bar/features/
-├── battery/
-├── borg/
-├── clock/
-├── launcher/
-├── language/
-├── monitorprofile/
-├── mpris/
-├── network/
-├── power/
-├── potatofast/
-├── qreeper/
-├── timer/
-├── upchecker/
-├── volume/
-└── workspaces/
-```
+Bar features under `modules/bar/features/`:
+
+| Feature | What it is | IPC target | Docs |
+| --- | --- | --- | --- |
+| battery | UPower battery pill | — | [README](modules/bar/features/battery/README.md) |
+| borg | Borg backup state and progress popup | `qreep-borg` | [README](modules/bar/features/borg/README.md) |
+| clock | clock, calendar popup, calendar sync | `qreep-calendar` | [README](modules/bar/features/clock/README.md) |
+| language | keyboard layout pill | `qreep-language` | [README](modules/bar/features/language/README.md) |
+| launcher | button that opens KIP | — | [README](modules/bar/features/launcher/README.md) |
+| monitorprofile | monitor layout icons from runtime JSON | `qreep-monitor-profile` | [README](modules/bar/features/monitorprofile/README.md) |
+| mpris | media pill, preview tooltip, player popup | `qreep-mpris` | [README](modules/bar/features/mpris/README.md) |
+| network | wired, Wi-Fi, and Bluetooth pill and panel | — | [README](modules/bar/features/network/README.md) |
+| potatofast | POTATO fasting progress pill | `qreep-potato-fast` | [README](modules/bar/features/potatofast/README.md) |
+| power | power panel, normal and fullscreen | `qreep-power` | [README](modules/bar/features/power/README.md) |
+| qreeper | compass pill, only during a Qreeper session | — | [`modules/qreeper/README.md`](modules/qreeper/README.md) |
+| timer | active timer pill | — | [README](modules/bar/features/timer/README.md) |
+| tray | StatusNotifier system tray | — | [README](modules/bar/features/tray/README.md) |
+| upchecker | update pill and panel, with Triage badges | `qreep-upchecker` | [README](modules/bar/features/upchecker/README.md) |
+| vitals | runtime-toggleable CPU, temp, fan, battery, disk gauges | `qreep-vitals` | [README](modules/bar/features/vitals/README.md) |
+| volume | volume pill with OSD feedback | — | [README](modules/bar/features/volume/README.md) |
+| workspaces | Hyprland workspaces and client popup | — | [README](modules/bar/features/workspaces/README.md) |
+
+Dashboard blocks have their own READMEs under `modules/dashboard/features/`
+(clock, image, weather, wotd). The word-of-the-day pipeline is in
+[`docs/mot-du-jour.md`](docs/mot-du-jour.md).
 
 ## Bar
 
@@ -81,111 +106,112 @@ The main bar is `modules/bar/Bar.qml`.
 
 It owns:
 
-* the left, center, right, and overlay slots;
-* shared services used by bar modules;
-* shared tooltip surfaces;
-* feature panels/popups that are opened from bar buttons.
+- the left, center, right, and overlay slots;
+- shared services used by bar modules;
+- shared tooltip surfaces;
+- feature panels/popups that are opened from bar buttons.
 
 The detailed ownership map lives in
 [`docs/bar-ownership-map.md`](docs/bar-ownership-map.md). Read that before
 moving feature surfaces around. It is cheaper than guessing, which remains a
 popular but poorly reviewed debugging strategy.
 
-The bar layer namespace is:
+Bar mode and screen:
 
-```qml
-WlrLayershell.namespace: "qreep-bar"
+```bash
+quickshell ipc call qreep-bar getMode
+quickshell ipc call qreep-bar setMode reserved    # or overlay, collapsed
+quickshell ipc call qreep-bar toggleCollapsed
+quickshell ipc call qreep-bar moveToFocused       # bar follows you on request, not on every focus change
+quickshell ipc call qreep-bar getScreen
 ```
 
-Do not blur this layer unless you enjoy transparent edge artifacts and follow-up
-questions from yourself.
+Pill state uses two separate ideas:
 
-## Hyprland Layer Rules
+```bash
+quickshell ipc call qreep-bar-pill enablePill clock    # add pill to the bar
+quickshell ipc call qreep-bar-pill disablePill clock   # remove pill from the bar
+quickshell ipc call qreep-bar-pill expandPill clock    # full-size in collapsed mode
+quickshell ipc call qreep-bar-pill collapsePill clock  # collapsed strip in collapsed mode
+quickshell ipc call qreep-bar-pill listPills           # list known pill state
+```
 
-Use separate layer rules for separate surfaces. The bar is not the power panel.
-This is a useful fact, despite everything trying to make it annoying.
+So in collapsed mode, `enablePill` makes the pill present, and `expandPill`
+makes it full-size. Separate switches. Fewer surprise side effects, which is a
+lifestyle choice.
 
-Example shape:
+Current known runtime pills are `clock`, `workspaces`, `mpris`, `timer`,
+`upchecker`, `monitorprofile`, `borg`, `potato-fast`, `vitals`, `battery`,
+`network`, `language`, `volume`, `qreeper`, and `tray`. Unknown pill IDs return
+an error instead of inventing state for `banana`, which is growth.
+
+## Hyprland layer rules
+
+Every surface has its own namespace, so every surface can get its own rule.
+The bar is not the power panel. This is a useful fact, despite everything
+trying to make it annoying.
+
+`ignore_alpha` tells Hyprland not to blur behind pixels at or below that alpha.
+It is how a full-screen layer gets blur only where it should:
+
+- `0.1` blurs everything that is not fully transparent. KIP depends on this:
+  its faint full-screen backdrop (alpha 0.18) sits just above it on purpose, so
+  the whole desktop behind KIP blurs while the card stays sharp.
+- `0.5` sits between a dimmed backdrop (about 0.32) and a card (about 0.75), so
+  the backdrop dims without blurring and only the card blurs. Places, Prism,
+  and Wallpaper use this.
+
+What Adam's config currently does:
+
+| Namespace | Blur | `ignore_alpha` | Notes |
+| --- | --- | --- | --- |
+| `qreep-bar` | no | — | do not blur this; transparent edges get halos |
+| `qreep-popup-power` | yes | 0.5 | |
+| `qreep-popup-workspace-clients` | yes | 0.5 | |
+| `qreep-popup-upchecker` | yes | 0.1 | `blur_popups` |
+| `qreep-popup-osd` | yes | 0.1 | `blur_popups` |
+| `qreep-places` | yes | 0.5 | backdrop dims, card blurs |
+| `qreep-prism` | yes | 0.5 | same |
+| `qreep-wallpaper` | yes | 0.5 | same |
+| `qreep-kip` | yes | 0.1 | backdrop above the threshold on purpose |
+| `qreep-aegis`, `qreep-dashboard`, `qreep-expose` | yes | 0.1 | |
+| `qreep-clipboard`, `qreep-timer`, `qreep-triage` | yes | 0.1 | |
+| `qreep-notification`, `qreep-notification-center` | yes | 0.1 | surfaces are input-masked too |
+| `qreep-polkit`, `qreep-fast-password`, `qreep-bloom` | yes | 0.1 | |
+
+Not given rules yet: `qreep-screenshot`, `qreep-qreeper-minimap`, and
+`qreep-qreeper-atlas`.
+
+Rule shape, in the Lua config syntax:
 
 ```lua
 hl.layer_rule({
-    name = "qreep-bar",
-    match = { namespace = "qreep-bar" },
-    animation = "popin 85%",
-})
-
-hl.layer_rule({
-    name = "qreep-power",
-    match = { namespace = "qreep-popup-power" },
-    blur = true,
-    animation = "popin 85%",
-    ignore_alpha = 0.5,
-})
-
-hl.layer_rule({
-    name = "qreep-upchecker",
-    match = { namespace = "qreep-popup-upchecker" },
-    blur = true,
-    animation = "popin 85%",
-    ignore_alpha = 0.5,
-})
-
-hl.layer_rule({
-    name = "qreep-notification",
-    match = { namespace = "qreep-notification" },
-    blur = true,
-    ignore_alpha = 0.1,
-})
-
-hl.layer_rule({
-    name = "qreep-notification-center",
-    match = { namespace = "qreep-notification-center" },
-    blur = true,
-    ignore_alpha = 0.1,
-})
-
-hl.layer_rule({
-    name = "qreep-polkit",
-    match = { namespace = "qreep-polkit" },
+    name = "qreep-kip",
+    match = { namespace = "qreep-kip" },
     blur = true,
     ignore_alpha = 0.1,
 })
 ```
 
-`ignore_alpha` tells Hyprland not to blur behind pixels at or below that alpha
-threshold. Higher values ignore more soft/transparent pixels. Good for avoiding
-blur halos around rounded transparent surfaces.
-
 ## Theme
 
-The public theme object is `theme/QreepTheme.qml`.
+The public theme object is `theme/QreepTheme.qml`. Colours come from
+`theme/colors/UnclaimedBloomColors.qml`, generated by Unclaimed Bloom from
+`theme/colors/template.qml`. Do not hand-edit the generated file; the next
+wallpaper change will undo you without asking.
 
-Root theme files:
+Module theme files live with their owning module and are aggregated by
+`modules/ModulesTheme.qml`:
 
-* `theme/colors/UnclaimedBloomColors.qml`
-* `theme/colors/template.qml`
+```text
+modules/<module>/<Module>Theme.qml            one per top-level module
+modules/bar/BarTheme.qml                      bar, plus BarPillTheme and TooltipTheme
+modules/bar/features/<feature>/*Theme.qml     one per bar feature that needs tokens
+modules/dashboard/features/aegis/AegisTheme.qml   Aegis lives here, not in modules/aegis/
+```
 
-Module theme files live with their owning module:
-
-* `modules/ModulesTheme.qml`
-* `modules/aegis/AegisTheme.qml`
-* `modules/bar/BarTheme.qml`
-* `modules/bar/BarPillTheme.qml`
-* `modules/bar/TooltipTheme.qml`
-* `modules/bloom/BloomTheme.qml`
-* `modules/clipboard/ClipboardTheme.qml`
-* `modules/dashboard/DashboardTheme.qml`
-* `modules/expose/ExposeTheme.qml`
-* `modules/fastpassword/FastPasswordTheme.qml`
-* `modules/notification/NotificationTheme.qml`
-* `modules/osd/OsdTheme.qml`
-* `modules/polkit/PolkitTheme.qml`
-* `modules/qreeper/QreeperTheme.qml`
-* `modules/timer/TimerTheme.qml`
-* `modules/prism/PrismTheme.qml`
-* `modules/wallpaper/WallpaperTheme.qml`
-
-`QreepTheme.qml` exposes global semantic colors and the aggregated module theme:
+`QreepTheme.qml` exposes global semantic colours and the aggregated module
+theme:
 
 ```qml
 readonly property QtObject modules: Modules.ModulesTheme {
@@ -203,279 +229,27 @@ If a feature needs sizes, spacing, timing, or command names, put them in that
 feature's theme file. Hardcoding in the button is how the next tweak becomes a
 search warrant.
 
-## IPC
-
-Useful current targets:
-
-```bash
-quickshell ipc call qreep-borg refresh
-quickshell ipc call qreep-borg showProgress
-quickshell ipc call qreep-borg hideProgress
-quickshell ipc call qreep-borg toggleProgress
-quickshell ipc call qreep-potato-fast refresh
-quickshell ipc call qreep-upchecker refresh
-quickshell ipc call qreep-upchecker toggle
-quickshell ipc call qreep-triage showUpdates
-quickshell ipc call qreep-triage showPackage luajit
-quickshell ipc call qreep-monitor-profile refresh
-quickshell ipc call qreep-calendar refresh
-quickshell ipc call qreep-calendar notifyChangedAll
-quickshell ipc call qreep-calendar notifyChanged EVENT_ID
-quickshell ipc call qreep-power toggle
-quickshell ipc call qreep-power toggleFullscreen
-quickshell ipc call qreep-aegis toggle
-quickshell ipc call qreep-dashboard toggle
-quickshell ipc call qreep-bloom pickupBloom
-quickshell ipc call qreep-clipboard toggle
-quickshell ipc call qreep-expose toggle
-quickshell ipc call qreep-notification toggleCenter
-quickshell ipc call qreep-polkit demo
-quickshell ipc call qreep-polkit registrationState
-quickshell ipc call qreep-qreeper toggleMinimap
-quickshell ipc call qreep-qreeper toggleAtlas
-quickshell ipc call qreep-timer toggle
-quickshell ipc call osd showMessage "Hello from the questionable future" 3000
-```
-
-Notification center commands:
-
-```bash
-quickshell ipc call qreep-notification toggleCenter
-quickshell ipc call qreep-notification showCenter
-quickshell ipc call qreep-notification hideCenter
-quickshell ipc call qreep-notification dismissAll
-```
-
-Aegis commands:
-
-```bash
-quickshell ipc call qreep-aegis toggle
-quickshell ipc call qreep-aegis showMe
-quickshell ipc call qreep-aegis hideMe
-quickshell ipc call qreep-aegis refresh
-quickshell ipc call qreep-aegis setMode full
-```
-
-Dashboard commands:
-
-```bash
-quickshell ipc call qreep-dashboard toggle
-quickshell ipc call qreep-dashboard showMe
-quickshell ipc call qreep-dashboard hideMe
-quickshell ipc call qreep-dashboard refresh
-```
-
-Clipboard commands:
-
-```bash
-quickshell ipc call qreep-clipboard toggle
-quickshell ipc call qreep-clipboard showMe
-quickshell ipc call qreep-clipboard hideMe
-quickshell ipc call qreep-clipboard refresh
-```
-
-Expose commands:
-
-```bash
-quickshell ipc call qreep-expose toggle
-quickshell ipc call qreep-expose showMe
-quickshell ipc call qreep-expose hideMe
-quickshell ipc call qreep-expose refresh
-```
-
-Fast Password commands:
-
-```bash
-quickshell ipc call qreep-fast-password toggle
-quickshell ipc call qreep-fast-password showMe
-quickshell ipc call qreep-fast-password hideMe
-quickshell ipc call qreep-fast-password refresh
-quickshell ipc call qreep-fast-password copy "Work/DB"
-```
-
-The panel first authenticates through `qreep-pass-auth`, then lists allowed
-entry names through `qreep-pass-list`, and copies through `qreep-pass-copy`.
-The copy helper checks for the existing Polkit authorization without opening a
-second prompt, enforces the same allowlist, and copies with
-`wl-copy --sensitive`. All three use or support the same Polkit action:
-`art.druzd.adam.qreep.pass.copy`. The installed policy uses `auth_self_keep` so
-the copy step can reuse the short-lived authorization from opening the chooser.
-
-Visible entries come from:
-
-```text
-~/.config/qreep/fast-password.json
-```
-
-Example:
-
-```json
-{
-  "entries": [
-    "Work/DB"
-  ]
-}
-```
-
-QML does not receive the password value. If direct `passw` is still callable, it
-remains a bypass; this module protects the Qreep path, not the entire user
-session from itself.
-
-Polkit commands:
-
-```bash
-quickshell ipc call qreep-polkit demo
-quickshell ipc call qreep-polkit showMe
-quickshell ipc call qreep-polkit hideMe
-quickshell ipc call qreep-polkit toggle
-quickshell ipc call qreep-polkit registrationState
-quickshell ipc call qreep-polkit showLog
-quickshell ipc call qreep-polkit logPath
-```
-
-The Polkit module in `modules/polkit/` now creates a real Quickshell
-`PolkitAgent`. It only becomes the actual password prompt when it successfully
-registers for the session. If `hyprpolkitagent` is already running, Qreep loses
-that registration race and the existing agent still owns the real prompts.
-
-For a focused test:
-
-```bash
-systemctl --user stop hyprpolkitagent
-quickshell -c qreep --no-duplicate
-quickshell ipc call qreep-polkit registrationState
-pkexec true
-systemctl --user start hyprpolkitagent
-```
-
-`pkexec true` asks for authentication and then does nothing interesting, which
-is exactly the sort of test command an auth prompt deserves.
-
-Artwork is pulled from repo `assets/icon_*` images and cropped into the left
-side of the dialog. Runtime log lines land in the Quickshell log for the active
-instance:
-
-```bash
-find "/run/user/$UID/quickshell/by-id" -name log.qslog -print
-```
-
-Look for `Qreep info: Polkit ...`. Do not log passwords. This is not a diary.
-
-Timer commands:
-
-```bash
-quickshell ipc call qreep-timer toggle
-quickshell ipc call qreep-timer showMe
-quickshell ipc call qreep-timer hideMe
-quickshell ipc call qreep-timer startTimer "Focus"
-quickshell ipc call qreep-timer startCountdown 25m "Pomodoro"
-quickshell ipc call qreep-timer startCountdownUntil 15:03 "Tea"
-quickshell ipc call qreep-timer setNotificationMode osd
-quickshell ipc call qreep-timer pause
-quickshell ipc call qreep-timer resume
-quickshell ipc call qreep-timer toggleRunning
-quickshell ipc call qreep-timer stop
-```
-
-The timer panel is a top-level shell surface in `modules/timer/`. It supports a
-count-up timer, countdowns, finish-at times, duration presets, labels,
-pause/resume, stop, Tab navigation, and selectable completion feedback through
-either `notify-send` or Qreep OSD. Duration parsing accepts plain minutes (`25`)
-or `h`/`m`/`s` strings such as `1h30m` and `45s`. Finish-at parsing accepts
-local `HH:MM` such as `15:03`.
-
-Timer OSD completion uses bottom-center placement, the `Time's up` title, a
-128px `alarm-symbolic` icon, and a 10 second display duration. Subtle? No.
-Useful from across the room? More likely.
-
-The active timer is shown by `modules/bar/features/timer/TimerButton.qml`.
-Countdowns use a circular pie fill from empty to full. Count-up timers show the
-elapsed time as plain text because sometimes the correct UI is not a tiny
-festival.
-
-When a countdown completes, the timer pill shakes and pulses three times, then
-stays warning-colored until any pill click acknowledges it. Left, middle, and
-right click still clear that visual warning; middle click restarts a completed
-countdown from empty, otherwise it keeps the usual pause/resume job.
-
-Timer state is persisted at `~/.cache/qreep/timer/state.json`, so count-ups,
-countdowns, and the selected completion feedback mode survive Quickshell
-restarts.
-
-Expose behavior:
-
-```text
-current workspace windows -> large cards
-other workspaces          -> compact cluster cards
-typing                   -> reveal search and filter clients
-arrow keys               -> spatial selection, including cluster mini-cards
-Enter / click            -> switch workspace if needed, focus client, close
-```
-
-Current-workspace previews prefer `ToplevelManager.toplevels` rendered through
-`ScreencopyView`, with `grim -T <stableId>` still-image thumbnails as the
-fallback.
-The overview layout is manual and grid-shaped, not a QML `Grid`, so filtered
-cards can animate into their new positions instead of teleporting because a
-layout object felt helpful. Current-workspace previews start from the real
-window rect and morph into the destination preview area with theme-owned push
-and settle values.
-
-Clock event dots are still popup-based so they sit neatly under the pill. The
-bar suppresses them while Dashboard, Expose, or fullscreen Power is open,
-because separate popup windows do not politely hide behind fullscreen shell
-surfaces by themselves.
-
-Bloom commands:
-
-```bash
-quickshell ipc call qreep-bloom showBloom default ""
-quickshell ipc call qreep-bloom doneBloom
-quickshell ipc call qreep-bloom pickupBloom
-quickshell ipc call qreep-bloom hideBloom
-```
-
-The notification test helper sends a mixed batch for popup and center layout
-checks:
-
-```bash
-scripts/qreep-notification-test-batch_v0.0.1
-scripts/qreep-notification-test-batch_v0.0.1 --delay 0.4
-```
-
-Qreep must own `org.freedesktop.Notifications` for that helper to test Qreep.
-If another notification daemon owns it, Qreep logs that it could not register
-and the notifications go somewhere else. Very democratic. Not helpful.
-
-Install stable helper names and the calendar user units:
+## Install
 
 ```bash
 scripts/install
 ```
 
-That copies the current versioned helper scripts to `~/.local/bin`, including:
+Copies the versioned helper scripts to stable names in `~/.local/bin`:
 
 ```text
+qreep-bloom-notify
 qreep-calendar-sync
 qreep-calendar-google-sync
 qreep-calendar-microsoft-ics-sync
 qreep-calendar-microsoft-sync
 qreep-calendar-pull
+qreep-notification-test-batch
 qreep-region-screenshot-delay
 ```
 
-It also builds and installs the Rust package triage helper:
-
-```text
-triagectl
-```
-
-Upchecker and Triage now share the package-maintenance path: Upchecker can show
-latest triage decisions beside updates and jump to the selected package in
-Triage, while Triage reuses the same Upchecker update command instead of
-inventing a second button with a different mood.
-
-It also installs:
+It also builds and installs `triagectl` with cargo (skipped with a message if
+cargo is missing), and installs the calendar user units:
 
 ```text
 ~/.config/systemd/user/qreep-calendar-sync.service
@@ -488,148 +262,13 @@ Enable the timer only when wanted:
 systemctl --user enable --now qreep-calendar-sync.timer
 ```
 
-Pill state commands use two separate ideas:
+Not installed by `scripts/install`, on purpose or out of laziness:
 
-```bash
-quickshell ipc call qreep-bar-pill enablePill clock    # add pill to the bar
-quickshell ipc call qreep-bar-pill disablePill clock   # remove pill from the bar
-quickshell ipc call qreep-bar-pill expandPill clock    # full-size in collapsed mode
-quickshell ipc call qreep-bar-pill collapsePill clock  # collapsed strip in collapsed mode
-quickshell ipc call qreep-bar-pill listPills           # list known pill state
-```
-
-So in collapsed mode, `enablePill` makes the pill present, and `expandPill`
-makes it full-size. Separate switches. Fewer surprise side effects, which is a
-lifestyle choice.
-
-Current known runtime pills are `clock`, `workspaces`, `mpris`, `timer`,
-`upchecker`, `monitorprofile`, `borg`, `potato-fast`, `battery`, `network`,
-`language`, `volume`, `qreeper`, and `tray`.
-Unknown pill IDs return an error instead of inventing state for `banana`, which
-is growth.
-
-The POTATO fasting pill lives first in the center slot, before the clock and
-MPRIS. It polls `potato-fast --json`, renders `percentage` as an actual bar
-fill, and refreshes through:
-
-```bash
-quickshell ipc call qreep-potato-fast refresh
-```
-
-The `potato-sync` helper also calls that IPC target after writing
-`~/.cache/potato/health.json`, using the `qreep` Quickshell config by default.
-That is the small acknowledgement pulse after the paperwork changes, not a new
-state store. POTATO owns the data; Qreep displays it.
-
-Some Quickshell versions vary slightly in CLI syntax. If this bites, check:
-
-```bash
-quickshell ipc --help
-```
-
-## Qreeper Map
-
-The compass pill and its two surfaces render the map that the Qreeper Blightmud
-plugin will publish to `~/.local/state/qreeper/map.json`. Qreep only reads that
-JSON; the plugin's SQLite database stays the plugin's business. The publisher
-does not exist yet, so for now it runs on fixtures:
-
-```bash
-scripts/qreep-qreeper-fixture_v0.0.1 --help
-```
-
-Layer namespaces are `qreep-qreeper-minimap` (Top layer, masked, no keyboard
-focus) and `qreep-qreeper-atlas` (Overlay, exclusive keyboard focus). The
-schema, fixture scenarios, and limitations live in
-[`modules/qreeper/README.md`](modules/qreeper/README.md).
-
-## Event JSON
-
-Clock events are loaded from:
-
-```text
-events.json
-~/.cache/qreep/calendar/events.json
-~/.cache/qreep/calendar/microsoft-events.json
-```
-
-Expected shape:
-
-```json
-{
-  "events": [
-    {
-      "date": "2026-06-25",
-      "title": "Meeting",
-      "start": "14:00",
-      "end": "15:00",
-      "allDay": false
-    }
-  ]
-}
-```
-
-The clock shows current-day dots. The calendar popup shows a month grid, a
-selected-day agenda, optional next personal-event hints, and a footer with last
-pull status:
-
-```text
-Google: yyyy-MM-dd HH-mm-ss (status) | Microsoft: yyyy-MM-dd HH-mm-ss (status)
-```
-
-Personal events are still detected by the deliberately small `AD...` title
-prefix rule. When `CalendarTheme.showUpcomingPersonalEvents` is enabled, the
-clock tooltip and today's agenda append up to
-`CalendarTheme.upcomingPersonalEventLimit` upcoming personal events after the
-normal remaining-today events. Already-listed today events are skipped. Nobody
-needs a duplicate appointment pretending to be insight.
-
-Clock click behavior:
-
-```text
-left   -> open calendar
-middle -> toggle seconds
-right  -> confirm a manual calendar pull
-```
-
-Manual pulls run:
-
-```bash
-qreep-calendar-pull --notify
-```
-
-The timer uses the quiet default:
-
-```bash
-qreep-calendar-pull
-```
-
-Pull state is written to:
-
-```text
-~/.cache/qreep/calendar/state.json
-~/.cache/qreep/calendar/final.json
-```
-
-`state.json` is updated while the pull runs. `final.json` is the last finished
-summary. The wrapper runs configured providers, prefers Microsoft ICS over the
-Microsoft Graph route when both configs exist, and leaves the provider scripts
-to do the actual fetch/cache-refresh work. Boring boundaries. Useful boundaries.
-
-## Monitor Profile JSON
-
-Monitor profile state is read from:
-
-```text
-${XDG_RUNTIME_DIR:-/tmp}/hypr-monitor-profile-qreep.json
-```
-
-QML does not expand shell syntax, so the service builds that path with
-`Quickshell.env("XDG_RUNTIME_DIR") || "/tmp"`.
-
-The service expects a `layout` array with `position`, `display_name`,
-`external`, and optional `display.mode`/`display.scale` values. It sorts monitors
-by position and renders a compact icon summary.
+- the `qreep-pass-*` helpers and the Polkit policy; see
+  [`modules/fastpassword/README.md`](modules/fastpassword/README.md), because
+  installing a policy needs root and deserves a deliberate moment;
+- `jarvis` and its prompts; see [`tools/jarvis/README.md`](tools/jarvis/README.md);
+- `wallpaper-thumbs`, which runs from the repo next to its QML.
 
 ## Validation
 
@@ -638,16 +277,14 @@ Small useful checks:
 ```bash
 qmllint modules/bar/Bar.qml
 qmllint theme/QreepTheme.qml
-qmllint modules/bar/features/mpris/MprisService.qml
-qmllint modules/aegis/*.qml
-qmllint modules/dashboard/*.qml
-qmllint modules/notification/*.qml
+qmllint modules/<module>/*.qml
 ```
 
 For broader changes:
 
 ```bash
 qmllint modules/bar/Bar.qml theme/QreepTheme.qml modules/bar/features/*/*.qml
+git diff --check
 ```
 
 Runtime smoke test:
