@@ -38,9 +38,12 @@ The daily visible part of Qreep includes:
 - POTATO fasting progress;
 - MPRIS media controls;
 - network, keyboard layout, volume, battery, and power controls;
-- launcher and monitor-profile controls;
+- Vitals: small CPU, temperature, fan, battery, and disk gauges you switch on as needed;
+- a system tray for the apps that insist on one;
+- a launcher button (it opens KIP) and monitor-profile controls;
 - update checking;
-- Borg backup state and progress.
+- Borg backup state and progress;
+- a Qreeper compass, only while a Qreeper session is running.
 
 The bar can run in `reserved`, `overlay`, or `collapsed` mode. Individual pills may also be enabled or expanded independently, because apparently even a bar can have moods.
 
@@ -111,6 +114,12 @@ surface for the selected update.
 
 Some things are too large to pretend they are bar widgets:
 
+- **KIP** — the launcher, command line, and local-AI prompt in one box;
+- **Places** — a project cockpit: git state, questlog, recent files, then open it where you want;
+- **Wallpaper** — the wallpaper picker for Unclaimed Bloom, with colour search;
+- **Prism** — colour history, favourites, and palettes, fed by a picker and the clipboard;
+- **Screenshot** — select a region, wait, then capture it;
+- **Qreeper** — a minimap and Atlas for my MUD mapper;
 - **Expose** — a searchable, keyboard-friendly window overview;
 - **Clipboard** — clipboard history with search and selection;
 - **Fast Password** — a quick password entry picker that authenticates first and only shows allowlisted entries;
@@ -124,6 +133,42 @@ Some things are too large to pretend they are bar widgets:
 - **Bloom** — progress feedback for my Unclaimed Bloom tooling.
 
 They live as their own modules. The bar is allowed to open them, but it is not allowed to adopt all of them.
+
+#### KIP
+
+KIP opens on `SUPER+SPACE` as an app launcher and turns into whatever the
+input asks for: `/ask` and `/notes-ask` talk to a local model through
+[Jarvis](tools/jarvis/README.md), `/fd`, `/rg`, `/browse` find files, `/keys`
+lists Hyprland binds, `/qreep` drives Qreep's own IPC, and `/help` lists the
+rest. It has opinions in its status line. They are mostly correct.
+
+<!-- TODO screenshot: docs/assets/screenshots/qreep-kip.png -->
+
+#### Places
+
+Places shows a project's state before I jump into it — git status,
+uncommitted and recent files, questlog, pinned docs, a few numbers — and then
+opens it in an editor, the dev cockpit, superfile, or a terminal. Folders,
+USB drives, SMB shares, SSH hosts, calendar events, and Logseq TODOs can live
+there too, all from one `~/.config/qreep/places.json`.
+
+<!-- TODO screenshot: docs/assets/screenshots/qreep-places.png -->
+
+#### Wallpaper
+
+A grid or list of wallpapers with previews and filtering by name, hex, or CSS
+colour name. Picking one hands it to Unclaimed Bloom's `wallset`, which does the
+actual theming; Qreep only does the choosing.
+
+<!-- TODO screenshot: docs/assets/screenshots/qreep-wallpaper.png -->
+
+#### Prism
+
+Every colour I pick with `SUPER+P` or copy as `#hex`, `rgb()`, or `hsl()` lands
+in a history, with the nearest CSS name. Favourites and palettes of colour
+combos sit next to it, plus a hue ring for building harmonies.
+
+<!-- TODO screenshot: docs/assets/screenshots/qreep-prism.png -->
 
 #### Expose
 
@@ -146,6 +191,10 @@ Fast Password asks through Qreep Polkit before the chooser opens, then shows onl
 The notification centre groups notifications by application and keeps actions close enough to be useful.
 
 ![Qreep notification centre](docs/assets/screenshots/qreep-notification-center.png)
+
+Popups stack under the bar, and a few apps get their own card: Hyprshot brings the screenshot along.
+
+![Qreep notification popups](docs/assets/screenshots/qreep-notifications.png)
 
 #### Polkit
 
@@ -173,13 +222,13 @@ The clock popup grew into a calendar with local events, Google Calendar and Outl
 
 This was not necessarily the plan. It is, however, useful.
 
+![Qreep calendar](docs/assets/screenshots/qreep-calendar.png)
+
 <https://github.com/user-attachments/assets/ad8cf34a-fd57-4501-9b7c-3cd49073d6c7>
 
 ### Unclaimed Bloom
 
 Qreep also listens to my [Unclaimed Bloom](https://github.com/Praczet/unclaimed-bloom) tooling and shows progress while the desktop changes its clothes.
-
-![Qreep with an Unclaimed Bloom theme](docs/assets/screenshots/qreep-bloom.png)
 
 <https://github.com/user-attachments/assets/264ad41b-b444-43d1-80a7-9058c3ac9ebe>
 
@@ -206,11 +255,21 @@ That seems unfair to both of us.
 
 ## Start
 
-Install the helper scripts and user units:
+Qreep runs from the repository through a symlink, so edits are live after a
+restart:
+
+```bash
+ln -s ~/Development/Hyprland/quickshell/Qreep ~/.config/quickshell/qreep
+```
+
+Install the helper scripts, `triagectl`, and the calendar user units:
 
 ```bash
 scripts/install
 ```
+
+That does not cover everything. The Fast Password helpers and their Polkit
+policy, and `jarvis`, are installed separately; their READMEs say how.
 
 Run Qreep:
 
@@ -224,6 +283,11 @@ For relaunching during development without accidentally spawning another copy:
 quickshell -c qreep --no-duplicate
 ```
 
+It leans on other tools, mostly the obvious ones: Hyprland, `clipvault`,
+`wl-clipboard`, `kitty`, `superfile`, `hyprpicker`, `grim` and `slurp`,
+`sqlite3`, `ripgrep` and `fd`, `udisks2` and `gvfs`, and Ollama for KIP's
+local-AI side. A missing one breaks its own feature, not the shell.
+
 ## A few useful IPC calls
 
 ```bash
@@ -231,6 +295,10 @@ quickshell ipc call qreep-bar setMode reserved
 quickshell ipc call qreep-bar setMode overlay
 quickshell ipc call qreep-bar setMode collapsed
 
+quickshell ipc call qreep-kip toggle
+quickshell ipc call qreep-places toggle
+quickshell ipc call qreep-wallpaper toggle
+quickshell ipc call qreep-prism pick
 quickshell ipc call qreep-expose toggle
 quickshell ipc call qreep-clipboard toggle
 quickshell ipc call qreep-notification toggleCenter
@@ -266,17 +334,24 @@ modules/clipboard/         clipboard picker
 modules/dashboard/         dashboard engine and surface
 modules/expose/            window overview
 modules/fastpassword/      Polkit-gated password picker
+modules/kip/               launcher, slash commands, local-AI prompt
 modules/notification/      notification server, popups, and centre
 modules/osd/               on-screen display
+modules/places/            project cockpit and other places
 modules/polkit/            Polkit auth prompt and demo surface
 modules/prism/             colour history, favourites, palettes
+modules/qreeper/           Qreeper minimap and Atlas
+modules/screenshot/        delayed region screenshots
 modules/timer/             timer and countdown panel
+modules/triage/            Arch package triage
 modules/wallpaper/         wallpaper picker for Unclaimed Bloom
 
 components/                shared UI pieces
 core/                      shared shell machinery
 theme/                     public theme entry point and tokens
 scripts/                   helpers and user services
+tools/jarvis/              KIP's local-AI backend
+tools/triagectl/           Triage's Rust helper
 ```
 
 ## Documentation
