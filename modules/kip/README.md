@@ -135,13 +135,10 @@ A.exec(mainMod .. " + F1", "Keybindings", qreep .. " ipc call qreep-kip toggleWi
 
 ## Motion
 
-All open/close geometry derives from one number, `openProgress` (0 → 1):
-
-| Slice | Phase | What moves |
-| --- | --- | --- |
-| `0 → signalEnd` | signal | input box fades in at the top edge (`signalTopY`) |
-| `signalEnd → descendEnd` | descend | input box slides down to `anchorY` |
-| `descendEnd → 1` | assemble | header up, icon left, status right, body down |
+All open/close geometry derives from one number, `openProgress` (0 → 1).
+The card, shoulders, input, header, and body deploy together on one eased
+curve from the top edge. `signalEnd` only controls the quick initial fade; it
+does not split movement into a second phase.
 
 Closing animates the same number back to 0, faster. A toggle mid-animation just
 reverses direction, so there is no state machine to wedge. Content state

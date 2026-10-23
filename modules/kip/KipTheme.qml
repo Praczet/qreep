@@ -8,26 +8,32 @@ QtObject {
 
     // Placement. Quickshell screen sizes are logical pixels, so these already
     // respect Hyprland scaling.
-    // Input box top. The card grows upward from it by cardPadding +
-    // headerHeroSpace + headerHeight + headerGap, so raise this together
-    // with headerHeroSpace or the card climbs into the bar.
+    // Input box top. The header sits cardPadding + headerHeroSpace +
+    // headerHeight + headerGap above it; the card itself always reaches up
+    // to attachY, so the room above the header is just more banner.
     readonly property int anchorY: 230
+    // Screen-edge line the card hangs from. 0 covers the bar; set it to the
+    // bar height to hang from the bar instead.
+    readonly property int attachY: 0
+    // Concave flares joining the card to the edge, like a drawer pulled out
+    // of it: how far they reach out sideways and down the card's sides.
+    readonly property int shoulderWidth: 80
+    readonly property int shoulderHeight: 120
     readonly property int panelWidth: 880
     readonly property int screenMargin: 24
     readonly property int signalTopY: 4
 
-    // Motion. reducedMotion skips the slide/assemble theatre entirely.
+    // Motion. reducedMotion skips the deployment theatre entirely.
     readonly property bool reducedMotion: false
     readonly property int openDuration: 480
     readonly property int closeDuration: 340
     readonly property int contentFadeDuration: 140
     readonly property int bodyResizeDuration: 180
 
-    // openProgress slices: signal (input fades in at signalTopY) → descend
-    // (slides to anchorY) → assemble (header up, body down). The input is
-    // full size and typeable throughout.
+    // The whole surface deploys on one eased openProgress curve. signalEnd
+    // only controls the quick initial fade; it is not a separate movement.
+    // The input is full size and typeable throughout.
     readonly property real signalEnd: 0.15
-    readonly property real descendEnd: 0.55
 
     // Card and input.
     readonly property int cardPadding: 14
@@ -282,7 +288,9 @@ QtObject {
             label: "Terminal",
             hint: qreep.terminal + " in this folder",
             icon: "󰆍",
-            command: qreep.terminalCommand([], { cwd: "{path}" })
+            command: qreep.terminalCommand([], {
+                cwd: "{path}"
+            })
         },
         {
             id: "broot",
@@ -326,7 +334,9 @@ QtObject {
             label: "Terminal",
             hint: qreep.terminal + " in its folder",
             icon: "󰆍",
-            command: qreep.terminalCommand([], { cwd: "{dir}" })
+            command: qreep.terminalCommand([], {
+                cwd: "{dir}"
+            })
         },
         {
             id: "copy-path",
@@ -401,6 +411,9 @@ QtObject {
 
     readonly property string kipIcon: "󰚩"
 
+    // Deliberately above qreep-kip's Hyprland ignore_alpha (0.1): this gives
+    // the compositor a full-screen blur region behind the crisp KIP surface.
+    readonly property color backdropColor: withAlpha(qreep.background, 0.18)
     readonly property real cardOpacity: 0.9
     readonly property color cardColor: withAlpha(qreep.surface, cardOpacity)
     readonly property color inputColor: withAlpha(qreep.surfaceContainerHighest, 0.78)

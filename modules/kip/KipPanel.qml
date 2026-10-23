@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Effects
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
@@ -128,20 +129,21 @@ PanelWindow {
             return openProgress > 0 ? "closing" : "hidden";
         if (openProgress < kt.signalEnd)
             return "signal";
-        if (openProgress < kt.descendEnd)
-            return "descend";
         if (openProgress < 1)
-            return "assemble";
+            return "deploy";
         if (contentState === "service")
             return service.busy ? "processing" : (service.status === "error" ? "error" : "results");
         return "ready";
     }
 
-    // Motion slices, each eased on its own.
+    // One geometry clock deploys the whole surface from the top edge. The
+    // initial signal slice only handles opacity; it no longer hands movement
+    // to separate descend and assemble phases halfway through the animation.
+    readonly property real motionT: ease(openProgress)
     readonly property real signalT: ease(segment(0, kt.signalEnd))
-    readonly property real descendT: ease(segment(kt.signalEnd, kt.descendEnd))
-    readonly property real headerT: ease(segment(kt.descendEnd, kt.descendEnd + (1 - kt.descendEnd) * 0.6))
-    readonly property real bodyT: ease(segment(kt.descendEnd + (1 - kt.descendEnd) * 0.3, 1))
+    readonly property real descendT: motionT
+    readonly property real headerT: motionT
+    readonly property real bodyT: motionT
 
     // Geometry. The input box is full size from the first frame, so typing
     // works at once; it only fades in at the top and slides down.
@@ -361,6 +363,16 @@ PanelWindow {
         }
     }
 
+    // Hyprland only blurs layer pixels above the configured ignore_alpha.
+    // A faint full-window backdrop therefore blurs the desktop while KIP's
+    // own card and banner are drawn sharply on top of it.
+    Rectangle {
+        anchors.fill: parent
+        color: rootKipPanel.kt.backdropColor
+        opacity: rootKipPanel.signalT
+        visible: opacity > 0.01
+    }
+
     // Outside click closes.
     MouseArea {
         anchors.fill: parent
@@ -382,34 +394,74 @@ PanelWindow {
         visible: opacity > 0.01
     }
 
-    // The card assembles outward from the input box.
-    Rectangle {
+    // The card hangs from the screen edge (attachY) and stretches down with
+    // the input box, like a drawer: top pinned, bottom following the input,
+    // then the body. Square top, rounded bottom, concave shoulders into the
+    // edge. Drawn as a Shape; the Item only carries geometry.
+    Item {
         id: card
 
-        readonly property real topExtent: (rootKipPanel.kt.cardPadding + rootKipPanel.kt.headerHeroSpace + rootKipPanel.kt.headerHeight + rootKipPanel.kt.headerGap) * rootKipPanel.headerT
-        readonly property real bottomExtent: rootKipPanel.kt.cardPadding * rootKipPanel.headerT + (rootKipPanel.kt.bodyGap + rootKipPanel.bodyAreaHeight) * rootKipPanel.bodyT
+        // Header block height above the input; the banner bottom keeps this
+        // distance from the card's old top, so the picture does not move.
+        readonly property real headerExtent: rootKipPanel.kt.cardPadding + rootKipPanel.kt.headerHeroSpace + rootKipPanel.kt.headerHeight + rootKipPanel.kt.headerGap
+        readonly property real topExtent: Math.max(0, rootKipPanel.boxY - rootKipPanel.kt.attachY)
+        readonly property real finalTopExtent: Math.max(0, rootKipPanel.kt.anchorY - rootKipPanel.kt.attachY)
+        readonly property real bottomExtent: rootKipPanel.kt.cardPadding + (rootKipPanel.kt.bodyGap + rootKipPanel.bodyAreaHeight) * rootKipPanel.bodyT
+        readonly property real radius: rootKipPanel.kt.cardRadius
+        // Shoulders grow while the card drops, and never run into the
+        // bottom corners of a short strip.
+        readonly property real shoulderWidth: rootKipPanel.kt.shoulderWidth * rootKipPanel.descendT
+        readonly property real shoulderHeight: Math.max(0, Math.min(rootKipPanel.kt.shoulderHeight * rootKipPanel.descendT, height - radius))
 
-        x: rootKipPanel.boxX - rootKipPanel.kt.cardPadding * rootKipPanel.headerT
+        x: rootKipPanel.boxX - rootKipPanel.kt.cardPadding
         y: rootKipPanel.boxY - topExtent
-        width: rootKipPanel.boxWidth + rootKipPanel.kt.cardPadding * 2 * rootKipPanel.headerT
+        width: rootKipPanel.boxWidth + rootKipPanel.kt.cardPadding * 2
         height: rootKipPanel.boxHeight + topExtent + bottomExtent
-        radius: rootKipPanel.kt.cardRadius
-        color: rootKipPanel.kt.cardColor
-        border.width: 1
-        border.color: rootKipPanel.kt.borderColor
-        opacity: rootKipPanel.headerT
+        opacity: rootKipPanel.signalT
         visible: opacity > 0.01
 
-        // Banner image behind header and input. The mask rounds the top
-        // corners to the card; the gradient on top fades it into the body.
+        // Outline in card coordinates, shifted right by dx (the banner mask
+        // starts at the left shoulder tip). Open along the edge for the
+        // border; fills close it with Z.
+        function outline(dx: real): string {
+            const w = width, h = height, r = radius, sw = shoulderWidth, sh = shoulderHeight;
+            const p = (x, y) => (x + dx) + " " + y;
+
+            return "M " + p(-sw, 0)
+                + " C " + p(-sw * 0.3125, 0) + " " + p(0, sh * 0.46) + " " + p(0, sh)
+                + " L " + p(0, h - r)
+                + " A " + r + " " + r + " 0 0 0 " + p(r, h)
+                + " L " + p(w - r, h)
+                + " A " + r + " " + r + " 0 0 0 " + p(w, h - r)
+                + " L " + p(w, sh)
+                + " C " + p(w, sh * 0.46) + " " + p(w + sw * 0.3125, 0) + " " + p(w + sw, 0);
+        }
+
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeWidth: -1
+                fillColor: rootKipPanel.kt.cardColor
+
+                PathSvg {
+                    path: card.outline(0) + " Z"
+                }
+            }
+        }
+
+        // Banner image behind header and input. Its texture stays at final
+        // size throughout the animation so PreserveAspectCrop does not
+        // reframe it on every tick; the moving mask reveals the fixed image.
         Item {
             id: banner
 
-            x: 1
-            y: 1
-            width: parent.width - 2
-            height: Math.min(rootKipPanel.kt.headerImageHeight, parent.height - 2)
-            visible: rootKipPanel.headerImageUrl.length > 0 && bannerImage.status === Image.Ready
+            x: -rootKipPanel.kt.shoulderWidth
+            y: 0
+            width: parent.width + rootKipPanel.kt.shoulderWidth * 2
+            height: Math.max(0, card.finalTopExtent - card.headerExtent + rootKipPanel.kt.headerImageHeight)
+            visible: rootKipPanel.headerImageUrl.length > 0 && bannerImage.status === Image.Ready && height > 0
             layer.enabled: visible
             layer.effect: MultiEffect {
                 maskEnabled: true
@@ -421,8 +473,8 @@ PanelWindow {
 
                 anchors.fill: parent
                 source: rootKipPanel.headerImageUrl
-                // Fixed decode size: the card width animates on open.
-                sourceSize.width: rootKipPanel.kt.panelWidth
+                // Fixed decode size for the stable banner texture.
+                sourceSize.width: rootKipPanel.kt.panelWidth + rootKipPanel.kt.shoulderWidth * 2
                 fillMode: Image.PreserveAspectCrop
                 verticalAlignment: rootKipPanel.kt.headerImageAlign === "top" ? Image.AlignTop : rootKipPanel.kt.headerImageAlign === "bottom" ? Image.AlignBottom : Image.AlignVCenter
                 opacity: rootKipPanel.kt.headerImageOpacity
@@ -451,14 +503,57 @@ PanelWindow {
             }
         }
 
-        Rectangle {
+        // Keep the texture provider in the scene graph so the animated Shape
+        // continues updating. Hiding ShaderEffectSource itself makes
+        // MultiEffect lose the mask and the banner becomes a plain rectangle.
+        // It renders behind the opaque card; hideSource keeps the Shape from
+        // also being drawn in its normal place.
+        ShaderEffectSource {
             id: bannerMask
+
+            x: banner.x
+            y: banner.y
+            z: -1
+            width: banner.width
+            height: banner.height
+            sourceItem: bannerMaskShape
+            hideSource: true
+            live: true
+        }
+
+        Shape {
+            id: bannerMaskShape
 
             width: banner.width
             height: banner.height
-            radius: rootKipPanel.kt.cardRadius - 1
-            visible: false
-            layer.enabled: true
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeWidth: -1
+                fillColor: "white"
+
+                PathSvg {
+                    // The mask texture uses the final banner bounds; shift
+                    // the animated outline into those fixed coordinates.
+                    path: card.outline(rootKipPanel.kt.shoulderWidth) + " Z"
+                }
+            }
+        }
+
+        // Border on top of the banner, open along the edge.
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeWidth: 1
+                strokeColor: rootKipPanel.kt.borderColor
+                fillColor: "transparent"
+
+                PathSvg {
+                    path: card.outline(0)
+                }
+            }
         }
 
         // Swallow clicks so the outside-click catcher does not close KIP.
