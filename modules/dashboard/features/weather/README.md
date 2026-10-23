@@ -12,9 +12,9 @@ Use it from `modules/dashboard/configs/main_dashboard.json`:
   "showTitle": false,
   "config": {
     "apiEnabled": true,
-    "location": "Bergem, Luxembourg",
-    "latitude": 49.524509,
-    "longitude": 6.044283,
+    "location": "Luxembourg",
+    "latitude": 49.61,
+    "longitude": 6.13,
     "timezone": "Europe/Luxembourg",
     "refreshInterval": 1800000,
     "temperature": "37°C",

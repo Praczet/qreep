@@ -5,7 +5,7 @@ QtObject {
     id: rootWeatherService
 
     property var config: ({})
-    property string location: stringValue(config.location, "Bergem, Luxembourg")
+    property string location: stringValue(config.location, "Luxembourg")
     property string temperature: stringValue(config.temperature, "--°C")
     property real currentTemperature: parseTemperature(config.temperature, 0)
     property string condition: stringValue(config.condition, "Weather unavailable")
@@ -16,8 +16,8 @@ QtObject {
     property bool loading: false
     property bool pendingRefresh: false
 
-    readonly property real latitude: numberValue(config.latitude, 49.524509)
-    readonly property real longitude: numberValue(config.longitude, 6.044283)
+    readonly property real latitude: numberValue(config.latitude, 49.61)
+    readonly property real longitude: numberValue(config.longitude, 6.13)
     readonly property string timezone: stringValue(config.timezone, "Europe/Luxembourg")
     readonly property int refreshInterval: Math.max(300000, numberValue(config.refreshInterval, 1800000))
     readonly property bool apiEnabled: config.apiEnabled !== false
@@ -220,7 +220,7 @@ QtObject {
     }
 
     onConfigChanged: {
-        location = stringValue(config.location, "Bergem, Luxembourg");
+        location = stringValue(config.location, "Luxembourg");
         temperature = stringValue(config.temperature, temperature);
         currentTemperature = parseTemperature(config.temperature, currentTemperature);
 

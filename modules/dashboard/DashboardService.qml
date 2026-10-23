@@ -129,7 +129,7 @@ QtObject {
                 showBorder: true,
                 config: ({
                     apiEnabled: true,
-                    location: "Bergem, Luxembourg",
+                    location: "Luxembourg",
                     latitude: 49.5,
                     longitude: 6.1,
                     timezone: "Europe/Luxembourg",
