@@ -3,7 +3,7 @@
 The project cockpit. Pick a project and see where it stands before you jump
 in: git state, what changed, what the agents are doing in its questlog,
 pinned docs, a few numbers. Then open it in your editor, launch the
-dev-workspace cockpit, or drop into yazi or a terminal.
+dev-workspace cockpit, or drop into superfile or a terminal.
 
 It replaces `~/.local/bin/places-rofi` for projects. Rofi can only show a
 list of strings; this one can show a list of strings *and* their problems.
@@ -18,7 +18,7 @@ next look without restarting Qreep. Minimum per project: a name and a path.
 ```json
 {
   "defaultEditor": "nvim",
-  "fileManager": { "command": ["yazi", "{path}"], "terminal": true },
+  "fileManager": { "command": ["spf", "{path}"], "terminal": true },
   "editors": {
     "nvim": { "command": ["nvim", "{path}"], "terminal": true },
     "code": { "command": ["code", "{path}"] }
@@ -86,10 +86,10 @@ the file cards. Every block takes `"enabled": false` and an optional `"title"`.
 | --- | --- | --- |
 | `apps` | desktop entry ids (`zen`, `org.gnome.Calculator`, `.desktop` optional) | launch (Terminal=true apps run in kitty) |
 | `documents` | paths, or `{ "name", "path" }` | Open with chooser; documents and images put "default app" first |
-| `folders` | paths, or `{ "name", "path" }` | folder chooser: yazi, terminal here, broot, copy path |
+| `folders` | paths, or `{ "name", "path" }` | folder chooser: superfile, terminal here, broot, copy path |
 | `folder` | none; `"path"`, `"sort"` (`name` / `modified`), `"limit"`, `"hidden"` | lists the folder's contents, subfolders first; folder chooser or Open with |
-| `usb` | none | Open (mounts if needed, yazi), Terminal, Mount / Unmount, Eject (unmount + power off) |
-| `smb` | `"shares": [{ "name", "url": "smb://host/share", "user", "domain" }]` | Open (mounts if needed, yazi), Terminal, Mount / Unmount, Change / Forget password |
+| `usb` | none | Open (mounts if needed, superfile), Terminal, Mount / Unmount, Eject (unmount + power off) |
+| `smb` | `"shares": [{ "name", "url": "smb://host/share", "user", "domain" }]` | Open (mounts if needed, superfile), Terminal, Mount / Unmount, Change / Forget password |
 | `ssh` | none (every `~/.ssh/config` host), or host names / `{ "name", "host", "user", "port" }`; `"exclude"` | a terminal running `ssh <host>` |
 
 `ssh` without items reads `~/.ssh/config` (watched): wildcard patterns and
@@ -185,7 +185,7 @@ until Qreep reloads.
 
 Clicking a file row (uncommitted, recent, docs, pinned) opens KIP's "Open
 with" chooser with KIP's file actions (`KipTheme.fileActions`): nvim first,
-Vivify for markdown, then the default app, its folder in yazi, a terminal in
+Vivify for markdown, then the default app, its folder in superfile, a terminal in
 its folder, and copy path. The panel behind the chooser is blurred.
 The order is decided in three steps: an extension guess right away
 (documents and images: their app first), then `xdg-mime` a moment later
@@ -194,7 +194,7 @@ every app whose desktop entry lists the type, the default first and marked
 so, each launched with `gio launch <app.desktop> <file>`), and
 finally whatever you picked last for that file type goes on top. The
 chooser shows two groups: "Open with" (the apps) and "Actions" (nvim, Vivify,
-folder in yazi, terminal there, copy path). Text files list Actions first,
+folder in superfile, terminal there, copy path). Text files list Actions first,
 everything else Open with first; a remembered choice brings its group up.
 Only the default app (and a remembered one) gets a number key; the other
 "can open it" apps are reached with the arrows, so nvim and the actions keep

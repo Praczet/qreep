@@ -977,7 +977,7 @@ PanelWindow {
             chooserUsb = null;
             chooserSmb = item;
             chooserIsFile = false;
-            chooserOptions = [{ id: "open", label: "Open", icon: "󰉋", hint: item.mounted ? "in yazi" : "mount, then yazi" }].concat(item.mounted ? [
+            chooserOptions = [{ id: "open", label: "Open", icon: "󰉋", hint: item.mounted ? "in superfile" : "mount, then superfile" }].concat(item.mounted ? [
                     { id: "terminal", label: "Terminal", icon: "󰆍", hint: theme.terminal + " in it" },
                     { id: "unmount", label: "Unmount", icon: "󰕔", hint: "gio mount -u" }
                 ] : [
@@ -998,7 +998,7 @@ PanelWindow {
             chooserTodo = null;
             chooserUsb = item;
             chooserIsFile = false;
-            chooserOptions = [{ id: "open", label: "Open", icon: "󰉋", hint: mounted ? "in yazi" : "mount, then yazi" }].concat(mounted ? [
+            chooserOptions = [{ id: "open", label: "Open", icon: "󰉋", hint: mounted ? "in superfile" : "mount, then superfile" }].concat(mounted ? [
                     { id: "terminal", label: "Terminal", icon: "󰆍", hint: theme.terminal + " in it" },
                     { id: "unmount", label: "Unmount", icon: "󰕔", hint: "keep it plugged in" }
                 ] : [

@@ -28,7 +28,7 @@ QtObject {
     "Tab walks the buttons, then the file cards, then around again.",
     "Click a file, or Enter on it in a card, for Open with: nvim, Vivify, app, folder, terminal, copy path.",
     "Shift+Enter launches the cockpit: terminal and browser on the dev workspace.",
-    "Ctrl+E opens the project in the other editor. Ctrl+O yazi, Ctrl+T a terminal.",
+    "Ctrl+E opens the project in the other editor. Ctrl+O superfile, Ctrl+T a terminal.",
     "From KIP: /p eos opens Places on EOS. Shift+Enter there goes straight to the cockpit.",
     "\"enabled\": false on a project or group hides it without deleting it.",
     "\"pinned\": [\"docs/notes/spec.docx\"] in places.json pins a file to its project.",

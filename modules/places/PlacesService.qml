@@ -462,7 +462,7 @@ Item {
         return drives;
     }
 
-    // open: mount if needed, then yazi there. terminal: kitty in it.
+    // open: mount if needed, then superfile there. terminal: kitty in it.
     // mount / unmount / eject (unmount + power off the whole disk).
     function usbAction(drive, action) {
         if (action === "terminal" && drive.mountpoint) {
@@ -470,7 +470,7 @@ Item {
             return;
         }
         if (action === "open" && drive.mountpoint) {
-            run(theme.terminalCommand(["yazi", drive.mountpoint]), drive.mountpoint);
+            run(theme.terminalCommand(["spf", drive.mountpoint]), drive.mountpoint);
             return;
         }
 
@@ -505,7 +505,7 @@ Item {
             const path = usbActionStdout.text.trim();
 
             if (usbActionProcess.openAfter && exitCode === 0 && path.length > 0)
-                rootPlacesService.run(rootPlacesService.theme.terminalCommand(["yazi", path]), path);
+                rootPlacesService.run(rootPlacesService.theme.terminalCommand(["spf", path]), path);
             rootPlacesService.refreshUsb();
         }
     }
@@ -584,7 +584,7 @@ Item {
         }
     }
 
-    // open: mount if needed, then yazi on the GVFS path. terminal: kitty there.
+    // open: mount if needed, then superfile on the GVFS path. terminal: kitty there.
     // mount, unmount, forget (delete the saved password).
     function smbAction(share, action) {
         if (smbProcess.running)
@@ -675,7 +675,7 @@ Item {
             } else if (exitCode !== 0) {
                 rootPlacesService.run(["notify-send", "SMB", smbStderr.text.trim() || "Mount failed."], rootPlacesService.home);
             } else if (path.length > 0 && smbProcess.action === "open") {
-                rootPlacesService.run(rootPlacesService.theme.terminalCommand(["yazi", path]), path);
+                rootPlacesService.run(rootPlacesService.theme.terminalCommand(["spf", path]), path);
             } else if (path.length > 0 && smbProcess.action === "terminal") {
                 rootPlacesService.run(rootPlacesService.theme.terminalCommand([], { cwd: path }), path);
             }
@@ -1676,7 +1676,7 @@ Item {
         if (!project)
             return;
         launch(config.fileManager || {
-            command: ["yazi", "{path}"],
+            command: ["spf", "{path}"],
             terminal: true
         }, path || project.path, path || project.path);
     }

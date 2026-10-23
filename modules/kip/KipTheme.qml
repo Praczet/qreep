@@ -266,14 +266,14 @@ QtObject {
 
     // Folders open here, not through xdg-open: the inode/directory default is
     // yazi, a Terminal=true app, and plain xdg-open has no terminal to put it
-    // in, so it exited without a word. Given a file, yazi opens its folder
-    // with that file hovered.
-    readonly property var fileManagerCommand: qreep.terminalCommand(["yazi"])
+    // in, so it exited without a word. superfile (spf) gets the folder, not
+    // the file: it has no "open with this file hovered" trick.
+    readonly property var fileManagerCommand: qreep.terminalCommand(["spf"])
     readonly property var folderActions: [
         {
             id: "file-manager",
             label: "Open",
-            hint: "in yazi",
+            hint: "in superfile",
             icon: "󰉋",
             command: fileManagerCommand.concat(["{path}"])
         },
@@ -317,9 +317,9 @@ QtObject {
         {
             id: "folder",
             label: "Folder",
-            hint: "its folder in yazi, file selected",
+            hint: "its folder in superfile",
             icon: "󰉋",
-            command: fileManagerCommand.concat(["{path}"])
+            command: fileManagerCommand.concat(["{dir}"])
         },
         {
             id: "terminal",
