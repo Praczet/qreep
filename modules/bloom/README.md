@@ -16,6 +16,10 @@ It watches the same cache files as the AGS Bloom OSD:
 The module is hosted directly by `shell.qml`. It is not a bar feature. The bar
 has enough hobbies.
 
+The card is translucent (background alpha 0.75) so Hyprland can blur behind
+it. The layer is a transparent top strip with namespace `qreep-bloom`; give it
+`blur = true, ignore_alpha = 0.1` and only the card gets blurred.
+
 ## IPC
 
 ```bash
@@ -28,6 +32,8 @@ quickshell --path . ipc call qreep-bloom showMe
 quickshell --path . ipc call qreep-bloom hideMe
 ```
 
-The file watcher is the important path. IPC is mainly for manual nudges or a
-future notify wrapper if `~/.config/unclaimed-bloom/notify.json` moves from AGS
-to Qreep.
+The file watcher is the important path. IPC is for manual nudges and for
+`scripts/qreep-bloom-notify`, the wrapper that
+`~/.config/unclaimed-bloom/notify.json` points at. It translates Unclaimed
+Bloom's `bloom-show`, `bloom-done`, `bloom-hide`, and `bloom-pickup` into the
+IPC calls above. `scripts/install` also copies it to `~/.local/bin`.

@@ -52,10 +52,16 @@ readonly property QtObject power: PowerFeature.PowerTheme {}
 `PowerService.qml` uses `Quickshell.Io.Process` to run:
 
 * `loginctl lock-session`
-* `hyprctl dispatch exit`
+* `hyprctl dispatch exit`, or `hyprctl dispatch 'hl.dsp.exit()'` when Hyprland
+  runs a Lua config (`Hyprland.usingLua`), because the Lua config wants Lua
+  dispatches and the old form fails there
 * `systemctl suspend`
 * `systemctl reboot`
 * `systemctl poweroff`
+
+Command output is collected: a non-zero exit logs a warning with stderr (or
+stdout, or the exit code), so a failed logout leaves a trace instead of just
+not happening.
 
 `PowerPanel.qml` is a `PanelWindow`, not a `PopupWindow`, so it can have its own
 Hyprland layer rule:

@@ -8,7 +8,7 @@ dev-workspace cockpit, or drop into superfile or a terminal.
 It replaces `~/.local/bin/places-rofi` for projects. Rofi can only show a
 list of strings; this one can show a list of strings *and* their problems.
 
-Top-level shell module, opened by IPC and `SUPER+SHIFT+P`. No bar button.
+Top-level shell module, opened by IPC and `SUPER+grave`. No bar button.
 
 ## Config
 

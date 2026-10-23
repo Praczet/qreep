@@ -73,9 +73,16 @@ sequence live in `ClockTheme.qml`.
 
 The event dots stay in `ClockEventIndicators.qml` as a popup so they can sit
 under the clock pill without being clipped by the bar window. `Bar.qml`
-suppresses that popup while Dashboard, Expose, or fullscreen Power is open,
+suppresses that popup while Dashboard, Expose, the Qreeper Atlas, or
+fullscreen Power is open,
 because separate popup windows otherwise float above fullscreen Qreep surfaces
 like they skipped the part where layering was explained.
+
+Being a separate popup, the dots do not move with the bar on their own. When
+the center slot or clock shifts (the timer pill appearing, the clock gaining
+seconds), `Bar.qml` bumps `anchorRevision`, and the indicators hide for one
+short beat (32 ms) and come back re-anchored, instead of sliding to their new
+spot from the old one.
 
 Provider sync scripts compare the previous generated cache with the newly
 downloaded one before writing. Future/remaining events for today that are added,

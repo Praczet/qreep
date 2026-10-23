@@ -88,10 +88,16 @@ quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboa
 
 ## Hyprland Binding
 
-Suggested shape:
+Adam's current binding is `SUPER+SHIFT+V`, in the Lua config:
+
+```lua
+A.exec(mainMod .. " + SHIFT + V", "Clipboard manager (qreep)", qreep .. " ipc call qreep-clipboard toggle")
+```
+
+The plain hyprland.conf shape, if that layer comes back:
 
 ```ini
-bind = CTRL SUPER, V, exec, quickshell --path ~/Development/Hyprland/quickshell/Qreep ipc call qreep-clipboard toggle
+bind = SUPER SHIFT, V, exec, quickshell -c qreep ipc call qreep-clipboard toggle
 ```
 
 Adjust the config syntax to match whichever Hyprland config layer is currently
