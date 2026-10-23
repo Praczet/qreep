@@ -47,7 +47,7 @@ QtObject {
     readonly property int animationDuration: 180
 
     readonly property real overlayOpacity: 0.32
-    // Above 0.5: Hyprland's ignore_alpha for this layer, so the card stays blurred.
+    // A normal window now: Hyprland's window blur sits behind the whole card.
     readonly property real panelOpacity: 0.75
     readonly property color overlayColor: Qt.rgba(qreep.background.r, qreep.background.g, qreep.background.b, overlayOpacity)
     readonly property color panelColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, panelOpacity)

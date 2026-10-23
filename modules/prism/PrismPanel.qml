@@ -1,14 +1,14 @@
 import QtQuick
 import Quickshell
-import Quickshell.Wayland
 
-// Prism overlay: dimmed backdrop, one centered card. Sidebar on the left
-// (Favourites, History, palettes), the selected section on the right:
+// Prism window: a normal Hyprland window (move, resize, float), one card.
+// Sidebar on the left (Favourites, History, palettes), the selected section
+// on the right:
 //   Favourites / History  a grid of colour swatches
 //   a palette             a grid of combo posters
 //   a combo (Enter)       that combo full size: one band per colour,
 //                         lettered in the combo colour that reads best
-PanelWindow {
+FloatingWindow {
     id: rootPrismPanel
 
     required property QtObject theme
@@ -148,18 +148,18 @@ PanelWindow {
 
     signal closeRequested
 
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
-    color: "transparent"
-    exclusionMode: ExclusionMode.Ignore
+    // The monitor that had focus on open. Only the first size comes from it;
+    // after that Hyprland owns size and position, like Triage.
+    property var targetScreen: null
 
-    WlrLayershell.namespace: "qreep-prism"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    title: "Qreep Prism"
+    implicitWidth: rootPrismPanel.pt.panelWidthFor(targetScreen ? targetScreen.width : 1920, targetScreen ? targetScreen.height : 1080)
+    implicitHeight: rootPrismPanel.pt.panelHeightFor(targetScreen ? targetScreen.width : 1920, targetScreen ? targetScreen.height : 1080)
+
+    color: "transparent"
+    surfaceFormat.opaque: false
+
+    onClosed: rootPrismPanel.closeRequested()
 
     Component.onCompleted: opened()
 
@@ -762,29 +762,9 @@ PanelWindow {
     }
 
     Rectangle {
-        anchors.fill: parent
-        color: rootPrismPanel.pt.overlayColor
-        opacity: rootPrismPanel.presented ? 1 : 0
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: rootPrismPanel.pt.animationDuration
-            }
-        }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        onClicked: rootPrismPanel.closeRequested()
-    }
-
-    Rectangle {
         id: card
 
-        anchors.centerIn: parent
-        anchors.verticalCenterOffset: rootPrismPanel.presented ? 0 : 24
-        width: rootPrismPanel.pt.panelWidthFor(parent.width, parent.height)
-        height: rootPrismPanel.pt.panelHeightFor(parent.width, parent.height)
+        anchors.fill: parent
         radius: rootPrismPanel.pt.panelRadius
         color: rootPrismPanel.pt.panelColor
         border.width: 1
@@ -800,13 +780,6 @@ PanelWindow {
             }
         }
 
-        Behavior on anchors.verticalCenterOffset {
-            NumberAnimation {
-                duration: rootPrismPanel.pt.animationDuration
-                easing.type: Easing.OutCubic
-            }
-        }
-
         Behavior on scale {
             NumberAnimation {
                 duration: rootPrismPanel.pt.animationDuration
@@ -814,7 +787,7 @@ PanelWindow {
             }
         }
 
-        // Swallow clicks so only the backdrop closes Prism; an open menu closes.
+        // A click on the card closes an open menu.
         MouseArea {
             anchors.fill: parent
             onClicked: rootPrismPanel.chooserOpen = false

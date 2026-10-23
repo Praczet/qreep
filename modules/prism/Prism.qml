@@ -4,7 +4,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 
 // Prism controller: IPC, open state, the service (which also runs the
-// colour picker and watches the clipboard), and a lazy overlay panel on
+// colour picker and watches the clipboard), and a lazy window sized for
 // whichever monitor has focus when it opens.
 Scope {
     id: rootPrism
@@ -97,7 +97,7 @@ Scope {
         active: rootPrism.panelLoaded
 
         PrismPanel {
-            screen: rootPrism.targetScreen
+            targetScreen: rootPrism.targetScreen
             theme: rootPrism.theme
             service: prismService
             panelOpen: rootPrism.open
