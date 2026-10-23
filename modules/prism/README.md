@@ -8,6 +8,11 @@ hyprpicker (still copied to the clipboard, as before), and anything copied as
 `rgb(2e3440)`, `0xaarrggbb`) is caught by a `wl-paste --watch`. Both land in
 History. Favourites are the ones you pin.
 
+It is a normal window (`Qreep Prism`): move it, resize it, and the sidebar,
+universe, and sheets scroll when it gets short.
+Hyprland tiles it by default. To open it floating and centred, see
+[Hyprland window rules](../../README_when_bored.md#hyprland-window-rules).
+
 Palettes are named sets of **combos**, and a combo is one or more colours
 that belong together. A palette ("Color combos") shows its combos as small
 posters; Enter opens one full size: one band per colour, lettered in the
@@ -98,7 +103,7 @@ quickshell ipc -c qreep call qreep-prism state
 
 * `Prism.qml` - controller: IPC, open state, lazy panel on the focused monitor.
 * `PrismService.qml` - store, picker, clipboard watcher, colour parsing and contrast.
-* `PrismPanel.qml` - overlay: sidebar, swatch grid, combo grid, combo poster, prompts, keys.
+* `PrismPanel.qml` - FloatingWindow (move, resize like any window): sidebar, swatch grid, combo grid, combo poster, prompts, keys.
 * `PrismPoster.qml` - a combo as a small poster (palette grid).
 * `PrismBand.qml` - one colour band: name, hex box, lettered in the combo's ink.
 * `PrismUniverse.qml` - the editor: wheel, sliders, notations, harmonies.

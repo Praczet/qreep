@@ -11,6 +11,10 @@ Rofi had icons. This has opinions.
 `SUPER+T` toggles it (Hyprland `binds.lua`). Running `wallset` without a
 path opens it too, when Qreep is up.
 
+It is a normal window (`Qreep Wallpaper`) you can move and resize.
+Hyprland tiles it by default. To open it floating and centred, see
+[Hyprland window rules](../../README_when_bored.md#hyprland-window-rules).
+
 | Key | Does |
 | --- | --- |
 | type | filter by file name or colour (every word must match, see [Colour search](#colour-search)) |
@@ -134,7 +138,7 @@ quickshell ipc -c qreep call qreep-wallpaper state
 
 * `Wallpaper.qml` - controller: IPC, open state, lazy panel on the focused monitor.
 * `WallpaperService.qml` - listing, thumbnail builds, name and colour search, current wallpaper, view state, apply.
-* `WallpaperPanel.qml` - overlay, search, grid / list, preview, keys.
+* `WallpaperPanel.qml` - FloatingWindow (move, resize like any window), search, grid / list, preview, keys.
 * `WallpaperThumb.qml` - one letterboxed thumbnail with placeholder, current badge and palette strip.
 * `WallpaperPalette.qml` - a strip of dominant colours, optionally clickable.
 * `WallpaperColorNames.js` - the 148 CSS named colours (generated from `matplotlib.colors.CSS4_COLORS`).

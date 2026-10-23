@@ -158,8 +158,8 @@ It is how a full-screen layer gets blur only where it should:
   its faint full-screen backdrop (alpha 0.18) sits just above it on purpose, so
   the whole desktop behind KIP blurs while the card stays sharp.
 - `0.5` sits between a dimmed backdrop (about 0.32) and a card (about 0.75), so
-  the backdrop dims without blurring and only the card blurs. Places, Prism,
-  and Wallpaper use this.
+  the backdrop dims without blurring and only the card blurs. Places uses
+  this.
 
 What Adam's config currently does:
 
@@ -171,8 +171,6 @@ What Adam's config currently does:
 | `qreep-popup-upchecker` | yes | 0.1 | `blur_popups` |
 | `qreep-popup-osd` | yes | 0.1 | `blur_popups` |
 | `qreep-places` | yes | 0.5 | backdrop dims, card blurs |
-| `qreep-prism` | yes | 0.5 | same |
-| `qreep-wallpaper` | yes | 0.5 | same |
 | `qreep-kip` | yes | 0.1 | backdrop above the threshold on purpose |
 | `qreep-aegis`, `qreep-dashboard`, `qreep-expose` | yes | 0.1 | |
 | `qreep-clipboard`, `qreep-timer`, `qreep-triage` | yes | 0.1 | |
@@ -192,6 +190,48 @@ hl.layer_rule({
     ignore_alpha = 0.1,
 })
 ```
+
+## Hyprland window rules
+
+Not everything is a layer. Triage, Prism, and Wallpaper are `FloatingWindow`s:
+normal Hyprland windows you can move, resize, and send to another workspace.
+Hyprland tiles them by default, which is a choice it makes without asking.
+
+To open them floating and centred, at the size Qreep asks for, add a window
+rule to `~/.config/hypr/modules/windows.lua` (Adam's config; anything Hyprland
+loads works). The match is the window title, which each panel sets:
+
+| Title | Module |
+| --- | --- |
+| `Qreep Prism` | Prism |
+| `Qreep Wallpaper` | Wallpaper |
+| `Qreep Triage` | Triage (not in Adam's rule; it still tiles) |
+
+```lua
+hl.window_rule({
+    name = "windowrule-qreep-floating",
+    match = { title = "^Qreep (Prism|Wallpaper)$" },
+    float = true,
+    center = true,
+})
+```
+
+Then reload and check Hyprland agrees:
+
+```bash
+# Reload the Hyprland config and print any config errors (empty is good).
+hyprctl reload && hyprctl configerrors
+
+# Open Prism, then list Qreep windows with their floating state and geometry.
+quickshell -c qreep ipc call qreep-prism showMe
+hyprctl clients -j | jq '.[] | select(.title | startswith("Qreep")) | {title, floating, size, at}'
+```
+
+`center` centres on the usable area, so the bar's reserved space pushes the
+window down a little. That is arithmetic, not a bug.
+
+The old `qreep-prism` and `qreep-wallpaper` layer rules match nothing now and
+can be deleted.
 
 ## Theme
 
