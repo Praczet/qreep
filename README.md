@@ -8,12 +8,6 @@ It started as a Waybar-shaped learning project: one bar, a few pills, and the in
 
 ![Qreep desktop](docs/assets/screenshots/qreep-bloom.png)
 
-
-
-https://github.com/user-attachments/assets/639899a5-bea6-46c3-b4e3-f87f33290a33
-
-
-
 *A quiet desktop until I ask it to do something.*
 
 ## Why this creature exists
@@ -53,21 +47,11 @@ The workspace pill shows the active workspace, occupied workspaces, and the wind
 
 ![Qreep workspace menu](docs/assets/screenshots/qreep-workspace.png)
 
-Workspace switching:
-
-<https://github.com/user-attachments/assets/69f106ff-27a7-43da-b368-63fe93683370>
-
-Workspace windows and taskbar behaviour:
-
-<https://github.com/user-attachments/assets/33156a92-77e8-4b91-993a-25a1dbc9ff07>
-
 #### MPRIS
 
 The media pill stays compact until it has something useful to say.
 
 ![Qreep MPRIS tooltip](docs/assets/screenshots/qreep-mpris-tooltip.png)
-
-<https://github.com/user-attachments/assets/5ad0ffaf-7cfa-4d5d-90c4-0612791ea183>
 
 #### POTATO fasting
 
@@ -81,15 +65,11 @@ Qreep keeps an eye on Borg backups and can show both the last known state and li
 
 ![Qreep Borg backup status](docs/assets/screenshots/qreep-borg.png)
 
-<https://github.com/user-attachments/assets/b59055c3-1343-4cb4-a83b-8c5546354b1e>
-
 #### Monitor profiles
 
 The monitor-profile pill shows the active Hyprland monitor profile and keeps the switcher close by.
 
 ![Qreep monitor profile](docs/assets/screenshots/qreep-monitor.png)
-
-<https://github.com/user-attachments/assets/9e4ecac1-b0f4-4320-a177-f031f07f1c14>
 
 #### Network
 
@@ -138,11 +118,14 @@ They live as their own modules. The bar is allowed to open them, but it is not a
 
 KIP opens on `SUPER+SPACE` as an app launcher and turns into whatever the
 input asks for: `/ask` and `/notes-ask` talk to a local model through
-[Jarvis](tools/jarvis/README.md), `/fd`, `/rg`, `/browse` find files, `/keys`
-lists Hyprland binds, `/qreep` drives Qreep's own IPC, and `/help` lists the
-rest. It has opinions in its status line. They are mostly correct.
+[Jarvis](tools/jarvis/README.md), `/fd`, `/rg`, `/browse` find files, `/win`
+switches windows by live preview, `/keys` lists Hyprland binds, `/qreep` drives
+Qreep's own IPC, and `/help` lists the rest. It has opinions in its status line.
+They are mostly correct.
 
-<!-- TODO screenshot: docs/assets/screenshots/qreep-kip.png -->
+![KIP command list](docs/assets/screenshots/qreep-kip.png)
+
+![KIP window switcher on a different Bloom theme](docs/assets/screenshots/qreep-kip-win.png)
 
 #### Places
 
@@ -152,7 +135,7 @@ opens it in an editor, the dev cockpit, superfile, or a terminal. Folders,
 USB drives, SMB shares, SSH hosts, calendar events, and Logseq TODOs can live
 there too, all from one `~/.config/qreep/places.json`.
 
-<!-- TODO screenshot: docs/assets/screenshots/qreep-places.png -->
+![Qreep Places](docs/assets/screenshots/qreep-places.png)
 
 #### Wallpaper
 
@@ -160,7 +143,7 @@ A grid or list of wallpapers with previews and filtering by name, hex, or CSS
 colour name. Picking one hands it to Unclaimed Bloom's `wallset`, which does the
 actual theming; Qreep only does the choosing.
 
-<!-- TODO screenshot: docs/assets/screenshots/qreep-wallpaper.png -->
+![Qreep wallpaper picker](docs/assets/screenshots/qreep-wallpaper.png)
 
 #### Prism
 
@@ -168,7 +151,7 @@ Every colour I pick with `SUPER+P` or copy as `#hex`, `rgb()`, or `hsl()` lands
 in a history, with the nearest CSS name. Favourites and palettes of colour
 combos sit next to it, plus a hue ring for building harmonies.
 
-<!-- TODO screenshot: docs/assets/screenshots/qreep-prism.png -->
+![Qreep Prism colour history](docs/assets/screenshots/qreep-prism.png)
 
 #### Expose
 
@@ -212,10 +195,6 @@ Aegis collects system, hardware, storage, memory, network, Borg, and Bloom infor
 
 ![Qreep Aegis system surface](docs/assets/screenshots/qreep-aegis.png)
 
-Dashboard and Aegis in motion:
-
-<https://github.com/user-attachments/assets/c17d8637-8525-4d2f-ade9-21c63748ae00>
-
 ### A clock that became a calendar
 
 The clock popup grew into a calendar with local events, Google Calendar and Outlook/Microsoft calendar pulls, reminders, event dots, next personal-event hints, and change feedback.
@@ -224,13 +203,11 @@ This was not necessarily the plan. It is, however, useful.
 
 ![Qreep calendar](docs/assets/screenshots/qreep-calendar.png)
 
-<https://github.com/user-attachments/assets/ad8cf34a-fd57-4501-9b7c-3cd49073d6c7>
-
 ### Unclaimed Bloom
 
 Qreep also listens to my [Unclaimed Bloom](https://github.com/Praczet/unclaimed-bloom) tooling and shows progress while the desktop changes its clothes.
 
-<https://github.com/user-attachments/assets/264ad41b-b444-43d1-80a7-9058c3ac9ebe>
+![Qreep Bloom progress card](docs/assets/screenshots/qreep-bloom-progress.png)
 
 ## The rules, approximately
 

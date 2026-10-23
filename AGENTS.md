@@ -1220,9 +1220,8 @@ Known open items, each its own unit:
 
 1. Decide whether `launcher` and `power` should join runtime pill state. Both are easy; both are escape hatches, so hiding them should be a deliberate choice, not a side effect with icons.
 2. Give `qreep-screenshot`, `qreep-qreeper-minimap`, and `qreep-qreeper-atlas` Hyprland layer rules if they need blur or animation; they have none today.
-3. Fill the README screenshot placeholders for KIP, Places, Wallpaper, and Prism (`<!-- TODO screenshot -->` comments in `README.md`).
-4. Revisit MPRIS only if its panel/tooltip/service wiring keeps expanding.
-5. Leave Clipboard alone unless a real issue appears. The follow-ups live in `modules/clipboard/README.md`.
+3. Revisit MPRIS only if its panel/tooltip/service wiring keeps expanding.
+4. Leave Clipboard alone unless a real issue appears. The follow-ups live in `modules/clipboard/README.md`.
 
 Keep the ownership map current when ownership changes. It is only useful if it
 tells the truth, which is apparently a demanding requirement.
