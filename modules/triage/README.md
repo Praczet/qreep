@@ -154,6 +154,13 @@ triagectl export-json
 triagectl export-md
 ```
 
+`decide` only accepts names that are installed (`pacman -Qi`), in the repo sync
+databases (`pacman -Si`), in the AUR (`paru -Si`), or that already have a review
+item, so removed packages can still collect decisions. The AUR check is the only
+network call and runs last; offline, an uninstalled AUR package is rejected
+until the network comes back. Names are case-sensitive; `Miller` is rejected with a hint
+pointing at `miller` instead of quietly becoming its own package.
+
 All helper output intended for QML should be JSON. Human text can exist for
 `--help`, but service calls should not need fragile string parsing.
 
