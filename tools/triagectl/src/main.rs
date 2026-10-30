@@ -909,6 +909,7 @@ fn decide(conn: &Connection, args: &[String]) -> Result<DecideResponse> {
     let package = &args[0];
     let kind = &args[1];
     validate_decision_kind(kind)?;
+    validate_package_name(conn, package)?;
     let note = parse_note(args);
     let ts = now_ts()?;
 
@@ -953,6 +954,35 @@ fn validate_decision_kind(kind: &str) -> Result<()> {
         "keep" | "investigate" | "plan-remove" | "skip" => Ok(()),
         _ => Err(format!("unknown decision kind: {kind}").into()),
     }
+}
+
+// Package names are case-sensitive and decide used to accept anything, which is
+// how "Miller" got its own review item. Known review items stay valid so removed
+// packages can still collect decisions.
+fn validate_package_name(conn: &Connection, package: &str) -> Result<()> {
+    if is_known_package(conn, package)? {
+        return Ok(());
+    }
+
+    let lower = package.to_lowercase();
+    if lower != package && is_known_package(conn, &lower)? {
+        return Err(format!("unknown package: {package} (did you mean {lower}?)").into());
+    }
+    Err(format!("unknown package: {package}").into())
+}
+
+fn is_known_package(conn: &Connection, package: &str) -> Result<bool> {
+    let reviewed: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM review_items WHERE package = ?1",
+        params![package],
+        |row| row.get(0),
+    )?;
+    // Cheapest first: local review state, installed, repo sync DBs, then the AUR
+    // through paru, which is the only network call and only runs as a last resort.
+    Ok(reviewed > 0
+        || run_command(&["pacman", "-Qi", package]).ok
+        || run_command(&["pacman", "-Si", package]).ok
+        || run_command(&["paru", "-Si", package]).ok)
 }
 
 fn parse_note(args: &[String]) -> Option<String> {
