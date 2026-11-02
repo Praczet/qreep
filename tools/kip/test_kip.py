@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -58,6 +59,23 @@ class KipAddTests(unittest.TestCase):
             self.assertEqual(self.run_kip(*args).returncode, 0)
 
         self.assertEqual(self.journal(), "- plain text #kip\n- qsv #kip/try\n- mox shortcuts #kip/idea\n")
+
+    @unittest.skipUnless(shutil.which("lsq"), "lsq is not installed")
+    def test_todo_writes_a_plain_logseq_task_without_a_tag(self):
+        self.assertEqual(self.run_kip("todo", "renew", "the", "domain").returncode, 0)
+        self.assertEqual(self.journal(), "- TODO renew the domain\n")
+
+    def test_todo_marker_is_not_doubled_and_example_works(self):
+        self.assertEqual(self.run_kip("todo", "TODO renew", "--dry-run").stdout, "- TODO renew\n")
+        self.assertEqual(
+            self.run_kip("todo", "renew", "--example", "x y", "--dry-run").stdout,
+            "- TODO renew\n  example:: x y\n",
+        )
+
+    def test_todo_needs_text(self):
+        self.assertEqual(self.run_kip("todo").returncode, 2)
+        self.assertEqual(self.run_kip("todo", "  ").returncode, 1)
+        self.assertEqual(self.journal(), "")
 
     def test_plain_text_means_add_however_it_starts(self):
         cases = {
@@ -131,6 +149,33 @@ class KipAddTests(unittest.TestCase):
 
     def test_missing_lsq_says_nothing_was_saved(self):
         result = self.run_kip("add", "qsv", KIP_LSQ=str(self.base / "missing"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Nothing was saved", result.stderr)
+
+    def run_kip_without_lsq_on_path(self, *args):
+        home = self.base / "home"
+        bare = self.base / "bare-bin"
+        bare.mkdir()
+        (bare / "python3").symlink_to(sys.executable)
+        env = {key: value for key, value in os.environ.items() if key != "KIP_LSQ"}
+        env.update({"HOME": str(home), "PATH": str(bare), "KIP_LOGSEQ_DIR": str(self.graph)})
+        return subprocess.run([str(KIP), *args], capture_output=True, text=True, env=env), home
+
+    def test_lsq_is_found_in_go_bin_without_a_login_path(self):
+        (self.base / "home" / "go" / "bin").mkdir(parents=True)
+        log = self.base / "lsq-args"
+        fake = self.base / "home" / "go" / "bin" / "lsq"
+        fake.write_text(f"#!/bin/sh\nprintf '%s\\n' \"$@\" > '{log}'\n")
+        fake.chmod(0o755)
+
+        result, _ = self.run_kip_without_lsq_on_path("todo", "renew")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("TODO renew", log.read_text())
+
+    def test_lsq_found_nowhere_still_says_nothing_was_saved(self):
+        (self.base / "home").mkdir()
+        result, _ = self.run_kip_without_lsq_on_path("todo", "renew")
         self.assertEqual(result.returncode, 1)
         self.assertIn("Nothing was saved", result.stderr)
 
@@ -265,6 +310,36 @@ class KipListTests(unittest.TestCase):
     def test_missing_graph_is_an_error_not_an_empty_list(self):
         self.env["KIP_LOGSEQ_DIR"] = str(self.base / "nope")
         self.assertEqual(self.source(self.listing(), "logseq")["status"], "error")
+
+    def test_every_open_todo_is_listed_including_handwritten_ones(self):
+        (self.graph / "journals" / "a.md").write_text(
+            "- TODO renew: the domain\n"
+            "\t- TODO [#A] call the bank\n"
+            "- DONE already finished\n"
+            "- TODO\n"
+            "- TODOS are not tasks\n"
+            "- TODO tagged thing #kip/try\n"
+        )
+        (self.graph / "pages" / "work.md").write_text("- TODO from a page\n")
+
+        items = self.listing("--kind", "todo")["items"]
+
+        self.assertEqual(
+            [(i["title"], i["text"]) for i in items],
+            [("renew", "the domain"), ("call the bank", ""), ("tagged thing", ""), ("from a page", "")],
+        )
+        self.assertEqual(items[3]["source"]["reference"], "pages/work.md")
+
+    def test_todo_in_a_code_block_is_not_a_task(self):
+        (self.graph / "pages" / "a.md").write_text("- ```md\n  - TODO example\n  ```\n")
+        self.assertEqual(self.listing()["items"], [])
+
+    def test_human_list_groups_each_kind(self):
+        (self.graph / "journals" / "a.md").write_text("- a thing #kip\n- TODO b thing\n")
+        result = subprocess.run(
+            [str(KIP), "list"], capture_output=True, text=True, env={**os.environ, **self.env}
+        )
+        self.assertEqual(result.stdout.splitlines(), ["todo (1)", "  b thing", "note (1)", "  a thing"])
 
     def test_kind_filter(self):
         (self.graph / "journals" / "a.md").write_text("- a #kip\n- b #kip/try\n")

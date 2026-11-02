@@ -8,6 +8,7 @@ the next topic eats it. KIP owns the data; Mox will only display it.
 | `kip "text"` | Remember that this exists | `#kip` |
 | `kip try "text"` | Try this later | `#kip/try` |
 | `kip idea "text"` | Worth thinking about | `#kip/idea` |
+| `kip todo "text"` | Something to do | `TODO`, no tag |
 
 ```bash
 install -m 0755 tools/kip/kip ~/.local/bin/kip
@@ -35,18 +36,23 @@ later, so that is what search needs.
 The tag is added for you. Quote notes containing shell characters like `|`, `*`
 or `$`, because zsh gets to them first.
 
+`kip todo` writes a plain Logseq task, so it behaves like any other `TODO` there,
+including your queries. Mark it `DONE` in Logseq and it leaves the list. Only
+`TODO` is listed, not `DOING` or `WAITING`.
+
 The first word matters: `kip idea for dinner` saves "for dinner" as an idea. For
-plain text that starts with `add`, `try` or `idea`, write
+plain text that starts with `add`, `try`, `idea`, `todo` or `list`, write
 `kip add "idea for dinner"`.
 
 `KIP_LOGSEQ_DIR` points at another graph, otherwise `lsq` uses its own config.
-`KIP_LSQ` replaces the `lsq` executable.
+`KIP_LSQ` replaces the `lsq` executable. Without it, `kip` looks on `PATH`, then in
+`~/go/bin` and `~/.local/bin`, because the launcher does not get your shell's `PATH`.
 
 ## Listing
 
 ```bash
 kip list              # everything
-kip list --kind try   # note, try, idea, shortcut or tip
+kip list --kind todo  # todo, note, try, idea, shortcut or tip
 kip list --json       # the kip-items-v1 document Mox reads
 ```
 
@@ -54,7 +60,7 @@ Kip reads three places and never writes to any of them:
 
 | Source | Kind | Where |
 | --- | --- | --- |
-| `logseq` | `note`, `try`, `idea` | `#kip` lines in `journals/` and `pages/`, using `lsq`'s `:directory` |
+| `logseq` | `note`, `try`, `idea`, `todo` | `#kip` lines and every open `TODO` in `journals/` and `pages/`, using `lsq`'s `:directory` |
 | `hyprland` | `shortcut` | `hyprctl binds -j`, without mouse binds, switches and `XF86` media keys |
 | `zsh` | `tip` | `~/.config/zsh/tips.txt`, one `keys\|description` per line, optional |
 

@@ -11,6 +11,7 @@ Examples:
   kip qsv: process and filter CSV from the terminal
   kip try "qsv: process CSV" --example "qsv stats file.csv"
   kip idea "Mox could read my shortcuts"
+  kip todo "renew the domain"
   kip "qsv: process CSV" --dry-run
   kip list --kind try
   kip list --json
@@ -21,15 +22,18 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 
-TAGS = {"add": "#kip", "try": "#kip/try", "idea": "#kip/idea"}
+TAGS = {"add": "#kip", "try": "#kip/try", "idea": "#kip/idea"}  # todo has its own marker
 LSQ_TIMEOUT_SECONDS = 10
 HYPRCTL_TIMEOUT_SECONDS = 3
-ITEM_KINDS = ("note", "try", "idea", "shortcut", "tip")
+ITEM_KINDS = ("todo", "note", "try", "idea", "shortcut", "tip")
 # Hyprland modmask bits, in the order people say them.
 MODIFIERS = ((64, "Super"), (4, "Ctrl"), (8, "Alt"), (1, "Shift"), (2, "Caps"), (16, "Mod2"), (32, "Mod3"), (128, "Mod5"))
+# Logseq's own task marker, with its optional [#A] priority.
+TODO_MARKER = re.compile(r"^TODO(?:\s+\[#[A-Z]\])?\s+(?=\S)")
 KIP_TAG = re.compile(r"(?:^|\s)#kip(?:/([\w-]+))?(?=\s|$)")
 
 
@@ -54,6 +58,13 @@ def build_block(words, command="add", example=None):
     # Logseq reads "name:: value" as a property, and the note would vanish into metadata.
     if re.match(r"^[^\s:]+::", text):
         raise KipError('The note looks like a Logseq property. Use "name: what it is for".')
+    # A real Logseq task, so it behaves like any other TODO there and needs no tag.
+    if command == "todo":
+        lines = [f"TODO {TODO_MARKER.sub('', text)}"]
+        if example is not None:
+            lines.append(f"  example:: {single_line(example, 'The example')}")
+        return "\n".join(lines)
+
     tag = TAGS[command]
     existing = re.findall(r"(?:^|\s)(#kip(?:/\w+)?)(?=\s|$)", text)
     # A plain note that already names a kip tag has said what it wants.
@@ -66,8 +77,24 @@ def build_block(words, command="add", example=None):
     return "\n".join(lines)
 
 
+def lsq_executable():
+    configured = os.environ.get("KIP_LSQ")
+    if configured:
+        return configured
+    # The launcher and other services do not get a login shell's PATH, and go install
+    # puts lsq in a directory only that shell knows about.
+    found = shutil.which("lsq")
+    if found:
+        return found
+    for candidate in ("~/go/bin/lsq", "~/.local/bin/lsq"):
+        path = Path(candidate).expanduser()
+        if os.access(path, os.X_OK):
+            return str(path)
+    return "lsq"
+
+
 def append_to_journal(block):
-    command = [os.environ.get("KIP_LSQ", "lsq")]
+    command = [lsq_executable()]
     graph = os.environ.get("KIP_LOGSEQ_DIR")
     if graph:
         command += ["-d", graph]
@@ -130,11 +157,15 @@ def parse_notes(content, reference):
             fenced = not fenced
             continue
         bullet = re.match(r"^(\s*)-\s+(.*)$", line)
-        if fenced or not bullet or not KIP_TAG.search(bullet.group(2)):
+        if fenced or not bullet:
             continue
-        tags = KIP_TAG.findall(bullet.group(2))
-        kind = next((tag for tag in tags if tag in ("try", "idea")), "note")
-        full = " ".join(KIP_TAG.sub(" ", bullet.group(2)).split())
+        content = bullet.group(2)
+        is_todo = TODO_MARKER.match(content) is not None
+        if not is_todo and not KIP_TAG.search(content):
+            continue
+        tags = KIP_TAG.findall(content)
+        kind = "todo" if is_todo else next((tag for tag in tags if tag in ("try", "idea")), "note")
+        full = " ".join(KIP_TAG.sub(" ", TODO_MARKER.sub("", content)).split())
         if not full:
             continue
         title, separator, text = full.partition(": ")
@@ -241,11 +272,16 @@ def command_list(args):
     if args.json:
         print(json.dumps(document, ensure_ascii=False))
         return 0
-    for item in document["items"]:
-        detail = f": {item['text']}" if item["text"] else ""
-        print(f"[{item['kind']}] {item['title']}{detail}")
-        if item["example"]:
-            print(f"    {item['example']}")
+    for kind in ITEM_KINDS:
+        items = [item for item in document["items"] if item["kind"] == kind]
+        if not items:
+            continue
+        print(f"{kind} ({len(items)})")
+        for item in items:
+            detail = f": {item['text']}" if item["text"] else ""
+            print(f"  {item['title']}{detail}")
+            if item["example"]:
+                print(f"      {item['example']}")
     for source in document["sources"]:
         if source["status"] == "error":
             print(f"kip: {source['id']}: {source['error']}", file=sys.stderr)
@@ -256,6 +292,7 @@ COMMANDS = {
     "add": "Remember that this exists. Also what plain `kip \"text\"` does.",
     "try": "Something to try later.",
     "idea": "Something worth thinking about.",
+    "todo": "Something to do, written as a plain Logseq TODO.",
 }
 
 
