@@ -55,7 +55,7 @@ ShellRoot {
         qreeperController: qreeper
         aegisController: aegis
         sensorsService: systemSensors
-        shellFullscreenSurfaceOpen: dashboard.open || expose.open || qreeper.atlasOpen
+        shellFullscreenSurfaceOpen: dashboard.open || expose.open || qreeper.atlasOpen || kip.open
 
         onVolumeFeedbackRequested: (percent, muted, icon) => {
             osd.showMessage(percent + "%", qreepTheme.modules.osd.defaultDuration, qreepTheme.modules.osd.defaultPosition, muted ? "Volume (Muted)" : "Volume", icon, qreepTheme.modules.osd.progressIconSize, percent / 100);

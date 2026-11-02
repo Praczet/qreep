@@ -73,7 +73,7 @@ sequence live in `ClockTheme.qml`.
 
 The event dots stay in `ClockEventIndicators.qml` as a popup so they can sit
 under the clock pill without being clipped by the bar window. `Bar.qml`
-suppresses that popup while Dashboard, Expose, the Qreeper Atlas, or
+suppresses that popup while Dashboard, Expose, the Qreeper Atlas, KIP, or
 fullscreen Power is open,
 because separate popup windows otherwise float above fullscreen Qreep surfaces
 like they skipped the part where layering was explained.
