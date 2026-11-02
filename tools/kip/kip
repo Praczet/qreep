@@ -8,18 +8,29 @@
 """Kip: writes down what you just found, before the next topic eats it.
 
 Examples:
-  kip add qsv: process and filter CSV from the terminal
-  kip add "qsv: process CSV" --type tool --try "qsv stats file.csv"
-  kip add "qsv: process CSV" --dry-run
+  kip qsv: process and filter CSV from the terminal
+  kip try "qsv: process CSV" --example "qsv stats file.csv"
+  kip idea "Mox could read my shortcuts"
+  kip "qsv: process CSV" --dry-run
+  kip list --kind try
+  kip list --json
 """
 import argparse
+import hashlib
+import json
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 
-TAG = "#kip"
+TAGS = {"add": "#kip", "try": "#kip/try", "idea": "#kip/idea"}
 LSQ_TIMEOUT_SECONDS = 10
+HYPRCTL_TIMEOUT_SECONDS = 3
+ITEM_KINDS = ("note", "try", "idea", "shortcut", "tip")
+# Hyprland modmask bits, in the order people say them.
+MODIFIERS = ((64, "Super"), (4, "Ctrl"), (8, "Alt"), (1, "Shift"), (2, "Caps"), (16, "Mod2"), (32, "Mod3"), (128, "Mod5"))
+KIP_TAG = re.compile(r"(?:^|\s)#kip(?:/([\w-]+))?(?=\s|$)")
 
 
 class KipError(Exception):
@@ -35,7 +46,7 @@ def single_line(value, label):
     return text
 
 
-def build_block(words, kind=None, example=None):
+def build_block(words, command="add", example=None):
     # A leading "- " would nest a bullet inside the bullet lsq already writes.
     text = re.sub(r"^-(\s+|$)", "", single_line(" ".join(words), "The note"))
     if not text:
@@ -43,14 +54,15 @@ def build_block(words, kind=None, example=None):
     # Logseq reads "name:: value" as a property, and the note would vanish into metadata.
     if re.match(r"^[^\s:]+::", text):
         raise KipError('The note looks like a Logseq property. Use "name: what it is for".')
-    if not re.search(rf"(^|\s){TAG}(\s|$)", text):
-        text = f"{text} {TAG}"
+    tag = TAGS[command]
+    existing = re.findall(r"(?:^|\s)(#kip(?:/\w+)?)(?=\s|$)", text)
+    # A plain note that already names a kip tag has said what it wants.
+    if tag not in existing and not (command == "add" and existing):
+        text = f"{text} {tag}"
 
     lines = [text]
-    if kind is not None:
-        lines.append(f"  type:: {single_line(kind, 'The type')}")
     if example is not None:
-        lines.append(f"  try:: {single_line(example, 'The example')}")
+        lines.append(f"  example:: {single_line(example, 'The example')}")
     return "\n".join(lines)
 
 
@@ -77,21 +89,203 @@ def append_to_journal(block):
         raise KipError(f"Nothing was saved. lsq said: {reason}")
 
 
+def stable_id(source, value):
+    return f"{source}:{hashlib.sha256(value.casefold().encode()).hexdigest()[:24]}"
+
+
+def make_item(item_id, kind, title, text, example, source, reference):
+    return {
+        "id": item_id,
+        "kind": kind,
+        "title": title,
+        "text": text,
+        "example": example,
+        "source": {"kind": source, "reference": reference},
+    }
+
+
+def source_result(source_id, status, path, items=(), error=""):
+    return {"id": source_id, "status": status, "path": str(path), "itemCount": len(items), "error": error}
+
+
+def logseq_graph():
+    configured = os.environ.get("KIP_LOGSEQ_DIR")
+    if configured:
+        return Path(configured).expanduser()
+    # lsq decides where notes go, so its config decides where they are read from.
+    config = Path(os.environ.get("KIP_LSQ_CONFIG", "~/.config/lsq/config.edn")).expanduser()
+    try:
+        match = re.search(r'^\s*:directory\s+"([^"]+)"', config.read_text(encoding="utf-8"), re.M)
+    except OSError:
+        match = None
+    return Path(os.path.expandvars(match.group(1))).expanduser() if match else Path("~/Notes/Logseq").expanduser()
+
+
+def parse_notes(content, reference):
+    items = []
+    fenced = False
+    lines = content.splitlines()
+    for index, line in enumerate(lines):
+        if line.lstrip().lstrip("- ").startswith("```"):
+            fenced = not fenced
+            continue
+        bullet = re.match(r"^(\s*)-\s+(.*)$", line)
+        if fenced or not bullet or not KIP_TAG.search(bullet.group(2)):
+            continue
+        tags = KIP_TAG.findall(bullet.group(2))
+        kind = next((tag for tag in tags if tag in ("try", "idea")), "note")
+        full = " ".join(KIP_TAG.sub(" ", bullet.group(2)).split())
+        if not full:
+            continue
+        title, separator, text = full.partition(": ")
+        example = ""
+        for following in lines[index + 1:]:
+            if re.match(r"^\s*-\s", following):
+                break
+            prop = re.match(r"^\s+example::\s*(.*)$", following)
+            if prop:
+                example = prop.group(1).strip()
+                break
+        items.append(make_item(stable_id("logseq", full), kind, title, text if separator else "", example, "logseq", reference))
+    return items
+
+
+def read_logseq():
+    graph = logseq_graph()
+    if not graph.is_dir():
+        return [], source_result("logseq", "error", graph, error="The Logseq graph was not found.")
+    items = {}
+    try:
+        for folder in ("journals", "pages"):
+            for path in sorted((graph / folder).glob("*.md")):
+                content = path.read_text(encoding="utf-8", errors="replace")
+                for item in parse_notes(content, f"{folder}/{path.name}"):
+                    items.setdefault(item["id"], item)
+    except OSError as error:
+        return [], source_result("logseq", "error", graph, error=str(error))
+    found = list(items.values())
+    return found, source_result("logseq", "ok", graph, found)
+
+
+def bind_keys(bind):
+    modifiers = [name for bit, name in MODIFIERS if int(bind.get("modmask") or 0) & bit]
+    return " + ".join([*modifiers, str(bind.get("key"))])
+
+
+def read_hyprland():
+    hyprctl = os.environ.get("KIP_HYPRCTL", "hyprctl")
+    try:
+        result = subprocess.run(
+            [hyprctl, "binds", "-j"],
+            capture_output=True,
+            text=True,
+            timeout=HYPRCTL_TIMEOUT_SECONDS,
+            stdin=subprocess.DEVNULL,
+        )
+        if result.returncode != 0:
+            raise OSError(result.stderr.strip() or f"exit status {result.returncode}")
+        binds = json.loads(result.stdout)
+        if not isinstance(binds, list):
+            raise ValueError("hyprctl did not return a list.")
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        return [], source_result("hyprland", "error", hyprctl, error=str(error))
+    items = {}
+    for bind in binds:
+        if not isinstance(bind, dict):
+            continue
+        key = str(bind.get("key") or "")
+        description = " ".join(str(bind.get("description") or "").split())
+        # Mouse drags and lid switches are not something anyone needs a tip for.
+        if not key or not description or bind.get("mouse") or key.startswith(("switch:", "mouse")):
+            continue
+        keys = bind_keys(bind)
+        item_id = stable_id("hyprland", keys)
+        items.setdefault(item_id, make_item(item_id, "shortcut", keys, description, "", "hyprland", keys))
+    found = list(items.values())
+    return found, source_result("hyprland", "ok", hyprctl, found)
+
+
+def read_zsh_tips():
+    path = Path(os.environ.get("KIP_ZSH_TIPS", "~/.config/zsh/tips.txt")).expanduser()
+    if not path.exists():
+        return [], source_result("zsh", "missing", path)
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as error:
+        return [], source_result("zsh", "error", path, error=str(error))
+    items = {}
+    for line in lines:
+        keys, separator, text = line.strip().partition("|")
+        if not separator or not keys.strip() or not text.strip() or line.lstrip().startswith("#"):
+            continue
+        item_id = stable_id("zsh", keys.strip())
+        items.setdefault(item_id, make_item(item_id, "tip", keys.strip(), text.strip(), "", "zsh", keys.strip()))
+    found = list(items.values())
+    return found, source_result("zsh", "ok", path, found)
+
+
+def collect_items():
+    items = []
+    sources = []
+    for reader in (read_logseq, read_hyprland, read_zsh_tips):
+        found, source = reader()
+        items += found
+        sources.append(source)
+    return {"schemaVersion": 1, "format": "kip-items", "sources": sources, "items": items}
+
+
+def command_list(args):
+    document = collect_items()
+    if args.kind:
+        document["items"] = [item for item in document["items"] if item["kind"] == args.kind]
+    if args.json:
+        print(json.dumps(document, ensure_ascii=False))
+        return 0
+    for item in document["items"]:
+        detail = f": {item['text']}" if item["text"] else ""
+        print(f"[{item['kind']}] {item['title']}{detail}")
+        if item["example"]:
+            print(f"    {item['example']}")
+    for source in document["sources"]:
+        if source["status"] == "error":
+            print(f"kip: {source['id']}: {source['error']}", file=sys.stderr)
+    return 0
+
+
+COMMANDS = {
+    "add": "Remember that this exists. Also what plain `kip \"text\"` does.",
+    "try": "Something to try later.",
+    "idea": "Something worth thinking about.",
+}
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="kip", description="Kip keeps what you find.")
     commands = parser.add_subparsers(dest="command", required=True)
-    add = commands.add_parser("add", help="Add one memory to today's Logseq journal.")
-    add.add_argument("note", nargs="+", help='What it is and what it is for: "qsv: process CSV".')
-    add.add_argument("--type", dest="kind", help="Kind of thing, for example tool, app or shortcut.")
-    add.add_argument("--try", dest="example", help="One example worth seeing again.")
-    add.add_argument("--dry-run", action="store_true", help="Print the block without saving it.")
+    for name, description in COMMANDS.items():
+        command = commands.add_parser(name, help=description)
+        command.add_argument("note", nargs="+", help='What it is and what it is for: "qsv: process CSV".')
+        command.add_argument("--example", help="One example worth seeing again.")
+        command.add_argument("--dry-run", action="store_true", help="Print the block without saving it.")
+    listing = commands.add_parser("list", help="Show what Kip knows: notes, Hyprland binds and zsh tips.")
+    listing.add_argument("--kind", choices=ITEM_KINDS, help="Show only one kind.")
+    listing.add_argument("--json", action="store_true", help="Print the kip-items-v1 document.")
     return parser
 
 
+def with_default_command(argv):
+    # `kip "text"` means `kip add "text"`. Only the help flags stay top-level.
+    if argv and argv[0] not in (*COMMANDS, "list", "-h", "--help"):
+        return ["add", *argv]
+    return argv
+
+
 def main(argv=None):
-    args = build_parser().parse_args(argv)
+    args = build_parser().parse_args(with_default_command(sys.argv[1:] if argv is None else argv))
+    if args.command == "list":
+        return command_list(args)
     try:
-        block = build_block(args.note, args.kind, args.example)
+        block = build_block(args.note, args.command, args.example)
         if args.dry_run:
             print(f"- {block}")
             return 0

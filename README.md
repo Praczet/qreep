@@ -337,7 +337,7 @@ core/                      shared shell machinery
 theme/                     public theme entry point and tokens
 scripts/                   helpers and user services
 tools/jarvis/              KIP's local-AI backend
-tools/kip/                 `kip add`: one-line memories into Logseq
+tools/kip/                 `kip`: one-line memories into Logseq
 tools/triagectl/           Triage's Rust helper
 ```
 
