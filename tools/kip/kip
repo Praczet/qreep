@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+# %name: kip
+# %desc: Add one-line memories to today's Logseq journal
+# %icon: accessories-text-editor-symbolic
+# %terminal: true
+# %categories: Utility;
+# %requires: python3, lsq
+"""Kip: writes down what you just found, before the next topic eats it.
+
+Examples:
+  kip add qsv: process and filter CSV from the terminal
+  kip add "qsv: process CSV" --type tool --try "qsv stats file.csv"
+  kip add "qsv: process CSV" --dry-run
+"""
+import argparse
+import os
+import re
+import subprocess
+import sys
+
+TAG = "#kip"
+LSQ_TIMEOUT_SECONDS = 10
+
+
+class KipError(Exception):
+    pass
+
+
+def single_line(value, label):
+    text = value.strip()
+    if not text:
+        raise KipError(f"{label} is empty.")
+    if "\n" in text or "\r" in text:
+        raise KipError(f"{label} must be one line.")
+    return text
+
+
+def build_block(words, kind=None, example=None):
+    # A leading "- " would nest a bullet inside the bullet lsq already writes.
+    text = re.sub(r"^-(\s+|$)", "", single_line(" ".join(words), "The note"))
+    if not text:
+        raise KipError("The note is empty.")
+    # Logseq reads "name:: value" as a property, and the note would vanish into metadata.
+    if re.match(r"^[^\s:]+::", text):
+        raise KipError('The note looks like a Logseq property. Use "name: what it is for".')
+    if not re.search(rf"(^|\s){TAG}(\s|$)", text):
+        text = f"{text} {TAG}"
+
+    lines = [text]
+    if kind is not None:
+        lines.append(f"  type:: {single_line(kind, 'The type')}")
+    if example is not None:
+        lines.append(f"  try:: {single_line(example, 'The example')}")
+    return "\n".join(lines)
+
+
+def append_to_journal(block):
+    command = [os.environ.get("KIP_LSQ", "lsq")]
+    graph = os.environ.get("KIP_LOGSEQ_DIR")
+    if graph:
+        command += ["-d", graph]
+    command += ["-a", block]
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=LSQ_TIMEOUT_SECONDS,
+            stdin=subprocess.DEVNULL,
+        )
+    except FileNotFoundError:
+        raise KipError(f"{command[0]} was not found. Nothing was saved.") from None
+    except subprocess.TimeoutExpired:
+        raise KipError(f"{command[0]} did not finish in {LSQ_TIMEOUT_SECONDS}s. Check today's journal.") from None
+    if result.returncode != 0:
+        reason = result.stderr.strip() or f"exit status {result.returncode}"
+        raise KipError(f"Nothing was saved. lsq said: {reason}")
+
+
+def build_parser():
+    parser = argparse.ArgumentParser(prog="kip", description="Kip keeps what you find.")
+    commands = parser.add_subparsers(dest="command", required=True)
+    add = commands.add_parser("add", help="Add one memory to today's Logseq journal.")
+    add.add_argument("note", nargs="+", help='What it is and what it is for: "qsv: process CSV".')
+    add.add_argument("--type", dest="kind", help="Kind of thing, for example tool, app or shortcut.")
+    add.add_argument("--try", dest="example", help="One example worth seeing again.")
+    add.add_argument("--dry-run", action="store_true", help="Print the block without saving it.")
+    return parser
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
+    try:
+        block = build_block(args.note, args.kind, args.example)
+        if args.dry_run:
+            print(f"- {block}")
+            return 0
+        append_to_journal(block)
+    except KipError as error:
+        print(f"kip: {error}", file=sys.stderr)
+        return 1
+    print(f"Saved to today's journal: {block.splitlines()[0]}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
