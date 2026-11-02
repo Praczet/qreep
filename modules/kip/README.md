@@ -22,6 +22,7 @@ modules/kip/
 ├── KipCommands.qml    # command registry + parse(text)
 ├── KipMessages.qml    # event-keyed microcopy, picked on state entry
 ├── KipJarvisService.qml # Jarvis adapter: argv, JSON/NDJSON parsing, cancellation
+├── KipClaudeService.qml # /ask-claude: one question through claude -p
 ├── KipMockService.qml # fake search/ask/general, Jarvis-shaped event sequence
 ├── KipScreenshotService.qml # /last: newest files in the screenshot folder
 ├── KipShotsCommand.qml # /last in the panel: count, live refresh, grid keys
@@ -114,6 +115,14 @@ Details that were verified against the installed Jarvis on 2026-10-15:
 Each request gets its own `Process`. A new request, Escape, editing the text,
 or closing KIP kills the old process (checked with `pgrep`) and its late
 output is ignored by request id.
+
+`/ask-claude <q>` skips Jarvis and runs `claude -p` (`KipTheme.claudeCommand`),
+handled by `KipClaudeService.qml`. The question and any searches go to Anthropic,
+and usage comes out of the five-hour and weekly limits shared with Claude Code,
+so asking here can end a coding session early. Web search is its only tool, so
+it cannot read files. `ANTHROPIC_API_KEY` is removed from its environment,
+because `claude -p` would otherwise quietly bill the API instead of the plan.
+One question, one answer: no follow-ups, and a retry costs quota again.
 
 `/ask-chat <q>` is the odd one out: it never calls Jarvis or any API. It runs
 `xdg-open https://chatgpt.com/?q=<q>` (`KipTheme.chatGptCommand`) and closes
@@ -220,6 +229,7 @@ The size survives closing KIP but not a Quickshell restart.
 | `/` | command palette |
 | `/as` | candidate, `/ask` highlighted |
 | `/ask ` + question (alias `/a`) | general question, no notes context (mock) |
+| `/ask-claude ` + question (alias `/cl`) | Claude answer in KIP, with web search; uses your Claude plan |
 | `/ask-chat ` + question (alias `/ac`) | opens the question on chatgpt.com and closes KIP |
 | `/notes-ask ` + question (alias `/na`) | note-grounded answer (mock) |
 | `/notes ` + query (aliases `/n`, `/search`) | notes search (mock) |

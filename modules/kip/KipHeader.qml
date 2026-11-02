@@ -113,7 +113,9 @@ Item {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: rootKipHeader.service.mock ? "Local AI · mock" : (rootKipHeader.service.model.length > 0 ? "Local AI · " + rootKipHeader.service.model : "Local AI")
+                readonly property string providerLabel: rootKipHeader.service.providerLabel || "Local AI"
+
+                text: rootKipHeader.service.mock ? "Local AI · mock" : (rootKipHeader.service.model.length > 0 ? providerLabel + " · " + rootKipHeader.service.model : providerLabel)
                 color: rootKipHeader.kipTheme.secondaryTextColor
                 font.pixelSize: rootKipHeader.kipTheme.metaPixelSize
             }

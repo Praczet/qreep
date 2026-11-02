@@ -40,6 +40,7 @@ PanelWindow {
     signal actionRequested(var item, var option)
     signal copyRequested(string text)
     signal chatGptRequested(string question)
+    signal askProviderRequested(string provider)
 
     readonly property QtObject kt: theme.modules.kip
 
@@ -2001,6 +2002,9 @@ PanelWindow {
             return;
         }
 
+        // Swaps what `service` points at, so it comes before the first use.
+        askProviderRequested(kind === "claude" ? "claude" : "local");
+
         contentState = "service";
         answerView.follow = true;
         resultIndex = 0;
@@ -2028,6 +2032,9 @@ PanelWindow {
                 return answerView.selectedText.length > 0;
             if (option.id === "open-source")
                 return service.kind === "ask" && resultsVisible && !service.mock;
+            // Jarvis has a detailed mode. Claude would just spend quota on a rerun.
+            if (option.id === "explain")
+                return service.kind !== "claude";
             return true;
         });
 
@@ -2258,7 +2265,11 @@ PanelWindow {
                     index: "index problem",
                     malformed: "malformed reply",
                     process: "jarvis failed",
-                    missing: "jarvis not found"
+                    missing: "jarvis not found",
+                    limit: "usage limit reached",
+                    auth: "not signed in",
+                    claude: "claude failed",
+                    "claude-missing": "claude not found"
                 }[service.errorKind] || "backend error");
         }
         return prefix + service.status;

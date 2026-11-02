@@ -280,6 +280,10 @@ QtObject {
                 neutral: ["General question. Enter sends it."],
                 dry: ["A question for my magnificent intellect? Proceed.", "No notes? Just raw intelligence? How flattering.", "Ask, mortal. I have a reputation to maintain.", "A question without context. My favourite kind of peril.", "You bring curiosity. I bring unreasonable confidence.", "Very well. Let's pretend I know everything."]
             },
+            "claude.ready": {
+                neutral: ["Enter asks Claude. This uses your Claude plan's limits."],
+                dry: ["A second opinion. Enter, and it comes out of your coding quota.", "Very well, ask the expensive one. Enter.", "My colleague takes questions. Enter sends it, quota permitting.", "Outside counsel. Billed in usage limits. Enter."]
+            },
             "chatgpt.ready": {
                 neutral: ["Enter opens this question on chatgpt.com."],
                 dry: ["Outsourcing. Enter sends this to chatgpt.com.", "Another intellect? Fine. Enter opens your browser.", "I will carry your question to the door. Enter.", "The browser can have this one. Enter when ready."]

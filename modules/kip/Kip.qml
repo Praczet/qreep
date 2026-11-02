@@ -22,7 +22,9 @@ Scope {
     property QtObject placesController: null
     // "jarvis" or "mock"; starts from the theme, switchable over IPC for testing.
     property string backend: theme.modules.kip.backend
-    readonly property QtObject service: backend === "mock" ? mockService : jarvisService
+    // Who answers the current request: "local" (the backend above) or "claude".
+    property string askProvider: "local"
+    readonly property QtObject service: askProvider === "claude" ? claudeService : (backend === "mock" ? mockService : jarvisService)
     readonly property string phase: panelLoader.item ? panelLoader.item.phase : "hidden"
     // Input for a panel that did not exist yet when showWith was called.
     property var pendingInput: null
@@ -43,6 +45,12 @@ Scope {
 
     KipJarvisService {
         id: jarvisService
+
+        theme: rootKip.theme
+    }
+
+    KipClaudeService {
+        id: claudeService
 
         theme: rootKip.theme
     }
@@ -254,6 +262,7 @@ Scope {
             onActionRequested: (item, option) => rootKip.runAction(item, option)
             onCopyRequested: text => rootKip.copyText(text)
             onChatGptRequested: question => rootKip.askChatGpt(question)
+            onAskProviderRequested: provider => rootKip.setAskProvider(provider)
             onCloseFinished: {
                 if (!rootKip.open)
                     rootKip.panelLoaded = false;
@@ -367,6 +376,15 @@ Scope {
             query: encodeURIComponent(question)
         }));
         hide();
+    }
+
+    // Whoever is being replaced stops first, so a late reply has nowhere to land.
+    function setAskProvider(provider) {
+        if (provider === askProvider)
+            return;
+
+        service.reset();
+        askProvider = provider;
     }
 
     function launch(command) {
@@ -484,7 +502,10 @@ Scope {
     function submitText(text) {
         const parsed = kipCommands.parse(text);
 
-        if (parsed.mode === "ready" && parsed.command.kind === "general" && parsed.argument.length > 0)
+        if (parsed.mode === "ready" && ["general", "search", "ask", "claude"].includes(parsed.command.kind))
+            setAskProvider(parsed.command.kind === "claude" ? "claude" : "local");
+
+        if (parsed.mode === "ready" && (parsed.command.kind === "general" || parsed.command.kind === "claude") && parsed.argument.length > 0)
             service.general(parsed.argument);
         else if (parsed.mode === "ready" && parsed.command.kind === "search" && parsed.argument.length > 0)
             service.search(parsed.argument);

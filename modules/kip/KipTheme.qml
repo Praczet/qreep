@@ -359,6 +359,14 @@ QtObject {
     readonly property int logseqColdStartTimeout: 30000
     // Any .md hit asks "Open with" first; the first entry that applies is the
     // default. logseqOnly entries appear only for files in the Logseq graph.
+    // /ask-claude. The question is appended after "--", so one starting with "-"
+    // stays a question. WebSearch is the only tool, on purpose, and the empty
+    // setting sources keep CLAUDE.md, hooks and plugins out of it. The short
+    // system prompt replaces Claude Code's: about 1,600 input tokens instead of
+    // 8,700, measured 2026-11-02, and these tokens come out of the same limits as
+    // Claude Code.
+    readonly property var claudeCommand: ["claude", "-p", "--model", "sonnet", "--output-format", "stream-json", "--verbose", "--include-partial-messages", "--tools", "WebSearch", "--allowedTools", "WebSearch", "--no-session-persistence", "--strict-mcp-config", "--setting-sources", "", "--system-prompt", "Answer the question directly and concisely in Markdown. Search the web only when the answer depends on current or uncertain facts, and link what you used.", "--"]
+
     // /ask-chat. ?q= is not a documented chatgpt.com feature, so if it stops
     // working this is the one line to change.
     readonly property var chatGptCommand: ["xdg-open", "https://chatgpt.com/?q={query}"]

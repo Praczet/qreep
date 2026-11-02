@@ -62,6 +62,22 @@ QtObject {
             actions: "Opens chatgpt.com/?q=<question> with xdg-open and closes KIP. Nothing comes back here: no answer, no history, no API key. It uses your normal ChatGPT login and limits."
         },
         {
+            name: "ask-claude",
+            aliases: ["cl"],
+            label: "Ask Claude",
+            description: "Ask Claude in KIP, with web search. Uses your Claude plan's limits.",
+            helper: "Type the question, then Enter. It counts against the limits Claude Code uses too.",
+            eventKey: "claude.ready",
+            placeholder: "question",
+            icon: "󰚩",
+            sourceHint: "claude -p · web search only · leaves this machine",
+            kind: "claude",
+            takesArgument: true,
+            syntax: "/ask-claude <question>",
+            examples: ["/ask-claude What is the best tool for csv in the console?", "/cl what does set -x do"],
+            actions: "One question, one answer, no follow-ups. It can search the web but cannot read your files. The answer is selectable; code blocks have Copy. Enter on a finished answer opens its actions."
+        },
+        {
             name: "notes-ask",
             aliases: ["na"],
             label: "Ask notes",
