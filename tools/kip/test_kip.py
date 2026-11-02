@@ -231,6 +231,8 @@ class KipListTests(unittest.TestCase):
             {"modmask": 69, "key": "M", "description": "Mox  tip", "mouse": False},
             {"modmask": 64, "key": "mouse:272", "description": "Drag", "mouse": True},
             {"modmask": 0, "key": "switch:Lid Switch", "description": "Lid", "mouse": False},
+            {"modmask": 0, "key": "XF86MonBrightnessUp", "description": "Brightness", "mouse": False},
+            {"modmask": 64, "key": "xf86audioplay", "description": "Play", "mouse": False},
             {"modmask": 64, "key": "X", "description": "", "mouse": False},
         ])))
 

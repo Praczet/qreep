@@ -195,8 +195,8 @@ def read_hyprland():
             continue
         key = str(bind.get("key") or "")
         description = " ".join(str(bind.get("description") or "").split())
-        # Mouse drags and lid switches are not something anyone needs a tip for.
-        if not key or not description or bind.get("mouse") or key.startswith(("switch:", "mouse")):
+        # Mouse drags, lid switches and media keys are not something anyone needs a tip for.
+        if not key or not description or bind.get("mouse") or key.lower().startswith(("switch:", "mouse", "xf86")):
             continue
         keys = bind_keys(bind)
         item_id = stable_id("hyprland", keys)

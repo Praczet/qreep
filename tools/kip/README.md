@@ -55,7 +55,7 @@ Kip reads three places and never writes to any of them:
 | Source | Kind | Where |
 | --- | --- | --- |
 | `logseq` | `note`, `try`, `idea` | `#kip` lines in `journals/` and `pages/`, using `lsq`'s `:directory` |
-| `hyprland` | `shortcut` | `hyprctl binds -j`, without mouse binds and switches |
+| `hyprland` | `shortcut` | `hyprctl binds -j`, without mouse binds, switches and `XF86` media keys |
 | `zsh` | `tip` | `~/.config/zsh/tips.txt`, one `keys\|description` per line, optional |
 
 Each source reports its own `status` of `ok`, `missing` or `error`. One broken
