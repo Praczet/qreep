@@ -48,6 +48,13 @@ plain text that starts with `add`, `try`, `idea`, `todo` or `list`, write
 `KIP_LSQ` replaces the `lsq` executable. Without it, `kip` looks on `PATH`, then in
 `~/go/bin` and `~/.local/bin`, because the launcher does not get your shell's `PATH`.
 
+In the launcher, `/kip` does the same without a terminal. Everything after
+`--example` is literal there, so quotes need no care:
+
+```text
+/kip try qsv: process CSV --example qsv sqlp a.csv "SELECT id FROM a" | qsv table
+```
+
 ## Listing
 
 ```bash

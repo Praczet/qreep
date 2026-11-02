@@ -47,6 +47,8 @@ modules/kip/
 ├── KipBrowseCommand.qml # /browse in the panel: input-as-path, Tab/Alt keys
 ├── KipAppService.qml  # launcher: desktop entries, grouping, search, launch log
 ├── KipAppView.qml     # launcher: toolbar + sectioned grid/list, spatial keys
+├── KipNotesCommand.qml # /kip: what the input means, preview, list page
+├── KipNotesService.qml # /kip: runs the kip command
 ├── KipTimerCommand.qml # /timer: plan + preview against the Qreep timer
 ├── KipRunService.qml  # /run: rofi-runner history, terminal/background decision
 ├── KipRunCommand.qml  # /run in the panel: history picking, preview, danger arm, keys
@@ -226,6 +228,7 @@ The size survives closing KIP but not a Quickshell restart.
 | `/p [words]` (aliases `/proj`, `/project`, `/places`) | projects from Places with branch, age, changes, quests; Enter opens Places on it, Shift+Enter its cockpit, Ctrl+Enter its editor |
 | `/ssh [words]` (alias `/hosts`) | the ssh hosts from Places' ssh blocks, dimmed when unreachable, a red `prod` chip when kitty's `ssh.conf` gives them the prod theme; Enter connects in kitty with `kitten ssh` |
 | `/keys [words]` (aliases `/binds`, `/k`) | Hyprland keybindings by description or keys; Enter copies the keys |
+| `/kip text`, `try text`, `idea text`, `todo text`, `list [kind]` (alias `/remember`) | keep it in today's Logseq journal through `kip`; preview, then Enter saves |
 | `/timer 25m Tea`, `15:03 x`, `up x`, `pause`, `resume`, `stop` (alias `/t`) | preview, then Enter does it |
 | `/run <command>` (alias `/r`) | run what you typed, in Ghostty or the background; preview first |
 | `/help`, `/help fd` (alias `/?`) | commands and keys, or one command's syntax, flags, examples; live |
@@ -537,6 +540,10 @@ None of these talk to the model or the network.
   `ExposeService.previewSourceForClient` matches, fitted to the window's
   aspect. No safe match, no preview: the card shows the icon. Icons come from
   `DesktopEntries.heuristicLookup`, then Expose's class fixes.
+- **`/kip`** runs `tools/kip/kip` with an argv, never a shell. `kip` owns the tags
+  and the journal; the preview only shows what it will write. The panel stays open
+  until `kip` confirms, so a failed save shows its reason. Everything after
+  `--example` is literal. `/kip list` shows your own notes unless you name a kind.
 - **`/timer`** plans against the Qreep timer service (`shell.qml` passes
   `timer.service` in) using its own `parseDuration`/`parseFinishAt`, so KIP
   accepts exactly what the bar does. The preview says what will happen and

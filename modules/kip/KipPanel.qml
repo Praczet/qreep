@@ -106,9 +106,27 @@ PanelWindow {
     readonly property var appSections: appsMode ? apps.sections(appsQuery, apps.grouping) : []
     readonly property bool appsVisible: appsMode && appView.count > 0
 
+    property var keepListKinds: []
     property string bloomWallpaper: ""
     readonly property string headerImagePath: kt.headerImage === "bloom" ? bloomWallpaper : kt.headerImage
     readonly property string headerImageUrl: headerImagePath.length > 0 ? "file://" + headerImagePath.split("/").map(encodeURIComponent).join("/") : ""
+
+    KipNotesCommand {
+        id: keepCommand
+    }
+
+    KipNotesService {
+        id: keepService
+
+        // A list is only worth showing if /kip list is still what the input says.
+        onListed: {
+            if (rootKipPanel.liveKind() === "keep" && keepCommand.plan(rootKipPanel.parsed.argument).action === "list")
+                rootKipPanel.showDoc(keepCommand.listMarkdown(document, rootKipPanel.keepListKinds), "keep", "keep.ready");
+        }
+        // The panel stays open until kip confirms, so a failed save is never silent.
+        onSaved: rootKipPanel.closeRequested()
+        onFailed: message => rootKipPanel.notice = message
+    }
 
     // Unclaimed Bloom writes the wallpaper path here; read only when wanted.
     FileView {
@@ -1417,6 +1435,12 @@ PanelWindow {
             return;
         }
 
+        // /kip previews instantly. Only a list needs to run kip, and only on Enter's terms.
+        if (liveKind() === "keep") {
+            showKeepPreview();
+            return;
+        }
+
         // /timer previews instantly: no process, just the timer's own parsers.
         if (liveKind() === "timer") {
             showTimerPreview();
@@ -1627,6 +1651,22 @@ PanelWindow {
             dict.lookup(parsed.argument);
     }
 
+    function showKeepPreview() {
+        if (liveKind() !== "keep")
+            return;
+
+        const planned = keepCommand.plan(parsed.argument);
+
+        notice = planned.error;
+        if (planned.action === "list" && planned.valid) {
+            keepListKinds = planned.kinds;
+            showDoc("Reading your notes...", "keep", "keep.ready");
+            keepService.list(planned.args);
+            return;
+        }
+        showDoc(planned.preview, "keep", "keep.ready");
+    }
+
     function showTimerPreview() {
         if (liveKind() !== "timer" && !(parsed.mode === "ready" && parsed.command && parsed.command.kind === "timer"))
             return;
@@ -1823,6 +1863,13 @@ PanelWindow {
             } else if (docKind === "def" && dict.status === "done") {
                 copyRequested(dict.plainText());
                 notice = "Copied the definition of " + dict.word + ".";
+            } else if (docKind === "keep") {
+                const planned = keepCommand.plan(parsed.argument);
+
+                if (planned.action === "save" && planned.valid && keepService.status !== "running")
+                    keepService.save(planned.args);
+                else if (planned.error.length > 0)
+                    notice = planned.error;
             } else if (docKind === "timer") {
                 const planned = timerCommand.plan(parsed.argument);
 
@@ -1912,6 +1959,9 @@ PanelWindow {
             tldrTimer.stop();
             tldr.lookup(argument);
             showTldr();
+            return;
+        case "keep":
+            showKeepPreview();
             return;
         case "timer":
             showTimerPreview();
@@ -2161,6 +2211,10 @@ PanelWindow {
                 return calcHistorySelected !== null || calc.status === "done" ? "copy" : "";
             if (docKind === "def")
                 return dict.status === "done" ? "copy" : "";
+            if (docKind === "keep") {
+                const keepPlan = keepCommand.plan(parsed.argument);
+                return keepPlan.action === "save" && keepPlan.valid ? "save" : "";
+            }
             if (docKind === "timer")
                 return timerCommand.plan(parsed.argument).valid ? "do it" : "";
             return "";

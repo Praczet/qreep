@@ -166,6 +166,10 @@ QtObject {
                 neutral: ["Places is not loaded, so there are no ssh hosts to show."],
                 dry: ["The hosts live in Places, and Places is not answering."]
             },
+            "keep.ready": {
+                neutral: ["What did you find, and what is it for?"],
+                dry: ["Write it down before the next topic eats it.", "Future you has a terrible memory. Be kind."]
+            },
             "timer.ready": {
                 neutral: ["Duration, clock time, up, pause, resume or stop."],
                 dry: ["Time management. Bold of you.", "How long shall we pretend you'll focus?", "Name a duration. I'll hold you to it."]

@@ -294,6 +294,23 @@ QtObject {
             actions: "Lists every bind with its description, in config order, as soon as you type the space. Words filter keys, description and submap; binds whose keys match come first. Enter copies the keys (SUPER+SHIFT+S). Nothing is run: with the Lua config every bind reports dispatcher __lua, so there is no command to replay."
         },
         {
+            name: "kip",
+            aliases: ["remember"],
+            label: "Keep",
+            description: "Keep what you found: a note, something to try, an idea. Same as the kip command.",
+            helper: "Say what it is and what it is for. Preview first, Enter saves to today's journal.",
+            eventKey: "keep.ready",
+            placeholder: "qsv: process CSV · try ... · idea ... · todo ... · list",
+            icon: "󰄱",
+            sourceHint: "kip · today's Logseq journal",
+            kind: "keep",
+            takesArgument: true,
+            argumentOptional: true,
+            syntax: "/kip [try|idea|todo|add] <text> [--example <anything>] · /kip list [kind]",
+            examples: ["/kip qsv: process CSV", "/kip try qsv: process CSV --example qsv stats a.csv", "/kip idea Mox reads my shortcuts", "/kip list try"],
+            actions: "Shows the exact note, nothing is saved until Enter. Everything after --example is literal, so quotes need no care. /kip list shows your notes; Mox picks them up from there."
+        },
+        {
             name: "timer",
             aliases: ["t"],
             label: "Timer",
