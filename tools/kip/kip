@@ -25,8 +25,10 @@ import re
 import shutil
 import subprocess
 import sys
+import urllib.parse
 
 TAGS = {"add": "#kip", "try": "#kip/try", "idea": "#kip/idea"}  # todo has its own marker
+MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 LSQ_TIMEOUT_SECONDS = 10
 HYPRCTL_TIMEOUT_SECONDS = 3
 ITEM_KINDS = ("todo", "note", "try", "idea", "shortcut", "tip")
@@ -120,15 +122,40 @@ def stable_id(source, value):
     return f"{source}:{hashlib.sha256(value.casefold().encode()).hexdigest()[:24]}"
 
 
-def make_item(item_id, kind, title, text, example, source, reference):
+def make_item(item_id, kind, title, text, example, source, reference, url=""):
     return {
         "id": item_id,
         "kind": kind,
         "title": title,
         "text": text,
         "example": example,
-        "source": {"kind": source, "reference": reference},
+        "source": {"kind": source, "reference": reference, "url": url},
     }
+
+
+def ordinal(day):
+    if 11 <= day % 100 <= 13:
+        return f"{day}th"
+    return f"{day}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(day % 10, 'th') }"
+
+
+def logseq_page_name(folder, path, content):
+    """The name Logseq uses for a file: journal date, title:: property, or file name."""
+    journal = re.fullmatch(r"(\d{4})_(\d{2})_(\d{2})", path.stem)
+    if folder == "journals" and journal:
+        year, month, day = (int(part) for part in journal.groups())
+        if 1 <= month <= 12:
+            # Logseq's default journal title format, "MMM do, yyyy".
+            return f"{MONTHS[month - 1]} {ordinal(day)}, {year}"
+    title = re.search(r"^title::\s*(.+?)\s*$", content.split("\n- ")[0], re.M)
+    if title:
+        return title.group(1)
+    return urllib.parse.unquote(path.stem).replace("___", "/")
+
+
+def logseq_url(graph, page):
+    quote = urllib.parse.quote
+    return f"logseq://graph/{quote(graph.name, safe='')}?page={quote(page, safe='')}"
 
 
 def source_result(source_id, status, path, items=(), error=""):
@@ -148,7 +175,7 @@ def logseq_graph():
     return Path(os.path.expandvars(match.group(1))).expanduser() if match else Path("~/Notes/Logseq").expanduser()
 
 
-def parse_notes(content, reference):
+def parse_notes(content, reference, url=""):
     items = []
     fenced = False
     lines = content.splitlines()
@@ -177,7 +204,7 @@ def parse_notes(content, reference):
             if prop:
                 example = prop.group(1).strip()
                 break
-        items.append(make_item(stable_id("logseq", full), kind, title, text if separator else "", example, "logseq", reference))
+        items.append(make_item(stable_id("logseq", full), kind, title, text if separator else "", example, "logseq", reference, url))
     return items
 
 
@@ -190,7 +217,8 @@ def read_logseq():
         for folder in ("journals", "pages"):
             for path in sorted((graph / folder).glob("*.md")):
                 content = path.read_text(encoding="utf-8", errors="replace")
-                for item in parse_notes(content, f"{folder}/{path.name}"):
+                url = logseq_url(graph, logseq_page_name(folder, path, content))
+                for item in parse_notes(content, f"{folder}/{path.name}", url):
                     items.setdefault(item["id"], item)
     except OSError as error:
         return [], source_result("logseq", "error", graph, error=str(error))

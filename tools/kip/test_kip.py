@@ -246,7 +246,14 @@ class KipListTests(unittest.TestCase):
         self.assertEqual(items[0]["title"], "qsv")
         self.assertEqual(items[0]["text"], "process CSV")
         self.assertEqual(items[0]["example"], "qsv stats file.csv")
-        self.assertEqual(items[0]["source"], {"kind": "logseq", "reference": "journals/2026_11_02.md"})
+        self.assertEqual(
+            items[0]["source"],
+            {
+                "kind": "logseq",
+                "reference": "journals/2026_11_02.md",
+                "url": "logseq://graph/graph?page=Nov%202nd%2C%202026",
+            },
+        )
         self.assertEqual(items[1]["title"], "plain thing")
         self.assertEqual(items[1]["text"], "")
 
@@ -340,6 +347,33 @@ class KipListTests(unittest.TestCase):
             [str(KIP), "list"], capture_output=True, text=True, env={**os.environ, **self.env}
         )
         self.assertEqual(result.stdout.splitlines(), ["todo (1)", "  b thing", "note (1)", "  a thing"])
+
+    def url_for(self, folder, name, content="- note #kip\n"):
+        (self.graph / folder / name).write_text(content)
+        reference = f"{folder}/{name}"
+        return next(i for i in self.listing()["items"] if i["source"]["reference"] == reference)["source"]["url"]
+
+    def test_links_use_the_name_logseq_uses_for_the_page(self):
+        cases = (
+            ("journals", "2026_11_01.md", "- a #kip\n", "Nov%201st%2C%202026"),
+            ("journals", "2026_11_03.md", "- b #kip\n", "Nov%203rd%2C%202026"),
+            ("journals", "2026_11_11.md", "- c #kip\n", "Nov%2011th%2C%202026"),
+            ("journals", "2026_11_22.md", "- d #kip\n", "Nov%2022nd%2C%202026"),
+            ("pages", "CSV-2-SQL.md", "- e #kip\n", "CSV-2-SQL"),
+            ("pages", "Linux___zsh.md", "- f #kip\n", "Linux%2Fzsh"),
+            ("pages", "z.md", "title:: Real Title\n\n- g #kip\n", "Real%20Title"),
+            ("pages", "y.md", "- h #kip\n  title:: a block property\n", "y"),
+        )
+        for folder, name, content, page in cases:
+            with self.subTest(name):
+                self.assertEqual(self.url_for(folder, name, content), f"logseq://graph/graph?page={page}")
+
+    def test_only_logseq_items_get_a_link(self):
+        self.env["KIP_HYPRCTL"] = str(self.fake_hyprctl(json.dumps(
+            [{"modmask": 64, "key": "M", "description": "Min", "mouse": False}]
+        )))
+        (self.base / "tips.txt").write_text("CTRL-R|history\n")
+        self.assertEqual([i["source"]["url"] for i in self.listing()["items"]], ["", ""])
 
     def test_kind_filter(self):
         (self.graph / "journals" / "a.md").write_text("- a #kip\n- b #kip/try\n")

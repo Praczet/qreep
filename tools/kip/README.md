@@ -73,7 +73,8 @@ Kip reads three places and never writes to any of them:
 
 Each source reports its own `status` of `ok`, `missing` or `error`. One broken
 source does not hide the others, and an error does not mean "nothing exists".
-A note's `id` comes from its text, so moving it keeps its id and rewording it
+Each Logseq item's `source.url` is a `logseq://` link to its page, which is what
+Mox's Open note button uses. A note's `id` comes from its text, so moving it keeps its id and rewording it
 makes a new one.
 
 ## Not here yet
