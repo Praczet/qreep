@@ -39,6 +39,7 @@ PanelWindow {
     // default opener); the controller runs its command for item.
     signal actionRequested(var item, var option)
     signal copyRequested(string text)
+    signal chatGptRequested(string question)
 
     readonly property QtObject kt: theme.modules.kip
 
@@ -1959,6 +1960,9 @@ PanelWindow {
             tldrTimer.stop();
             tldr.lookup(argument);
             showTldr();
+            return;
+        case "chatgpt":
+            chatGptRequested(argument);
             return;
         case "keep":
             showKeepPreview();

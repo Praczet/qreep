@@ -46,6 +46,22 @@ QtObject {
             actions: "The answer is selectable; code blocks have Copy. Enter on a finished answer opens its actions."
         },
         {
+            name: "ask-chat",
+            aliases: ["ac"],
+            label: "Ask ChatGPT",
+            description: "Open the question on chatgpt.com. The answer stays in the browser.",
+            helper: "Type the question, then Enter. KIP closes and your browser takes over.",
+            eventKey: "chatgpt.ready",
+            placeholder: "question",
+            icon: "󰖟",
+            sourceHint: "chatgpt.com · your browser · leaves this machine",
+            kind: "chatgpt",
+            takesArgument: true,
+            syntax: "/ask-chat <question>",
+            examples: ["/ask-chat What is the best tool for csv in the console?", "/ac why is the sky blue"],
+            actions: "Opens chatgpt.com/?q=<question> with xdg-open and closes KIP. Nothing comes back here: no answer, no history, no API key. It uses your normal ChatGPT login and limits."
+        },
+        {
             name: "notes-ask",
             aliases: ["na"],
             label: "Ask notes",

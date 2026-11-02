@@ -115,6 +115,12 @@ Each request gets its own `Process`. A new request, Escape, editing the text,
 or closing KIP kills the old process (checked with `pgrep`) and its late
 output is ignored by request id.
 
+`/ask-chat <q>` is the odd one out: it never calls Jarvis or any API. It runs
+`xdg-open https://chatgpt.com/?q=<q>` (`KipTheme.chatGptCommand`) and closes
+KIP, so the question goes to OpenAI through your browser, on your normal
+ChatGPT login and limits, and the answer stays there. `?q=` is not a documented
+feature as far as anyone has promised, so it may break without notice.
+
 Error states, each with its own message:
 
 | Error | Cause |
@@ -214,6 +220,7 @@ The size survives closing KIP but not a Quickshell restart.
 | `/` | command palette |
 | `/as` | candidate, `/ask` highlighted |
 | `/ask ` + question (alias `/a`) | general question, no notes context (mock) |
+| `/ask-chat ` + question (alias `/ac`) | opens the question on chatgpt.com and closes KIP |
 | `/notes-ask ` + question (alias `/na`) | note-grounded answer (mock) |
 | `/notes ` + query (aliases `/n`, `/search`) | notes search (mock) |
 | `/last`, `/last 3` (alias `/shot`) | newest screenshot(s), capped at 12 |

@@ -253,6 +253,7 @@ Scope {
             onBodyLimitRequested: limit => rootKip.bodyLimit = limit
             onActionRequested: (item, option) => rootKip.runAction(item, option)
             onCopyRequested: text => rootKip.copyText(text)
+            onChatGptRequested: question => rootKip.askChatGpt(question)
             onCloseFinished: {
                 if (!rootKip.open)
                     rootKip.panelLoaded = false;
@@ -356,6 +357,15 @@ Scope {
             waitForLogseq(command);
 
         launch(command);
+        hide();
+    }
+
+    // Hands the question to the browser and closes. The answer never comes back
+    // to KIP; that is the price of using the web chat's limits.
+    function askChatGpt(question) {
+        launch(fill(theme.modules.kip.chatGptCommand, {
+            query: encodeURIComponent(question)
+        }));
         hide();
     }
 
@@ -480,6 +490,8 @@ Scope {
             service.search(parsed.argument);
         else if (parsed.mode === "ready" && parsed.command.kind === "ask" && parsed.argument.length > 0)
             service.ask(parsed.argument);
+        else if (parsed.mode === "ready" && parsed.command.kind === "chatgpt" && parsed.argument.length > 0)
+            askChatGpt(parsed.argument);
         else if (parsed.mode === "ready" && parsed.command.kind === "files" && parsed.argument.length > 0)
             fileService.search(parsed.argument, parsed.flags.from || "", parsed.flags.hidden === true, false);
         else if (parsed.mode === "ready" && parsed.command.kind === "screenshots")

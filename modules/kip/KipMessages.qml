@@ -280,6 +280,10 @@ QtObject {
                 neutral: ["General question. Enter sends it."],
                 dry: ["A question for my magnificent intellect? Proceed.", "No notes? Just raw intelligence? How flattering.", "Ask, mortal. I have a reputation to maintain.", "A question without context. My favourite kind of peril.", "You bring curiosity. I bring unreasonable confidence.", "Very well. Let's pretend I know everything."]
             },
+            "chatgpt.ready": {
+                neutral: ["Enter opens this question on chatgpt.com."],
+                dry: ["Outsourcing. Enter sends this to chatgpt.com.", "Another intellect? Fine. Enter opens your browser.", "I will carry your question to the door. Enter.", "The browser can have this one. Enter when ready."]
+            },
             "general.generating": {
                 neutral: ["Writing an answer."],
                 dry: ["Assembling wisdom from an alarming number of possibilities.", "Thinking. A rare activity in this household.", "One moment. Brilliance requires punctuation.", "Constructing an answer worthy of my reputation.", "Consulting the vast emptiness between certainty and knowledge.", "Arranging thoughts into something socially acceptable."]

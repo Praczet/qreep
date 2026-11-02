@@ -359,6 +359,10 @@ QtObject {
     readonly property int logseqColdStartTimeout: 30000
     // Any .md hit asks "Open with" first; the first entry that applies is the
     // default. logseqOnly entries appear only for files in the Logseq graph.
+    // /ask-chat. ?q= is not a documented chatgpt.com feature, so if it stops
+    // working this is the one line to change.
+    readonly property var chatGptCommand: ["xdg-open", "https://chatgpt.com/?q={query}"]
+
     readonly property var markdownOpeners: [
         {
             id: "logseq",
