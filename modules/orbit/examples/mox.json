@@ -1,0 +1,25 @@
+{
+  "name": "Mox",
+  "items": [
+    {
+      "name": "Qreep",
+      "icon": "applications-system",
+      "items": [
+        { "name": "Aegis", "ipc": ["qreep-aegis", "toggle"] },
+        { "name": "Clipboard", "ipc": ["qreep-clipboard", "toggle"] },
+        { "name": "Places", "ipc": ["qreep-places", "toggle"] }
+      ]
+    },
+    { "name": "Firefox", "app": "firefox" },
+    { "name": "Files", "text": "Fs", "key": "s", "exec": ["xdg-open", "~/"] },
+    { "name": "Terminal", "exec": ["kitty"] },
+    {
+      "name": "Just a diagram",
+      "text": "Di",
+      "items": [
+        { "name": "Nothing runs here" },
+        { "name": "Enter just selects", "text": "En" }
+      ]
+    }
+  ]
+}

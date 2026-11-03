@@ -9,6 +9,7 @@ import "expose" as ExposeModule
 import "fastpassword" as FastPasswordModule
 import "kip" as KipModule
 import "notification" as NotificationModule
+import "orbit" as OrbitModule
 import "osd" as OsdModule
 import "places" as PlacesModule
 import "polkit" as PolkitModule
@@ -57,6 +58,10 @@ QtObject {
     }
 
     readonly property QtObject notification: NotificationModule.NotificationTheme {
+        qreep: rootModulesTheme.qreep
+    }
+
+    readonly property QtObject orbit: OrbitModule.OrbitTheme {
         qreep: rootModulesTheme.qreep
     }
 

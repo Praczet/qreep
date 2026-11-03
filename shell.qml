@@ -7,6 +7,7 @@ import "modules/dashboard" as DashboardModule
 import "modules/expose" as ExposeModule
 import "modules/fastpassword" as FastPasswordModule
 import "modules/kip" as KipModule
+import "modules/orbit" as OrbitModule
 import "modules/osd" as OsdModule
 import "modules/places" as PlacesModule
 import "modules/polkit" as PolkitModule
@@ -55,7 +56,7 @@ ShellRoot {
         qreeperController: qreeper
         aegisController: aegis
         sensorsService: systemSensors
-        shellFullscreenSurfaceOpen: dashboard.open || expose.open || qreeper.atlasOpen || kip.open
+        shellFullscreenSurfaceOpen: dashboard.open || expose.open || qreeper.atlasOpen || kip.open || orbit.open
 
         onVolumeFeedbackRequested: (percent, muted, icon) => {
             osd.showMessage(percent + "%", qreepTheme.modules.osd.defaultDuration, qreepTheme.modules.osd.defaultPosition, muted ? "Volume (Muted)" : "Volume", icon, qreepTheme.modules.osd.progressIconSize, percent / 100);
@@ -112,6 +113,12 @@ ShellRoot {
 
         theme: qreepTheme
         kipController: kip
+    }
+
+    OrbitModule.Orbit {
+        id: orbit
+
+        theme: qreepTheme
     }
 
     BloomModule.Bloom {
