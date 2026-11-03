@@ -62,6 +62,7 @@ included, takes these fields:
 | `app` | Desktop entry id. Also supplies the name and icon |
 | `exec` | Argv array, no shell. An argument that starts with `~/` is expanded |
 | `ipc` | Qreep IPC, for example `["qreep-aegis", "toggle"]` |
+| `delay` | Milliseconds to wait before running the action, for things that look at the screen, like a colour picker |
 
 A node with an action and items runs on `Enter` and opens on its letters. A node
 with neither just gets selected, so a read-only diagram works. The actions are

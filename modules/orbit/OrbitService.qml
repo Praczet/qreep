@@ -62,6 +62,17 @@ Scope {
         }
     }
 
+    // A node's `delay`: Orbit is already closing, so what runs next can see the
+    // screen without it. Lives here because the panel is gone by then.
+    Timer {
+        id: delayTimer
+
+        property var pending: null
+
+        repeat: false
+        onTriggered: pending()
+    }
+
     Process {
         id: launcher
 
@@ -299,6 +310,7 @@ Scope {
             app: node.app ? String(node.app) : "",
             exec: node.exec || null,
             ipc: node.ipc || null,
+            delay: Math.max(0, Number(node.delay) || 0),
             source: chain[chain.length - 1],
             itemsSourcePath: node.itemsSource ? pathFor(node.itemsSource) : "",
             docPath: docPath,
@@ -450,7 +462,7 @@ Scope {
 
     function run(node) {
         if (node.app)
-            return runApp(node);
+            return runApp(node, node.delay);
 
         const field = node.exec ? "exec" : "ipc";
         const args = node[field];
@@ -462,22 +474,36 @@ Scope {
 
         const strings = args.map(arg => expand(arg));
 
-        startProcess(node.exec ? strings : ["quickshell", "ipc", "--pid", String(Quickshell.processId), "call"].concat(strings));
+        const command = node.exec ? strings : ["quickshell", "ipc", "--pid", String(Quickshell.processId), "call"].concat(strings);
+
+        startLater(node.delay, () => startProcess(command));
         return true;
     }
 
-    function runApp(node) {
+    function runApp(node, delay) {
         const entry = appEntry(node.app);
 
         if (!entry) {
             error = node.name + ": no desktop entry for " + node.app;
             return false;
         }
-        if (entry.runInTerminal)
-            startProcess(theme.terminalCommand(entry.command));
-        else
-            entry.execute();
+        startLater(delay, () => {
+            if (entry.runInTerminal)
+                startProcess(theme.terminalCommand(entry.command));
+            else
+                entry.execute();
+        });
         return true;
+    }
+
+    function startLater(delay, action) {
+        if (delay <= 0) {
+            action();
+            return;
+        }
+        delayTimer.pending = action;
+        delayTimer.interval = delay;
+        delayTimer.restart();
     }
 
     function startProcess(command) {

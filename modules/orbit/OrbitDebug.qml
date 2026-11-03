@@ -104,7 +104,7 @@ Rectangle {
             "label: " + node.text + (node.key ? "  key: " + node.key : ""),
             "id: " + node.id,
             "source: " + shortPath(node.source) + (node.fromDoc ? " (built from its doc)" : ""),
-            "action: " + shortPath(actionOf(node))
+            "action: " + shortPath(actionOf(node)) + (node.delay > 0 ? " (after " + node.delay + " ms)" : "")
         ];
 
         if (node.itemsSourcePath)
