@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import Quickshell.Io
 import "../../core" as Core
 
@@ -21,11 +22,23 @@ QtObject {
     property string pendingCopyEntry: ""
     property var pendingCopyCommand: []
 
+    // The note being read. It lives here only while the panel shows it, and it is
+    // never logged. There is deliberately no IPC that returns it.
+    property string noteText: ""
+    property string noteLabel: ""
+    property bool noteLoading: false
+    property var pendingNoteEntry: null
+    property QtObject noteProcess: null
+    property int noteRequestId: 0
+    readonly property bool noteOpen: noteText.length > 0
+
     signal openAuthorized
+    signal noteAuthRequired(var entry)
 
     readonly property string authCommand: "qreep-pass-auth"
     readonly property string listCommand: "qreep-pass-list"
     readonly property string copyCommand: "qreep-pass-copy"
+    readonly property string showCommand: "qreep-pass-show"
     readonly property Core.Log fallbackLog: Core.Log {}
 
     onSearchTextChanged: applyFilter()
@@ -84,6 +97,54 @@ QtObject {
         onExited: (exitCode, exitStatus) => rootFastPasswordService.applyCopyOutput(copyStdout.text, copyStderr.text, exitCode)
     }
 
+    // One process per read, destroyed afterwards: a StdioCollector keeps its text
+    // for as long as it lives, and this text should not outlive the panel.
+    readonly property Component noteProcessComponent: Component {
+        Process {
+            id: noteRunner
+
+            property int ownerId: -1
+            property var entry: null
+
+            stdout: StdioCollector {
+                id: noteStdout
+
+                waitForEnd: true
+            }
+
+            stderr: StdioCollector {
+                id: noteStderr
+
+                waitForEnd: true
+            }
+
+            onExited: (exitCode, exitStatus) => {
+                rootFastPasswordService.applyNoteOutput(noteRunner, noteStdout.text, noteStderr.text, exitCode);
+                noteRunner.destroy();
+            }
+        }
+    }
+
+    // On stdin, so selected text never shows up in a process list.
+    readonly property Process noteCopyRunner: Process {
+        id: noteCopyRunner
+
+        property string pendingInput: ""
+
+        command: ["wl-copy", "--sensitive"]
+        stdinEnabled: true
+
+        onStarted: {
+            write(pendingInput);
+            pendingInput = "";
+            stdinEnabled = false;
+        }
+        onExited: (exitCode, exitStatus) => {
+            pendingInput = "";
+            stdinEnabled = true;
+        }
+    }
+
     function requestOpen() {
         if (authRunner.running)
             return;
@@ -100,6 +161,8 @@ QtObject {
         authenticating = false;
 
         if (exitCode !== 0) {
+            pendingNoteEntry = null;
+
             if (authPurpose === "copy") {
                 status = "copy authentication cancelled";
                 pendingCopyCommand = [];
@@ -231,6 +294,7 @@ QtObject {
         const name = String(rawEntry.name || key).trim();
         const displayName = String(rawEntry.displayName || rawEntry.label || labelFromKey(key)).trim();
         const desc = String(rawEntry.desc || "").trim();
+        const kind = String(rawEntry.kind || "").trim().toLowerCase();
         const sourceLabel = sourceDisplayName(source);
         const group = desc.length > 0 ? sourceLabel + " · " + desc : sourceLabel + " · " + key;
 
@@ -242,7 +306,8 @@ QtObject {
             label: displayName,
             group,
             desc,
-            icon: iconForEntry(name, group, displayName, String(rawEntry.icon || ""), source),
+            icon: kind === "note" && !rawEntry.icon ? "󰎞" : iconForEntry(name, group, displayName, String(rawEntry.icon || ""), source),
+            kind,
             listIndex: index
         };
     }
@@ -378,6 +443,86 @@ QtObject {
         copyRunner.running = false;
         copyRunner.command = command;
         copyRunner.running = true;
+    }
+
+    function openNote(entry) {
+        if (!entry)
+            return;
+
+        clearNote();
+        noteLoading = true;
+        noteLabel = entry.label;
+        error = "";
+
+        const process = noteProcessComponent.createObject(rootFastPasswordService, {
+            ownerId: noteRequestId,
+            entry: entry,
+            command: [showCommand, "--key", entry.key]
+        });
+
+        noteProcess = process;
+        process.running = true;
+    }
+
+    function applyNoteOutput(process, stdout, stderr, exitCode) {
+        if (noteProcess === process)
+            noteProcess = null;
+
+        // Closed or replaced while it was reading: drop the answer.
+        if (process.ownerId !== noteRequestId)
+            return;
+
+        noteLoading = false;
+
+        if (exitCode === 6) {
+            noteLabel = "";
+            noteAuthRequired(process.entry);
+            return;
+        }
+
+        if (exitCode !== 0) {
+            noteLabel = "";
+            reportError("Fast password note failed:", processMessage(stderr, showCommand + " returned " + exitCode));
+            return;
+        }
+
+        noteText = String(stdout).replace(/\s+$/, "");
+    }
+
+    function resumePendingNote() {
+        const entry = pendingNoteEntry;
+
+        pendingNoteEntry = null;
+        openNote(entry);
+    }
+
+    function clearNote() {
+        const wasShown = noteOpen;
+
+        noteRequestId++;
+        noteLoading = false;
+        pendingNoteEntry = null;
+
+        if (noteProcess) {
+            noteProcess.running = false;
+            noteProcess = null;
+        }
+
+        noteText = "";
+        noteLabel = "";
+
+        // Selecting with the mouse fills the primary selection, for middle-click.
+        if (wasShown)
+            Quickshell.execDetached(["wl-copy", "--primary", "--clear"]);
+    }
+
+    function copyNoteSelection(text) {
+        if (!text || noteCopyRunner.running)
+            return;
+
+        noteCopyRunner.pendingInput = text;
+        noteCopyRunner.running = true;
+        status = "copied";
     }
 
     function entryAt(index) {

@@ -12,7 +12,7 @@ PanelWindow {
     property bool presented: false
 
     signal closeRequested
-    signal copyRequested(int index)
+    signal entryActivated(int index)
 
     implicitWidth: screen.width
     implicitHeight: screen.height
@@ -137,7 +137,7 @@ PanelWindow {
 
                     Text {
                         width: parent.width
-                        text: "Polkit-gated copy"
+                        text: rootFastPasswordPanel.service.noteOpen ? rootFastPasswordPanel.service.noteLabel : "Polkit-gated copy"
                         color: rootFastPasswordPanel.theme.modules.fastPassword.secondaryTextColor
                         font.pixelSize: rootFastPasswordPanel.theme.modules.fastPassword.metaPixelSize
                         elide: Text.ElideRight
@@ -159,6 +159,7 @@ PanelWindow {
             }
 
             Rectangle {
+                visible: !rootFastPasswordPanel.service.noteOpen
                 width: parent.width
                 height: rootFastPasswordPanel.theme.modules.fastPassword.searchHeight
                 radius: rootFastPasswordPanel.theme.modules.fastPassword.controlRadius
@@ -187,7 +188,7 @@ PanelWindow {
                             list.forceActiveFocus();
                             event.accepted = true;
                         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                            rootFastPasswordPanel.copyRequested(rootFastPasswordPanel.service.selectedIndex);
+                            rootFastPasswordPanel.entryActivated(rootFastPasswordPanel.service.selectedIndex);
                             event.accepted = true;
                         }
                     }
@@ -197,6 +198,7 @@ PanelWindow {
             ListView {
                 id: list
 
+                visible: !rootFastPasswordPanel.service.noteOpen
                 width: parent.width
                 height: parent.height - rootFastPasswordPanel.theme.modules.fastPassword.headerHeight - rootFastPasswordPanel.theme.modules.fastPassword.searchHeight - parent.spacing * 2
                 model: rootFastPasswordPanel.service.filteredEntries
@@ -274,14 +276,14 @@ PanelWindow {
                     TapHandler {
                         onTapped: {
                             rootFastPasswordPanel.service.setSelection(index);
-                            rootFastPasswordPanel.copyRequested(index);
+                            rootFastPasswordPanel.entryActivated(index);
                         }
                     }
                 }
 
                 Keys.onPressed: event => {
                     if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                        rootFastPasswordPanel.copyRequested(rootFastPasswordPanel.service.selectedIndex);
+                        rootFastPasswordPanel.entryActivated(rootFastPasswordPanel.service.selectedIndex);
                         event.accepted = true;
                     } else if (event.key === Qt.Key_Up) {
                         if (rootFastPasswordPanel.service.selectedIndex <= 0)
@@ -300,6 +302,16 @@ PanelWindow {
                     }
                 }
             }
+
+            FastPasswordNoteView {
+                visible: rootFastPasswordPanel.service.noteOpen
+                width: parent.width
+                height: parent.height - rootFastPasswordPanel.theme.modules.fastPassword.headerHeight - parent.spacing
+                theme: rootFastPasswordPanel.theme
+                service: rootFastPasswordPanel.service
+
+                onIdleTimeout: rootFastPasswordPanel.closeRequested()
+            }
         }
     }
 
@@ -315,6 +327,12 @@ PanelWindow {
 
         if (rootFastPasswordPanel.service.copying)
             return "copying";
+
+        if (rootFastPasswordPanel.service.noteLoading)
+            return "reading note";
+
+        if (rootFastPasswordPanel.service.noteOpen)
+            return rootFastPasswordPanel.service.status === "copied" ? "copied" : "Esc closes";
 
         return rootFastPasswordPanel.service.filteredEntries.length + " / " + rootFastPasswordPanel.service.entries.length;
     }

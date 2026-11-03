@@ -18,6 +18,14 @@ Scope {
         onOpenAuthorized: {
             rootFastPassword.openAuthorizedPanel();
         }
+
+        // The stamp ran out. The prompt must not sit under an overlay that holds the
+        // keyboard, so close, authenticate, and come back to the same note.
+        onNoteAuthRequired: entry => {
+            rootFastPassword.hide();
+            fastPasswordService.pendingNoteEntry = entry;
+            fastPasswordService.requestOpen();
+        }
     }
 
     readonly property IpcHandler ipc: IpcHandler {
@@ -53,10 +61,7 @@ Scope {
             panelOpen: rootFastPassword.open
 
             onCloseRequested: rootFastPassword.hide()
-            onCopyRequested: index => {
-                if (fastPasswordService.copy(index))
-                    rootFastPassword.hide();
-            }
+            onEntryActivated: index => rootFastPassword.activate(index)
         }
     }
 
@@ -76,9 +81,22 @@ Scope {
         closeTimer.stop();
         fastPasswordService.refresh();
         open = true;
+        fastPasswordService.resumePendingNote();
+    }
+
+    // A note opens in the panel, which stays up. Anything else copies and closes.
+    function activate(index) {
+        const entry = fastPasswordService.entryAt(index);
+
+        if (entry && entry.kind === "note")
+            fastPasswordService.openNote(entry);
+        else if (fastPasswordService.copy(index))
+            hide();
     }
 
     function hide() {
+        fastPasswordService.clearNote();
+
         if (!open)
             return;
 

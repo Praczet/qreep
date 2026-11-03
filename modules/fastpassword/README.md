@@ -2,10 +2,12 @@
 
 `qreep-fast-password` is a shell-level password entry picker. It shows entry
 names, lets Adam search them quickly, and copies the selected password through
-the Polkit-gated `qreep-pass-copy` helper.
+the Polkit-gated `qreep-pass-copy` helper. Entries marked as notes open in the
+panel instead, so a KeePass note can be read and then closed.
 
-It does not render secret values in QML. Qreep is the picker, not the vault.
-Small mercy, large consequences.
+It never renders a password in QML. Notes are the one deliberate exception, see
+[Notes](#notes). Qreep is the picker, not the vault. Small mercy, large
+consequences.
 
 ## Files
 
@@ -13,6 +15,7 @@ Small mercy, large consequences.
 modules/fastpassword/
 ├── FastPassword.qml        # Scope/controller, IPC, open state, lazy panel
 ├── FastPasswordPanel.qml   # centered overlay, search, keyboard list
+├── FastPasswordNoteView.qml # read-only, selectable note text
 ├── FastPasswordService.qml # list/copy helper calls, filtering, selection
 ├── FastPasswordTheme.qml   # sizes, colors, motion
 └── README.md
@@ -20,12 +23,13 @@ modules/fastpassword/
 
 ## Helpers
 
-The module expects three user-level commands:
+The module expects four user-level commands:
 
 ```bash
 qreep-pass-auth
 qreep-pass-list
 qreep-pass-copy
+qreep-pass-show
 ```
 
 `qreep-pass-auth` asks Polkit for `art.druzd.adam.qreep.pass.copy` before the
@@ -38,7 +42,8 @@ passwords. The source for the current helpers and policy lives at:
 ```text
 scripts/qreep-pass-auth_v0.0.1
 scripts/qreep-pass-copy_v0.0.3
-scripts/qreep-pass-list_v0.0.3
+scripts/qreep-pass-list_v0.0.4
+scripts/qreep-pass-show_v0.0.1
 scripts/art.druzd.adam.qreep.pass.policy
 ```
 
@@ -47,7 +52,8 @@ Install/update the helpers with:
 ```bash
 install -m 0755 scripts/qreep-pass-auth_v0.0.1 ~/.local/bin/qreep-pass-auth
 install -m 0755 scripts/qreep-pass-copy_v0.0.3 ~/.local/bin/qreep-pass-copy
-install -m 0755 scripts/qreep-pass-list_v0.0.3 ~/.local/bin/qreep-pass-list
+install -m 0755 scripts/qreep-pass-list_v0.0.4 ~/.local/bin/qreep-pass-list
+install -m 0755 scripts/qreep-pass-show_v0.0.1 ~/.local/bin/qreep-pass-show
 ```
 
 Install/update the policy with:
@@ -165,6 +171,43 @@ but that still has to enumerate KeePass and is therefore allowed to be slow.
 Using it as a daily setting is just rebuilding the old Rofi situation with nicer
 clothes.
 
+## Notes
+
+Add `"kind": "note"` to a KeePass entry and `Enter` shows its notes field instead
+of copying its password:
+
+```json
+{
+  "displayName": "Secret Note",
+  "key": "Secret-Note",
+  "source": "keepass",
+  "kind": "note"
+}
+```
+
+`qreep-pass-show --key <key>` reads it with
+`keepassxc-cli show -q -a notes`. It checks the same auth stamp as
+`qreep-pass-copy` and only serves KeePass entries marked as notes, and it reads
+no other attribute, so no call can make it print a password.
+
+| Key | What it does |
+| --- | --- |
+| Mouse or `Shift`+arrows | Select text |
+| `Ctrl+A` | Select everything |
+| `Ctrl+C` | Copy through `wl-copy --sensitive`, which clipvault does not store |
+| `Escape` or click outside | Clear the note and close |
+
+An open note also closes after 90 seconds without a key, wheel, or pointer move
+(`noteIdleMilliseconds`). If the auth stamp has expired when you open one, the
+panel closes, Polkit asks, and the panel comes back on that note.
+
+The text is rendered as plain text, is never logged, and has no IPC that returns
+it. Closing drops the text and clears the primary selection, because selecting
+with the mouse fills that for middle-click. That is as far as it goes: QML cannot
+promise the memory is wiped, a screenshot still sees it, and the KeePass master
+password in GNOME Keyring means other programs running as you can read the same
+note without going through Qreep.
+
 ## IPC
 
 ```bash
@@ -183,10 +226,10 @@ qreep-pass-copy --source proton --key "//Personal/KeePassXC/pass"
 - `Down` moves from search into the list.
 - `Up`/`Down` move selection.
 - `Enter` copies the selected entry through `qreep-pass-copy` and closes the
-  panel.
+  panel, or opens it if it is a note.
 
 ## Current Boundary
 
-Qreep only sees metadata. KeePass, Proton Pass, and GNOME Keyring lookup logic
+Qreep only sees metadata, plus the text of a note while it is open. KeePass, Proton Pass, and GNOME Keyring lookup logic
 stays in the helper scripts, where the ugly bits can wear one hat instead of
 wandering through QML.

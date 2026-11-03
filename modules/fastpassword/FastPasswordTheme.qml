@@ -29,6 +29,9 @@ QtObject {
     readonly property int bodyPixelSize: 13
     readonly property int metaPixelSize: 10
     readonly property int animationDuration: 150
+    readonly property string noteFontFamily: "FiraCode Nerd Font"
+    // An open note closes after this long without a key, wheel, or pointer move.
+    readonly property int noteIdleMilliseconds: 90000
 
     readonly property real panelOpacity: 0.9
     readonly property color panelColor: Qt.rgba(qreep.surface.r, qreep.surface.g, qreep.surface.b, panelOpacity)
