@@ -518,6 +518,8 @@ Item {
 
     // A share needs a password the keyring does not have: the panel asks.
     signal smbPasswordNeeded(var share, string message)
+    // What the password dialog should finish doing, so Thunar stays Thunar after it.
+    property string smbLoginAction: "open"
 
     // { name, url, user, domain } -> share item. url: smb://[user@]host/share
     function smbShare(spec) {
@@ -610,6 +612,7 @@ Item {
             + "gio info \"$1\" >/dev/null 2>&1 || { case \"$out\" in *assword*|*uthenticat*) exit 3;; esac; printf '%s' \"$out\" >&2; exit 1; }; fi; "
             + "gio info \"$1\" | sed -n 's/^local path: //p'";
 
+        smbLoginAction = action;
         smbProcess.share = share;
         smbProcess.action = action;
         smbProcess.stdinEnabled = false;
@@ -630,7 +633,7 @@ Item {
             + "gio info \"$1\" | sed -n 's/^local path: //p'";
 
         smbProcess.share = share;
-        smbProcess.action = "open";
+        smbProcess.action = smbLoginAction;
         smbProcess.command = ["sh", "-c", script, "places", share.url, domain, share.key, remember ? "1" : "0"];
         smbProcess.pendingInput = password + "\n";
         smbProcess.stdinEnabled = true;
@@ -676,6 +679,8 @@ Item {
                 rootPlacesService.run(["notify-send", "SMB", smbStderr.text.trim() || "Mount failed."], rootPlacesService.home);
             } else if (path.length > 0 && smbProcess.action === "open") {
                 rootPlacesService.run(rootPlacesService.theme.terminalCommand(["spf", path]), path);
+            } else if (path.length > 0 && smbProcess.action === "thunar") {
+                rootPlacesService.run(["thunar", path], path);
             } else if (path.length > 0 && smbProcess.action === "terminal") {
                 rootPlacesService.run(rootPlacesService.theme.terminalCommand([], { cwd: path }), path);
             }

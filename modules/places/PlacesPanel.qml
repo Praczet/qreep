@@ -983,8 +983,10 @@ PanelWindow {
             chooserIsFile = false;
             chooserOptions = [{ id: "open", label: "Open", icon: "󰉋", hint: item.mounted ? "in superfile" : "mount, then superfile" }].concat(item.mounted ? [
                     { id: "terminal", label: "Terminal", icon: "󰆍", hint: theme.terminal + " in it" },
+                    { id: "thunar", label: "Thunar", icon: "󰉋", hint: "in Thunar" },
                     { id: "unmount", label: "Unmount", icon: "󰕔", hint: "gio mount -u" }
                 ] : [
+                    { id: "thunar", label: "Thunar", icon: "󰉋", hint: "mount, then Thunar" },
                     { id: "mount", label: "Mount", icon: "󰒍", hint: "no window" }
                 ], [
                     { id: "password", label: "Change password", icon: "󰌋", hint: "ask now, save in the keyring" },
@@ -1183,11 +1185,12 @@ PanelWindow {
         // SMB: password goes through the dialog; the rest through the service.
         if (smb && option) {
             if (option.id === "password") {
+                service.smbLoginAction = "open";
                 openLogin(smb, "Enter the password. It is saved in GNOME Keyring if you keep the box ticked.");
                 return;
             }
             service.smbAction(smb, option.id);
-            if (option.id === "open" || option.id === "terminal")
+            if (option.id === "open" || option.id === "terminal" || option.id === "thunar")
                 closeRequested();
             return;
         }
