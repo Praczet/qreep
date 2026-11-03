@@ -170,6 +170,7 @@ These are hosted by `shell.qml`, not `Bar.qml`:
 | `modules/osd/Osd.qml` | Shell-level OSD surface and IPC service. |
 | `modules/kip/Kip.qml` | Launcher and slash-command surface; the launcher button only calls its IPC. |
 | `modules/places/Places.qml` | Project cockpit overlay. |
+| `modules/orbit/Orbit.qml` | Radial launcher overlay drawn from JSON; the bar only suppresses calendar dots while it is open. |
 | `modules/wallpaper/Wallpaper.qml` | Wallpaper picker overlay. |
 | `modules/prism/Prism.qml` | Colour history and palette overlay plus a clipboard watcher. |
 | `modules/fastpassword/FastPassword.qml` | Polkit-gated password chooser. |
