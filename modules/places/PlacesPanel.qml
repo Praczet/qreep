@@ -54,6 +54,9 @@ PanelWindow {
         target: rootPlacesPanel.service
 
         function onSmbPasswordNeeded(share, message) {
+            // Open closes the panel before gio has answered, and a wrong password
+            // comes back after it closed too. Reopen first, or the dialog stays hidden.
+            rootPlacesPanel.openRequested();
             rootPlacesPanel.openLogin(share, message);
         }
     }
@@ -129,6 +132,7 @@ PanelWindow {
     ]
 
     signal closeRequested
+    signal openRequested
 
     anchors {
         top: true

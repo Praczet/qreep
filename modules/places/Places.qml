@@ -76,6 +76,7 @@ Scope {
             kipController: rootPlaces.kipController
 
             onCloseRequested: rootPlaces.hide()
+            onOpenRequested: rootPlaces.show()
         }
     }
 
