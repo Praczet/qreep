@@ -49,6 +49,38 @@ PanelWindow {
     readonly property bool centerSlotActive: !collapsed || rootBar.anyPillEnabled(["potato-fast", "timer", "clock", "mpris"])
     readonly property bool rightSlotActive: !collapsed || rootBar.anyPillEnabled(["upchecker", "monitorprofile", "borg", "vitals", "battery", "network", "language", "volume", "qreeper", "tray"])
 
+    // What the updates and backup icons show and where they sit, for anyone who wants
+    // to walk over to them. Values are what the bar already knows: nothing is checked here.
+    readonly property IpcHandler attentionIpc: IpcHandler {
+        target: "qreep-bar-attention"
+
+        function state(): string {
+            return rootBar.attentionState();
+        }
+    }
+
+    function attentionIcon(item, amountKey, amount) {
+        const icon = { visible: item.visible && item.width > 0 && rootBar.rightSlotActive, x: 0, width: 0 };
+        icon[amountKey] = amount;
+        if (icon.visible) {
+            icon.x = Math.round(item.mapToItem(null, 0, 0).x);
+            icon.width = Math.round(item.width);
+        }
+        return icon;
+    }
+
+    function attentionState() {
+        const updatesKnown = upchecker.service.error.length === 0;
+        // borg-pulse only writes the age into its text, as "[-3]". No match is not "zero days".
+        const age = /\[-(\d+)\]/.exec(String(borgService.text));
+        return JSON.stringify({
+            schemaVersion: 1,
+            screen: rootBar.screen ? rootBar.screen.name : "",
+            updates: attentionIcon(upcheckerButton, "count", updatesKnown ? upchecker.service.updates.length : null),
+            backup: attentionIcon(borg, "ageDays", age ? Number(age[1]) : null)
+        });
+    }
+
     signal volumeFeedbackRequested(int percent, bool muted, string icon)
     signal audioMixerRequested
 

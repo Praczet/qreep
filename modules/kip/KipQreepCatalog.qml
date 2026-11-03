@@ -29,6 +29,7 @@ QtObject {
             "qreep-aegis": "󰞀",
             "qreep-bar": "󱔓",
             "qreep-bar-pill": "󰔡",
+            "qreep-bar-attention": "󱔓",
             "qreep-bloom": "󰉁",
             "qreep-wallpaper": "󰸉",
             "qreep-prism": "󰏘",
@@ -124,6 +125,7 @@ QtObject {
         "qreep-aegis.copyText", "qreep-aegis.copyJson",
         "qreep-bar.getMode", "qreep-bar-pill.listPills", "qreep-bar-pill.state",
         "qreep-vitals.listIndicators", "qreep-vitals.state", "qreep-places.state",
+        "qreep-bar-attention.state",
         "qreep-mpris.state", "qreep-language.state", "qreep-screenshot.state",
         "qreep-qreeper.state", "qreep-qreeper.fontScale", "qreep-qreeper.setFontScale", "qreep-qreeper.resetFontScale", "qreep-qreeper.rearrange"
     ]
