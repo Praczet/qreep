@@ -25,6 +25,9 @@ QtObject {
     property bool pendingRefresh: false
     property bool backupStateInitialized: false
     property bool backupPanelOpen: false
+    // Hidden on purpose: state polls and the final result leave the popup shut
+    // until it is asked for again or a new backup starts.
+    property bool backupProgressDismissed: false
     property bool backupWasRunning: false
     property string backupState: "idle"
     property string backupProfile: ""
@@ -189,11 +192,13 @@ QtObject {
     function showProgress() {
         backupPanelHideTimer.stop();
         requestBackupState();
+        backupProgressDismissed = false;
         backupPanelOpen = true;
     }
 
     function hideProgress() {
         backupPanelHideTimer.stop();
+        backupProgressDismissed = true;
         backupPanelOpen = false;
     }
 
@@ -213,6 +218,7 @@ QtObject {
         backupCurrentPath = "";
         backupLastFilePath = "";
         backupRc = -1;
+        backupProgressDismissed = false;
         backupPanelOpen = true;
 
         backupRunner.running = false;
@@ -287,7 +293,10 @@ QtObject {
 
         if (nextState === "running") {
             backupPanelHideTimer.stop();
-            backupPanelOpen = true;
+            if (previousState !== "running" || archiveChanged)
+                backupProgressDismissed = false;
+            if (!backupProgressDismissed)
+                backupPanelOpen = true;
             handledBackupTerminalKey = "";
             applyBackupRunningStatus("");
             requestBackupFinal();
@@ -300,7 +309,8 @@ QtObject {
         }
 
         if (isTerminalBackupState(nextState)) {
-            backupPanelOpen = true;
+            if (!backupProgressDismissed)
+                backupPanelOpen = true;
             backupWasRunning = false;
             shakeRequested();
             refresh();

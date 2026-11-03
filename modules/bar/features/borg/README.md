@@ -95,6 +95,11 @@ Expected state shape:
 }
 ```
 
+The popup opens by itself when a backup starts. Hiding it (`hideProgress`,
+`toggleProgress`) sticks for that backup, including its final result, so the
+one-second poll cannot bring it back. Left click, `showProgress`, or the next
+backup opens it again.
+
 Terminal states use:
 
 ```json
