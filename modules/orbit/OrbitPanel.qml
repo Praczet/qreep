@@ -191,6 +191,7 @@ PanelWindow {
                 iconSource: modelData.iconSource
                 hint: modelData.key || modelData.text.toLowerCase()
                 pinnedKey: modelData.key.length > 0
+                hasItems: modelData.items.length > 0
                 selected: ringIndex >= 0 && ringIndex === rootOrbitPanel.service.selectedIndex
                 dimmed: ringIndex >= 0 && rootOrbitPanel.service.isDimmed(ringIndex)
 

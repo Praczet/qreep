@@ -24,6 +24,7 @@ Item {
     property bool pinnedKey: false
     property bool selected: false
     property bool dimmed: false
+    property bool hasItems: false
 
     signal clicked
 
@@ -37,6 +38,10 @@ Item {
     // Where the circle really is: posX/posY turned by the ring's angle.
     readonly property real shownX: posX * Math.cos(ringRadians) - posY * Math.sin(ringRadians)
     readonly property real shownY: posX * Math.sin(ringRadians) + posY * Math.cos(ringRadians)
+    // Pointing away from the centre.
+    readonly property real distanceOut: Math.sqrt(shownX * shownX + shownY * shownY)
+    readonly property real outX: distanceOut > 0 ? shownX / distanceOut : 0
+    readonly property real outY: distanceOut > 0 ? shownY / distanceOut : -1
 
     width: ot.centerSize
     height: ot.centerSize
@@ -150,6 +155,27 @@ Item {
         Behavior on opacity {
             NumberAnimation {
                 duration: rootOrbitNode.ot.selectDuration
+            }
+        }
+
+        // Says "there is more in here". Behind the fill and on the outer side, so
+        // it stays clear of the line to the centre.
+        Rectangle {
+            readonly property real reach: parent.width / 2 * rootOrbitNode.ot.itemsMarkerOffset
+
+            x: parent.width / 2 - width / 2 + rootOrbitNode.outX * reach
+            y: parent.height / 2 - height / 2 + rootOrbitNode.outY * reach
+            width: parent.width * rootOrbitNode.ot.itemsMarkerSize
+            height: width
+            radius: width / 2
+            color: rootOrbitNode.ot.selectedColor
+            opacity: rootOrbitNode.hasItems && rootOrbitNode.role === "ring" ? rootOrbitNode.ot.itemsMarkerOpacity : 0
+            visible: opacity > 0.001
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: rootOrbitNode.ot.selectDuration
+                }
             }
         }
 
@@ -271,14 +297,11 @@ Item {
         id: nameLabel
 
         readonly property real unscale: rootOrbitNode.entry && rootOrbitNode.entry.size > 0 ? rootOrbitNode.ot.centerSize / rootOrbitNode.entry.size : 1
-        readonly property real distance: Math.sqrt(rootOrbitNode.shownX * rootOrbitNode.shownX + rootOrbitNode.shownY * rootOrbitNode.shownY)
-        readonly property real outX: distance > 0 ? rootOrbitNode.shownX / distance : 0
-        readonly property real outY: distance > 0 ? rootOrbitNode.shownY / distance : -1
         readonly property real reach: rootOrbitNode.width / 2 * rootOrbitNode.ot.selectedScale * rootOrbitNode.ot.selectionRingScale
-            + unscale * (rootOrbitNode.ot.nameGap + Math.abs(outX) * width / 2 + Math.abs(outY) * height / 2)
+            + unscale * (rootOrbitNode.ot.nameGap + Math.abs(rootOrbitNode.outX) * width / 2 + Math.abs(rootOrbitNode.outY) * height / 2)
 
-        x: rootOrbitNode.width / 2 - width / 2 + outX * reach
-        y: rootOrbitNode.height / 2 - height / 2 + outY * reach
+        x: rootOrbitNode.width / 2 - width / 2 + rootOrbitNode.outX * reach
+        y: rootOrbitNode.height / 2 - height / 2 + rootOrbitNode.outY * reach
         scale: unscale
         visible: rootOrbitNode.ot.showNodeNames && rootOrbitNode.role === "ring"
         width: Math.min(implicitWidth, rootOrbitNode.ot.nameMaxWidth)

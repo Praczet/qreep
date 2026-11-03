@@ -79,6 +79,11 @@ QtObject {
     readonly property int ringRotationSeconds: 120
     readonly property real selectedScale: 1.12
     readonly property int selectDuration: 150
+    // A ring node that has items: a smaller circle peeking out from behind it.
+    // Size and offset are fractions of the node's diameter and radius.
+    readonly property real itemsMarkerSize: 0.5
+    readonly property real itemsMarkerOffset: 0.7
+    readonly property real itemsMarkerOpacity: 0.2
     // The open circle around the selected node. It grows out from behind the
     // node when selected and shrinks back behind it when not.
     readonly property real selectionRingScale: 1.25

@@ -78,6 +78,8 @@ app, because the first circle is selected. The lookup runs when Orbit opens, and
 there is no type-specific list to maintain. Two apps with the same first letters
 (E-book editor, E-book viewer) cannot be told apart by typing; use `Tab`.
 
+A ring node with items has a small faint circle peeking out from behind it.
+
 Icon nodes get a small badge saying what to type, because a folder picture is
 not much of a hint.
 
