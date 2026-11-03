@@ -526,13 +526,17 @@ Item {
         const config = typeof spec === "string" ? {
             url: spec
         } : (spec || {});
-        const match = /^smb:\/\/(?:([^@\/]+)@)?([^\/]+)\/([^\/]+)/i.exec(String(config.url || ""));
+        const match = /^smb:\/\/(?:([^@\/]+)@)?([^\/]+)\/([^\/]+)(?:\/(.*))?$/i.exec(String(config.url || ""));
         const user = String(config.user || (match && match[1] ? decodeURIComponent(match[1]) : ""));
         const host = match ? match[2] : "";
         const share = match ? match[3] : "";
+        // Only the share gets mounted. Anything after it is where to land inside.
+        const subPath = String(match && match[4] ? match[4] : "").split("/")
+            .filter(part => part.length > 0 && part !== "." && part !== "..").join("/");
 
         return {
             kind: "smb",
+            subPath: subPath,
             label: String(config.name || share + " on " + host),
             host: host,
             share: share,
@@ -669,7 +673,9 @@ Item {
         }
 
         onExited: (exitCode, exitStatus) => {
-            const path = smbStdout.text.trim();
+            const mountPath = smbStdout.text.trim();
+            const subPath = smbProcess.share ? String(smbProcess.share.subPath || "") : "";
+            const path = mountPath.length > 0 && subPath.length > 0 ? mountPath + "/" + subPath : mountPath;
 
             if (exitCode === 3) {
                 rootPlacesService.smbPasswordNeeded(smbProcess.share, "Password needed (or the saved one was refused).");
