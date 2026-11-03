@@ -57,6 +57,12 @@ QtObject {
     readonly property int ringRotationSeconds: 120
     readonly property real selectedScale: 1.12
     readonly property int selectDuration: 150
+    // The open circle around the selected node. It grows out from behind the
+    // node when selected and shrinks back behind it when not.
+    readonly property real selectionRingScale: 1.25
+    readonly property real selectionRingWidth: 2.5
+    readonly property int selectionRingDuration: 240
+    readonly property real selectionRingOvershoot: 1.8
     readonly property real dimmedOpacity: 0.25
 
     readonly property color overlayColor: withAlpha(qreep.background, 0.45)

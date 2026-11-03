@@ -152,6 +152,57 @@ Item {
             }
         }
 
+        // Behind the fill, so shrinking back simply disappears under the node.
+        Rectangle {
+            id: selectionRing
+
+            anchors.fill: parent
+            radius: width / 2
+            color: "transparent"
+            border.width: rootOrbitNode.ot.selectionRingWidth
+            border.color: rootOrbitNode.ot.selectedColor
+            scale: 1
+            opacity: 0
+            visible: opacity > 0.001
+
+            states: State {
+                name: "selected"
+                when: rootOrbitNode.selected
+
+                PropertyChanges {
+                    selectionRing.scale: rootOrbitNode.ot.selectionRingScale
+                    selectionRing.opacity: 1
+                }
+            }
+
+            transitions: [
+                Transition {
+                    to: "selected"
+
+                    NumberAnimation {
+                        property: "scale"
+                        duration: rootOrbitNode.ot.selectionRingDuration
+                        easing.type: Easing.OutBack
+                        easing.overshoot: rootOrbitNode.ot.selectionRingOvershoot
+                    }
+
+                    NumberAnimation {
+                        property: "opacity"
+                        duration: rootOrbitNode.ot.selectDuration
+                    }
+                },
+                Transition {
+                    from: "selected"
+
+                    NumberAnimation {
+                        properties: "scale,opacity"
+                        duration: rootOrbitNode.ot.selectDuration
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            ]
+        }
+
         Rectangle {
             anchors.fill: parent
             radius: width / 2
