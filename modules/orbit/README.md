@@ -5,10 +5,14 @@ one tree: the current node sits in the middle, its items sit on a ring around
 it. It is for a small hand-picked menu you learn by route. For "I know the name
 of the thing", KIP is right there.
 
+![Orbit's top ring, with a node selected](../../docs/assets/screenshots/qreep-orbit.png)
+
 Going inside a node moves it to the middle while its siblings shrink into the
 parent, which stays as a faint dot, lower-left. Older parents curl away behind
 it, smaller and fainter, up to four in all. Its children then grow out of it. A thin line joins every visible node to its parent and follows them as they
 move. Keys do not wait for any of this, so a fast route still lands correctly.
+
+![Inside a node, with its parent left behind as a faint dot](../../docs/assets/screenshots/qreep-orbit-inner.png)
 
 ## Try it
 
@@ -30,6 +34,9 @@ quickshell -c qreep ipc call qreep-orbit state
 Do not rename `showWith` to `show`. The quickshell CLI reads that word as its
 own `ipc show` command and rejects the argument.
 
+Qreep sets no keybinding. Adam's Hyprland `binds.lua` has `SUPER+CTRL+SPACE` run
+`toggleWith app`; bind whichever file you want to open first.
+
 ## Keys
 
 | Key | What it does |
@@ -43,6 +50,11 @@ own `ipc show` command and rejects the argument.
 | `F1` | Debug panel: the selected and current node, and which file each came from |
 
 Click the centre to go up, or a parent to jump back to it. Click outside to close.
+
+`F1` answers "what was this planet again, and which file did it come from?",
+which turns out to be a real question after a week.
+
+![F1 debug panel next to the ring](../../docs/assets/screenshots/qreep-orbit-debug.png)
 
 ## JSON
 
@@ -64,6 +76,21 @@ included, takes these fields:
 | `ipc` | Qreep IPC, for example `["qreep-aegis", "toggle"]` |
 | `delay` | Milliseconds to wait before running the action, for things that look at the screen, like a colour picker |
 
+A sub-ring is just a node with `items`. This one opens one folder three ways:
+
+```json
+{
+  "name": "Downloads",
+  "icon": "folder-download",
+  "key": "w",
+  "items": [
+    { "name": "Terminal", "icon": "utilities-terminal", "exec": ["kitty", "--directory", "~/Downloads"] },
+    { "name": "Thunar", "icon": "org.xfce.thunar", "exec": ["thunar", "~/Downloads"] },
+    { "name": "Superfile", "text": "Sf", "exec": ["kitty", "spf", "~/Downloads"] }
+  ]
+}
+```
+
 A node with an action and items runs on `Enter` and opens on its letters. A node
 with neither just gets selected, so a read-only diagram works. The actions are
 checked in the order `app`, `exec`, `ipc`; the first one set wins.
@@ -83,6 +110,20 @@ A ring node with items has a small faint circle peeking out from behind it.
 
 Icon nodes get a small badge saying what to type, because a folder picture is
 not much of a hint.
+
+## Layer rule
+
+The surface is a full-screen layer in namespace `qreep-orbit`. For the blurred
+backdrop in the screenshots:
+
+```lua
+hl.layer_rule({
+    name = "layerrule-qreep-orbit",
+    match = { namespace = "qreep-orbit" },
+    blur = true,
+    ignore_alpha = 0.1,
+})
+```
 
 ## Not built yet
 
