@@ -96,6 +96,7 @@ Some things are too large to pretend they are bar widgets:
 
 - **KIP** — the launcher, command line, and local-AI prompt in one box;
 - **Places** — a project cockpit: git state, questlog, recent files, then open it where you want;
+- **Orbit** — a keyboard-first radial launcher for the few things I open all the time, drawn from JSON;
 - **Wallpaper** — the wallpaper picker for Unclaimed Bloom, with colour search;
 - **Prism** — colour history, favourites, and palettes, fed by a picker and the clipboard;
 - **Screenshot** — select a region, wait, then capture it;
@@ -136,6 +137,19 @@ USB drives, SMB shares, SSH hosts, calendar events, and Logseq TODOs can live
 there too, all from one `~/.config/qreep/places.json`.
 
 ![Qreep Places](docs/assets/screenshots/qreep-places.png)
+
+#### Orbit
+
+A launcher shaped like a small solar system, for the short list of things I
+open often enough to learn by route. The current node sits in the middle with
+its items on a ring around it; a couple of letters go in or run one, and
+parents shrink away behind you as you go deeper. Each tree is a JSON file in
+`~/.config/qreep/orbit/`, and one file can pull in another. Places is for looking
+at things first; Orbit is for already knowing what you want.
+
+![Qreep Orbit](docs/assets/screenshots/qreep-orbit.png)
+
+![Orbit three levels deep](docs/assets/screenshots/qreep-orbit-nested.png)
 
 #### Wallpaper
 
@@ -283,6 +297,7 @@ quickshell ipc call qreep-bar setMode collapsed
 
 quickshell ipc call qreep-kip toggle
 quickshell ipc call qreep-places toggle
+quickshell ipc call qreep-orbit toggleWith app
 quickshell ipc call qreep-wallpaper toggle
 quickshell ipc call qreep-prism pick
 quickshell ipc call qreep-expose toggle
@@ -322,6 +337,7 @@ modules/expose/            window overview
 modules/fastpassword/      Polkit-gated password picker
 modules/kip/               launcher, slash commands, local-AI prompt
 modules/notification/      notification server, popups, and centre
+modules/orbit/             radial launcher drawn from JSON
 modules/osd/               on-screen display
 modules/places/            project cockpit and other places
 modules/polkit/            Polkit auth prompt and demo surface

@@ -40,7 +40,7 @@ modules/         top-level modules, one folder each
 modules/bar/features/   bar-owned pills, panels, services, and popups
 theme/           public theme entry point and generated colours
 scripts/         helper scripts, systemd units, Polkit policy, install
-tools/           jarvis (KIP backend) and triagectl (Triage helper)
+tools/           jarvis (KIP backend), kip (Logseq one-liners), triagectl (Triage helper)
 fixtures/        test data, currently for Qreeper
 docs/            bar ownership map, mot-du-jour pipeline, archive
 ```
@@ -64,6 +64,7 @@ Adam's Hyprland `binds.lua`, not something Qreep sets.
 | Fast Password | Polkit-gated, allowlisted KeePass entry copier | `qreep-fast-password` | `SUPER+SHIFT+L` | [README](modules/fastpassword/README.md) |
 | KIP | launcher, slash commands, local-AI prompt | `qreep-kip` | `SUPER+Space`, `SUPER+/`, `SUPER+F1`, `SUPER+F2`, `SUPER+SHIFT+C` | [README](modules/kip/README.md) |
 | Notification | notification server, popups, centre | `qreep-notification` | `SUPER+N`, `SUPER+SHIFT+N` | [README](modules/notification/README.md) |
+| Orbit | keyboard-first radial launcher drawn from JSON | `qreep-orbit` | `SUPER+CTRL+Space` | [README](modules/orbit/README.md) |
 | OSD | on-screen messages, progress, volume, brightness | `osd` | — | [README](modules/osd/README.md) |
 | Places | project cockpit plus folders, drives, shares, hosts | `qreep-places` | `SUPER+grave` | [README](modules/places/README.md) |
 | Polkit | session auth agent, with a demo mode | `qreep-polkit` | — | [README](modules/polkit/README.md) |
@@ -172,6 +173,7 @@ What Adam's config currently does:
 | `qreep-popup-osd` | yes | 0.1 | `blur_popups` |
 | `qreep-places` | yes | 0.5 | backdrop dims, card blurs |
 | `qreep-kip` | yes | 0.1 | backdrop above the threshold on purpose |
+| `qreep-orbit` | yes | 0.1 | |
 | `qreep-aegis`, `qreep-dashboard`, `qreep-expose` | yes | 0.1 | |
 | `qreep-clipboard`, `qreep-timer`, `qreep-triage` | yes | 0.1 | |
 | `qreep-notification`, `qreep-notification-center` | yes | 0.1 | surfaces are input-masked too |
