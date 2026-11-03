@@ -8,6 +8,15 @@ QtObject {
 
     readonly property string configDir: Quickshell.env("HOME") + "/.config/qreep/orbit"
 
+    // Icons for the actions a `doc` node borrows from KIP, by action id.
+    readonly property var docActionIcons: ({
+            "default": "nvim",
+            "vivify": "text-markdown",
+            "folder": "folder",
+            "terminal": "utilities-terminal",
+            "copy-path": "edit-copy"
+        })
+
     readonly property int centerSize: 112
     readonly property int nodeSize: 76
     readonly property int minNodeSize: 40

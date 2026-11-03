@@ -21,6 +21,9 @@ Scope {
     property var files: ({})
     // One watching FileView per path.
     property var fileViews: ({})
+    // What each `doc` can be opened with, by path, and who is asking.
+    property var docs: ({})
+    property var docInspectors: ({})
     // Normalised tree: { id, name, text, iconSource, key, app, exec, ipc, items }.
     property var root: null
     // Every node of the tree, flat. The panel keeps one circle alive per node.
@@ -51,6 +54,12 @@ Scope {
         }
     }
 
+    readonly property Component docInspectorComponent: Component {
+        OrbitDocInspector {
+            onAnswered: (path, info) => rootOrbitService.docAnswered(path, info)
+        }
+    }
+
     Process {
         id: launcher
 
@@ -66,6 +75,10 @@ Scope {
             fileViews[path].destroy();
         fileViews = {};
         files = {};
+        for (const path in docInspectors)
+            docInspectors[path].destroy();
+        docInspectors = {};
+        docs = {};
         rootPath = pathFor(name);
         watchFile(rootPath);
     }
@@ -91,6 +104,23 @@ Scope {
         const text = String(value);
 
         return text === "~" || text.startsWith("~/") ? home + text.slice(1) : text;
+    }
+
+    function inspectDoc(path) {
+        const inspectors = Object.assign({}, docInspectors);
+
+        inspectors[path] = docInspectorComponent.createObject(rootOrbitService, {
+            path: path
+        });
+        docInspectors = inspectors;
+    }
+
+    function docAnswered(path, info) {
+        const known = Object.assign({}, docs);
+
+        known[path] = info;
+        docs = known;
+        rebuild();
     }
 
     function fileLoaded(path, text) {
@@ -131,9 +161,9 @@ Scope {
         };
     }
 
-    // Walk the tree with the files read so far. A source nobody has read yet
-    // goes on the list and the walk is thrown away; each file that arrives
-    // comes back here, so the tree appears once, complete.
+    // Walk the tree with what is known so far. A source or doc nobody has asked
+    // about yet goes on the list and the walk is thrown away; each answer comes
+    // back here, so the tree appears once, complete.
     function rebuild() {
         const file = files[rootPath];
 
@@ -145,12 +175,17 @@ Scope {
             return;
         }
 
-        const missing = {};
+        const missing = {
+            files: {},
+            docs: {}
+        };
         const tree = normalize(file.value, "root", [rootPath], missing);
-        const paths = Object.keys(missing);
+        const filePaths = Object.keys(missing.files);
+        const docPaths = Object.keys(missing.docs);
 
-        if (paths.length > 0) {
-            paths.filter(path => !fileViews[path]).forEach(path => watchFile(path));
+        if (filePaths.length > 0 || docPaths.length > 0) {
+            filePaths.filter(path => !fileViews[path]).forEach(path => watchFile(path));
+            docPaths.filter(path => !docInspectors[path]).forEach(path => inspectDoc(path));
             return;
         }
 
@@ -171,7 +206,7 @@ Scope {
         const file = files[path];
 
         if (!file) {
-            missing[path] = true;
+            missing.files[path] = true;
             return {};
         }
         if (file.error)
@@ -182,6 +217,34 @@ Scope {
             node: file.value,
             chain: chain.concat([path])
         };
+    }
+
+    // The circles a `doc` opens into: every app that can open it, default first,
+    // then KIP's file actions. Text gets the editor first, the way Places does.
+    function docItems(path, info) {
+        const kt = theme.modules.kip;
+        const values = {
+            path: path,
+            line: "1",
+            dir: path.replace(/\/[^\/]*$/, "") || "/"
+        };
+        const fill = command => command.map(part => String(part).replace(/\{(\w+)\}/g, (match, key) => values[key] !== undefined ? values[key] : match));
+        const fromAction = action => ({
+            name: action.label,
+            icon: ot.docActionIcons[action.id] || "",
+            exec: fill(action.command)
+        });
+        const apps = info.apps.map(app => ({
+            name: app.name,
+            icon: app.icon,
+            exec: ["gio", "launch", app.desktopFile, path]
+        }));
+        const open = kt.fileActions.filter(action => action.id === "open").map(fromAction);
+        const vivify = /\.md$/i.test(path) ? kt.markdownOpeners.filter(opener => opener.id === "vivify").map(fromAction) : [];
+        const actions = kt.fileActions.filter(action => action.id !== "open").map(fromAction);
+        const openers = apps.length > 0 ? apps : open;
+
+        return /^text\//.test(info.mime) ? vivify.concat(actions, openers) : openers.concat(vivify, actions);
     }
 
     function setTree(tree) {
@@ -202,7 +265,13 @@ Scope {
         const entry = node.app ? appEntry(node.app) : null;
         const source = node.itemsSource ? readSource(node.itemsSource, chain, missing) : {};
         const sourced = source.node || {};
-        const name = String(node.name || (entry && entry.name) || sourced.name || node.text || "?");
+        const docPath = node.doc ? expand(node.doc) : "";
+        const docInfo = docPath ? docs[docPath] : null;
+
+        if (docPath && !docInfo)
+            missing.docs[docPath] = true;
+
+        const name = String(node.name || (entry && entry.name) || sourced.name || node.text || (docPath && docPath.replace(/^.*\//, "")) || "?");
         const own = (Array.isArray(node.items) ? node.items : []).map(child => ({
             raw: child,
             chain: chain
@@ -210,6 +279,11 @@ Scope {
         const pulled = (Array.isArray(sourced.items) ? sourced.items : []).map(child => ({
             raw: child,
             chain: source.chain
+        }));
+
+        const generated = (docInfo && !docInfo.error ? docItems(docPath, docInfo) : []).map(child => ({
+            raw: child,
+            chain: chain
         }));
 
         return {
@@ -221,8 +295,8 @@ Scope {
             app: node.app ? String(node.app) : "",
             exec: node.exec || null,
             ipc: node.ipc || null,
-            sourceError: source.error || "",
-            items: own.concat(pulled).map((child, index) => normalize(child.raw, id + "/" + index, child.chain, missing))
+            sourceError: source.error || (docInfo && docInfo.error) || "",
+            items: own.concat(pulled, generated).map((child, index) => normalize(child.raw, id + "/" + index, child.chain, missing))
         };
     }
 

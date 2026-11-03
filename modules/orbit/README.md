@@ -57,6 +57,7 @@ included, takes these fields:
 | `key` | Pins what you type. A pinned node answers only to this, so a new neighbour cannot change its route |
 | `items` | Child nodes |
 | `itemsSource` | Another Orbit file whose `items` go under this node, after any local `items`. Same path rules as `showWith` |
+| `doc` | A file. The node opens into every app that can open it, default first, then nvim, Folder, Terminal, and Copy path. Any `items` come first |
 | `app` | Desktop entry id. Also supplies the name and icon |
 | `exec` | Argv array, no shell. An argument that starts with `~/` is expanded |
 | `ipc` | Qreep IPC, for example `["qreep-aegis", "toggle"]` |
@@ -70,6 +71,11 @@ file's when it has none. A file works on its own and pulled into another one.
 Every file is read when Orbit opens and watched while it stays loaded. A missing
 or broken file, or a loop of files, breaks only the node asking for it; select
 that node to see why.
+
+On a `doc` node, `Enter` goes inside and `Enter` again opens it with the default
+app, because the first circle is selected. The lookup runs when Orbit opens, and
+there is no type-specific list to maintain. Two apps with the same first letters
+(E-book editor, E-book viewer) cannot be told apart by typing; use `Tab`.
 
 Icon nodes get a small badge saying what to type, because a folder picture is
 not much of a hint.
