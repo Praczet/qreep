@@ -18,6 +18,9 @@ PanelWindow {
     property bool presented: false
     // False while a node travels to the middle; its children wait inside it.
     property bool bloomed: false
+    // Turns only while Orbit is open, and every new ring starts from zero, so
+    // it always opens with its first node at twelve o'clock.
+    property real ringAngle: 0
     readonly property string currentId: service.current ? service.current.id : ""
     readonly property var nodeIds: service.nodes.map(node => node.id)
     // The live circles, by node index, so the links can follow them.
@@ -105,7 +108,25 @@ PanelWindow {
 
         interval: rootOrbitPanel.ot.bloomDelay
         repeat: false
-        onTriggered: rootOrbitPanel.bloomed = true
+        onTriggered: {
+            // Nothing is on the ring yet at this point, so nothing jumps.
+            rootOrbitPanel.ringAngle = 0;
+            if (ringRotation.running)
+                ringRotation.restart();
+            rootOrbitPanel.bloomed = true;
+        }
+    }
+
+    NumberAnimation {
+        id: ringRotation
+
+        target: rootOrbitPanel
+        property: "ringAngle"
+        from: 0
+        to: 360
+        duration: rootOrbitPanel.ot.ringRotationSeconds * 1000
+        loops: Animation.Infinite
+        running: rootOrbitPanel.ot.ringRotationEnabled && rootOrbitPanel.presented
     }
 
     Rectangle {
@@ -164,6 +185,7 @@ PanelWindow {
                 entry: rootOrbitPanel.scene[modelData.id] || null
                 originX: keys.width / 2
                 originY: keys.height / 2
+                ringAngle: rootOrbitPanel.ringAngle
                 text: modelData.text
                 iconSource: modelData.iconSource
                 hint: modelData.key || modelData.text.toLowerCase()

@@ -85,6 +85,10 @@ Orbit only reads its files. It writes nothing but the processes it launches.
 
 ## How the motion works
 
+The ring turns slowly while Orbit is open. Set `ringRotationEnabled` to `false`
+in `OrbitTheme.qml` to stop it, or change `ringRotationSeconds` for the speed.
+Keys and Tab order are unaffected; only the place on screen drifts.
+
 `OrbitLayout.scene()` is a pure function: tree position in, target for every node
 out. Each node keeps one `OrbitNode` for the life of the panel and animates to
 its target from wherever it currently is. Timing lives in `OrbitTheme.qml`. Keep

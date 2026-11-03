@@ -14,6 +14,8 @@ Item {
     // The middle of the screen, in the parent's coordinates.
     required property real originX
     required property real originY
+    // Degrees. Applies only while this node is on the ring.
+    required property real ringAngle
     property string text: ""
     property string iconSource: ""
     // What to type for this node. Shown only when the circle does not say so.
@@ -29,11 +31,16 @@ Item {
     readonly property bool emphasised: role === "center" || role === "parent"
     property real posX: 0
     property real posY: 0
+    property bool onRing: false
+    readonly property real ringRadians: onRing ? ringAngle * Math.PI / 180 : 0
+    // Where the circle really is: posX/posY turned by the ring's angle.
+    readonly property real shownX: posX * Math.cos(ringRadians) - posY * Math.sin(ringRadians)
+    readonly property real shownY: posX * Math.sin(ringRadians) + posY * Math.cos(ringRadians)
 
     width: ot.centerSize
     height: ot.centerSize
-    x: originX + posX - width / 2
-    y: originY + posY - height / 2
+    x: originX + shownX - width / 2
+    y: originY + shownY - height / 2
     scale: 0
     opacity: 0
     visible: opacity > 0.001 && scale > 0.001
@@ -56,6 +63,7 @@ Item {
         const duration = shrinking ? ot.shrinkDuration : growing ? ot.growDuration : ot.moveDuration;
 
         moves.stop();
+        setOnRing(entry.role === "ring");
         pause.duration = entry.delay;
         xAnimation.to = entry.x;
         yAnimation.to = entry.y;
@@ -69,6 +77,21 @@ Item {
         scaleAnimation.easing.type = growing ? Easing.OutBack : Easing.OutCubic;
         scaleAnimation.easing.overshoot = ot.growOvershoot;
         moves.start();
+    }
+
+    // Joining or leaving the ring changes what posX/posY mean. Convert them so
+    // the circle stays exactly where it is, and carries on from there.
+    function setOnRing(value) {
+        if (value === onRing)
+            return;
+
+        const radians = value ? ringAngle * Math.PI / 180 : 0;
+        const fromX = shownX;
+        const fromY = shownY;
+
+        posX = fromX * Math.cos(radians) + fromY * Math.sin(radians);
+        posY = fromY * Math.cos(radians) - fromX * Math.sin(radians);
+        onRing = value;
     }
 
     SequentialAnimation {

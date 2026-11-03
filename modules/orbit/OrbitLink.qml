@@ -13,14 +13,14 @@ Rectangle {
     required property real originY
 
     readonly property bool linked: childNode !== null && parentNode !== null
-    readonly property real dx: linked ? childNode.posX - parentNode.posX : 0
-    readonly property real dy: linked ? childNode.posY - parentNode.posY : 0
+    readonly property real dx: linked ? childNode.shownX - parentNode.shownX : 0
+    readonly property real dy: linked ? childNode.shownY - parentNode.shownY : 0
     readonly property real distance: Math.sqrt(dx * dx + dy * dy)
     readonly property real parentEdge: linked ? parentNode.scale * ot.centerSize / 2 : 0
     readonly property real childEdge: linked ? childNode.scale * ot.centerSize / 2 : 0
 
-    x: linked && distance > 0 ? originX + parentNode.posX + dx / distance * parentEdge : 0
-    y: (linked && distance > 0 ? originY + parentNode.posY + dy / distance * parentEdge : 0) - height / 2
+    x: linked && distance > 0 ? originX + parentNode.shownX + dx / distance * parentEdge : 0
+    y: (linked && distance > 0 ? originY + parentNode.shownY + dy / distance * parentEdge : 0) - height / 2
     width: Math.max(0, distance - parentEdge - childEdge)
     height: ot.linkWidth
     transformOrigin: Item.Left

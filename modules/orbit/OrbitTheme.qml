@@ -51,6 +51,10 @@ QtObject {
     readonly property int staggerDelay: 28
     readonly property int maxStagger: 160
     readonly property real growOvershoot: 1.5
+    // The ring turning slowly around the centre, clockwise. Labels stay upright,
+    // and keys and Tab order do not care where a node has drifted to.
+    readonly property bool ringRotationEnabled: true
+    readonly property int ringRotationSeconds: 120
     readonly property real selectedScale: 1.12
     readonly property int selectDuration: 150
     readonly property real dimmedOpacity: 0.25
