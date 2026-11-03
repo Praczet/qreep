@@ -51,7 +51,7 @@ included, takes these fields:
 
 | Field | Meaning |
 | --- | --- |
-| `name` | Full name, shown under the centre when selected. Falls back to the app's name |
+| `name` | Full name, shown next to the node and under the centre when selected. Falls back to the app's name |
 | `text` | Circle label and what you type. Defaults to the first two letters of `name` |
 | `icon` | Themed icon name, or a path starting with `/` or `~/`. Beats `text` on the circle |
 | `key` | Pins what you type. A pinned node answers only to this, so a new neighbour cannot change its route |

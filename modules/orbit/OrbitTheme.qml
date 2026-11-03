@@ -25,6 +25,12 @@ QtObject {
     readonly property int captionPixelSize: 15
     readonly property int detailPixelSize: 11
     readonly property int hintPixelSize: 11
+    // The name next to each ring node, on its outer side, so the ring is
+    // readable without selecting everything in turn.
+    readonly property bool showNodeNames: true
+    readonly property int nameMaxWidth: 150
+    readonly property int namePixelSize: 12
+    readonly property int nameGap: 6
     readonly property int hintSize: 20
     readonly property int borderWidth: 1
     readonly property int animationDuration: 160

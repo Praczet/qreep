@@ -17,6 +17,7 @@ Item {
     // Degrees. Applies only while this node is on the ring.
     required property real ringAngle
     property string text: ""
+    property string name: ""
     property string iconSource: ""
     // What to type for this node. Shown only when the circle does not say so.
     property string hint: ""
@@ -261,6 +262,32 @@ Item {
                 font.pixelSize: rootOrbitNode.ot.hintPixelSize
             }
         }
+    }
+
+    // Stays outward as the ring turns, and clears the selection circle whether
+    // or not it is showing, so the name does not shift when selected. Sizes in
+    // here are counter-scaled, so `unscale` turns screen pixels into local ones.
+    Text {
+        id: nameLabel
+
+        readonly property real unscale: rootOrbitNode.entry && rootOrbitNode.entry.size > 0 ? rootOrbitNode.ot.centerSize / rootOrbitNode.entry.size : 1
+        readonly property real distance: Math.sqrt(rootOrbitNode.shownX * rootOrbitNode.shownX + rootOrbitNode.shownY * rootOrbitNode.shownY)
+        readonly property real outX: distance > 0 ? rootOrbitNode.shownX / distance : 0
+        readonly property real outY: distance > 0 ? rootOrbitNode.shownY / distance : -1
+        readonly property real reach: rootOrbitNode.width / 2 * rootOrbitNode.ot.selectedScale * rootOrbitNode.ot.selectionRingScale
+            + unscale * (rootOrbitNode.ot.nameGap + Math.abs(outX) * width / 2 + Math.abs(outY) * height / 2)
+
+        x: rootOrbitNode.width / 2 - width / 2 + outX * reach
+        y: rootOrbitNode.height / 2 - height / 2 + outY * reach
+        scale: unscale
+        visible: rootOrbitNode.ot.showNodeNames && rootOrbitNode.role === "ring"
+        width: Math.min(implicitWidth, rootOrbitNode.ot.nameMaxWidth)
+        elide: Text.ElideRight
+        text: rootOrbitNode.name
+        color: rootOrbitNode.selected ? rootOrbitNode.ot.selectedColor : rootOrbitNode.ot.textColor
+        opacity: rootOrbitNode.dimmed ? rootOrbitNode.ot.dimmedOpacity : 1
+        font.pixelSize: rootOrbitNode.ot.namePixelSize
+        font.bold: rootOrbitNode.selected
     }
 
     MouseArea {

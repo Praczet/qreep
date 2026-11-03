@@ -187,6 +187,7 @@ PanelWindow {
                 originY: keys.height / 2
                 ringAngle: rootOrbitPanel.ringAngle
                 text: modelData.text
+                name: modelData.name
                 iconSource: modelData.iconSource
                 hint: modelData.key || modelData.text.toLowerCase()
                 pinnedKey: modelData.key.length > 0
