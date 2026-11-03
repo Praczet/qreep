@@ -37,6 +37,11 @@ own `ipc show` command and rejects the argument.
 Qreep sets no keybinding. Adam's Hyprland `binds.lua` has `SUPER+CTRL+SPACE` run
 `toggleWith app`; bind whichever file you want to open first.
 
+A small file can have its own binding and still be pulled into a bigger tree with
+`itemsSource`. Orbit opens with the first item selected, so the top of `items` is
+the fastest thing in the file: bind `toggleWith download` to `SUPER+D`, and
+`SUPER+D`, `Enter` runs the first item. Everything else is still a letter away.
+
 ## Keys
 
 | Key | What it does |
