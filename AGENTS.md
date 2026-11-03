@@ -23,6 +23,7 @@ qreep/
 │   ├── fastpassword/
 │   ├── kip/
 │   ├── notification/
+│   ├── orbit/
 │   ├── osd/
 │   ├── places/
 │   ├── polkit/
@@ -166,6 +167,7 @@ The hash below is the repo commit the docs were synchronized against. If docs ar
 | `modules/fastpassword/README.md` | `1af57ac` | `2026-07-17` |
 | `modules/kip/README.md` | `b5b9bda` | `2026-10-19` |
 | `modules/notification/README.md` | `1a769ca` | `2026-07-08` |
+| `modules/orbit/README.md` | `e24a1a0` | `2026-11-03` |
 | `modules/osd/README.md` | `1a769ca` | `2026-07-08` |
 | `modules/places/README.md` | `865c8af` | `2026-10-23` |
 | `modules/polkit/README.md` | `63f3bf5` | `2026-07-15` |
@@ -227,6 +229,7 @@ modules/
 ├── fastpassword/
 ├── kip/
 ├── notification/
+├── orbit/
 ├── osd/
 ├── places/
 ├── polkit/
@@ -1074,6 +1077,7 @@ Qreep currently has:
 - a top-level Notification module in `modules/notification/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-notification`, and backed by `Quickshell.Services.Notifications.NotificationServer`;
 - notification popups and the notification center use masked layer surfaces so transparent areas pass pointer input through; do not remove those masks just because the surface looks transparent;
 - notification popup action handling is intentionally id-based because invoking an action can close/destroy the notification object before animations finish. Do not change action clicks back to delayed object-based dismiss unless crash reports are the desired feature;
+- a top-level Orbit module in `modules/orbit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-orbit` (`showWith <name>`, `toggleWith <name>`), drawing one JSON tree from `~/.config/qreep/orbit/` as a centre node and one ring, with letter, `Tab`, and `Enter` navigation and `app` / `exec` / `ipc` actions. No Hyprland binding yet;
 - a top-level Quickshell OSD module in `modules/osd/` with IPC methods for plain messages, JSON-backed messages, progress displays, volume, microphone, brightness, and player controls;
 - a top-level Places module in `modules/places/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-places` (bound to `SUPER+grave`), replacing the old `places-rofi` project picker: a centered overlay with a filterable, grouped project list and a detail pane showing README summary, git state, questlog (`docs/ai/QUESTLOG.json` or `questlog.json`), uncommitted and recently touched files, pinned docs, commits, and tokei/commit-activity stats; projects and non-project places (pages of `apps` / `documents` / `folders` / `folder` (live listing of one path) / `ssh` (~/.ssh/config hosts, Enter = kitty ssh) / `usb` (lsblk while open, udisksctl mount/unmount/eject) / `smb` (gio mount; password only in GNOME Keyring under service=qreep-places-smb, passed on stdin, dialog when missing) / `calendar` (bar clock event files) / `todos` (Logseq TODO lines via `rg`, opened through `Kip.runAction`) blocks; projects take blocks too, every entry and block honours `"enabled": false`) come from `~/.config/qreep/places.json` (watched), and actions open the project in the configured editor, the cockpit script, superfile, or a terminal. Places only reads; it writes nothing but the processes it launches;
 - a top-level Polkit module in `modules/polkit/`, hosted directly by `shell.qml`, exposed through IPC target `qreep-polkit`, using `Quickshell.Services.Polkit.PolkitAgent` when it can register as the session agent, and keeping demo IPC for visual work while `hyprpolkitagent` still owns authentication;
