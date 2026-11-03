@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# %name: Qreep Password Show
+# %desc: Print the notes of an allowlisted KeePass note entry after qreep-fast-password has authenticated.
+# %icon: dialog-password-symbolic
+# %terminal: false
+# %categories: Utility;Security;
+# %mode: arg
+# %default_args:
+# %prompt: Note entry key
+# %prompt_type: text
+# %tags: qreep keepass password notes secrets
+#
+# Reads the notes attribute and nothing else, and only for entries marked
+# "kind": "note" in fast-password.json, so no call can make it print a password.
+# stdout carries the note. Never log it, and never add a --attribute option.
+set -euo pipefail
+
+AUTH_FILE="${QREEP_PASS_AUTH_FILE:-${XDG_RUNTIME_DIR:-/tmp}/qreep/fast-password.auth}"
+AUTH_TTL_SECONDS="${QREEP_PASS_AUTH_TTL_SECONDS:-120}"
+DB="${QREEP_PASS_DB:-${HOME}/.vaults/praczet.kdbx}"
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "Missing: $1" >&2
+    exit 127
+  }
+}
+
+usage() {
+  echo "Usage: qreep-pass-show --key <key>" >&2
+  exit 64
+}
+
+[[ $# -eq 2 && "$1" == "--key" && -n "$2" ]] || usage
+KEY="$2"
+
+case "$KEY" in
+*$'\n'* | *$'\r'*)
+  echo "Invalid key: newlines are not allowed" >&2
+  exit 2
+  ;;
+esac
+
+need date
+need keepassxc-cli
+need python3
+need qreep-pass-list
+need secret-tool
+
+# Same exit code as qreep-pass-copy: 6 means authenticate and try again.
+[[ -f "$AUTH_FILE" ]] || {
+  echo "Fast Password is not authenticated" >&2
+  exit 6
+}
+
+AUTH_TIME="$(cat "$AUTH_FILE" 2>/dev/null || printf '0')"
+NOW="$(date +%s)"
+
+case "$AUTH_TIME" in
+'' | *[!0-9]*)
+  echo "Fast Password authentication stamp is invalid" >&2
+  exit 6
+  ;;
+esac
+
+if ((NOW - AUTH_TIME > AUTH_TTL_SECONDS)); then
+  echo "Fast Password authentication expired" >&2
+  exit 6
+fi
+
+VISIBLE="$(qreep-pass-list)"
+
+VISIBLE="$VISIBLE" python3 - "$KEY" <<'PY'
+import json
+import os
+import sys
+
+key = sys.argv[1]
+entries = json.loads(os.environ.get("VISIBLE", "[]"))
+if not isinstance(entries, list):
+    raise SystemExit("qreep-pass-list returned invalid JSON")
+
+allowed = any(
+    entry.get("kind") == "note"
+    and entry.get("source") == "keepass"
+    and entry.get("key") == key
+    for entry in entries
+)
+if not allowed:
+    raise SystemExit(f"Not an allowlisted KeePass note: {key}")
+PY
+
+[[ -f "$DB" ]] || {
+  echo "Database not found: $DB" >&2
+  exit 1
+}
+
+PASS="$(secret-tool lookup app keepassxc 2>/dev/null || true)"
+[[ -n "$PASS" ]] || {
+  echo "KeePass master password not found in keyring" >&2
+  exit 2
+}
+
+# Keep the note out of a shell variable. Python only passes it through and says
+# whether it was empty. Stderr never carries note text.
+if ! printf "%s" "$PASS" | keepassxc-cli show -q -a notes "$DB" "$KEY" | python3 -c '
+import sys
+data = sys.stdin.buffer.read()
+sys.stdout.buffer.write(data)
+sys.exit(5 if not data.strip() else 0)
+'; then
+  status=("${PIPESTATUS[@]}")
+  if ((status[2] == 5 && status[1] == 0)); then
+    echo "No note found for $KEY" >&2
+    exit 5
+  fi
+  echo "Could not read the note for $KEY" >&2
+  exit 1
+fi
