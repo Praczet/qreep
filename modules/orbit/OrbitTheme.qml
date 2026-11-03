@@ -42,6 +42,13 @@ QtObject {
     readonly property int nameGap: 6
     readonly property int hintSize: 20
     readonly property int borderWidth: 1
+    // F1 panel, to the right of the ring; orbitGap leaves room for node names.
+    readonly property int debugWidth: 380
+    readonly property int debugOrbitGap: 130
+    readonly property int debugPadding: 14
+    readonly property int debugRadius: 12
+    readonly property int debugPixelSize: 12
+    readonly property string debugFontFamily: qreep.iconFontFamily
     readonly property int animationDuration: 160
     // The way back: nearest parent first, each one smaller and fainter, curling
     // around the centre inside the ring and away from the caption. Angles are
@@ -90,6 +97,7 @@ QtObject {
     readonly property color textColor: qreep.on_surface
     readonly property color detailColor: qreep.on_surface_variant
     readonly property color hintColor: withAlpha(qreep.surfaceContainerHighest, 0.95)
+    readonly property color debugColor: withAlpha(qreep.surfaceContainer, 0.92)
     readonly property color captionColor: withAlpha(qreep.background, 0.7)
     readonly property color errorColor: qreep.error
 

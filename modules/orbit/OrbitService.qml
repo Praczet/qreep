@@ -34,6 +34,8 @@ Scope {
     property int selectedIndex: -1
     // Letters typed so far, while they still match more than one node.
     property string typed: ""
+    // F1. Kept here so it survives closing and reopening while tuning a menu.
+    property bool debugOpen: false
 
     readonly property var items: current ? current.items : []
     readonly property var selectedNode: selectedIndex >= 0 && selectedIndex < items.length ? items[selectedIndex] : null
@@ -232,12 +234,14 @@ Scope {
         const fromAction = action => ({
             name: action.label,
             icon: ot.docActionIcons[action.id] || "",
-            exec: fill(action.command)
+            exec: fill(action.command),
+            fromDoc: true
         });
         const apps = info.apps.map(app => ({
             name: app.name,
             icon: app.icon,
-            exec: ["gio", "launch", app.desktopFile, path]
+            exec: ["gio", "launch", app.desktopFile, path],
+            fromDoc: true
         }));
         const open = kt.fileActions.filter(action => action.id === "open").map(fromAction);
         const vivify = /\.md$/i.test(path) ? kt.markdownOpeners.filter(opener => opener.id === "vivify").map(fromAction) : [];
@@ -295,6 +299,10 @@ Scope {
             app: node.app ? String(node.app) : "",
             exec: node.exec || null,
             ipc: node.ipc || null,
+            source: chain[chain.length - 1],
+            itemsSourcePath: node.itemsSource ? pathFor(node.itemsSource) : "",
+            docPath: docPath,
+            fromDoc: node.fromDoc === true,
             sourceError: source.error || (docInfo && docInfo.error) || "",
             items: own.concat(pulled, generated).map((child, index) => normalize(child.raw, id + "/" + index, child.chain, missing))
         };

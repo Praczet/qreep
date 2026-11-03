@@ -254,6 +254,15 @@ PanelWindow {
                 font.pixelSize: rootOrbitPanel.ot.detailPixelSize
             }
         }
+
+        OrbitDebug {
+            x: Math.max(rootOrbitPanel.ot.screenMargin, Math.min(keys.width - width - rootOrbitPanel.ot.screenMargin, keys.width / 2 + rootOrbitPanel.ringLayout.radius + rootOrbitPanel.ringLayout.nodeSize / 2 + rootOrbitPanel.ot.debugOrbitGap))
+            anchors.verticalCenter: parent.verticalCenter
+            z: 10
+            ot: rootOrbitPanel.ot
+            service: rootOrbitPanel.service
+            shown: rootOrbitPanel.service.debugOpen && rootOrbitPanel.presented
+        }
     }
 
     function captionName() {
@@ -276,6 +285,9 @@ PanelWindow {
         case Qt.Key_Backspace:
             if (!service.clearTyped())
                 service.goUp();
+            return;
+        case Qt.Key_F1:
+            service.debugOpen = !service.debugOpen;
             return;
         case Qt.Key_Tab:
             service.cycle(1);

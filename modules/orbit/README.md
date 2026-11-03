@@ -40,6 +40,7 @@ own `ipc show` command and rejects the argument.
 | `Backspace` | Clear typed letters, then go up |
 | `Esc` | Clear typed letters, then go up, then close |
 | `Ctrl+Esc` | Close, however deep you are |
+| `F1` | Debug panel: the selected and current node, and which file each came from |
 
 Click the centre to go up, or a parent to jump back to it. Click outside to close.
 
